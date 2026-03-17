@@ -4379,6 +4379,9 @@ void FASTCALL Render::MixFast(int y)
 	MixFastLine(y, y);
 }
 
+// px68k-style scanline compositor (Render Fast 1:1)
+void FASTCALL Xm6Px68kComposeScanlineFast(DWORD *out_argb32, int len, const DWORD *grp, const DWORD *grp_sp, const DWORD *grp_sp2, const DWORD *bgtext_line, const BYTE *tr_flag, BOOL gon, BOOL tron, BOOL pron, BOOL ton, BOOL bgon, int gr_pri, int sp_pri, int tx_pri, BYTE vr2h);
+
 void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 {
 	DWORD *dst;
@@ -4460,122 +4463,13 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	bgon = bg_active;
 	FastPrepareBGTextLine(bgtext_line, tr_flag, bg_flag, text_line, bg_line, render.mixlen, ton, bgon, tx_pri, sp_pri, bg_opaq);
 
-	// px68k starts the destination scanline as empty and lets the first visible
-	// layer copy opaquely; later layers then overlay only visible pixels.
-	opaq = TRUE;
-	tdrawed = FALSE;
-
-	if (gr_pri >= 2) {
-		if (gon) {
-			FastDrawLayerLine(out, grp, render.mixlen, opaq);
-			opaq = FALSE;
-		}
-		if (tron) {
-			FastDrawLayerLine(out, grp_sp2, render.mixlen, opaq);
-			opaq = FALSE;
-		}
-	}
-		if ((sp_pri >= 2) && bgon) {
-			if (tr_mode && (gr_pri != 2) && tron) {
-				if (gr_pri < tx_pri) {
-					FastDrawBGTextLineBGTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-				}
-				else {
-					FastDrawBGTextLineBG(out, bgtext_line, tr_flag, render.mixlen, opaq, tdrawed);
-				}
-			}
-			else {
-				FastDrawBGTextLineBG(out, bgtext_line, tr_flag, render.mixlen, opaq, tdrawed);
-			}
-			tdrawed = TRUE;
-			opaq = FALSE;
-		}
-	if ((tx_pri >= 2) && ton) {
-		if (tr_mode && (gr_pri != 2) && tron) {
-			FastDrawBGTextLineTEXTTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-		}
-		else {
-			FastDrawBGTextLineTEXT(out, bgtext_line, tr_flag, render.mixlen, opaq, tdrawed);
-		}
-		opaq = FALSE;
-		tdrawed = TRUE;
-	}
-
-	if ((gr_pri == 1) && gon) {
-		FastDrawLayerLine(out, grp, render.mixlen, opaq);
-		opaq = FALSE;
-	}
-		if ((sp_pri == 1) && bgon) {
-			if (tr_mode && (gr_pri == 0) && tron) {
-				if (gr_pri < tx_pri) {
-					FastDrawBGTextLineBGTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-				}
-				else {
-					FastDrawBGTextLineBG(out, bgtext_line, tr_flag, render.mixlen, opaq, (BOOL)(tx_pri == 2));
-				}
-			}
-			else {
-				FastDrawBGTextLineBG(out, bgtext_line, tr_flag, render.mixlen, opaq, (BOOL)(tx_pri == 2));
-			}
-			tdrawed = TRUE;
-			opaq = FALSE;
-		}
-	if ((tx_pri == 1) && tr_mode && (gr_pri != 0) && (sp_pri > gr_pri) && bgon && tron) {
-		FastDrawBGTextLineBGTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-		tdrawed = TRUE;
-		opaq = FALSE;
-		if (tron) {
-			FastDrawLayerLine(out, grp_sp2, render.mixlen, opaq);
-		}
-	}
-	else if ((gr_pri == 1) && tron && gon && p->exon) {
-		FastDrawLayerLine(out, grp_sp2, render.mixlen, opaq);
-		opaq = FALSE;
-	}
-	if ((tx_pri == 1) && ton) {
-		if (tr_mode && (gr_pri == 0) && tron) {
-			FastDrawBGTextLineTEXTTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-		}
-		else {
-			FastDrawBGTextLineTEXT(out, bgtext_line, tr_flag, render.mixlen, opaq, (BOOL)(sp_pri >= 1));
-		}
-		opaq = FALSE;
-		tdrawed = TRUE;
-	}
-
-	if ((gr_pri == 0) && gon) {
-		FastDrawLayerLine(out, grp, render.mixlen, opaq);
-		opaq = FALSE;
-	}
-	if ((sp_pri == 0) && bgon) {
-		FastDrawBGTextLineBG(out, bgtext_line, tr_flag, render.mixlen, opaq, (BOOL)(tx_pri >= 1));
-		tdrawed = TRUE;
-		opaq = FALSE;
-	}
-	if ((tx_pri == 0) && tr_mode && (sp_pri > gr_pri) && bgon && tron) {
-		FastDrawBGTextLineBGTR(out, bgtext_line, tr_flag, grp_sp, render.mixlen, opaq);
-		tdrawed = TRUE;
-		opaq = FALSE;
-		if (tron) {
-			FastDrawLayerLine(out, grp_sp2, render.mixlen, opaq);
-		}
-	}
-	else if ((gr_pri == 0) && tron && p->exon) {
-		FastDrawLayerLine(out, grp_sp2, render.mixlen, opaq);
-		opaq = FALSE;
-	}
-	if ((tx_pri == 0) && ton) {
-		FastDrawBGTextLineTEXT(out, bgtext_line, tr_flag, render.mixlen, opaq, TRUE);
-		tdrawed = TRUE;
-		opaq = FALSE;
-	}
-
-	if (pri_mode && pron) {
-		FastDrawPriLine(out, grp_sp, render.mixlen);
-	}
-	else if (dim_mode && tron) {
-		FastDrawHalfFillLine(out, grp_sp, render.mixlen);
-	}
+	// px68k-style 565+Ibit scanline composition (Render Fast 1:1 path)
+	Xm6Px68kComposeScanlineFast(out, render.mixlen,
+		grp, grp_sp, grp_sp2,
+		bgtext_line, tr_flag,
+		gon, tron, pron, ton, bgon,
+		gr_pri, sp_pri, tx_pri,
+		p->vr2h);
 
 	RendMix01(dst, out, render.drawflag + (src_y << 6), render.mixlen);
 }
@@ -4953,13 +4847,13 @@ void FASTCALL Render::ProcessFast()
 				render.fast_mix_stamp[src] = stamp;
 				render.fast_bg_stamp[src & 0x1ff] = stamp;
 				render.mix[src] = TRUE;
-				Text(src);
 				Grp(0, src);
 				Grp(1, src);
 				Grp(2, src);
 				Grp(3, src);
 				render.bgspmod[src & 0x1ff] = TRUE;
 				BGSprite(src);
+				Text(src);
 				MixFastLine(src, src);
 			}
 		}
@@ -4978,26 +4872,26 @@ void FASTCALL Render::ProcessFast()
 			render.fast_mix_stamp[src] = stamp;
 			render.fast_bg_stamp[src & 0x1ff] = stamp;
 			render.mix[src] = TRUE;
-			Text(src);
 			Grp(0, src);
 			Grp(1, src);
 			Grp(2, src);
 			Grp(3, src);
 			render.bgspmod[src & 0x1ff] = TRUE;
 			BGSprite(src);
+			Text(src);
 			MixFastLine(src, src);
 			src = (i << 1) + 1;
 			stamp = ++render.fast_stamp_counter;
 			render.fast_mix_stamp[src] = stamp;
 			render.fast_bg_stamp[src & 0x1ff] = stamp;
 			render.mix[src] = TRUE;
-			Text(src);
 			Grp(0, src);
 			Grp(1, src);
 			Grp(2, src);
 			Grp(3, src);
 			render.bgspmod[src & 0x1ff] = TRUE;
 			BGSprite(src);
+			Text(src);
 			MixFastLine(src, src);
 		}
 		// ?X?V
@@ -5011,13 +4905,13 @@ void FASTCALL Render::ProcessFast()
 		render.fast_mix_stamp[i] = stamp;
 		render.fast_bg_stamp[i & 0x1ff] = stamp;
 		render.mix[i] = TRUE;
-		Text(i);
 		Grp(0, i);
 		Grp(1, i);
 		Grp(2, i);
 		Grp(3, i);
 		render.bgspmod[i & 0x1ff] = TRUE;
 		BGSprite(i);
+		Text(i);
 		MixFastLine(i, i);
 	}
 	// ?X?V

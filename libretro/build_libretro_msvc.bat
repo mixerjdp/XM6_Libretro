@@ -74,6 +74,7 @@ set SOURCES=^
   ..\vm\ppi.cpp ^
   ..\vm\printer.cpp ^
   ..\vm\render.cpp ^
+  ..\vm\px68k_scanline_compositor.cpp ^
   ..\vm\rend_soft.cpp ^
   ..\vm\rtc.cpp ^
   ..\vm\sasi.cpp ^
