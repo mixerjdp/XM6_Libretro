@@ -202,11 +202,11 @@ BOOL FASTCALL Render::Init()
 		return FALSE;
 	}
 
-	// CRTC?ÔøΩÔøΩ
+	// CRTC?ÅEΩÅEΩ
 	crtc = (CRTC*)vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
 	ASSERT(crtc);
 
-	// VC?ÔøΩÔøΩ
+	// VC?ÅEΩÅEΩ
 	vc = (VC*)vm->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(vc);
 
@@ -490,21 +490,21 @@ void FASTCALL Render::Reset()
 	ASSERT(this);
 	LOG0(Log::Normal, "???Z?b?g");
 
-	// ?r?f?I?R???g???[?????|?C???^?ÔøΩÔøΩ
+	// ?r?f?I?R???g???[?????|?C???^?ÅEΩÅEΩ
 	ASSERT(vc);
 	render.palvc = (const WORD*)vc->GetPalette();
 
-	// ?e?L?X?gVRAM???|?C???^?ÔøΩÔøΩ
+	// ?e?L?X?gVRAM???|?C???^?ÅEΩÅEΩ
 	tvram = (TVRAM*)vm->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
 	ASSERT(tvram);
 	render.texttv = tvram->GetTVRAM();
 
-	// ?O???t?B?b?NVRAM???|?C???^?ÔøΩÔøΩ
+	// ?O???t?B?b?NVRAM???|?C???^?ÅEΩÅEΩ
 	gvram = (GVRAM*)vm->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(gvram);
 	render.grpgv = gvram->GetGVRAM();
 
-	// ?X?v???C?g?R???g???[?????|?C???^?ÔøΩÔøΩ
+	// ?X?v???C?g?R???g???[?????|?C???^?ÅEΩÅEΩ
 	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(sprite);
 	render.sprmem = sprite->GetPCG() - 0x8000;
@@ -840,7 +840,7 @@ void FASTCALL Render::StartFrameOriginal()
 		LOG0(Log::Normal, "CRTC????");
 #endif	// REND_LOG
 
-		// ?f?[?^?ÔøΩÔøΩ
+		// ?f?[?^?ÅEΩÅEΩ
 		crtc->GetCRTC(&crtcdata);
 
 		// h_dots?Av_dots??0?????
@@ -886,7 +886,7 @@ void FASTCALL Render::EndFrameOriginal()
 {
 	ASSERT(this);
 
-	// ??????ÔøΩÔøΩ??????
+	// ??????ÅEΩÅEΩ??????
 	if (!render.act) {
 		return;
 	}
@@ -1029,7 +1029,7 @@ void FASTCALL Render::Video()
 		render.mix[i] = TRUE;
 	}
 
-	// VC?f?[?^?ACRTC?f?[?^??ÔøΩÔøΩ
+	// VC?f?[?^?ACRTC?f?[?^??ÅEΩÅEΩ
 	p = vc->GetWorkAddr();
 	q = crtc->GetWorkAddr();
 
@@ -1045,6 +1045,9 @@ void FASTCALL Render::Video()
 	type = 0;
 	if (!p->siz) {
 		type = (int)(p->col + 1);
+		if (p->col == 2) {
+			type = 2;
+		}
 	}
 	if (type != render.grptype) {
 		render.grptype = type;
@@ -1083,27 +1086,31 @@ void FASTCALL Render::Video()
 					}
 				}
 				break;
-			// 512x512x2
-			case 2:
-				for (i=0; i<2; i++) {
-					// ?y?[?W0??`?F?b?N
-					if ((p->gp[i * 2 + 0] == 0) && (p->gp[i * 2 + 1] == 1)) {
-						if (p->gs[i * 2 + 0]) {
-							map[i] = 0;
-							render.grpen[0] = TRUE;
-							render.mixpage++;
+				// 512x512x2 (256Color)
+				case 2:
+					// px68k semantics:
+					// - Only GS0 and GS2 are meaningful enables in 256-color mode.
+					// - Page priority is decided by comparing GP0 vs GP2 (equal => page0 wins).
+					// - The two 8-bit pages are represented as blocks 0 and 2 in XM6.
+					{
+						const BOOL page0_on = (BOOL)p->gs[0];
+						const BOOL page2_on = (BOOL)p->gs[2];
+						const BOOL page0_top = (BOOL)(((int)p->gp[0]) <= ((int)p->gp[2]));
+
+						if (page0_on) { render.grpen[0] = TRUE; }
+						if (page2_on) { render.grpen[2] = TRUE; }
+
+						// Build bottom -> top (later layers overlay earlier ones).
+						if (page0_top) {
+							if (page2_on) { map[0] = 2; render.mixpage++; }
+							if (page0_on) { map[1] = 0; render.mixpage++; }
+						}
+						else {
+							if (page0_on) { map[0] = 0; render.mixpage++; }
+							if (page2_on) { map[1] = 2; render.mixpage++; }
 						}
 					}
-					// ?y?[?W1??`?F?b?N
-					if ((p->gp[i * 2 + 0] == 2) && (p->gp[i * 2 + 1] == 3)) {
-						if (p->gs[i * 2 + 0]) {
-							map[i] = 2;
-							render.grpen[2] = TRUE;
-							render.mixpage++;
-						}
-					}
-				}
-				break;
+					break;
 			// 512x512x1
 			case 3:
 			case 4:
@@ -1143,7 +1150,7 @@ void FASTCALL Render::Video()
 		}
 	}
 
-	// ?D?????ÔøΩÔøΩ
+	// ?D?????ÅEΩÅEΩ
 	tx = p->tx;
 	sp = p->sp;
 	gr = p->gr;
@@ -1493,7 +1500,7 @@ void FASTCALL Render::SetContrast(int cont)
 
 //---------------------------------------------------------------------------
 //
-//	?R???g???X?g?ÔøΩÔøΩ
+//	?R???g???X?g?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 int FASTCALL Render::GetContrast() const
@@ -1612,7 +1619,7 @@ DWORD FASTCALL Render::ConvPalette(int color, int ratio)
 
 //---------------------------------------------------------------------------
 //
-//	?p???b?g?ÔøΩÔøΩ
+//	?p???b?g?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPalette() const
@@ -1795,7 +1802,7 @@ void FASTCALL Render::TextCopy(DWORD src, DWORD dst, DWORD plane)
 
 //---------------------------------------------------------------------------
 //
-//	?e?L?X?g?o?b?t?@?ÔøΩÔøΩ
+//	?e?L?X?g?o?b?t?@?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetTextBuf() const
@@ -1822,7 +1829,7 @@ void FASTCALL Render::Text(int raster)
 	ASSERT(render.textbuf);
 	ASSERT(render.palbuf);
 
-	// ?f?B?Z?[?u????ÔøΩÔøΩ??????
+	// ?f?B?Z?[?u????ÅEΩÅEΩ??????
 	if (!render.texten) {
 		return;
 	}
@@ -1868,7 +1875,7 @@ void FASTCALL Render::Text(int raster)
 
 //---------------------------------------------------------------------------
 //
-//	?O???t?B?b?N?o?b?t?@?ÔøΩÔøΩ
+//	?O???t?B?b?N?o?b?t?@?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetGrpBuf(int index) const
@@ -2347,7 +2354,7 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 		use = FALSE;
 	}
 
-	// ???????????A????????????ÔøΩÔøΩ??????
+	// ???????????A????????????ÅEΩÅEΩ??????
 	if (!render.spuse[index]) {
 		if (!use) {
 			return;
@@ -2439,12 +2446,12 @@ void FASTCALL Render::BGScrl(int page, DWORD x, DWORD y)
 	render.bgx[page] = x;
 	render.bgy[page] = y;
 
-	// 768?~512??ÔøΩp???
+	// 768?~512??ÅEΩp???
 	if (!render.bgspflag) {
 		return;
 	}
 
-	// ?\???????ABGSPMOD??ÔøΩO??
+	// ?\???????ABGSPMOD??ÅEΩO??
 	flag = FALSE;
 	if (render.bgdisp[0]) {
 		flag = TRUE;
@@ -2586,7 +2593,7 @@ void FASTCALL Render::BGCtrl(int index, BOOL flag)
 		}
 	}
 
-	// ????X???A768?~512??O???bgspmod??ÔøΩO??
+	// ????X???A768?~512??O???bgspmod??ÅEΩO??
 	if (render.bgspflag) {
 		for (i=0; i<512; i++) {
 			render.bgspmod[i] = TRUE;
@@ -2627,7 +2634,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?C???f?b?N?X(<64x64)?A???W?X?^?|?C???^?ÔøΩÔøΩ
+		// ?C???f?b?N?X(<64x64)?A???W?X?^?|?C???^?ÅEΩÅEΩ
 		index = (int)(addr & 0x1fff);
 		index >>= 1;
 		ASSERT((index >= 0) && (index < 64*64));
@@ -2661,7 +2668,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			render.bgreg[i][index] = (DWORD)(low | mid | high);
 		}
 
-		// bgall??ÔøΩO??
+		// bgall??ÅEΩO??
 		render.bgall[i][index >> 6] = TRUE;
 
 		// ?\???????????I???Bbgsize=1??y?[?W1?????I??
@@ -2672,7 +2679,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?X?N???[????u????v?Z???Abgspmod??ÔøΩO??
+		// ?X?N???[????u????v?Z???Abgspmod??ÅEΩO??
 		index >>= 6;
 		if (render.bgsize) {
 			// 16x16
@@ -2738,7 +2745,7 @@ void FASTCALL Render::PCGMem(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	PCG?o?b?t?@?ÔøΩÔøΩ
+//	PCG?o?b?t?@?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPCGBuf() const
@@ -2751,7 +2758,7 @@ const DWORD* FASTCALL Render::GetPCGBuf() const
 
 //---------------------------------------------------------------------------
 //
-//	BG/?X?v???C?g?o?b?t?@?ÔøΩÔøΩ
+//	BG/?X?v???C?g?o?b?t?@?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetBGSpBuf() const
@@ -3046,7 +3053,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 
 	// ???[?v
 	for (i=0; i<64; i++) {
-		// ?ÔøΩÔøΩ
+		// ?ÅEΩÅEΩ
 		bgdata = reg[i];
 
 		// $10000????????????OK
@@ -3663,41 +3670,31 @@ static void FastBuildSpecial4(const Render::render_t *work, int page, int y, int
 static void FastBuildLine8(const Render::render_t *work, int pair, int y, int len,
 	DWORD *dst, BOOL opaq, BOOL *active)
 {
-	DWORD x0;
-	DWORD x1;
-	DWORD off0;
-	DWORD off1;
+	DWORD x;
+	DWORD off;
 	DWORD pixel;
 	int i;
 	int index;
 
-	x0 = work->grpx[pair * 2 + 0] & 0x1ff;
-	x1 = work->grpx[pair * 2 + 1] & 0x1ff;
-	off0 = ((DWORD)((y + (int)work->grpy[pair * 2 + 0]) & 0x1ff) << 10) + (x0 << 1) + pair;
-	off1 = ((DWORD)((y + (int)work->grpy[pair * 2 + 1]) & 0x1ff) << 10) + (x1 << 1) + pair;
+	x = work->grpx[pair * 2 + 0] & 0x1ff;
+	off = ((DWORD)((y + (int)work->grpy[pair * 2 + 0]) & 0x1ff) << 10) + (x << 1) + pair;
 	for (i=0; i<len; i++) {
-		index = (work->grpgv[off0] & 0x0f) | (work->grpgv[off1] & 0xf0);
+		pixel = opaq ? REND_COLOR0 : dst[i];
+		index = work->grpgv[off];
 		if (index != 0) {
 			pixel = work->paldata[index];
-			if (opaq || FastVisiblePixel(pixel)) {
-				dst[i] = pixel;
+			if (!opaq && !FastVisiblePixel(pixel)) {
+				pixel = dst[i];
 			}
 		}
-		else if (opaq) {
-			dst[i] = REND_COLOR0;
-		}
-		if (FastVisiblePixel(dst[i])) {
+		dst[i] = pixel;
+		if (FastVisiblePixel(pixel)) {
 			*active = TRUE;
 		}
-		off0 += 2;
-		off1 += 2;
-		x0 = (x0 + 1) & 0x1ff;
-		x1 = (x1 + 1) & 0x1ff;
-		if (x0 == 0) {
-			off0 -= 0x400;
-		}
-		if (x1 == 0) {
-			off1 -= 0x400;
+		off += 2;
+		x = (x + 1) & 0x1ff;
+		if (x == 0) {
+			off -= 0x400;
 		}
 	}
 }
@@ -3705,21 +3702,17 @@ static void FastBuildLine8(const Render::render_t *work, int pair, int y, int le
 static void FastBuildSpecial8(const Render::render_t *work, int pair, int y, int len,
 	DWORD *grp_sp, DWORD *grp_sp2, BOOL *grp_sp_tr, BOOL *active)
 {
-	DWORD x0;
-	DWORD x1;
-	DWORD off0;
-	DWORD off1;
+	DWORD x;
+	DWORD off;
 	DWORD pixel;
 	int i;
 	int index;
 	int even_index;
 
-	x0 = work->grpx[pair * 2 + 0] & 0x1ff;
-	x1 = work->grpx[pair * 2 + 1] & 0x1ff;
-	off0 = ((DWORD)((y + (int)work->grpy[pair * 2 + 0]) & 0x1ff) << 10) + (x0 << 1) + pair;
-	off1 = ((DWORD)((y + (int)work->grpy[pair * 2 + 1]) & 0x1ff) << 10) + (x1 << 1) + pair;
+	x = work->grpx[pair * 2 + 0] & 0x1ff;
+	off = ((DWORD)((y + (int)work->grpy[pair * 2 + 0]) & 0x1ff) << 10) + (x << 1) + pair;
 	for (i=0; i<len; i++) {
-		index = (work->grpgv[off0] & 0x0f) | (work->grpgv[off1] & 0xf0);
+		index = work->grpgv[off];
 		even_index = (index & 0xfe);
 		grp_sp_tr[i] = FALSE;
 		if (even_index != 0) {
@@ -3749,15 +3742,10 @@ static void FastBuildSpecial8(const Render::render_t *work, int pair, int y, int
 				*active = TRUE;
 			}
 		}
-		off0 += 2;
-		off1 += 2;
-		x0 = (x0 + 1) & 0x1ff;
-		x1 = (x1 + 1) & 0x1ff;
-		if (x0 == 0) {
-			off0 -= 0x400;
-		}
-		if (x1 == 0) {
-			off1 -= 0x400;
+		off += 2;
+		x = (x + 1) & 0x1ff;
+		if (x == 0) {
+			off -= 0x400;
 		}
 	}
 }
@@ -4040,14 +4028,14 @@ void FASTCALL Render::FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp
 
 			opaq = TRUE;
 
-			if (p->exon && p->gs[0] && render.grpen[top_pair * 2]) {
+			if (p->exon && p->gs[0]) {
 				active = FALSE;
 				FastBuildSpecial8(&render, top_pair, raster, render.mixlen, grp_sp, grp_sp2, grp_sp_tr, &active);
 				*tron = TRUE;
 				*pron = TRUE;
 			}
 
-			if (p->gs[2] && render.grpen[other_pair * 2]) {
+			if (render.grpen[other_pair * 2]) {
 				active = FALSE;
 				if (((p->vr2h & 0x1e) == 0x1e) && *tron) {
 					FastBuildLine8TR(&render, other_pair, raster, render.mixlen, grp, grp_sp, opaq, &active);
@@ -4061,7 +4049,7 @@ void FASTCALL Render::FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp
 				*gon = TRUE;
 				opaq = FALSE;
 			}
-			if (p->gs[0] && render.grpen[top_pair * 2] && ((p->vr2h & 0x14) != 0x14)) {
+			if (render.grpen[top_pair * 2] && ((p->vr2h & 0x14) != 0x14)) {
 				active = FALSE;
 				FastBuildLine8(&render, top_pair, raster, render.mixlen, grp, opaq, &active);
 				*gon = TRUE;
@@ -4886,7 +4874,7 @@ void FASTCALL Render::MixGrp(int y, DWORD *buf)
 
 //---------------------------------------------------------------------------
 //
-//	?????o?b?t?@?ÔøΩÔøΩ
+//	?????o?b?t?@?ÅEΩÅEΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetMixBuf() const
@@ -4957,7 +4945,7 @@ void FASTCALL Render::ProcessFast()
 	}
 
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/O????g?ÔøΩÔøΩ????A?c??????????????????
+		// I/O????g?ÅEΩÅEΩ????A?c??????????????????
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				src = (i >> 1);
@@ -5098,7 +5086,7 @@ void FASTCALL Render::Process()
 
 	// ????x2???
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/O????g?ÔøΩÔøΩ????A?c??????????????????
+		// I/O????g?ÅEΩÅEΩ????A?c??????????????????
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				Text(i >> 1);

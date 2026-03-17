@@ -1584,7 +1584,12 @@ void FASTCALL GVRAM::SetType(DWORD type)
 			next = 0;
 		}
 		else {
-			next = gvdata.col + 1;
+			if (gvdata.col == 2) {
+				next = 2;
+			}
+			else {
+				next = gvdata.col + 1;
+			}
 		}
 	}
 
