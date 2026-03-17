@@ -293,6 +293,9 @@
 					RelativePath="..\vm\render.cpp">
 				</File>
 				<File
+					RelativePath="..\vm\renderfast_scanline_compositor.cpp">
+				</File>
+				<File
 					RelativePath="..\vm\rtc.cpp">
 				</File>
 				<File

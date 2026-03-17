@@ -5,8 +5,8 @@
 
 namespace {
 
-static constexpr DWORD k_render_color0 = 0x80000000u;
-static constexpr DWORD k_px68k_ibit_marker = 0x40000000u;
+static const DWORD k_render_color0 = 0x80000000u;
+static const DWORD k_px68k_ibit_marker = 0x40000000u;
 
 static inline WORD pack_rgb565i(DWORD pixel)
 {
@@ -53,9 +53,9 @@ static inline WORD blend_tr_half(WORD base, WORD top)
 	// w = top; v = base;
 	// w &= Pal_HalfMask; if (v & Ibit) w += Pal_Ix2;
 	// v &= Pal_HalfMask; out = (v + w) >> 1;
-	static constexpr WORD half_mask = (WORD)0xF79E;
-	static constexpr WORD ibit = (WORD)0x0020;
-	static constexpr WORD ix2 = (WORD)0x0040;
+	static const WORD half_mask = (WORD)0xF79E;
+	static const WORD ibit = (WORD)0x0020;
+	static const WORD ix2 = (WORD)0x0040;
 
 	WORD w = (WORD)(top & half_mask);
 	if (base & ibit) {
@@ -67,7 +67,7 @@ static inline WORD blend_tr_half(WORD base, WORD top)
 
 static inline WORD dim_half_fill(WORD pixel)
 {
-	static constexpr WORD half_mask = (WORD)0xF79E;
+	static const WORD half_mask = (WORD)0xF79E;
 	return (WORD)((pixel & half_mask) >> 1);
 }
 
