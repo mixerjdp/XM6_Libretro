@@ -340,9 +340,10 @@ static bool set_frontend_pixel_format(enum retro_pixel_format fmt)
 
 static void sync_frontend_pixel_format_for_render_mode()
 {
-  const enum retro_pixel_format desired =
-    (g_render_mode == XM6CORE_RENDER_MODE_FAST) ? RETRO_PIXEL_FORMAT_RGB565
-                                               : RETRO_PIXEL_FORMAT_XRGB8888;
+  // Keep the frontend pixel format stable across compositor changes.
+  // RetroArch can display corrupted colors/geometry when switching between
+  // RGB565 and XRGB8888 mid-run; the core always produces ARGB32 anyway.
+  const enum retro_pixel_format desired = RETRO_PIXEL_FORMAT_XRGB8888;
 
   if (desired == g_frontend_pixel_format && g_frontend_pixel_format != RETRO_PIXEL_FORMAT_UNKNOWN) {
     return;
@@ -351,22 +352,20 @@ static void sync_frontend_pixel_format_for_render_mode()
   if (set_frontend_pixel_format(desired)) {
     core_log(RETRO_LOG_INFO,
              "[xm6-libretro] Video output pixel format set to %s",
-             (desired == RETRO_PIXEL_FORMAT_RGB565) ? "RGB565" : "XRGB8888");
+             "XRGB8888");
     return;
   }
 
-  if (desired == RETRO_PIXEL_FORMAT_RGB565) {
-    core_log(RETRO_LOG_WARN, "[xm6-libretro] Frontend does not support RGB565 (falling back to XRGB8888)");
-    if (set_frontend_pixel_format(RETRO_PIXEL_FORMAT_XRGB8888)) {
-      core_log(RETRO_LOG_INFO,
-               "[xm6-libretro] Video output pixel format set to %s",
-               "XRGB8888");
-      return;
-    }
+  core_log(RETRO_LOG_WARN, "[xm6-libretro] Frontend does not support XRGB8888 (falling back to RGB565)");
+  if (set_frontend_pixel_format(RETRO_PIXEL_FORMAT_RGB565)) {
+    core_log(RETRO_LOG_INFO,
+             "[xm6-libretro] Video output pixel format set to %s",
+             "RGB565");
+    return;
   }
 
   core_log(RETRO_LOG_ERROR, "[xm6-libretro] Frontend does not support %s",
-           (desired == RETRO_PIXEL_FORMAT_RGB565) ? "RGB565" : "XRGB8888");
+           "XRGB8888 or RGB565");
 }
 
 static bool get_core_module_dir(char *out_dir, size_t out_dir_size)
@@ -2804,17 +2803,10 @@ bool retro_load_game(const struct retro_game_info *info)
   }
 
   sync_frontend_pixel_format_for_render_mode();
-  if (g_render_mode == XM6CORE_RENDER_MODE_FAST) {
-    if (g_frontend_pixel_format != RETRO_PIXEL_FORMAT_RGB565) {
-      core_log(RETRO_LOG_WARN,
-               "[xm6-libretro] Fast compositor requested RGB565 but frontend is using %s",
-               (g_frontend_pixel_format == RETRO_PIXEL_FORMAT_XRGB8888) ? "XRGB8888" : "UNKNOWN");
-    }
-  } else {
-    if (g_frontend_pixel_format != RETRO_PIXEL_FORMAT_XRGB8888) {
-      core_log(RETRO_LOG_ERROR, "[xm6-libretro] Failed to set XRGB8888 pixel format");
-      return false;
-    }
+  if (g_frontend_pixel_format != RETRO_PIXEL_FORMAT_XRGB8888 &&
+      g_frontend_pixel_format != RETRO_PIXEL_FORMAT_RGB565) {
+    core_log(RETRO_LOG_ERROR, "[xm6-libretro] Failed to set a supported pixel format");
+    return false;
   }
 
   g_disk_paths.clear();

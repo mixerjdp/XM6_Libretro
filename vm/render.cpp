@@ -1045,7 +1045,7 @@ void FASTCALL Render::Video()
 	type = 0;
 	if (!p->siz) {
 		type = (int)(p->col + 1);
-		if (p->col == 2) {
+		if ((compositor_mode == compositor_fast) && (p->col == 2)) {
 			type = 2;
 		}
 	}
@@ -1086,31 +1086,53 @@ void FASTCALL Render::Video()
 					}
 				}
 				break;
-				// 512x512x2 (256Color)
-				case 2:
-					// px68k semantics:
-					// - Only GS0 and GS2 are meaningful enables in 256-color mode.
-					// - Page priority is decided by comparing GP0 vs GP2 (equal => page0 wins).
-					// - The two 8-bit pages are represented as blocks 0 and 2 in XM6.
-					{
-						const BOOL page0_on = (BOOL)p->gs[0];
-						const BOOL page2_on = (BOOL)p->gs[2];
-						const BOOL page0_top = (BOOL)(((int)p->gp[0]) <= ((int)p->gp[2]));
+			// 512x512x2
+			case 2:
+				if (compositor_mode == compositor_fast) {
+				// px68k semantics:
+				// - Only GS0 and GS2 are meaningful enables in 256-color mode.
+				// - Page priority is decided by comparing GP0 vs GP2 (equal => page0 wins).
+				// - The two 8-bit pages are represented as blocks 0 and 2 in XM6.
+				{
+					const BOOL page0_on = (BOOL)p->gs[0];
+					const BOOL page2_on = (BOOL)p->gs[2];
+					const BOOL page0_top = (BOOL)(((int)p->gp[0]) <= ((int)p->gp[2]));
 
-						if (page0_on) { render.grpen[0] = TRUE; }
-						if (page2_on) { render.grpen[2] = TRUE; }
+					if (page0_on) { render.grpen[0] = TRUE; }
+					if (page2_on) { render.grpen[2] = TRUE; }
 
-						// Build bottom -> top (later layers overlay earlier ones).
-						if (page0_top) {
-							if (page2_on) { map[0] = 2; render.mixpage++; }
-							if (page0_on) { map[1] = 0; render.mixpage++; }
-						}
-						else {
-							if (page0_on) { map[0] = 0; render.mixpage++; }
-							if (page2_on) { map[1] = 2; render.mixpage++; }
+					// Build bottom -> top (later layers overlay earlier ones).
+					if (page0_top) {
+						if (page2_on) { map[0] = 2; render.mixpage++; }
+						if (page0_on) { map[1] = 0; render.mixpage++; }
+					}
+					else {
+						if (page0_on) { map[0] = 0; render.mixpage++; }
+						if (page2_on) { map[1] = 2; render.mixpage++; }
+					}
+				}
+				}
+				else {
+				for (i=0; i<2; i++) {
+					// page0 check
+					if ((p->gp[i * 2 + 0] == 0) && (p->gp[i * 2 + 1] == 1)) {
+						if (p->gs[i * 2 + 0]) {
+							map[i] = 0;
+							render.grpen[0] = TRUE;
+							render.mixpage++;
 						}
 					}
-					break;
+					// page1 check
+					if ((p->gp[i * 2 + 0] == 2) && (p->gp[i * 2 + 1] == 3)) {
+						if (p->gs[i * 2 + 0]) {
+							map[i] = 2;
+							render.grpen[2] = TRUE;
+							render.mixpage++;
+						}
+					}
+				}
+				}
+				break;
 			// 512x512x1
 			case 3:
 			case 4:
@@ -4081,100 +4103,6 @@ void FASTCALL Render::FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp
 			return;
 	}
 }
-static void FastDrawLayerLine(DWORD *dst, const DWORD *src, int len, BOOL opaq)
-{
-	int i;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			dst[i] = src[i];
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (FastVisiblePixel(src[i])) {
-			dst[i] = src[i];
-		}
-	}
-}
-
-static void FastDrawLayerLineTR(DWORD *dst, const DWORD *src, const DWORD *grp_sp, int len, BOOL opaq)
-{
-	int i;
-	DWORD pixel;
-
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			pixel = src[i];
-			if (FastVisiblePixel(pixel) && FastVisiblePixel(grp_sp[i])) {
-				pixel = FastBlendPixel(pixel, grp_sp[i]);
-			}
-			else if (!FastVisiblePixel(pixel)) {
-				pixel = REND_COLOR0;
-			}
-			dst[i] = pixel;
-		}
-		return;
-	}
-
-	for (i=0; i<len; i++) {
-		pixel = src[i];
-		if (!FastVisiblePixel(pixel)) {
-			continue;
-		}
-		if (FastVisiblePixel(grp_sp[i])) {
-			pixel = FastBlendPixel(pixel, grp_sp[i]);
-		}
-		dst[i] = pixel;
-	}
-}
-
-static void FastDrawLayerLineBG(DWORD *dst, const DWORD *src, int len, BOOL opaq)
-{
-	int i;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			dst[i] = src[i];
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (FastVisibleBgPixel(src[i])) {
-			dst[i] = src[i];
-		}
-	}
-}
-
-static void FastDrawLayerLineTRBG(DWORD *dst, const DWORD *src, const DWORD *grp_sp, int len, BOOL opaq)
-{
-	int i;
-	DWORD pixel;
-
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			pixel = src[i];
-			if (FastVisibleBgPixel(pixel) && FastVisiblePixel(grp_sp[i])) {
-				pixel = FastBlendPixel(pixel, grp_sp[i]);
-			}
-			else if (!FastVisibleBgPixel(pixel)) {
-				pixel = REND_COLOR0;
-			}
-			dst[i] = pixel;
-		}
-		return;
-	}
-
-	for (i=0; i<len; i++) {
-		pixel = src[i];
-		if (!FastVisibleBgPixel(pixel)) {
-			continue;
-		}
-		if (FastVisiblePixel(grp_sp[i])) {
-			pixel = FastBlendPixel(pixel, grp_sp[i]);
-		}
-		dst[i] = pixel;
-	}
-}
-
 static void FastPrepareBGTextLine(DWORD *line, BYTE *tr_flag, const BYTE *bg_flag, const DWORD *text_line, const DWORD *bg_line,
 	int len, BOOL ton, BOOL bgon, int tx_pri, int sp_pri, BOOL bg_opaq)
 {
@@ -4232,148 +4160,6 @@ static void FastPrepareBGTextLine(DWORD *line, BYTE *tr_flag, const BYTE *bg_fla
 	}
 }
 
-static void FastDrawBGTextLineBG(DWORD *dst, const DWORD *line, const BYTE *tr_flag, int len, BOOL opaq, BOOL td)
-{
-	int i;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			dst[i] = line[i];
-		}
-		return;
-	}
-	if (td) {
-		for (i=0; i<len; i++) {
-			if ((tr_flag[i] & 2) && FastVisibleBgPixel(line[i])) {
-				dst[i] = line[i];
-			}
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (FastVisibleBgPixel(line[i])) {
-			dst[i] = line[i];
-		}
-	}
-}
-
-static void FastDrawBGTextLineTEXT(DWORD *dst, const DWORD *line, const BYTE *tr_flag, int len, BOOL opaq, BOOL td)
-{
-	int i;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			dst[i] = line[i];
-		}
-		return;
-	}
-	if (td) {
-		for (i=0; i<len; i++) {
-			if ((tr_flag[i] & 1) && FastVisiblePixel(line[i])) {
-				dst[i] = line[i];
-			}
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (FastVisiblePixel(line[i])) {
-			dst[i] = line[i];
-		}
-	}
-}
-
-static void FastDrawBGTextLineBGTR(DWORD *dst, const DWORD *line, const BYTE *tr_flag, const DWORD *grp_sp, int len, BOOL opaq)
-{
-	int i;
-	DWORD pixel;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			pixel = line[i];
-			if (FastVisiblePixel(grp_sp[i])) {
-				if (FastVisibleBgPixel(pixel)) {
-					pixel = FastBlendPixel(pixel, grp_sp[i]);
-				}
-				else {
-					pixel = FastDimPixel(grp_sp[i]);
-				}
-			}
-			else if (!FastVisibleBgPixel(pixel)) {
-				pixel = REND_COLOR0;
-			}
-			dst[i] = pixel;
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (!(tr_flag[i] & 2)) {
-			continue;
-		}
-		pixel = line[i];
-		if (!FastVisibleBgPixel(pixel)) {
-			continue;
-		}
-		if (FastVisiblePixel(grp_sp[i])) {
-			pixel = FastBlendPixel(pixel, grp_sp[i]);
-		}
-		dst[i] = pixel;
-	}
-}
-
-static void FastDrawBGTextLineTEXTTR(DWORD *dst, const DWORD *line, const BYTE *tr_flag, const DWORD *grp_sp, int len, BOOL opaq)
-{
-	int i;
-	DWORD pixel;
-	if (opaq) {
-		for (i=0; i<len; i++) {
-			pixel = line[i];
-			if (FastVisiblePixel(grp_sp[i])) {
-				if (FastVisiblePixel(pixel)) {
-					pixel = FastBlendPixel(pixel, grp_sp[i]);
-				}
-				else {
-					pixel = FastDimPixel(grp_sp[i]);
-				}
-			}
-			else if (!(tr_flag[i] & 1)) {
-				pixel = REND_COLOR0;
-			}
-			dst[i] = pixel;
-		}
-		return;
-	}
-	for (i=0; i<len; i++) {
-		if (!(tr_flag[i] & 1)) {
-			continue;
-		}
-		pixel = line[i];
-		if (!FastVisiblePixel(pixel)) {
-			continue;
-		}
-		if (FastVisiblePixel(grp_sp[i])) {
-			pixel = FastBlendPixel(pixel, grp_sp[i]);
-		}
-		dst[i] = pixel;
-	}
-}
-
-static void FastDrawPriLine(DWORD *dst, const DWORD *grp_sp, int len)
-{
-	int i;
-	for (i=0; i<len; i++) {
-		if (FastVisiblePixel(grp_sp[i])) {
-			dst[i] = grp_sp[i];
-		}
-	}
-}
-
-static void FastDrawHalfFillLine(DWORD *dst, const DWORD *grp_sp, int len)
-{
-	int i;
-	for (i=0; i<len; i++) {
-		if ((Px68kPack565I(dst[i]) == 0) && FastVisiblePixel(grp_sp[i])) {
-			dst[i] = FastDimPixel(grp_sp[i]);
-		}
-	}
-}
-
 void FASTCALL Render::MixFast(int y)
 {
 	MixFastLine(y, y);
@@ -4404,11 +4190,6 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	BOOL pron;
 	BOOL ton;
 	BOOL bgon;
-	BOOL opaq;
-	BOOL tr_mode;
-	BOOL dim_mode;
-	BOOL pri_mode;
-	BOOL tdrawed;
 	BOOL bg_active;
 	BOOL bg_opaq;
 	DWORD mix_stamp;
@@ -4437,9 +4218,6 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	sp_pri = (int)(p->sp & 3);
 	gr_pri = (int)(p->gr & 3);
 	ton = render.texten;
-	tr_mode = (BOOL)((p->vr2h & 0x5d) == 0x1d);
-	dim_mode = (BOOL)((p->vr2h & 0x5d) == 0x1c);
-	pri_mode = (BOOL)((p->vr2h & 0x5c) == 0x14);
 
 	FastMixGrp(src_y, grp, grp_sp, grp_sp2, grp_sp_tr, &gon, &tron, &pron);
 

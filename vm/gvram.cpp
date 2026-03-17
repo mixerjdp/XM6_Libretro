@@ -1584,7 +1584,9 @@ void FASTCALL GVRAM::SetType(DWORD type)
 			next = 0;
 		}
 		else {
-			if (gvdata.col == 2) {
+			const bool use_fast_mapping =
+				(render && (render->GetCompositorMode() == Render::compositor_fast));
+			if (use_fast_mapping && (gvdata.col == 2)) {
 				next = 2;
 			}
 			else {
