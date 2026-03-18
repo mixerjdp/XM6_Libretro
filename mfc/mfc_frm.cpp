@@ -3299,7 +3299,8 @@ void CFrmWnd::OnRenderFast()
 	}
 
 	GetConfig()->GetConfig(&config);
-	config.alt_raster = (nMode == Render::compositor_fast) ? TRUE : FALSE;
+	// Mantener AltRaster habilitado tambien en modo ORIGINAL.
+	config.alt_raster = TRUE;
 	GetConfig()->SetConfig(&config);
 
 	::LockVM();

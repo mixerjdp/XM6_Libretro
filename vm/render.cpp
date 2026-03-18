@@ -4276,6 +4276,23 @@ void FASTCALL Render::Mix(int y)
 	}
 	ASSERT(render.mixlen > 0);
 
+
+	// Original compositor: if half-transparency / special priority is active,
+	// use the px68k-style scanline compositor so effects like transparent clouds match.
+	 {
+		const VC::vc_t *vp = (vc ? vc->GetWorkAddr() : NULL);
+		if (vp) {
+			const BYTE vr2h = (BYTE)vp->vr2h;
+			const BOOL tr_mode = (BOOL)((vr2h & 0x5d) == 0x1d);
+			const BOOL dim_mode = (BOOL)((vr2h & 0x5d) == 0x1c);
+			const BOOL pri_mode = (BOOL)((vr2h & 0x5c) == 0x14);
+			if (vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode) {
+				MixFastLine(y, y);
+				return;
+			}
+		}
+	}
+
 #if defined(REND_LOG)
 	LOG1(Log::Normal, "???? y=%d", y);
 #endif	// REND_LOG
