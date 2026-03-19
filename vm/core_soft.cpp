@@ -66,18 +66,18 @@ static const BYTE MemDecodeData[] = {
 };
 
 // 実体 (Table instance)
-extern "C" BYTE MemDecodeTable[0x180 * 4] = { 0 };
+extern "C" uintptr_t MemDecodeTable[0x180] = { 0 };
 
 //
 // メモリデコードの初期化 (Memory decode initialization)
 //
 extern "C" void MemInitDecode(Device* /*mem*/, MemDevice **devarray)
 {
-	DWORD *table = (DWORD*)MemDecodeTable;
+	uintptr_t *table = MemDecodeTable;
 	
 	for (int i = 0; i < 0x180; i++) {
 		BYTE index = MemDecodeData[i];
-		table[i] = (DWORD)devarray[index];
+		table[i] = reinterpret_cast<uintptr_t>(devarray[index]);
 	}
 }
 

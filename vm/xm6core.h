@@ -110,6 +110,8 @@ XM6CORE_API int XM6CORE_CALL xm6_set_mouse_speed(XM6Handle handle, int speed);
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_port(XM6Handle handle, int port);
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_swap(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, int mode);
+XM6CORE_API int XM6CORE_CALL xm6_set_alt_raster(XM6Handle handle, int enabled);
+XM6CORE_API int XM6CORE_CALL xm6_set_render_bg0(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_transparency_enabled(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_get_render_mode(XM6Handle handle);
 XM6CORE_API int XM6CORE_CALL xm6_set_midi_enabled(XM6Handle handle, int enabled);

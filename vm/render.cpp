@@ -143,6 +143,7 @@ Render::Render(VM *p) : Device(p)
 	palbuf_fast = NULL;
 	fast_fallback_count = 0;
 	transparency_enabled = TRUE;
+	original_bg0_render_enabled = TRUE;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
@@ -2658,7 +2659,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 		if ((render.bgarea[i] == FALSE) && (addr < 0xe000)) {
 			flag = TRUE;
 		}
-		if ((render.bgarea[i] == TRUE) && (addr >= 0xe000)) {
+		if (render.bgarea[i] && (addr >= 0xe000)) {
 			flag = TRUE;
 		}
 		if (!flag) {
@@ -2924,6 +2925,7 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	DWORD **ptr;
 	int len;
 	int rest;
+	const BOOL legacy_bg_transparency = !original_bg0_render_enabled;
 
 	ASSERT((page == 0) || (page == 1));
 	ASSERT((raster >= 0) && (raster < 512));
@@ -2964,11 +2966,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 			x >>= 3;
 			if (cmov) {
 				RendBG8C(ptr, buf, x, render.mixlen, render.pcgready,
-					render.sprmem, render.pcgbuf, render.paldata);
+					render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 			}
 			else {
 				RendBG8(ptr, buf, x, render.mixlen, render.pcgready,
-					render.sprmem, render.pcgbuf, render.paldata);
+					render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 			}
 			return;
 		}
@@ -2977,7 +2979,7 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		rest = 8 - (x & 7);
 		ASSERT((rest > 0) && (rest < 8));
 		RendBG8P(&ptr[(x & 0xfff8) >> 2], buf, (x & 7), rest, render.pcgready,
-				render.sprmem, render.pcgbuf, render.paldata);
+				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 
 		// ?]??????8dot?P????????
 		len = render.mixlen - rest;
@@ -2986,11 +2988,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		ASSERT((x & 7) == 0);
 		if (cmov) {
 			RendBG8C(ptr, &buf[rest], (x >> 3), (len & 0xfff8), render.pcgready,
-				render.sprmem, render.pcgbuf, render.paldata);
+				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
 		else {
 			RendBG8(ptr, &buf[rest], (x >> 3), (len & 0xfff8), render.pcgready,
-				render.sprmem, render.pcgbuf, render.paldata);
+				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
 
 		// ???
@@ -2998,7 +3000,8 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 			x += (len & 0xfff8);
 			x &= (512 - 1);
 			RendBG8P(&ptr[x >> 2], &buf[rest + (len & 0xfff8)], 0, (len & 7),
-				render.pcgready, render.sprmem, render.pcgbuf, render.paldata);
+				render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
+				legacy_bg_transparency);
 		}
 		return;
 	}
@@ -3013,11 +3016,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		x >>= 4;
 		if (cmov) {
 			RendBG16C(ptr, buf, x, render.mixlen, render.pcgready,
-				render.sprmem, render.pcgbuf, render.paldata);
+				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
 		else {
 			RendBG16(ptr, buf, x, render.mixlen, render.pcgready,
-				render.sprmem, render.pcgbuf, render.paldata);
+				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
 		return;
 	}
@@ -3026,7 +3029,7 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	rest = 16 - (x & 15);
 	ASSERT((rest > 0) && (rest < 16));
 	RendBG16P(&ptr[(x & 0xfff0) >> 3], buf, (x & 15), rest, render.pcgready,
-			render.sprmem, render.pcgbuf, render.paldata);
+			render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 
 	// ?]??????16dot?P????????
 	len = render.mixlen - rest;
@@ -3035,11 +3038,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	ASSERT((x & 15) == 0);
 	if (cmov) {
 		RendBG16C(ptr, &buf[rest], (x >> 4), (len & 0xfff0), render.pcgready,
-			render.sprmem, render.pcgbuf, render.paldata);
+			render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 	}
 	else {
 		RendBG16(ptr, &buf[rest], (x >> 4), (len & 0xfff0), render.pcgready,
-			render.sprmem, render.pcgbuf, render.paldata);
+			render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 	}
 
 	// ???
@@ -3048,7 +3051,8 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		x &= (1024 - 1);
 		x >>= 4;
 		RendBG16P(&ptr[x << 1], &buf[rest + (len & 0xfff0)], 0, (len & 15),
-			render.pcgready, render.sprmem, render.pcgbuf, render.paldata);
+			render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
+			legacy_bg_transparency);
 	}
 }
 
@@ -3108,7 +3112,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 				pcgbuf += 0xf0;
 				for (j=0; j<16; j++) {
 					ptr[0] = pcgbuf;
-					ptr[1] = (DWORD*)bgdata;
+					ptr[1] = reinterpret_cast<DWORD*>(static_cast<size_t>(bgdata));
 					pcgbuf -= 0x10;
 					ptr += 128;
 				}
@@ -3117,7 +3121,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 				// ???
 				for (j=0; j<16; j++) {
 					ptr[0] = pcgbuf;
-					ptr[1] = (DWORD*)bgdata;
+					ptr[1] = reinterpret_cast<DWORD*>(static_cast<size_t>(bgdata));
 					pcgbuf += 0x10;
 					ptr += 128;
 				}
@@ -3139,7 +3143,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 				pcgbuf += 0x70;
 				for (j=0; j<8; j++) {
 					ptr[0] = pcgbuf;
-					ptr[1] = (DWORD*)bgdata;
+					ptr[1] = reinterpret_cast<DWORD*>(static_cast<size_t>(bgdata));
 					pcgbuf -= 0x10;
 					ptr += 128;
 				}
@@ -3148,7 +3152,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 				// ???
 				for (j=0; j<8; j++) {
 					ptr[0] = pcgbuf;
-					ptr[1] = (DWORD*)bgdata;
+					ptr[1] = reinterpret_cast<DWORD*>(static_cast<size_t>(bgdata));
 					pcgbuf += 0x10;
 					ptr += 128;
 				}
@@ -3205,7 +3209,8 @@ void FASTCALL Render::Mix(int y)
 			const BOOL tr_mode = (BOOL)((vr2h & 0x5d) == 0x1d);
 			const BOOL dim_mode = (BOOL)((vr2h & 0x5d) == 0x1c);
 			const BOOL pri_mode = (BOOL)((vr2h & 0x5c) == 0x14);
-			if (transparency_enabled && (vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode)) {
+			if (transparency_enabled &&
+				(vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode)) {
 				MixFastLine(y, y);
 				return;
 			}

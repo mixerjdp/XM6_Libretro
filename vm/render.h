@@ -168,6 +168,8 @@ public:
 	void FASTCALL Complete()			{ render.count = 0; }
 	void FASTCALL SetTransparencyEnabled(BOOL enabled)	{ transparency_enabled = enabled ? TRUE : FALSE; }
 	BOOL FASTCALL IsTransparencyEnabled() const		{ return transparency_enabled; }
+	void FASTCALL SetOriginalBG0RenderEnabled(BOOL enabled)	{ original_bg0_render_enabled = enabled ? TRUE : FALSE; }
+	BOOL FASTCALL IsOriginalBG0RenderEnabled() const		{ return original_bg0_render_enabled; }
 	BOOL FASTCALL SetCompositorMode(int mode);
 	int FASTCALL GetCompositorMode() const		{ return compositor_mode; }
 	DWORD FASTCALL GetFastFallbackCount() const	{ return fast_fallback_count; }
@@ -299,6 +301,7 @@ private:
 	DWORD *palbuf_fast;
 	DWORD fast_fallback_count;
 	BOOL transparency_enabled;
+	BOOL original_bg0_render_enabled;
 	render_t render;
 										// �E��E��E��E��E�f�E�[�E�^
 	BOOL cmov;

@@ -242,14 +242,51 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, in
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
-	// Habilitar el raster timing alternativo tambien en modo ORIGINAL
-	// (requerido para line-scrolling / efectos raster en juegos de carreras).
-	ctx->runtime_config.alt_raster = TRUE;
-	ctx->vm->ApplyCfg(&ctx->runtime_config);
-
 	if (ctx->render) {
 		ctx->render->Complete();
 	}
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_alt_raster(XM6Handle handle, int enabled)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	ctx->runtime_config.alt_raster = enabled ? TRUE : FALSE;
+	ctx->vm->ApplyCfg(&ctx->runtime_config);
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_bg0(XM6Handle handle, int enabled)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	Render *render = ctx->render;
+	if (!render) {
+		render = (Render*)ctx->vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+		ctx->render = render;
+	}
+
+	if (render) {
+		render->SetOriginalBG0RenderEnabled(enabled ? TRUE : FALSE);
+		render->ForceRecompose();
+		render->Complete();
+	}
+
 	return XM6CORE_OK;
 }
 

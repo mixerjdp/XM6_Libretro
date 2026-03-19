@@ -388,8 +388,7 @@ void FASTCALL Memory::InitTable()
 #endif	// _WIN32
 
 	MemDevice *mdev;
-	BYTE *table;
-	DWORD ptr;
+	uintptr_t *table;
 	int i;
 
 	ASSERT(this);
@@ -413,12 +412,7 @@ void FASTCALL Memory::InitTable()
 	// 繧｢繧ｻ繝ｳ繝悶Λ繝ｫ繝ｼ繝√Φ縺ｧ蜃ｺ譚･縺溘ユ繝ｼ繝悶Ν繧帝・↓謌ｻ縺・繧｢繝ｩ繧､繝ｳ繝｡繝ｳ繝医↓豕ｨ諢・
 	table = MemDecodeTable;
 	for (i=0; i<0x180; i++) {
-		// 4繝舌う繝医＃縺ｨ縺ｫDWORD蛟､繧貞叙繧願ｾｼ縺ｿ縲√・繧､繝ｳ繧ｿ縺ｫ繧ｭ繝｣繧ｹ繝・
-		ptr = *(DWORD*)table;
-		mem.table[i] = (MemDevice*)ptr;
-
-		// 谺｡縺ｸ
-		table += 4;
+		mem.table[i] = reinterpret_cast<MemDevice*>(table[i]);
 	}
 }
 
