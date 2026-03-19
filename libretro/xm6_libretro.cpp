@@ -705,13 +705,80 @@ static bool run_pending_hdd_boot_warmup_step()
 
   --g_hdd_boot_reset_countdown;
   if (g_hdd_boot_reset_countdown == 0) {
-    core_log(RETRO_LOG_INFO,
-             "[xm6-libretro] Completing deferred HDD boot stabilization with reset");
-    g_xm6.reset(g_xm6_handle);
+      g_xm6.reset(g_xm6_handle);
     g_video_not_ready_count = 0;
   }
 
   return true;
+}
+
+static void reset_mouse_state();
+static void apply_runtime_core_options();
+static void apply_joy_type_options();
+static bool mount_current_disk();
+static bool set_system_directory_from_frontend();
+
+static void clear_reset_input_latches()
+{
+  g_prev_start = false;
+  g_prev_select = false;
+  g_prev_start_keycode = 0;
+  g_prev_select_keycode = 0;
+  g_prev_midi_hotkey = false;
+}
+
+static void sanitize_runtime_for_reset()
+{
+  g_hdd_boot_reset_countdown = 0;
+  g_video_not_ready_count = 0;
+  clear_reset_input_latches();
+  reset_mouse_state();
+}
+
+static void hdd_manual_reset_cold_style()
+{
+  if (!g_xm6_handle || !g_xm6.set_power) {
+    return;
+  }
+
+  core_log(RETRO_LOG_INFO,
+           "[xm6-libretro] Manual reset while HDD mounted: full cold-style reboot (recreate VM + remount + deferred warm-up reset)");
+
+  // Recreate VM instance so manual reset matches content-load cold boot behavior.
+  if (g_xm6.destroy) {
+    g_xm6.destroy(g_xm6_handle);
+    g_xm6_handle = nullptr;
+  }
+
+  if (!ensure_xm6_handle()) {
+    core_log(RETRO_LOG_ERROR,
+             "[xm6-libretro] HDD manual reset failed: could not recreate VM handle");
+    g_game_loaded = false;
+    return;
+  }
+
+  if (!set_system_directory_from_frontend()) {
+    core_log(RETRO_LOG_WARN,
+             "[xm6-libretro] HDD manual reset: could not set system directory");
+  }
+
+  // Re-apply runtime options before remount so VM-side config mirrors content-load
+  // cold boot behavior as closely as possible.
+  apply_runtime_core_options();
+  apply_joy_type_options();
+  reset_mouse_state();
+
+  if (!mount_current_disk()) {
+    core_log(RETRO_LOG_ERROR,
+             "[xm6-libretro] HDD manual reset failed: remount failed");
+    g_game_loaded = false;
+    return;
+  }
+
+  g_xm6.set_power(g_xm6_handle, 0);
+  g_xm6.set_power(g_xm6_handle, 1);
+  begin_hdd_boot_warmup("manual reset (HDD full cold-style)");
+  g_game_loaded = true;
 }
 
 static void arm_savestate_guard_frames(const char *reason, unsigned frames)
@@ -721,11 +788,6 @@ static void arm_savestate_guard_frames(const char *reason, unsigned frames)
            "[xm6-libretro] Savestate guard armed for %u frames (%s)",
            g_savestate_guard_countdown,
            reason ? reason : "unspecified");
-}
-
-static void arm_savestate_guard(const char *reason)
-{
-  arm_savestate_guard_frames(reason, k_savestate_guard_frames_default);
 }
 
 static void reset_mouse_state()
@@ -2757,22 +2819,18 @@ void retro_set_controller_port_device(unsigned, unsigned) {}
 void retro_reset(void)
 {
   if (g_xm6_handle && g_xm6.reset) {
-    g_hdd_boot_reset_countdown = 0;
-    reset_mouse_state();
-    g_video_not_ready_count = 0;
+    sanitize_runtime_for_reset();
 
     if (g_content_is_hdd && g_xm6.set_power) {
-      core_log(RETRO_LOG_INFO,
-               "[xm6-libretro] Manual reset while HDD mounted: power cycle + deferred warm-up reset");
-      g_xm6.set_power(g_xm6_handle, 0);
-      g_xm6.set_power(g_xm6_handle, 1);
-      begin_hdd_boot_warmup("manual reset (HDD)");
+      hdd_manual_reset_cold_style();
     } else {
       g_xm6.reset(g_xm6_handle);
     }
 
     midi_queue_reset_if_enabled();
-    arm_savestate_guard("manual reset");
+    arm_savestate_guard_frames(
+      g_content_is_hdd ? "manual reset (HDD full cold-style)" : "manual reset",
+      g_content_is_hdd ? k_savestate_guard_frames_hdd_load : k_savestate_guard_frames_default);
   }
 }
 
