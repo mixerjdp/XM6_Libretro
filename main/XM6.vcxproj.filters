@@ -120,7 +120,7 @@
     <ClCompile Include="..\vm\render.cpp">
       <Filter>??? ????\VM</Filter>
     </ClCompile>
-    <ClCompile Include="..\vm\renderfast_scanline_compositor.cpp">
+    <ClCompile Include="..\vm\renderfast_compositor.cpp">
       <Filter>??? ????\VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\rtc.cpp">

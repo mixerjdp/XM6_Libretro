@@ -235,27 +235,34 @@ private:
 	void FASTCALL StartFrameOriginal();
 	void FASTCALL StartFrameFast();
 	void FASTCALL EndFrameOriginal();
+	void FASTCALL EndFrameFast();
 	void FASTCALL HSyncOriginal(int raster);
+	void FASTCALL HSyncFast(int raster);
 	void FASTCALL SetCRTCOriginal();
+	void FASTCALL SetCRTCFast();
 	void FASTCALL SetVCOriginal();
+	void FASTCALL SetVCFast();
 	void FASTCALL InvalidateFrame();
 	void FASTCALL InvalidateAll();
 	void FASTCALL Process();
 	void FASTCALL ProcessFast();
 										// �E��E��E��E��E�_�E��E��E��E��E�O
 	void FASTCALL Video();
+	void FASTCALL VideoFastPX68K();
 										// VC�E��E��E��E�
 	void FASTCALL SetupGrp(int first);
 										// �E�O�E��E��E�t�E�B�E�b�E�N�E�Z�E�b�E�g�E�A�E�b�E�v
 	void FASTCALL Contrast();
 										// �E�R�E��E��E�g�E��E��E�X�E�g�E��E��E��E�
 	void FASTCALL Palette();
+	void FASTCALL PaletteFastPX68K();
 										// �E�p�E��E��E�b�E�g�E��E��E��E�
 	void FASTCALL MakePalette();
 										// �E�p�E��E��E�b�E�g�E��E�
 	DWORD FASTCALL ConvPalette(int color, int ratio);
 										// �E�F�E�ϊ�
 	void FASTCALL Text(int raster);
+	void FASTCALL TextFastPX68K(int raster);
 										// �E�e�E�L�E�X�E�g
 	void FASTCALL Grp(int block, int raster);
 										// �E�O�E��E��E�t�E�B�E�b�E�N

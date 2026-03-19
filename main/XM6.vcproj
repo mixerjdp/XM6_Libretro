@@ -143,7 +143,7 @@
 	</References>
 	<Files>
 		<Filter
-			Name="ƒ\[ƒX ƒtƒ@ƒCƒ‹"
+			Name="ï¿½\ï¿½[ï¿½X ï¿½tï¿½@ï¿½Cï¿½ï¿½"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<Filter
@@ -293,7 +293,7 @@
 					RelativePath="..\vm\render.cpp">
 				</File>
 				<File
-					RelativePath="..\vm\renderfast_scanline_compositor.cpp">
+					RelativePath="..\vm\renderfast_compositor.cpp">
 				</File>
 				<File
 					RelativePath="..\vm\rtc.cpp">
@@ -471,7 +471,7 @@ nasmw -f win32 -o $(IntDir)\$(InputName).obj $(InputPath)
 			</Filter>
 		</Filter>
 		<Filter
-			Name="ƒwƒbƒ_[ ƒtƒ@ƒCƒ‹"
+			Name="ï¿½wï¿½bï¿½_ï¿½[ ï¿½tï¿½@ï¿½Cï¿½ï¿½"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<Filter
@@ -706,7 +706,7 @@ nasmw -f win32 -o $(IntDir)\$(InputName).obj $(InputPath)
 			</Filter>
 		</Filter>
 		<Filter
-			Name="ƒŠƒ\[ƒX ƒtƒ@ƒCƒ‹"
+			Name="ï¿½ï¿½ï¿½\ï¿½[ï¿½X ï¿½tï¿½@ï¿½Cï¿½ï¿½"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
 		</Filter>
