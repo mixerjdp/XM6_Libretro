@@ -253,6 +253,33 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, in
 	return XM6CORE_OK;
 }
 
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_transparency_enabled(XM6Handle handle, int enabled)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	Render *render = ctx->render;
+	if (!render) {
+		render = (Render*)ctx->vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+		ctx->render = render;
+	}
+
+	if (render) {
+		render->SetTransparencyEnabled(enabled ? TRUE : FALSE);
+		// Force a full recomposite so the option takes effect immediately
+		// without requiring a content reset.
+		render->ForceRecompose();
+		render->Complete();
+	}
+	return XM6CORE_OK;
+}
+
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_get_render_mode(XM6Handle handle)
 {
 	if (!handle) {

@@ -126,6 +126,7 @@ Render::Render(VM *p) : Device(p)
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	fast_fallback_count = 0;
+	transparency_enabled = TRUE;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
@@ -202,11 +203,11 @@ BOOL FASTCALL Render::Init()
 		return FALSE;
 	}
 
-	// CRTC?ÅEΩÅEΩ
+	// CRTC?ÔøΩEÔøΩÔøΩEÔøΩ
 	crtc = (CRTC*)vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
 	ASSERT(crtc);
 
-	// VC?ÅEΩÅEΩ
+	// VC?ÔøΩEÔøΩÔøΩEÔøΩ
 	vc = (VC*)vm->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(vc);
 
@@ -490,21 +491,21 @@ void FASTCALL Render::Reset()
 	ASSERT(this);
 	LOG0(Log::Normal, "???Z?b?g");
 
-	// ?r?f?I?R???g???[?????|?C???^?ÅEΩÅEΩ
+	// ?r?f?I?R???g???[?????|?C???^?ÔøΩEÔøΩÔøΩEÔøΩ
 	ASSERT(vc);
 	render.palvc = (const WORD*)vc->GetPalette();
 
-	// ?e?L?X?gVRAM???|?C???^?ÅEΩÅEΩ
+	// ?e?L?X?gVRAM???|?C???^?ÔøΩEÔøΩÔøΩEÔøΩ
 	tvram = (TVRAM*)vm->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
 	ASSERT(tvram);
 	render.texttv = tvram->GetTVRAM();
 
-	// ?O???t?B?b?NVRAM???|?C???^?ÅEΩÅEΩ
+	// ?O???t?B?b?NVRAM???|?C???^?ÔøΩEÔøΩÔøΩEÔøΩ
 	gvram = (GVRAM*)vm->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(gvram);
 	render.grpgv = gvram->GetGVRAM();
 
-	// ?X?v???C?g?R???g???[?????|?C???^?ÅEΩÅEΩ
+	// ?X?v???C?g?R???g???[?????|?C???^?ÔøΩEÔøΩÔøΩEÔøΩ
 	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(sprite);
 	render.sprmem = sprite->GetPCG() - 0x8000;
@@ -763,6 +764,11 @@ void FASTCALL Render::SetVC()
 	SetVCOriginal();
 }
 
+void FASTCALL Render::ForceRecompose()
+{
+	InvalidateAll();
+}
+
 void FASTCALL Render::InvalidateFrame()
 {
 	int i;
@@ -840,7 +846,7 @@ void FASTCALL Render::StartFrameOriginal()
 		LOG0(Log::Normal, "CRTC????");
 #endif	// REND_LOG
 
-		// ?f?[?^?ÅEΩÅEΩ
+		// ?f?[?^?ÔøΩEÔøΩÔøΩEÔøΩ
 		crtc->GetCRTC(&crtcdata);
 
 		// h_dots?Av_dots??0?????
@@ -886,7 +892,7 @@ void FASTCALL Render::EndFrameOriginal()
 {
 	ASSERT(this);
 
-	// ??????ÅEΩÅEΩ??????
+	// ??????ÔøΩEÔøΩÔøΩEÔøΩ??????
 	if (!render.act) {
 		return;
 	}
@@ -1029,7 +1035,7 @@ void FASTCALL Render::Video()
 		render.mix[i] = TRUE;
 	}
 
-	// VC?f?[?^?ACRTC?f?[?^??ÅEΩÅEΩ
+	// VC?f?[?^?ACRTC?f?[?^??ÔøΩEÔøΩÔøΩEÔøΩ
 	p = vc->GetWorkAddr();
 	q = crtc->GetWorkAddr();
 
@@ -1172,7 +1178,7 @@ void FASTCALL Render::Video()
 		}
 	}
 
-	// ?D?????ÅEΩÅEΩ
+	// ?D?????ÔøΩEÔøΩÔøΩEÔøΩ
 	tx = p->tx;
 	sp = p->sp;
 	gr = p->gr;
@@ -1522,7 +1528,7 @@ void FASTCALL Render::SetContrast(int cont)
 
 //---------------------------------------------------------------------------
 //
-//	?R???g???X?g?ÅEΩÅEΩ
+//	?R???g???X?g?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 int FASTCALL Render::GetContrast() const
@@ -1641,7 +1647,7 @@ DWORD FASTCALL Render::ConvPalette(int color, int ratio)
 
 //---------------------------------------------------------------------------
 //
-//	?p???b?g?ÅEΩÅEΩ
+//	?p???b?g?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPalette() const
@@ -1824,7 +1830,7 @@ void FASTCALL Render::TextCopy(DWORD src, DWORD dst, DWORD plane)
 
 //---------------------------------------------------------------------------
 //
-//	?e?L?X?g?o?b?t?@?ÅEΩÅEΩ
+//	?e?L?X?g?o?b?t?@?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetTextBuf() const
@@ -1851,7 +1857,7 @@ void FASTCALL Render::Text(int raster)
 	ASSERT(render.textbuf);
 	ASSERT(render.palbuf);
 
-	// ?f?B?Z?[?u????ÅEΩÅEΩ??????
+	// ?f?B?Z?[?u????ÔøΩEÔøΩÔøΩEÔøΩ??????
 	if (!render.texten) {
 		return;
 	}
@@ -1897,7 +1903,7 @@ void FASTCALL Render::Text(int raster)
 
 //---------------------------------------------------------------------------
 //
-//	?O???t?B?b?N?o?b?t?@?ÅEΩÅEΩ
+//	?O???t?B?b?N?o?b?t?@?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetGrpBuf(int index) const
@@ -2376,7 +2382,7 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 		use = FALSE;
 	}
 
-	// ???????????A????????????ÅEΩÅEΩ??????
+	// ???????????A????????????ÔøΩEÔøΩÔøΩEÔøΩ??????
 	if (!render.spuse[index]) {
 		if (!use) {
 			return;
@@ -2468,12 +2474,12 @@ void FASTCALL Render::BGScrl(int page, DWORD x, DWORD y)
 	render.bgx[page] = x;
 	render.bgy[page] = y;
 
-	// 768?~512??ÅEΩp???
+	// 768?~512??ÔøΩEÔøΩp???
 	if (!render.bgspflag) {
 		return;
 	}
 
-	// ?\???????ABGSPMOD??ÅEΩO??
+	// ?\???????ABGSPMOD??ÔøΩEÔøΩO??
 	flag = FALSE;
 	if (render.bgdisp[0]) {
 		flag = TRUE;
@@ -2615,7 +2621,7 @@ void FASTCALL Render::BGCtrl(int index, BOOL flag)
 		}
 	}
 
-	// ????X???A768?~512??O???bgspmod??ÅEΩO??
+	// ????X???A768?~512??O???bgspmod??ÔøΩEÔøΩO??
 	if (render.bgspflag) {
 		for (i=0; i<512; i++) {
 			render.bgspmod[i] = TRUE;
@@ -2656,7 +2662,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?C???f?b?N?X(<64x64)?A???W?X?^?|?C???^?ÅEΩÅEΩ
+		// ?C???f?b?N?X(<64x64)?A???W?X?^?|?C???^?ÔøΩEÔøΩÔøΩEÔøΩ
 		index = (int)(addr & 0x1fff);
 		index >>= 1;
 		ASSERT((index >= 0) && (index < 64*64));
@@ -2690,7 +2696,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			render.bgreg[i][index] = (DWORD)(low | mid | high);
 		}
 
-		// bgall??ÅEΩO??
+		// bgall??ÔøΩEÔøΩO??
 		render.bgall[i][index >> 6] = TRUE;
 
 		// ?\???????????I???Bbgsize=1??y?[?W1?????I??
@@ -2701,7 +2707,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?X?N???[????u????v?Z???Abgspmod??ÅEΩO??
+		// ?X?N???[????u????v?Z???Abgspmod??ÔøΩEÔøΩO??
 		index >>= 6;
 		if (render.bgsize) {
 			// 16x16
@@ -2767,7 +2773,7 @@ void FASTCALL Render::PCGMem(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	PCG?o?b?t?@?ÅEΩÅEΩ
+//	PCG?o?b?t?@?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPCGBuf() const
@@ -2780,7 +2786,7 @@ const DWORD* FASTCALL Render::GetPCGBuf() const
 
 //---------------------------------------------------------------------------
 //
-//	BG/?X?v???C?g?o?b?t?@?ÅEΩÅEΩ
+//	BG/?X?v???C?g?o?b?t?@?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetBGSpBuf() const
@@ -3075,7 +3081,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 
 	// ???[?v
 	for (i=0; i<64; i++) {
-		// ?ÅEΩÅEΩ
+		// ?ÔøΩEÔøΩÔøΩEÔøΩ
 		bgdata = reg[i];
 
 		// $10000????????????OK
@@ -4166,7 +4172,7 @@ void FASTCALL Render::MixFast(int y)
 }
 
 // px68k-style scanline compositor (Render Fast 1:1)
-void FASTCALL Xm6Px68kComposeScanlineFast(DWORD *out_argb32, int len, const DWORD *grp, const DWORD *grp_sp, const DWORD *grp_sp2, const DWORD *bgtext_line, const BYTE *tr_flag, BOOL gon, BOOL tron, BOOL pron, BOOL ton, BOOL bgon, int gr_pri, int sp_pri, int tx_pri, BYTE vr2h);
+void FASTCALL Xm6Px68kComposeScanlineFast(DWORD *out_argb32, int len, const DWORD *grp, const DWORD *grp_sp, const DWORD *grp_sp2, const DWORD *bgtext_line, const BYTE *tr_flag, BOOL gon, BOOL tron, BOOL pron, BOOL ton, BOOL bgon, int gr_pri, int sp_pri, int tx_pri, BYTE vr2h, BOOL transparency_enabled);
 
 void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 {
@@ -4247,7 +4253,7 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 		bgtext_line, tr_flag,
 		gon, tron, pron, ton, bgon,
 		gr_pri, sp_pri, tx_pri,
-		p->vr2h);
+		p->vr2h, transparency_enabled);
 
 	RendMix01(dst, out, render.drawflag + (src_y << 6), render.mixlen);
 }
@@ -4286,7 +4292,7 @@ void FASTCALL Render::Mix(int y)
 			const BOOL tr_mode = (BOOL)((vr2h & 0x5d) == 0x1d);
 			const BOOL dim_mode = (BOOL)((vr2h & 0x5d) == 0x1c);
 			const BOOL pri_mode = (BOOL)((vr2h & 0x5c) == 0x14);
-			if (vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode) {
+			if (transparency_enabled && (vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode)) {
 				MixFastLine(y, y);
 				return;
 			}
@@ -4563,7 +4569,7 @@ void FASTCALL Render::MixGrp(int y, DWORD *buf)
 
 //---------------------------------------------------------------------------
 //
-//	?????o?b?t?@?ÅEΩÅEΩ
+//	?????o?b?t?@?ÔøΩEÔøΩÔøΩEÔøΩ
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetMixBuf() const
@@ -4634,7 +4640,7 @@ void FASTCALL Render::ProcessFast()
 	}
 
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/O????g?ÅEΩÅEΩ????A?c??????????????????
+		// I/O????g?ÔøΩEÔøΩÔøΩEÔøΩ????A?c??????????????????
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				src = (i >> 1);
@@ -4775,7 +4781,7 @@ void FASTCALL Render::Process()
 
 	// ????x2???
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/O????g?ÅEΩÅEΩ????A?c??????????????????
+		// I/O????g?ÔøΩEÔøΩÔøΩEÔøΩ????A?c??????????????????
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				Text(i >> 1);

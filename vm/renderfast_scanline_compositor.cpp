@@ -210,8 +210,13 @@ void FASTCALL Xm6Px68kComposeScanlineFast(DWORD *out_argb32,
                                          int gr_pri,
                                          int sp_pri,
                                          int tx_pri,
-                                         BYTE vr2h)
+                                          BYTE vr2h,
+                                          BOOL transparency_enabled)
 {
+	if (!transparency_enabled) {
+		tron = FALSE;
+		pron = FALSE;
+	}
 	if (!out_argb32 || len <= 0) {
 		return;
 	}

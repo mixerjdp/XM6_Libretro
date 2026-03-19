@@ -166,6 +166,8 @@ public:
 										// �E�A�E�N�E�e�E�B�E�u�E��E�
 	BOOL FASTCALL IsReady() const		{ return (BOOL)(render.count > 0); }
 	void FASTCALL Complete()			{ render.count = 0; }
+	void FASTCALL SetTransparencyEnabled(BOOL enabled)	{ transparency_enabled = enabled ? TRUE : FALSE; }
+	BOOL FASTCALL IsTransparencyEnabled() const		{ return transparency_enabled; }
 	BOOL FASTCALL SetCompositorMode(int mode);
 	int FASTCALL GetCompositorMode() const		{ return compositor_mode; }
 	DWORD FASTCALL GetFastFallbackCount() const	{ return fast_fallback_count; }
@@ -185,6 +187,7 @@ public:
 										// CRTC�E�Z�E�b�E�g
 	void FASTCALL SetVC();
 										// VC�E�Z�E�b�E�g
+	void FASTCALL ForceRecompose();
 	void FASTCALL SetContrast(int cont);
 										// �E�R�E��E��E�g�E��E��E�X�E�g�E�ݒ�
 	int FASTCALL GetContrast() const;
@@ -288,6 +291,7 @@ private:
 	DWORD *palbuf_original;
 	DWORD *palbuf_fast;
 	DWORD fast_fallback_count;
+	BOOL transparency_enabled;
 	render_t render;
 										// �E��E��E��E��E�f�E�[�E�^
 	BOOL cmov;
@@ -295,4 +299,3 @@ private:
 };
 
 #endif	// render_h
-

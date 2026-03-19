@@ -90,6 +90,7 @@ static int g_system_clock = 0;
 static int g_ram_size = 5;
 static bool g_fast_floppy = false;
 static int g_render_mode = XM6CORE_RENDER_MODE_ORIGINAL;
+static bool g_transparency_enabled = true;
 static enum retro_pixel_format g_frontend_pixel_format = RETRO_PIXEL_FORMAT_UNKNOWN;
 static int g_master_volume = 100;
 static int g_fm_volume = 54;
@@ -249,6 +250,7 @@ struct xm6_api_t {
   int (XM6CORE_CALL *set_mouse_port)(XM6Handle handle, int port) = nullptr;
   int (XM6CORE_CALL *set_mouse_swap)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_render_mode)(XM6Handle handle, int mode) = nullptr;
+  int (XM6CORE_CALL *set_transparency_enabled)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *get_render_mode)(XM6Handle handle) = nullptr;
   int (XM6CORE_CALL *set_midi_enabled)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *midi_read_output)(XM6Handle handle,
@@ -486,6 +488,7 @@ static bool load_xm6_api()
   g_xm6.set_mouse_port = xm6_set_mouse_port;
   g_xm6.set_mouse_swap = xm6_set_mouse_swap;
   g_xm6.set_render_mode = xm6_set_render_mode;
+  g_xm6.set_transparency_enabled = xm6_set_transparency_enabled;
   g_xm6.get_render_mode = xm6_get_render_mode;
   g_xm6.set_midi_enabled = xm6_set_midi_enabled;
   g_xm6.midi_read_output = xm6_midi_read_output;
@@ -592,6 +595,7 @@ static bool load_xm6_api()
   load_optional_symbol(&g_xm6.set_mouse_port, "xm6_set_mouse_port");
   load_optional_symbol(&g_xm6.set_mouse_swap, "xm6_set_mouse_swap");
   load_optional_symbol(&g_xm6.set_render_mode, "xm6_set_render_mode");
+  load_optional_symbol(&g_xm6.set_transparency_enabled, "xm6_set_transparency_enabled");
   load_optional_symbol(&g_xm6.get_render_mode, "xm6_get_render_mode");
   load_optional_symbol(&g_xm6.set_midi_enabled, "xm6_set_midi_enabled");
   load_optional_symbol(&g_xm6.midi_read_output, "xm6_midi_read_output");
@@ -1487,6 +1491,9 @@ static void apply_runtime_core_options()
   if (g_xm6.set_render_mode) {
     g_xm6.set_render_mode(g_xm6_handle, g_render_mode);
   }
+  if (g_xm6.set_transparency_enabled) {
+    g_xm6.set_transparency_enabled(g_xm6_handle, g_transparency_enabled ? 1 : 0);
+  }
   if (g_xm6.set_master_volume) {
     g_xm6.set_master_volume(g_xm6_handle, g_master_volume);
   }
@@ -1613,6 +1620,11 @@ static void apply_core_option_values()
     } else {
       g_render_mode = XM6CORE_RENDER_MODE_ORIGINAL;
     }
+  }
+
+  var.key = "xm6_transparency";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_transparency_enabled = (std::strcmp(var.value, "disabled") != 0);
   }
 
   var.key = "xm6_master_volume";
@@ -1759,6 +1771,8 @@ static void register_core_options()
       "Fast floppy; disabled|enabled" },
     { "xm6_render_mode",
       "Video compositor; original|fast" },
+    { "xm6_transparency",
+      "Transparency (TR/half-fill); enabled|disabled" },
     { "xm6_master_volume",
       "Master volume; 100|90|80|70|60|50|40|30|20|10|0" },
     { "xm6_fm_volume",
@@ -2681,6 +2695,7 @@ void retro_init(void)
   g_system_clock = 0;
   g_ram_size = 5;
   g_fast_floppy = false;
+  g_transparency_enabled = true;
   g_master_volume = 100;
   g_fm_volume = 54;
   g_adpcm_volume = 52;
@@ -2906,6 +2921,7 @@ void retro_run(void)
 	      const int old_ram_size = g_ram_size;
 	      const bool old_fast_floppy = g_fast_floppy;
 	      const int old_render_mode = g_render_mode;
+	      const bool old_transparency_enabled = g_transparency_enabled;
 	      const int old_master_volume = g_master_volume;
 	      const int old_fm_volume = g_fm_volume;
 	      const int old_adpcm_volume = g_adpcm_volume;
@@ -2952,6 +2968,11 @@ void retro_run(void)
 	        sync_frontend_pixel_format_for_render_mode();
 	        g_video_probe_frames_remaining = k_video_probe_frames_after_mode_change;
 	        g_video_probe_frame_index = 0;
+	      }
+	      if (old_transparency_enabled != g_transparency_enabled) {
+	        apply_runtime_core_options();
+	        core_log(RETRO_LOG_INFO, "[xm6-libretro] Transparency (TR/half-fill) %s",
+	                 g_transparency_enabled ? "enabled" : "disabled");
 	      }
       if (old_master_volume != g_master_volume ||
           old_fm_volume != g_fm_volume ||
