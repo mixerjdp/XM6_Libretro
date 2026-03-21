@@ -1935,7 +1935,8 @@ static unsigned map_retro_key_to_xm6(unsigned keycode)
     case RETROK_k: return 0x25;
     case RETROK_l: return 0x26;
     case RETROK_SEMICOLON: return 0x27;
-    case RETROK_COLON: return 0x28;
+    case RETROK_COLON:
+    case RETROK_QUOTE: return 0x28;
     case RETROK_RIGHTBRACKET: return 0x29;
     case RETROK_z: return 0x2A;
     case RETROK_x: return 0x2B;
@@ -1994,6 +1995,8 @@ static unsigned map_retro_key_to_xm6(unsigned keycode)
     case RETROK_RSHIFT: return 0x70;
     case RETROK_LCTRL:
     case RETROK_RCTRL: return 0x71;
+    case RETROK_LALT: return 0x72;
+    case RETROK_RALT: return 0x73;
     default: return 0;
   }
 }
