@@ -952,6 +952,13 @@ static bool is_classic_sasi_hdf_size(unsigned long long size)
   return size == 0x9f5400ull || size == 0x13c9800ull || size == 0x2793000ull;
 }
 
+static bool path_has_extension(const std::string &path, const char *ext);
+
+static bool is_hdd_content_path(const std::string &path)
+{
+  return path_has_extension(path, ".hdf") || path_has_extension(path, ".hds");
+}
+
 static void resolve_hdd_target_for_path(const std::string &path, bool *out_is_scsi,
                                         int *out_slot, const char **out_reason)
 {
@@ -959,7 +966,11 @@ static void resolve_hdd_target_for_path(const std::string &path, bool *out_is_sc
   int slot = g_hdd_slot;
   const char *reason = g_hdd_target_auto ? "auto fallback" : "manual override";
 
-  if (g_hdd_target_auto) {
+  if (path_has_extension(path, ".hds")) {
+    is_scsi = true;
+    slot = 0;
+    reason = "HDS content";
+  } else if (g_hdd_target_auto) {
     unsigned long long size = 0;
     if (get_file_size_bytes(path, &size)) {
       if (is_classic_sasi_hdf_size(size)) {
@@ -2828,7 +2839,7 @@ void retro_get_system_info(struct retro_system_info *info)
   info->library_version = "2.06 Libretro";
   info->need_fullpath = true;
   info->block_extract = false;
-  info->valid_extensions = "dim|xdf|d88|88d|hdm|dup|2hd|img|hdf|m3u";
+  info->valid_extensions = "dim|xdf|d88|88d|hdm|dup|2hd|img|hdf|hds|m3u";
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -2888,7 +2899,7 @@ bool retro_load_game(const struct retro_game_info *info)
              "[xm6-libretro] MIDI output enabled but frontend MIDI interface is unavailable");
   }
   reset_mouse_state();
-  g_content_is_hdd = path_has_extension(info->path, ".hdf");
+  g_content_is_hdd = is_hdd_content_path(info->path);
 
   if (!g_content_is_hdd) {
     core_log(RETRO_LOG_INFO,

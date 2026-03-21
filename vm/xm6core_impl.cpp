@@ -32,6 +32,7 @@
 #include "adpcm.h"
 #include "sasi.h"
 #include "scsi.h"
+#include "sram.h"
 #include "config.h"
 #include "filepath.h"
 #include "fileio.h"
@@ -156,6 +157,54 @@ static unsigned long long query_file_size_bytes(const char *path)
 	}
 	return (static_cast<unsigned long long>(data.nFileSizeHigh) << 32) |
 		static_cast<unsigned long long>(data.nFileSizeLow);
+}
+
+static bool path_has_extension_ci(const char *path, const char *ext)
+{
+	if (!path || !ext) {
+		return false;
+	}
+
+	const char *dot = strrchr(path, '.');
+	if (!dot) {
+		return false;
+	}
+
+	return (_stricmp(dot, ext) == 0);
+}
+
+static void set_sram_boot_scsi(XM6Context *ctx, int slot)
+{
+	if (!ctx || !ctx->vm) {
+		return;
+	}
+
+	SRAM *sram = (SRAM*)ctx->vm->SearchDevice(MAKEID('S', 'R', 'A', 'M'));
+	if (!sram) {
+		return;
+	}
+
+	if (slot < 0) {
+		slot = 0;
+	} else if (slot > 7) {
+		slot = 7;
+	}
+
+	// This backend mounts SCSI HDDs as SCSIExt, so the IPL should jump to the
+	// external SCSI ROM entry point range.
+	const DWORD rom_addr = 0x00EA0020u + (static_cast<DWORD>(slot) << 2);
+
+	// BOOT = ROM, ROM boot address = SCSI target entry point.
+	sram->SetMemSw(0x18, 0xA0);
+	sram->SetMemSw(0x19, 0x00);
+	sram->SetMemSw(0x0C, static_cast<BYTE>((rom_addr >> 24) & 0xFF));
+	sram->SetMemSw(0x0D, static_cast<BYTE>((rom_addr >> 16) & 0xFF));
+	sram->SetMemSw(0x0E, static_cast<BYTE>((rom_addr >> 8) & 0xFF));
+	sram->SetMemSw(0x0F, static_cast<BYTE>(rom_addr & 0xFF));
+
+	emit_messagef(ctx,
+		"[xm6-core] SRAM boot selector set to SCSI%d (BOOT=ROM, ROM=$%08X)",
+		slot, rom_addr);
 }
 
 static const char* fdi_id_name(DWORD id)
@@ -1018,6 +1067,10 @@ XM6CORE_API int XM6CORE_CALL xm6_mount_scsi_hdd(
 	}
 	::lstrcpyn(ctx->runtime_config.scsi_file[slot], path.GetPath(), FILEPATH_MAX);
 	apply_runtime_config(ctx);
+
+	if (path_has_extension_ci(image_path, ".hds")) {
+		set_sram_boot_scsi(ctx, slot);
+	}
 
 	return XM6CORE_OK;
 }
