@@ -7,10 +7,26 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <cerrno>
+#include <sys/stat.h>
 
+#if defined(_WIN32)
 #include <windows.h>
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#endif
+#else
+#include <unistd.h>
+#include <limits.h>
+#include <dlfcn.h>
+#endif
 
 #include "libretro.h"
+
+#if !defined(_WIN32) && !defined(XM6CORE_MONOLITHIC)
+#define XM6CORE_MONOLITHIC
+#endif
 
 #ifndef XM6CORE_STATIC
 #define XM6CORE_STATIC
@@ -44,17 +60,9 @@ static const unsigned k_video_probe_frames_after_mode_change = 12;
 
 static uint64_t now_usec()
 {
-  static LARGE_INTEGER freq = {};
-  if (freq.QuadPart == 0) {
-    QueryPerformanceFrequency(&freq);
-    if (freq.QuadPart == 0) {
-      return 0;
-    }
-  }
-
-  LARGE_INTEGER counter = {};
-  QueryPerformanceCounter(&counter);
-  return static_cast<uint64_t>((counter.QuadPart * 1000000LL) / freq.QuadPart);
+  const auto now = std::chrono::steady_clock::now().time_since_epoch();
+  return static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(now).count());
 }
 
 static unsigned g_frame_width = k_default_width;
@@ -203,7 +211,13 @@ static unsigned g_video_probe_frames_remaining = 0;
 static unsigned g_video_probe_frame_index = 0;
 
 struct xm6_api_t {
+#ifndef XM6CORE_MONOLITHIC
+#if defined(_WIN32)
   HMODULE module = nullptr;
+#else
+  void* module = nullptr;
+#endif
+#endif
 
   XM6Handle (XM6CORE_CALL *create)(void) = nullptr;
   void (XM6CORE_CALL *destroy)(XM6Handle) = nullptr;
@@ -299,13 +313,18 @@ static void core_log(enum retro_log_level level, const char *fmt, ...)
   if (g_log_cb) {
     g_log_cb(level, "%s", buffer);
   } else {
+#if defined(_WIN32)
     OutputDebugStringA(buffer);
     OutputDebugStringA("\n");
+#else
+    std::fprintf(stderr, "%s\n", buffer);
+#endif
   }
 }
 
 static void core_log_last_error(const char *prefix)
 {
+#if defined(_WIN32)
   const DWORD err = GetLastError();
   char *msg = nullptr;
   const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -325,6 +344,16 @@ static void core_log_last_error(const char *prefix)
   }
   core_log(RETRO_LOG_ERROR, "[xm6-libretro] %s (winerr=%lu)",
            prefix, static_cast<unsigned long>(err));
+#else
+  const int err = errno;
+  const char* dyn = dlerror();
+  if (dyn && *dyn) {
+    core_log(RETRO_LOG_ERROR, "[xm6-libretro] %s (dlerror=%s)", prefix, dyn);
+    return;
+  }
+  core_log(RETRO_LOG_ERROR, "[xm6-libretro] %s (errno=%d: %s)",
+           prefix, err, std::strerror(err));
+#endif
 }
 
 static bool set_frontend_pixel_format(enum retro_pixel_format fmt)
@@ -380,6 +409,7 @@ static bool get_core_module_dir(char *out_dir, size_t out_dir_size)
     return false;
   }
 
+#if defined(_WIN32)
   HMODULE self = nullptr;
   if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
                           GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -408,6 +438,27 @@ static bool get_core_module_dir(char *out_dir, size_t out_dir_size)
   std::memcpy(out_dir, module_path, dir_len);
   out_dir[dir_len] = '\0';
   return true;
+#else
+  char module_path[PATH_MAX] = {};
+  ssize_t len = readlink("/proc/self/exe", module_path, sizeof(module_path) - 1);
+  if (len <= 0 || static_cast<size_t>(len) >= sizeof(module_path)) {
+    return false;
+  }
+  module_path[len] = '\0';
+
+  const char *slash = std::strrchr(module_path, '/');
+  if (!slash) {
+    return false;
+  }
+  const size_t dir_len = static_cast<size_t>(slash - module_path + 1);
+  if (dir_len + 1 > out_dir_size) {
+    return false;
+  }
+
+  std::memcpy(out_dir, module_path, dir_len);
+  out_dir[dir_len] = '\0';
+  return true;
+#endif
 }
 
 template <typename FnType>
@@ -421,7 +472,11 @@ static bool load_required_symbol(FnType *fn, const char *symbol)
   }
   return true;
 #else
+#if defined(_WIN32)
   *fn = reinterpret_cast<FnType>(GetProcAddress(g_xm6.module, symbol));
+#else
+  *fn = reinterpret_cast<FnType>(dlsym(g_xm6.module, symbol));
+#endif
   if (!*fn) {
     core_log(RETRO_LOG_ERROR, "[xm6-libretro] Missing required symbol: %s", symbol);
     return false;
@@ -436,7 +491,11 @@ static void load_optional_symbol(FnType *fn, const char *symbol)
 #ifdef XM6CORE_MONOLITHIC
   (void)symbol;
 #else
+#if defined(_WIN32)
   *fn = reinterpret_cast<FnType>(GetProcAddress(g_xm6.module, symbol));
+#else
+  *fn = reinterpret_cast<FnType>(dlsym(g_xm6.module, symbol));
+#endif
 #endif
 }
 
@@ -444,7 +503,11 @@ static void unload_xm6_api()
 {
 #ifndef XM6CORE_MONOLITHIC
   if (g_xm6.module) {
+#if defined(_WIN32)
     FreeLibrary(g_xm6.module);
+#else
+    dlclose(g_xm6.module);
+#endif
   }
 #endif
   g_xm6 = xm6_api_t();
@@ -536,6 +599,7 @@ static bool load_xm6_api()
     return true;
   }
 
+#if defined(_WIN32)
   char core_dir[MAX_PATH] = {};
   char dll_path[MAX_PATH] = {};
   if (get_core_module_dir(core_dir, sizeof(core_dir))) {
@@ -546,9 +610,24 @@ static bool load_xm6_api()
   if (!g_xm6.module) {
     g_xm6.module = LoadLibraryA("xm6core.dll");
   }
+#else
+  char core_dir[PATH_MAX] = {};
+  char so_path[PATH_MAX] = {};
+  if (get_core_module_dir(core_dir, sizeof(core_dir))) {
+    std::snprintf(so_path, sizeof(so_path), "%s%s", core_dir, "xm6core.so");
+    g_xm6.module = dlopen(so_path, RTLD_NOW | RTLD_LOCAL);
+  }
+  if (!g_xm6.module) {
+    g_xm6.module = dlopen("xm6core.so", RTLD_NOW | RTLD_LOCAL);
+  }
+#endif
 
   if (!g_xm6.module) {
+#if defined(_WIN32)
     core_log_last_error("Could not load xm6core.dll");
+#else
+    core_log_last_error("Could not load xm6core.so");
+#endif
     return false;
   }
 
@@ -856,7 +935,11 @@ static bool set_system_directory_from_frontend()
   std::string normalized = sys_dir;
   const char last = normalized.empty() ? '\0' : normalized[normalized.size() - 1];
   if (last != '\\' && last != '/') {
+#if defined(_WIN32)
     normalized.push_back('\\');
+#else
+    normalized.push_back('/');
+#endif
   }
 
   core_log(RETRO_LOG_INFO, "[xm6-libretro] set_system_dir: %s", normalized.c_str());
@@ -882,8 +965,11 @@ static bool file_exists(const std::string &path)
   if (path.empty()) {
     return false;
   }
-  const DWORD attrs = GetFileAttributesA(path.c_str());
-  return attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
+  struct stat st = {};
+  if (stat(path.c_str(), &st) != 0) {
+    return false;
+  }
+  return !S_ISDIR(st.st_mode);
 }
 
 static bool get_file_size_bytes(const std::string &path, unsigned long long *out_size)
@@ -895,17 +981,15 @@ static bool get_file_size_bytes(const std::string &path, unsigned long long *out
     return false;
   }
 
-  WIN32_FILE_ATTRIBUTE_DATA data = {};
-  if (!GetFileAttributesExA(path.c_str(), GetFileExInfoStandard, &data)) {
+  struct stat st = {};
+  if (stat(path.c_str(), &st) != 0) {
     return false;
   }
-  if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+  if (S_ISDIR(st.st_mode)) {
     return false;
   }
 
-  const unsigned long long size =
-      (static_cast<unsigned long long>(data.nFileSizeHigh) << 32) |
-      static_cast<unsigned long long>(data.nFileSizeLow);
+  const unsigned long long size = static_cast<unsigned long long>(st.st_size);
   if (out_size) {
     *out_size = size;
   }
@@ -924,7 +1008,11 @@ static std::string join_path(const std::string &dir, const char *name)
   if (last == '\\' || last == '/') {
     return dir + name;
   }
+#if defined(_WIN32)
   return dir + "\\" + name;
+#else
+  return dir + "/" + name;
+#endif
 }
 
 static bool system_file_exists(const char *name, unsigned long long *out_size = nullptr)

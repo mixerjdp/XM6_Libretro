@@ -13,7 +13,6 @@
 #include "os.h"
 #include "xm6.h"
 
-#if defined(_WIN32)
 
 typedef struct {
 	DWORD low;
@@ -133,5 +132,4 @@ private:
 										// デフォルトディレクトリ
 };
 
-#endif	// _WIN32
 #endif	// filepath_h

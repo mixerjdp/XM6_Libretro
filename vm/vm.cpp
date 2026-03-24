@@ -7,7 +7,9 @@
 //
 //---------------------------------------------------------------------------
 
+#if defined(_WIN32)
 #include <windows.h>
+#endif
 #include "os.h"
 #include "xm6.h"
 #include "vm.h"
@@ -291,8 +293,12 @@ void FASTCALL VM::NotifyHostMessage(const TCHAR* message) const
 		return;
 	}
 
-	::OutputDebugString(message);
-	::OutputDebugString(_T("\n"));
+#if defined(_WIN32)
+	::OutputDebugStringA(message);
+	::OutputDebugStringA(_T("\n"));
+#else
+	fprintf(stderr, "%s\n", message);
+#endif
 }
 
 DWORD FASTCALL VM::Save(const Filepath& path)

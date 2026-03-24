@@ -1,7 +1,6 @@
-// Compatibilidad con Visual Studio y Windows
-#include <windows.h>
-
 #include "rend_soft.h"
+#include "os.h"
+#include "xm6.h"
 #include <string.h>
 
 #ifndef FASTCALL

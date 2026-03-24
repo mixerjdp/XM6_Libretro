@@ -2,15 +2,15 @@
 //
 //	EMULADOR X68000 "XM6"
 //
-//	Copyright (C) 2001-2006 ï¿½oï¿½hï¿½D(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 E½oE½hE½D(ytanaka@ipc-tokai.or.jp)
 //	[ Aplicacion MFC ]
 //
 //---------------------------------------------------------------------------
 
 #if defined(_WIN32)
 
-#include "os.h"
 #include "mfc.h"
+#include "os.h"
 #include "xm6.h"
 #include "filepath.h"
 #include "mfc_frm.h"
@@ -240,7 +240,7 @@ BOOL FASTCALL FileOpenDlg(CWnd *pParent, LPSTR lpszPath, UINT nFilterID)
 //---------------------------------------------------------------------------
 //
 //	Dialogo de guardado de archivo
-//	* lpszPath siempre debe inicializarse antes de llamarï¿½BlpszExtï¿½Íæ“ª3ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚İ—Lï¿½ï¿½
+//	* lpszPath siempre debe inicializarse antes de llamarE½BlpszExtE½Íæ“ª3E½E½E½E½E½Ì‚İ—LE½E½
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL FileSaveDlg(CWnd *pParent, LPSTR lpszPath, LPCTSTR lpszExt, UINT nFilterID)
@@ -523,7 +523,7 @@ BOOL FASTCALL CApp::CheckEnvironment()
 				// Obtener direccion de DrawTextW
 				pDrawTextW = (DRAWTEXTWIDE)::GetProcAddress(m_hUser32, _T("DrawTextW"));
 				if (pDrawTextW) {
-					// CP932ï¿½Ö‚Ì•ÏŠï¿½ï¿½Æ•ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?
+					// CP932E½Ö‚Ì•ÏŠï¿½E½Æ•ï¿½E½E½E½E½E½?
 					::bSupport932 = TRUE;
 				}
 			}
@@ -540,7 +540,7 @@ BOOL FASTCALL CApp::CheckEnvironment()
 		::bCMOV = TRUE;
 	}
 
-	// Determinacion de MMX(Windows98ï¿½È~ï¿½Ì‚ï¿½)
+	// Determinacion de MMX(Windows98E½È~E½Ì‚ï¿½)
 	::bMMX = FALSE;
 	if (ovi.dwMajorVersion >= 4) {
 		// Windows 95 o Windows NT 4 o posterior
@@ -612,7 +612,7 @@ HWND FASTCALL CApp::SearchXM6Wnd()
 
 //---------------------------------------------------------------------------
 //
-//	XM6Busqueda de ventanaï¿½Rï¿½[ï¿½ï¿½ï¿½oï¿½bï¿½N
+//	XM6Busqueda de ventanaE½RE½[E½E½E½oE½bE½N
 //
 //---------------------------------------------------------------------------
 BOOL CALLBACK CApp::EnumXM6Proc(HWND hWnd, LPARAM lParam)

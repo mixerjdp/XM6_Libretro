@@ -7,7 +7,9 @@
 //
 //---------------------------------------------------------------------------
 
+#if defined(_WIN32)
 #include <windows.h>
+#endif
 #include "os.h"
 #include "xm6.h"
 #if !defined(XM6CORE_EXPORTS) && !defined(XM6CORE_STATIC)
@@ -39,6 +41,10 @@
 #include <cstring>
 #include <cstdarg>
 #include <new>
+#include <sys/stat.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
 //---------------------------------------------------------------------------
 //
@@ -151,12 +157,14 @@ void xm6_debug_message(const char *format, ...)
 
 static unsigned long long query_file_size_bytes(const char *path)
 {
-	WIN32_FILE_ATTRIBUTE_DATA data;
-	if (!path || !GetFileAttributesExA(path, GetFileExInfoStandard, &data)) {
+	struct stat st;
+	if (!path || stat(path, &st) != 0) {
 		return 0;
 	}
-	return (static_cast<unsigned long long>(data.nFileSizeHigh) << 32) |
-		static_cast<unsigned long long>(data.nFileSizeLow);
+	if ((st.st_mode & S_IFDIR) != 0) {
+		return 0;
+	}
+	return static_cast<unsigned long long>(st.st_size);
 }
 
 static bool path_has_extension_ci(const char *path, const char *ext)
@@ -469,29 +477,54 @@ static bool create_temp_state_filepath(Filepath *out_path)
 {
 	TCHAR temp_dir[_MAX_PATH];
 	TCHAR temp_file[_MAX_PATH];
-	UINT len;
+	size_t len;
 
 	if (!out_path) {
 		return false;
 	}
 
-	len = ::GetTempPath(_MAX_PATH, temp_dir);
+#if defined(_WIN32)
+	len = static_cast<size_t>(::GetTempPathA(_MAX_PATH, temp_dir));
 	if (len == 0 || len > (_MAX_PATH - 1)) {
 		return false;
 	}
-
-	if (::GetTempFileName(temp_dir, _T("xm6"), 0, temp_file) == 0) {
+	if (::GetTempFileNameA(temp_dir, _T("xm6"), 0, temp_file) == 0) {
 		return false;
 	}
-
 	out_path->SetPath(temp_file);
 	return true;
+#else
+	const char* tmp = getenv("TMPDIR");
+	if (!tmp || !*tmp) {
+		tmp = "/tmp";
+	}
+	strncpy(temp_dir, tmp, sizeof(temp_dir) - 1);
+	temp_dir[sizeof(temp_dir) - 1] = '\0';
+	len = strlen(temp_dir);
+	if (len > 0 && temp_dir[len - 1] != '/' && temp_dir[len - 1] != '\\') {
+		strncat(temp_dir, PATH_SEPARATOR_STR, sizeof(temp_dir) - strlen(temp_dir) - 1);
+	}
+	strncpy(temp_file, temp_dir, sizeof(temp_file) - 1);
+	temp_file[sizeof(temp_file) - 1] = '\0';
+	strncat(temp_file, "xm6stateXXXXXX", sizeof(temp_file) - strlen(temp_file) - 1);
+	int fd = mkstemp(temp_file);
+	if (fd < 0) {
+		return false;
+	}
+	close(fd);
+	out_path->SetPath(temp_file);
+	return true;
+#endif
 }
 
 static void delete_temp_state_file(const Filepath& path)
 {
 	if (!path.IsClear()) {
-		::DeleteFile(path.GetPath());
+#if defined(_WIN32)
+		::DeleteFileA(path.GetPath());
+#else
+		unlink(path.GetPath());
+#endif
 	}
 }
 
@@ -646,12 +679,24 @@ static void xm6_log_state_probe(XM6Context *ctx, const char *tag, const void *bu
 			((unsigned long)bytes[19] << 24);
 	}
 
-	wsprintfA(
+#if defined(_MSC_VER) && (_MSC_VER < 1900)
+	_snprintf_s(
 		msg,
+		sizeof(msg),
+		_TRUNCATE,
 		"[xm6core] %s size=%u first_id=%08lX",
 		tag,
 		(unsigned int)size,
 		first_id);
+#else
+	snprintf(
+		msg,
+		sizeof(msg),
+		"[xm6core] %s size=%u first_id=%08lX",
+		tag,
+		(unsigned int)size,
+		first_id);
+#endif
 	ctx->msg_callback(msg, ctx->msg_user);
 }
 

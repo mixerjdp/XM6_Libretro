@@ -9,8 +9,8 @@
 
 #if defined(_WIN32)
 
-#include "os.h"
 #include "mfc.h"
+#include "os.h"
 #include "xm6.h"
 #include "vm.h"
 #include "render.h"
@@ -1483,7 +1483,7 @@ void CDrawView::OnDraw(CDC *pDC)
 	vmul = 4;
 	
 
-	/* Mi  Codigo de prueba para calcular stretch vertical mÔøΩximo posible con respecto al anfitrion */
+	/* Mi  Codigo de prueba para calcular stretch vertical mÅEΩximo posible con respecto al anfitrion */
 		if (m_Info.bBltStretch) 
 		{
 			vmul = 1;							

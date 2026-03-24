@@ -9,8 +9,8 @@
 
 #if defined(_WIN32)
 
-#include "os.h"
 #include "mfc.h"
+#include "os.h"
 #include "xm6.h"
 #include "vm.h"
 #include "fdi.h"
@@ -451,7 +451,7 @@ void FASTCALL CFDIDlg::SetLogical()
 {
 	CButton *pButton;
 
-	// MS-DOSŒn‚Ì•¨—ƒtƒH[ƒ}ƒbƒg‚Ì‚İ˜_—ƒtƒH[ƒ}ƒbƒg‰Â”
+	// MS-DOSŒn‚Ì•¨—ƒtƒH[ƒ}ƒbƒg‚Ì‚İ˜_—ƒtƒH[ƒ}ƒbƒg‰ÂE
 	switch (m_dwPhysical) {
 		// ˜_—ƒtƒH[ƒ}ƒbƒg‚Å‚«‚È‚¢‚à‚Ì
 		case FDI_OS9:
