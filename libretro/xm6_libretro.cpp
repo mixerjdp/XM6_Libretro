@@ -19,6 +19,7 @@
 #else
 #include <unistd.h>
 #include <limits.h>
+#include <strings.h>
 #include <dlfcn.h>
 #endif
 
@@ -1703,6 +1704,51 @@ static void apply_runtime_core_options()
   }
 }
 
+static bool equals_ci(const char *lhs, const char *rhs)
+{
+  if (!lhs || !rhs) {
+    return false;
+  }
+#if defined(_WIN32)
+  return _stricmp(lhs, rhs) == 0;
+#else
+  return strcasecmp(lhs, rhs) == 0;
+#endif
+}
+
+static int parse_joy_type_value(const char *value, int default_type)
+{
+  if (!value) {
+    return default_type;
+  }
+
+  if (equals_ci(value, "cpsf_sfc") ||
+      equals_ci(value, "cpsf-sfc") ||
+      equals_ci(value, "CPSF-SFC (8 Buttons)") ||
+      equals_ci(value, "cpsf sfc")) {
+    return 7;
+  }
+  if (equals_ci(value, "cpsf_md") ||
+      equals_ci(value, "cpsf-md") ||
+      equals_ci(value, "CPSF-MD (8 Buttons)") ||
+      equals_ci(value, "cpsf md")) {
+    return 8;
+  }
+  if (equals_ci(value, "atari_ss") ||
+      equals_ci(value, "atari-ss") ||
+      equals_ci(value, "atari + start/select")) {
+    return 2;
+  }
+  if (equals_ci(value, "atari") || equals_ci(value, "2button") || equals_ci(value, "2-button")) {
+    return 1;
+  }
+  if (equals_ci(value, "disabled") || equals_ci(value, "none")) {
+    return 0;
+  }
+
+  return default_type;
+}
+
 static void apply_core_option_values()
 {
   if (!g_environ_cb) {
@@ -1749,32 +1795,12 @@ static void apply_core_option_values()
 
   var.key = "xm6_joy1_type";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-    if (std::strcmp(var.value, "cpsf_sfc") == 0) {
-      g_joy_type[0] = 7;
-    } else if (std::strcmp(var.value, "cpsf_md") == 0) {
-      g_joy_type[0] = 8;
-    } else if (std::strcmp(var.value, "atari_ss") == 0) {
-      g_joy_type[0] = 2;
-    } else if (std::strcmp(var.value, "disabled") == 0) {
-      g_joy_type[0] = 0;
-    } else {
-      g_joy_type[0] = 1;
-    }
+    g_joy_type[0] = parse_joy_type_value(var.value, 1);
   }
 
   var.key = "xm6_joy2_type";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-    if (std::strcmp(var.value, "cpsf_sfc") == 0) {
-      g_joy_type[1] = 7;
-    } else if (std::strcmp(var.value, "cpsf_md") == 0) {
-      g_joy_type[1] = 8;
-    } else if (std::strcmp(var.value, "atari_ss") == 0) {
-      g_joy_type[1] = 2;
-    } else if (std::strcmp(var.value, "atari") == 0) {
-      g_joy_type[1] = 1;
-    } else {
-      g_joy_type[1] = 0;
-    }
+    g_joy_type[1] = parse_joy_type_value(var.value, 0);
   }
 
   var.key = "xm6_ram_size";
@@ -2556,17 +2582,49 @@ static void build_joy_state(unsigned port,
   axes[2] = 0;
   axes[3] = 0;
 
-  buttons[0] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_B) ? 1 : 0;
-  buttons[1] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_A) ? 1 : 0;
-  buttons[2] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_Y) ? 1 : 0;
-  buttons[3] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_X) ? 1 : 0;
-  buttons[4] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_L) ? 1 : 0;
-  buttons[5] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_R) ? 1 : 0;
-
   const bool select_pressed = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_SELECT);
   const bool start_pressed = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_START);
-  buttons[6] = select_pressed ? 1 : 0;
-  buttons[7] = start_pressed ? 1 : 0;
+
+  const int joy_type = (port < 2) ? g_joy_type[port] : 0;
+  switch (joy_type) {
+    case 2: // atari_ss
+      buttons[0] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_B) ? 1 : 0;
+      buttons[1] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_A) ? 1 : 0;
+      buttons[2] = start_pressed ? 1 : 0;
+      buttons[3] = select_pressed ? 1 : 0;
+      break;
+    case 7: // cpsf_sfc
+      // Match px68k/libretro trigger layout.
+      buttons[0] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_X) ? 1 : 0;
+      buttons[1] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_Y) ? 1 : 0;
+      buttons[2] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_A) ? 1 : 0;
+      buttons[3] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_B) ? 1 : 0;
+      buttons[4] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_R) ? 1 : 0;
+      buttons[5] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_L) ? 1 : 0;
+      break;
+    case 8: // cpsf_md
+      buttons[0] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_A) ? 1 : 0;
+      buttons[1] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_B) ? 1 : 0;
+      buttons[2] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_X) ? 1 : 0;
+      buttons[3] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_Y) ? 1 : 0;
+      buttons[4] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_L) ? 1 : 0;
+      buttons[5] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_R) ? 1 : 0;
+      buttons[7] = select_pressed ? 1 : 0; // MODE
+      break;
+    default:
+      buttons[0] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_B) ? 1 : 0;
+      buttons[1] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_A) ? 1 : 0;
+      buttons[2] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_Y) ? 1 : 0;
+      buttons[3] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_X) ? 1 : 0;
+      buttons[4] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_L) ? 1 : 0;
+      buttons[5] = joy_pressed(port, RETRO_DEVICE_ID_JOYPAD_R) ? 1 : 0;
+      break;
+  }
+
+  buttons[6] = start_pressed ? 1 : 0;
+  if (joy_type != 8) {
+    buttons[7] = select_pressed ? 1 : 0;
+  }
 
   if (out_select_pressed) {
     *out_select_pressed = select_pressed;
@@ -2987,6 +3045,8 @@ void retro_reset(void)
       g_xm6.reset(g_xm6_handle);
     }
 
+    apply_joy_type_options();
+
     midi_queue_reset_if_enabled();
     arm_savestate_guard_frames(
       g_content_is_hdd ? "manual reset (HDD full cold-style)" : "manual reset",
@@ -3076,12 +3136,14 @@ bool retro_load_game(const struct retro_game_info *info)
     // HDF boot is more reliable with a full power cycle, not just a soft reset.
     g_xm6.set_power(g_xm6_handle, 0);
     g_xm6.set_power(g_xm6_handle, 1);
+    apply_joy_type_options();
     begin_hdd_boot_warmup("HDD");
   } else {
     g_xm6.set_power(g_xm6_handle, 1);
     g_video_not_ready_count = 0;
     core_log(RETRO_LOG_INFO, "[xm6-libretro] Performing floppy post-mount reset");
     g_xm6.reset(g_xm6_handle);
+    apply_joy_type_options();
   }
 
   midi_queue_reset_if_enabled();
@@ -3464,6 +3526,8 @@ bool retro_unserialize(const void *data, size_t size)
   }
   bool ok = g_xm6.load_state_mem(g_xm6_handle, data, static_cast<unsigned int>(size)) == XM6CORE_OK;
   if (ok) {
+    apply_runtime_core_options();
+    apply_joy_type_options();
     g_video_not_ready_count = 0;
     arm_savestate_guard_frames("post state load", k_savestate_guard_frames_post_load);
     core_log(RETRO_LOG_INFO, "[xm6-libretro] Savestate loaded");
