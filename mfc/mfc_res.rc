@@ -3972,6 +3972,13 @@ END
 #endif    // Espa�ol (Espa�a, alfabetizaci�n internacional) resources
 /////////////////////////////////////////////////////////////////////////////
 
+// English (United States) resources for non-Japanese profile
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#include "mfc_res_en.rc2"
+#endif
+
+
 
 
 #ifndef APSTUDIO_INVOKED

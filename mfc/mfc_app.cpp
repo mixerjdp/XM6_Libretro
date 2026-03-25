@@ -2,7 +2,7 @@
 //
 //	EMULADOR X68000 "XM6"
 //
-//	Copyright (C) 2001-2006 E½oE½hE½D(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 ï¿½Eï¿½oï¿½Eï¿½hï¿½Eï¿½D(ytanaka@ipc-tokai.or.jp)
 //	[ Aplicacion MFC ]
 //
 //---------------------------------------------------------------------------
@@ -19,6 +19,8 @@
 #include "mfc_info.h"
 #include "mfc_res.h"
 #include "mfc_app.h"
+#include <stdlib.h>
+#include <string.h>
 
 //---------------------------------------------------------------------------
 //
@@ -56,6 +58,85 @@ static BOOL bMMX;						// Flag de discriminacion MMX
 static BOOL bCMOV;						// Flag de discriminacion CMOV
 static LPSTR lpszInfoMsg;				// Buffer de mensaje de informacion
 static DRAWTEXTWIDE pDrawTextW;			// DrawTextW
+
+enum ui_language_mode_t {
+	UI_LANG_AUTO = 0,
+	UI_LANG_JAPANESE = 1,
+	UI_LANG_ENGLISH = 2,
+	UI_LANG_SPANISH = 3,
+};
+
+static ui_language_mode_t g_ui_language_mode = UI_LANG_AUTO;
+static LANGID g_ui_langid = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+
+static ui_language_mode_t FASTCALL ParseUiLanguageMode(const char *value)
+{
+	if (!value || !value[0]) {
+		return UI_LANG_AUTO;
+	}
+
+	if (_stricmp(value, "auto") == 0 || strcmp(value, "0") == 0) {
+		return UI_LANG_AUTO;
+	}
+	if (_stricmp(value, "jp") == 0 || _stricmp(value, "ja") == 0 ||
+		_stricmp(value, "japanese") == 0 || strcmp(value, "1") == 0) {
+		return UI_LANG_JAPANESE;
+	}
+	if (_stricmp(value, "en") == 0 || _stricmp(value, "english") == 0 || strcmp(value, "2") == 0) {
+		return UI_LANG_ENGLISH;
+	}
+	if (_stricmp(value, "es") == 0 || _stricmp(value, "spanish") == 0 || strcmp(value, "3") == 0) {
+		return UI_LANG_SPANISH;
+	}
+
+	return UI_LANG_AUTO;
+}
+
+static LANGID FASTCALL SelectUiLangId(ui_language_mode_t mode)
+{
+	if (mode == UI_LANG_JAPANESE) {
+		return MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+	}
+	if (mode == UI_LANG_ENGLISH) {
+		return MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+	}
+	if (mode == UI_LANG_SPANISH) {
+		return MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH_MODERN);
+	}
+
+	const WORD user_lang = PRIMARYLANGID(::GetUserDefaultLangID());
+	if (user_lang == LANG_JAPANESE) {
+		return MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+	}
+	if (user_lang == LANG_SPANISH) {
+		return MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH_MODERN);
+	}
+
+	const WORD system_lang = PRIMARYLANGID(::GetSystemDefaultLangID());
+	if (system_lang == LANG_JAPANESE) {
+		return MAKELANGID(LANG_JAPANESE, SUBLANG_DEFAULT);
+	}
+	if (system_lang == LANG_SPANISH) {
+		return MAKELANGID(LANG_SPANISH, SUBLANG_SPANISH_MODERN);
+	}
+
+	return MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+}
+
+static void FASTCALL ApplyUiLanguageForResources(LANGID langid)
+{
+	::SetThreadLocale(MAKELCID(langid, SORT_DEFAULT));
+
+	HMODULE kernel = ::GetModuleHandle(_T("KERNEL32.DLL"));
+	if (kernel) {
+		typedef LANGID (WINAPI *set_thread_ui_lang_t)(LANGID);
+		set_thread_ui_lang_t set_thread_ui_lang =
+			(set_thread_ui_lang_t)::GetProcAddress(kernel, "SetThreadUILanguage");
+		if (set_thread_ui_lang) {
+			set_thread_ui_lang(langid);
+		}
+	}
+}
 
 //---------------------------------------------------------------------------
 //
@@ -240,7 +321,7 @@ BOOL FASTCALL FileOpenDlg(CWnd *pParent, LPSTR lpszPath, UINT nFilterID)
 //---------------------------------------------------------------------------
 //
 //	Dialogo de guardado de archivo
-//	* lpszPath siempre debe inicializarse antes de llamarE½BlpszExtE½Íæ“ª3E½E½E½E½E½Ì‚İ—LE½E½
+//	* lpszPath siempre debe inicializarse antes de llamarï¿½Eï¿½BlpszExtï¿½Eï¿½Íæ“ª3ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½Ì‚İ—Lï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL FileSaveDlg(CWnd *pParent, LPSTR lpszPath, LPCTSTR lpszExt, UINT nFilterID)
@@ -491,14 +572,14 @@ BOOL FASTCALL CApp::CheckEnvironment()
 	//	Determinacion del OS
 	//
 
-	// Determinacion del entorno japones
-	::bJapanese = FALSE;
-	if (PRIMARYLANGID(GetSystemDefaultLangID()) == LANG_JAPANESE) {
-		if (PRIMARYLANGID(GetUserDefaultLangID()) == LANG_JAPANESE) {
-			// Determinado tanto por el sistema por defecto como por el usuario por defecto
-			::bJapanese = TRUE;
-		}
-	}
+	// Determine UI language mode (Auto/JP/EN/ES) from test variable.
+	// XM6_UI_LANG values: auto|jp|en|es (or 0|1|2|3).
+	const char *lang_override = getenv("XM6_UI_LANG");
+	g_ui_language_mode = ParseUiLanguageMode(lang_override);
+	g_ui_langid = SelectUiLangId(g_ui_language_mode);
+	ApplyUiLanguageForResources(g_ui_langid);
+
+	::bJapanese = (PRIMARYLANGID(g_ui_langid) == LANG_JAPANESE) ? TRUE : FALSE;
 
 	// Determinacion de Windows NT
 	memset(&ovi, 0, sizeof(ovi));
@@ -523,7 +604,7 @@ BOOL FASTCALL CApp::CheckEnvironment()
 				// Obtener direccion de DrawTextW
 				pDrawTextW = (DRAWTEXTWIDE)::GetProcAddress(m_hUser32, _T("DrawTextW"));
 				if (pDrawTextW) {
-					// CP932E½Ö‚Ì•ÏŠï¿½E½Æ•ï¿½E½E½E½E½E½?
+					// CP932ï¿½Eï¿½Ö‚Ì•ÏŠï¿½ï¿½Eï¿½Æ•ï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½?
 					::bSupport932 = TRUE;
 				}
 			}
@@ -540,7 +621,7 @@ BOOL FASTCALL CApp::CheckEnvironment()
 		::bCMOV = TRUE;
 	}
 
-	// Determinacion de MMX(Windows98E½È~E½Ì‚ï¿½)
+	// Determinacion de MMX(Windows98ï¿½Eï¿½È~ï¿½Eï¿½Ì‚ï¿½)
 	::bMMX = FALSE;
 	if (ovi.dwMajorVersion >= 4) {
 		// Windows 95 o Windows NT 4 o posterior
@@ -612,7 +693,7 @@ HWND FASTCALL CApp::SearchXM6Wnd()
 
 //---------------------------------------------------------------------------
 //
-//	XM6Busqueda de ventanaE½RE½[E½E½E½oE½bE½N
+//	XM6Busqueda de ventanaï¿½Eï¿½Rï¿½Eï¿½[ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½oï¿½Eï¿½bï¿½Eï¿½N
 //
 //---------------------------------------------------------------------------
 BOOL CALLBACK CApp::EnumXM6Proc(HWND hWnd, LPARAM lParam)
