@@ -32,12 +32,14 @@
 #include "opmif.h"
 #include "opm.h"
 #include "adpcm.h"
+#include "dmac.h"
 #include "sasi.h"
 #include "scsi.h"
 #include "sram.h"
 #include "config.h"
 #include "filepath.h"
 #include "fileio.h"
+#include <math.h>
 #include <cstring>
 #include <cstdarg>
 #include <new>
@@ -98,6 +100,19 @@ struct XM6Context {
 	unsigned int video_probe_frames_remaining;
 	unsigned int video_probe_frame_index;
 	BOOL video_probe_has_signature;
+
+	// Audio engine selection + PX68k-compatible ring state
+	int audio_engine;
+	short *px68k_ring;
+	unsigned int px68k_ring_frames;
+	unsigned int px68k_ring_read;
+	unsigned int px68k_ring_write;
+	unsigned int px68k_ring_count;
+	unsigned int px68k_rate_accum;
+	int px68k_lpf_prev_l;
+	int px68k_lpf_prev_r;
+	int px68k_last_out_l;
+	int px68k_last_out_r;
 };
 
 //---------------------------------------------------------------------------
@@ -114,6 +129,10 @@ static inline bool ctx_valid(XM6Context *ctx)
 {
 	return (ctx != NULL && ctx->vm != NULL);
 }
+
+static void reset_px68k_audio_state(XM6Context *ctx);
+static bool ensure_px68k_audio_ring(XM6Context *ctx);
+static void produce_px68k_audio(XM6Context *ctx, DWORD hus);
 
 static void emit_messagef(XM6Context *ctx, const char *format, ...)
 {
@@ -470,6 +489,8 @@ static void post_state_load_sync(XM6Context *ctx)
 		ctx->render->Complete();
 	}
 
+	reset_px68k_audio_state(ctx);
+
 	reset_video_probe_state(ctx);
 }
 
@@ -585,6 +606,7 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	ctx->sasi      = (SASI*)ctx->vm->SearchDevice(MAKEID('S', 'A', 'S', 'I'));
 	ctx->scsi      = (SCSI*)ctx->vm->SearchDevice(MAKEID('S', 'C', 'S', 'I'));
 	ctx->ppi       = (PPI*)ctx->vm->SearchDevice(MAKEID('P', 'P', 'I', ' '));
+	ctx->audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
 
 	apply_default_runtime_config(ctx);
 	reset_video_probe_state(ctx);
@@ -635,6 +657,10 @@ XM6CORE_API void XM6CORE_CALL xm6_destroy(XM6Handle handle)
 	ctx->opm_buf = NULL;
 	delete[] ctx->adpcm_buf;
 	ctx->adpcm_buf = NULL;
+
+	delete[] ctx->px68k_ring;
+	ctx->px68k_ring = NULL;
+	ctx->px68k_ring_frames = 0;
 
 	if (g_message_ctx == ctx) {
 		 g_message_ctx = NULL;
@@ -745,6 +771,9 @@ XM6CORE_API int XM6CORE_CALL xm6_exec(XM6Handle handle, unsigned int hus)
 	}
 
 	BOOL result = ctx->vm->Exec((DWORD)hus);
+	if (result) {
+		produce_px68k_audio(ctx, (DWORD)hus);
+	}
 	return result ? XM6CORE_OK : XM6CORE_ERR_NOT_READY;
 }
 
@@ -769,6 +798,7 @@ XM6CORE_API int XM6CORE_CALL xm6_exec_events_only(XM6Handle handle, unsigned int
 	}
 
 	ctx->scheduler->ExecEventsOnly((DWORD)hus);
+	produce_px68k_audio(ctx, (DWORD)hus);
 	return XM6CORE_OK;
 }
 
@@ -821,6 +851,7 @@ XM6CORE_API int XM6CORE_CALL xm6_exec_to_frame(XM6Handle handle)
 
 	while (total < MAX_HUS) {
 		ctx->vm->Exec(CHUNK);
+		produce_px68k_audio(ctx, CHUNK);
 		total += CHUNK;
 
 		if (ctx->render->IsReady()) {
@@ -842,6 +873,7 @@ XM6CORE_API int XM6CORE_CALL xm6_reset(XM6Handle handle)
 	}
 
 	ctx->vm->Reset();
+	reset_px68k_audio_state(ctx);
 	reset_video_probe_state(ctx);
 	return XM6CORE_OK;
 }
@@ -858,6 +890,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_power(XM6Handle handle, int enabled)
 
 	ctx->vm->SetPower(enabled ? TRUE : FALSE);
 	if (!enabled) {
+		reset_px68k_audio_state(ctx);
 		reset_video_probe_state(ctx);
 	}
 	return XM6CORE_OK;
@@ -1076,7 +1109,6 @@ XM6CORE_API int XM6CORE_CALL xm6_mount_sasi_hdd(
 	}
 	::lstrcpyn(ctx->runtime_config.sasi_file[slot], path.GetPath(), FILEPATH_MAX);
 	apply_runtime_config(ctx);
-
 	return XM6CORE_OK;
 }
 
@@ -1112,7 +1144,6 @@ XM6CORE_API int XM6CORE_CALL xm6_mount_scsi_hdd(
 	}
 	::lstrcpyn(ctx->runtime_config.scsi_file[slot], path.GetPath(), FILEPATH_MAX);
 	apply_runtime_config(ctx);
-
 	if (path_has_extension_ci(image_path, ".hds")) {
 		set_sram_boot_scsi(ctx, slot);
 	}
@@ -1411,6 +1442,233 @@ static inline short saturate_s16(int value)
 	return (short)value;
 }
 
+static void reset_px68k_audio_state(XM6Context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->px68k_ring_read = 0;
+	ctx->px68k_ring_write = 0;
+	ctx->px68k_ring_count = 0;
+	ctx->px68k_rate_accum = 0;
+	ctx->px68k_lpf_prev_l = 0;
+	ctx->px68k_lpf_prev_r = 0;
+	ctx->px68k_last_out_l = 0;
+	ctx->px68k_last_out_r = 0;
+
+	if (ctx->px68k_ring && ctx->px68k_ring_frames > 0) {
+		memset(ctx->px68k_ring, 0, ctx->px68k_ring_frames * 2 * sizeof(short));
+	}
+}
+
+static bool ensure_px68k_audio_ring(XM6Context *ctx)
+{
+	if (!ctx || ctx->audio_rate == 0) {
+		return false;
+	}
+
+	unsigned int want_frames = ctx->audio_rate;
+	if (want_frames < 2048) {
+		want_frames = 2048;
+	}
+
+	if (ctx->px68k_ring && ctx->px68k_ring_frames == want_frames) {
+		return true;
+	}
+
+	short *new_ring = new(std::nothrow) short[want_frames * 2];
+	if (!new_ring) {
+		return false;
+	}
+	memset(new_ring, 0, want_frames * 2 * sizeof(short));
+
+	delete[] ctx->px68k_ring;
+	ctx->px68k_ring = new_ring;
+	ctx->px68k_ring_frames = want_frames;
+	reset_px68k_audio_state(ctx);
+	return true;
+}
+
+static void px68k_ring_push_frame(XM6Context *ctx, short left, short right)
+{
+	if (!ctx || !ctx->px68k_ring || ctx->px68k_ring_frames == 0) {
+		return;
+	}
+
+	if (ctx->px68k_ring_count >= ctx->px68k_ring_frames) {
+		ctx->px68k_ring_read++;
+		if (ctx->px68k_ring_read >= ctx->px68k_ring_frames) {
+			ctx->px68k_ring_read = 0;
+		}
+		ctx->px68k_ring_count = ctx->px68k_ring_frames - 1;
+	}
+
+	unsigned int write = ctx->px68k_ring_write;
+	ctx->px68k_ring[(write * 2) + 0] = left;
+	ctx->px68k_ring[(write * 2) + 1] = right;
+
+	write++;
+	if (write >= ctx->px68k_ring_frames) {
+		write = 0;
+	}
+	ctx->px68k_ring_write = write;
+	ctx->px68k_ring_count++;
+}
+
+static unsigned int px68k_ring_pop_frames(XM6Context *ctx, short *out, unsigned int frames)
+{
+	unsigned int produced = 0;
+
+	if (!ctx || !out || !ctx->px68k_ring || ctx->px68k_ring_frames == 0) {
+		return 0;
+	}
+
+	while (produced < frames && ctx->px68k_ring_count > 0) {
+		unsigned int read = ctx->px68k_ring_read;
+		out[(produced * 2) + 0] = ctx->px68k_ring[(read * 2) + 0];
+		out[(produced * 2) + 1] = ctx->px68k_ring[(read * 2) + 1];
+
+		read++;
+		if (read >= ctx->px68k_ring_frames) {
+			read = 0;
+		}
+		ctx->px68k_ring_read = read;
+		ctx->px68k_ring_count--;
+		produced++;
+	}
+
+	return produced;
+}
+
+static int px68k_clamp_volume16(int value)
+{
+	if (value < 0) {
+		return 0;
+	}
+	if (value > 15) {
+		return 15;
+	}
+	return value;
+}
+
+static int px68k_runtime_to_fm16(int volume)
+{
+	int mapped = 12 + ((volume - 54) * 15) / 100;
+	return px68k_clamp_volume16(mapped);
+}
+
+static int px68k_runtime_to_adpcm16(int volume)
+{
+	int mapped = 15 + ((volume - 52) * 15) / 100;
+	return px68k_clamp_volume16(mapped);
+}
+
+static int px68k_opm_gain_q14(int vol16)
+{
+	if (vol16 <= 0) {
+		return 0;
+	}
+	double db = -((16.0 - (double)vol16) * 4.0);
+	double gain = pow(10.0, db / 40.0);
+	if (gain < 0.0) {
+		gain = 0.0;
+	}
+	return (int)(gain * 16384.0 + 0.5);
+}
+
+static int px68k_adpcm_gain_q14(int vol16)
+{
+	if (vol16 <= 0) {
+		return 0;
+	}
+	double gain = 1.0 / pow(1.189207115, (double)(16 - vol16));
+	if (gain < 0.0) {
+		gain = 0.0;
+	}
+	return (int)(gain * 16384.0 + 0.5);
+}
+
+static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
+{
+	if (!ctx || ctx->audio_engine != XM6CORE_AUDIO_ENGINE_PX68K ||
+		ctx->audio_rate == 0 || hus == 0 || !ctx->opmif || !ctx->adpcm ||
+		!ctx->opm_buf || !ctx->adpcm_buf) {
+		return;
+	}
+
+	if (!ensure_px68k_audio_ring(ctx)) {
+		return;
+	}
+
+	const unsigned int k_den = 2000000;
+	unsigned long long acc = (unsigned long long)ctx->px68k_rate_accum;
+	acc += (unsigned long long)ctx->audio_rate * (unsigned long long)hus;
+	unsigned int frames_to_generate = (unsigned int)(acc / k_den);
+	ctx->px68k_rate_accum = (unsigned int)(acc % k_den);
+
+	const int fm_gain_q14 = px68k_opm_gain_q14(px68k_runtime_to_fm16(ctx->runtime_config.fm_volume));
+	const int adpcm_gain_q14 = px68k_adpcm_gain_q14(px68k_runtime_to_adpcm16(ctx->runtime_config.adpcm_volume));
+	const int px_drive_q14 = 19661; // 1.20x
+
+	while (frames_to_generate > 0) {
+		unsigned int batch = frames_to_generate;
+		if (batch > ctx->audio_buf_frames) {
+			batch = ctx->audio_buf_frames;
+		}
+
+		DWORD ready = ctx->opmif->ProcessBuf();
+		memset(ctx->opm_buf, 0, batch * 2 * sizeof(DWORD));
+		memset(ctx->adpcm_buf, 0, batch * 2 * sizeof(DWORD));
+		ctx->opmif->GetBuf(ctx->opm_buf, (int)batch);
+
+		unsigned int mix_frames = batch;
+		if (ready < mix_frames) {
+			mix_frames = (unsigned int)ready;
+		}
+
+		if (mix_frames > 0) {
+			ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)mix_frames);
+		}
+
+		if (ready > mix_frames) {
+			ctx->adpcm->Wait((int)(ready - mix_frames));
+		} else {
+			ctx->adpcm->Wait(0);
+		}
+
+		int *fm_src = (int*)ctx->opm_buf;
+		int *adpcm_src = (int*)ctx->adpcm_buf;
+		for (unsigned int i = 0; i < batch; i++) {
+			int left = 0;
+			int right = 0;
+
+			if (i < mix_frames) {
+				const int fm_l = fm_src[(i * 2) + 0];
+				const int fm_r = fm_src[(i * 2) + 1];
+				const int pcm_l = adpcm_src[(i * 2) + 0];
+				const int pcm_r = adpcm_src[(i * 2) + 1];
+
+				left = ((fm_l * fm_gain_q14) + (pcm_l * adpcm_gain_q14)) >> 14;
+				right = ((fm_r * fm_gain_q14) + (pcm_r * adpcm_gain_q14)) >> 14;
+
+				left = (left * px_drive_q14) >> 14;
+				right = (right * px_drive_q14) >> 14;
+			}
+
+			ctx->px68k_lpf_prev_l = (ctx->px68k_lpf_prev_l * 3 + left) >> 2;
+			ctx->px68k_lpf_prev_r = (ctx->px68k_lpf_prev_r * 3 + right) >> 2;
+
+			px68k_ring_push_frame(
+				ctx,
+				saturate_s16(ctx->px68k_lpf_prev_l),
+				saturate_s16(ctx->px68k_lpf_prev_r));
+		}
+
+		frames_to_generate -= batch;
+	}
+}
+
 //---------------------------------------------------------------------------
 //	xm6_audio_configure  EConfigura el sistema de audio.
 //
@@ -1461,10 +1719,19 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_configure(
 	ctx->audio_rate = sample_rate;
 	ctx->audio_buf_frames = max_frames;
 
-	// No necesitamos buffer separado de ADPCM:
-	// ADPCM::GetBuf y SCSI::GetBuf suman al mismo buffer
+	// Buffer temporal separado para ADPCM (usado por el engine PX68k)
 	delete[] ctx->adpcm_buf;
-	ctx->adpcm_buf = NULL;
+	ctx->adpcm_buf = new(std::nothrow) DWORD[max_frames * 2];
+	if (!ctx->adpcm_buf) {
+		return XM6CORE_ERR_INIT_FAILED;
+	}
+
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) {
+		if (!ensure_px68k_audio_ring(ctx)) {
+			return XM6CORE_ERR_INIT_FAILED;
+		}
+	}
+	reset_px68k_audio_state(ctx);
 
 	return XM6CORE_OK;
 }
@@ -1508,6 +1775,44 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		frames = ctx->audio_buf_frames;
 	}
 
+	const int master = (ctx->runtime_config.master_volume < 0) ? 0 :
+		(ctx->runtime_config.master_volume > 100 ? 100 : ctx->runtime_config.master_volume);
+
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) {
+		if (!ctx->px68k_ring && !ensure_px68k_audio_ring(ctx)) {
+			for (unsigned int i = 0; i < (frames * 2); i++) {
+				out_interleaved_stereo[i] = 0;
+			}
+			*out_frames = frames;
+			return XM6CORE_OK;
+		}
+
+		unsigned int produced = px68k_ring_pop_frames(ctx, out_interleaved_stereo, frames);
+		unsigned int total_samples = produced * 2;
+		for (unsigned int i = 0; i < total_samples; i++) {
+			int mixed = out_interleaved_stereo[i];
+			if (master != 100) {
+				mixed = (mixed * master) / 100;
+			}
+			out_interleaved_stereo[i] = saturate_s16(mixed);
+		}
+
+		if (produced > 0) {
+			ctx->px68k_last_out_l = out_interleaved_stereo[(produced * 2) - 2];
+			ctx->px68k_last_out_r = out_interleaved_stereo[(produced * 2) - 1];
+		}
+
+		for (unsigned int i = produced; i < frames; i++) {
+			ctx->px68k_last_out_l = (ctx->px68k_last_out_l * 255) / 256;
+			ctx->px68k_last_out_r = (ctx->px68k_last_out_r * 255) / 256;
+			out_interleaved_stereo[(i * 2) + 0] = saturate_s16(ctx->px68k_last_out_l);
+			out_interleaved_stereo[(i * 2) + 1] = saturate_s16(ctx->px68k_last_out_r);
+		}
+
+		*out_frames = frames;
+		return XM6CORE_OK;
+	}
+
 	// OPM: procesar y obtener samples disponibles
 	DWORD ready = ctx->opmif->ProcessBuf();
 
@@ -1538,8 +1843,6 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 	// Convertir int32 stereo -> int16 stereo interleaved
 	const int *src = (const int*)ctx->opm_buf;
 	unsigned int total_samples = frames * 2;  // L + R
-	const int master = (ctx->runtime_config.master_volume < 0) ? 0 :
-		(ctx->runtime_config.master_volume > 100 ? 100 : ctx->runtime_config.master_volume);
 	for (unsigned int i = 0; i < total_samples; i++) {
 		int mixed = src[i];
 		if (master != 100) {
@@ -1549,6 +1852,42 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 	}
 
 	*out_frames = frames;
+	return XM6CORE_OK;
+}
+
+XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_engine)
+{
+	XM6Context *ctx = ctx_from_handle(handle);
+	if (!ctx_valid(ctx)) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	if (audio_engine != XM6CORE_AUDIO_ENGINE_XM6 &&
+		audio_engine != XM6CORE_AUDIO_ENGINE_PX68K) {
+		return XM6CORE_ERR_INVALID_ARGUMENT;
+	}
+
+	if (ctx->audio_engine == audio_engine) {
+		return XM6CORE_OK;
+	}
+
+	ctx->audio_engine = audio_engine;
+
+	if (ctx->audio_rate > 0) {
+		if (ctx->opmif) {
+			ctx->opmif->InitBuf((DWORD)ctx->audio_rate);
+		}
+		if (ctx->adpcm) {
+			ctx->adpcm->InitBuf((DWORD)ctx->audio_rate);
+		}
+	}
+
+	if (audio_engine == XM6CORE_AUDIO_ENGINE_PX68K &&
+		ctx->audio_rate > 0 && !ensure_px68k_audio_ring(ctx)) {
+		return XM6CORE_ERR_INIT_FAILED;
+	}
+
+	reset_px68k_audio_state(ctx);
 	return XM6CORE_OK;
 }
 
@@ -1716,5 +2055,76 @@ XM6CORE_API void* XM6CORE_CALL xm6_get_main_ram(XM6Handle handle, unsigned int* 
 		*out_size = (unsigned int)memory->GetRAMSize();
 	}
 	return (void*)memory->GetRAM();
+}
+
+XM6CORE_API int XM6CORE_CALL xm6_diag_get_adpcm_telemetry(
+	XM6Handle handle, xm6_adpcm_telemetry_t* out_telemetry)
+{
+	XM6Context *ctx = ctx_from_handle(handle);
+	if (!ctx_valid(ctx)) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+	if (!out_telemetry) {
+		return XM6CORE_ERR_INVALID_ARGUMENT;
+	}
+
+	memset(out_telemetry, 0, sizeof(*out_telemetry));
+	if (!ctx->adpcm) {
+		return XM6CORE_ERR_NOT_READY;
+	}
+
+	ADPCM::adpcm_t state;
+	ADPCM::adpcm_diag_t diag;
+	ctx->adpcm->GetADPCM(&state);
+	ctx->adpcm->GetDiag(&diag);
+
+	out_telemetry->quirk_arianshuu_fix = ctx->adpcm->IsArianshuuLoopFixEnabled() ? 1u : 0u;
+	out_telemetry->play = state.play ? 1u : 0u;
+	out_telemetry->rec = state.rec ? 1u : 0u;
+	out_telemetry->active = state.active ? 1u : 0u;
+	out_telemetry->started = state.started ? 1u : 0u;
+	out_telemetry->buffer_samples = state.number;
+	out_telemetry->wait_counter = state.wait;
+	out_telemetry->last_data = diag.last_data;
+
+	out_telemetry->start_events = diag.start_events;
+	out_telemetry->stop_events = diag.stop_events;
+	out_telemetry->req_total = diag.req_total;
+	out_telemetry->req_ok = diag.req_ok;
+	out_telemetry->req_fail = diag.req_fail;
+	out_telemetry->decode_calls = diag.decode_calls;
+	out_telemetry->underrun_head_events = diag.underrun_head_events;
+	out_telemetry->underrun_interp_events = diag.underrun_interp_events;
+	out_telemetry->underrun_linear_events = diag.underrun_linear_events;
+	out_telemetry->silence_fill_events = diag.silence_fill_events;
+	out_telemetry->stale_nonzero_events = diag.stale_nonzero_events;
+	out_telemetry->max_buffer_samples = diag.max_buffer_samples;
+
+	DMAC *dmac = (DMAC*)ctx->vm->SearchDevice(MAKEID('D', 'M', 'A', 'C'));
+	out_telemetry->dmac_ch3_active = (dmac && dmac->IsAct(3)) ? 1u : 0u;
+	if (dmac) {
+		DMAC::dma_t ch3;
+		dmac->GetDMA(3, &ch3);
+		out_telemetry->dmac3_mar = ch3.mar;
+		out_telemetry->dmac3_mtc = ch3.mtc;
+		out_telemetry->dmac3_btc = ch3.btc;
+		out_telemetry->dmac3_csr =
+			(ch3.coc ? 0x80u : 0u) |
+			(ch3.boc ? 0x40u : 0u) |
+			(ch3.ndt ? 0x20u : 0u) |
+			(ch3.err ? 0x10u : 0u) |
+			(ch3.act ? 0x08u : 0u) |
+			(ch3.dit ? 0x04u : 0u) |
+			(ch3.pct ? 0x02u : 0u) |
+			(ch3.pcs ? 0x01u : 0u);
+		out_telemetry->dmac3_ccr =
+			(ch3.str ? 0x80u : 0u) |
+			(ch3.cnt ? 0x40u : 0u) |
+			(ch3.hlt ? 0x20u : 0u) |
+			(ch3.sab ? 0x10u : 0u) |
+			(ch3.intr ? 0x08u : 0u);
+	}
+
+	return XM6CORE_OK;
 }
 

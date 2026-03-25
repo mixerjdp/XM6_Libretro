@@ -6,6 +6,7 @@
 #include "opm.h"
 #include "adpcm.h"
 #include "ppi.h"
+#include "dmac.h"
 #include "config.h"
 #include "midi.h"
 
@@ -245,6 +246,26 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, in
 	if (ctx->render) {
 		ctx->render->Complete();
 	}
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_legacy_dmac_cnt(XM6Handle handle, int enabled)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	DMAC *dmac = (DMAC*)ctx->vm->SearchDevice(MAKEID('D', 'M', 'A', 'C'));
+	if (!dmac) {
+		return XM6CORE_ERR_NOT_READY;
+	}
+
+	dmac->SetLegacyCntMode(enabled ? TRUE : FALSE);
 	return XM6CORE_OK;
 }
 

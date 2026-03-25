@@ -105,6 +105,8 @@ static enum retro_pixel_format g_frontend_pixel_format = RETRO_PIXEL_FORMAT_UNKN
 static int g_master_volume = 100;
 static int g_fm_volume = 54;
 static int g_adpcm_volume = 52;
+static int g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
+static bool g_legacy_dmac_cnt = false;
 static bool g_midi_output_enabled = false;
 enum midi_output_type_t {
   MIDI_OUTPUT_LA = 0,
@@ -262,6 +264,8 @@ struct xm6_api_t {
   int (XM6CORE_CALL *set_master_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_fm_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_adpcm_volume)(XM6Handle handle, int volume) = nullptr;
+  int (XM6CORE_CALL *set_audio_engine)(XM6Handle handle, int audio_engine) = nullptr;
+  int (XM6CORE_CALL *set_legacy_dmac_cnt)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_mouse_speed)(XM6Handle handle, int speed) = nullptr;
   int (XM6CORE_CALL *set_mouse_port)(XM6Handle handle, int port) = nullptr;
   int (XM6CORE_CALL *set_mouse_swap)(XM6Handle handle, int enabled) = nullptr;
@@ -551,6 +555,8 @@ static bool load_xm6_api()
   g_xm6.set_master_volume = xm6_set_master_volume;
   g_xm6.set_fm_volume = xm6_set_fm_volume;
   g_xm6.set_adpcm_volume = xm6_set_adpcm_volume;
+  g_xm6.set_audio_engine = xm6_set_audio_engine;
+  g_xm6.set_legacy_dmac_cnt = xm6_set_legacy_dmac_cnt;
   g_xm6.set_mouse_speed = xm6_set_mouse_speed;
   g_xm6.set_mouse_port = xm6_set_mouse_port;
   g_xm6.set_mouse_swap = xm6_set_mouse_swap;
@@ -676,6 +682,8 @@ static bool load_xm6_api()
   load_optional_symbol(&g_xm6.set_master_volume, "xm6_set_master_volume");
   load_optional_symbol(&g_xm6.set_fm_volume, "xm6_set_fm_volume");
   load_optional_symbol(&g_xm6.set_adpcm_volume, "xm6_set_adpcm_volume");
+  load_optional_symbol(&g_xm6.set_audio_engine, "xm6_set_audio_engine");
+  load_optional_symbol(&g_xm6.set_legacy_dmac_cnt, "xm6_set_legacy_dmac_cnt");
   load_optional_symbol(&g_xm6.set_mouse_speed, "xm6_set_mouse_speed");
   load_optional_symbol(&g_xm6.set_mouse_port, "xm6_set_mouse_port");
   load_optional_symbol(&g_xm6.set_mouse_swap, "xm6_set_mouse_swap");
@@ -1675,6 +1683,12 @@ static void apply_runtime_core_options()
   if (g_xm6.set_adpcm_volume) {
     g_xm6.set_adpcm_volume(g_xm6_handle, g_adpcm_volume);
   }
+  if (g_xm6.set_audio_engine) {
+    g_xm6.set_audio_engine(g_xm6_handle, g_audio_engine);
+  }
+  if (g_xm6.set_legacy_dmac_cnt) {
+    g_xm6.set_legacy_dmac_cnt(g_xm6_handle, g_legacy_dmac_cnt ? 1 : 0);
+  }
   if (g_xm6.set_midi_enabled) {
     g_xm6.set_midi_enabled(g_xm6_handle, g_midi_output_enabled ? 1 : 0);
   }
@@ -1819,6 +1833,20 @@ static void apply_core_option_values()
     g_adpcm_volume = std::atoi(var.value);
   }
 
+  var.key = "xm6_audio_engine";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    if (std::strcmp(var.value, "PX68k") == 0) {
+      g_audio_engine = XM6CORE_AUDIO_ENGINE_PX68K;
+    } else {
+      g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
+    }
+  }
+
+  var.key = "xm6_legacy_dmac_cnt";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_legacy_dmac_cnt = (std::strcmp(var.value, "enabled") == 0);
+  }
+
   var.key = "xm6_midi_output";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_midi_output_enabled = (std::strcmp(var.value, "enabled") == 0);
@@ -1899,7 +1927,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(master=%d fm=%d adpcm=%d) midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(master=%d fm=%d adpcm=%d) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -1914,6 +1942,8 @@ static void apply_core_option_values()
            g_alt_raster_enabled ? "enabled" : "disabled",
            g_render_bg0_enabled ? "enabled" : "disabled",
            g_master_volume, g_fm_volume, g_adpcm_volume,
+           (g_audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) ? "PX68k" : "XM6",
+           g_legacy_dmac_cnt ? "legacy" : "fixed",
            g_midi_output_enabled ? "enabled" : "disabled",
            (g_midi_output_type == MIDI_OUTPUT_LA) ? "LA" :
            (g_midi_output_type == MIDI_OUTPUT_GS) ? "GS" :
@@ -1960,6 +1990,10 @@ static void register_core_options()
       "FM volume; 54|100|90|80|70|60|50|40|30|20|10|0" },
     { "xm6_adpcm_volume",
       "ADPCM volume; 52|100|90|80|70|60|50|40|30|20|10|0" },
+    { "xm6_audio_engine",
+      "Audio engine; XM6|PX68k" },
+    { "xm6_legacy_dmac_cnt",
+      "Legacy DMAC CNT behavior; disabled|enabled" },
     { "xm6_midi_output",
       "MIDI output; disabled|enabled" },
     { "xm6_midi_output_type",
@@ -2885,6 +2919,8 @@ void retro_init(void)
   g_master_volume = 100;
   g_fm_volume = 54;
   g_adpcm_volume = 52;
+  g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
+  g_legacy_dmac_cnt = false;
   g_midi_output_enabled = false;
   g_midi_output_type = MIDI_OUTPUT_GM;
   g_midi_reset_pending = false;
@@ -3109,6 +3145,8 @@ void retro_run(void)
 	      const int old_master_volume = g_master_volume;
 	      const int old_fm_volume = g_fm_volume;
 	      const int old_adpcm_volume = g_adpcm_volume;
+	      const int old_audio_engine = g_audio_engine;
+	      const bool old_legacy_dmac_cnt = g_legacy_dmac_cnt;
       const bool old_midi_output_enabled = g_midi_output_enabled;
       const int old_midi_output_type = g_midi_output_type;
       const int old_pointer_device_mode = g_pointer_device_mode;
@@ -3168,6 +3206,19 @@ void retro_run(void)
 	        core_log(RETRO_LOG_INFO, "[xm6-libretro] Transparency (TR/half-fill) %s",
 	                 g_transparency_enabled ? "enabled" : "disabled");
 	      }
+      if (old_audio_engine != g_audio_engine) {
+        apply_runtime_core_options();
+        g_audio_fraction = 0.0;
+        core_log(RETRO_LOG_INFO,
+                 "[xm6-libretro] Audio engine changed to %s",
+                 (g_audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) ? "PX68k" : "XM6");
+      }
+      if (old_legacy_dmac_cnt != g_legacy_dmac_cnt) {
+        apply_runtime_core_options();
+        core_log(RETRO_LOG_INFO,
+                 "[xm6-libretro] Legacy DMAC CNT behavior %s",
+                 g_legacy_dmac_cnt ? "enabled" : "disabled");
+      }
       if (old_master_volume != g_master_volume ||
           old_fm_volume != g_fm_volume ||
           old_adpcm_volume != g_adpcm_volume) {
