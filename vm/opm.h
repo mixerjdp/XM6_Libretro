@@ -79,21 +79,21 @@ namespace FM
 		OPM();
 		virtual ~OPM() {}
 
-		bool	Init(uint c, uint r, bool=false);
-		bool	SetRate(uint c, uint r, bool);
+		virtual bool	Init(uint c, uint r, bool=false);
+		virtual bool	SetRate(uint c, uint r, bool);
 		void	SetLPFCutoff(uint freq);
-		void	Reset();
+		virtual void	Reset();
 		
-		void 	SetReg(uint addr, uint data);
+		virtual void 	SetReg(uint addr, uint data);
 		uint	GetReg(uint addr);
 		uint	ReadStatus() { return status & 0x03; }
 		
-		void 	Mix(Sample* buffer, int nsamples);
+		virtual void 	Mix(Sample* buffer, int nsamples);
 		
-		void	SetVolume(int db);
+		virtual void	SetVolume(int db);
 		void	SetChannelMask(uint mask);
 		
-		void	TimerA();
+		virtual void	TimerA();
 	private:
 		virtual void Intr(bool) {}
 

@@ -43,7 +43,8 @@ enum {
 
 enum {
   XM6CORE_AUDIO_ENGINE_XM6 = 0,
-  XM6CORE_AUDIO_ENGINE_PX68K = 1
+  XM6CORE_AUDIO_ENGINE_PX68K = 1,
+  XM6CORE_AUDIO_ENGINE_YMFM = 2
 };
 
 typedef struct xm6_video_frame_t {
@@ -140,6 +141,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_fast_floppy(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_master_volume(XM6Handle handle, int volume);
 XM6CORE_API int XM6CORE_CALL xm6_set_fm_volume(XM6Handle handle, int volume);
 XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_volume(XM6Handle handle, int volume);
+XM6CORE_API int XM6CORE_CALL xm6_set_surround_enabled(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_engine);
 XM6CORE_API int XM6CORE_CALL xm6_set_legacy_dmac_cnt(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_speed(XM6Handle handle, int speed);

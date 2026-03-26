@@ -31,6 +31,7 @@
 #include "ppi.h"
 #include "opmif.h"
 #include "opm.h"
+#include "ymfm_opm_engine.h"
 #include "adpcm.h"
 #include "dmac.h"
 #include "sasi.h"
@@ -87,9 +88,12 @@ struct XM6Context {
 	DWORD *adpcm_buf;
 	unsigned int audio_rate;
 	unsigned int audio_buf_frames;
+	BOOL surround_enabled;
 
 	// Runtime config applied to the VM devices
 	Config runtime_config;
+	int surround_prev_l;
+	int surround_prev_r;
 
 	// Message callback (client-side)
 	xm6_message_callback_t msg_callback;
@@ -133,6 +137,98 @@ static inline bool ctx_valid(XM6Context *ctx)
 static void reset_px68k_audio_state(XM6Context *ctx);
 static bool ensure_px68k_audio_ring(XM6Context *ctx);
 static void produce_px68k_audio(XM6Context *ctx, DWORD hus);
+static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate);
+
+static const unsigned int k_opm_clock_hz = 4000000u;
+
+static int clamp_sample_32(long long value)
+{
+	if (value > 2147483647LL) {
+		return 2147483647;
+	}
+	if (value < -2147483647LL - 1LL) {
+		return (-2147483647 - 1);
+	}
+	return (int)value;
+}
+
+static void apply_stereo_widen(DWORD *buffer, unsigned int frames)
+{
+	if (!buffer || frames == 0) {
+		return;
+	}
+
+	// Keep the effect subtle so it opens the image without becoming a fake reverb.
+	enum {
+		kWidthNum = 7,
+		kWidthDen = 4
+	};
+
+	int *samples = (int*)buffer;
+	for (unsigned int i = 0; i < frames; i++) {
+		const long long left = samples[0];
+		const long long right = samples[1];
+		long long mid = (left + right) / 2;
+		long long side = (left - right) / 2;
+		side = (side * kWidthNum) / kWidthDen;
+		samples[0] = clamp_sample_32(mid + side);
+		samples[1] = clamp_sample_32(mid - side);
+		samples += 2;
+	}
+}
+
+static void apply_surround_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0) {
+		return;
+	}
+
+	// Create a more obvious "smile" EQ: lift lows and highs a bit more than
+	// the mids, then widen the image.
+	enum {
+		kLowNum = 3,
+		kLowDen = 16,
+		kHighNum = 9,
+		kHighDen = 16,
+		kWidthNum = 3,
+		kWidthDen = 2
+	};
+
+	int prev_l = ctx->surround_prev_l;
+	int prev_r = ctx->surround_prev_r;
+	int *samples = (int*)buffer;
+
+	for (unsigned int i = 0; i < frames; i++) {
+		const long long input_l = samples[0];
+		const long long input_r = samples[1];
+
+		const long long low_l = (input_l + prev_l) >> 1;
+		const long long low_r = (input_r + prev_r) >> 1;
+		const long long high_l = input_l - prev_l;
+		const long long high_r = input_r - prev_r;
+
+		const long long shaped_l = input_l
+			+ ((low_l * kLowNum) / kLowDen)
+			+ ((high_l * kHighNum) / kHighDen);
+		const long long shaped_r = input_r
+			+ ((low_r * kLowNum) / kLowDen)
+			+ ((high_r * kHighNum) / kHighDen);
+
+		long long mid = (shaped_l + shaped_r) / 2;
+		long long side = (shaped_l - shaped_r) / 2;
+		side = (side * kWidthNum) / kWidthDen;
+
+		samples[0] = clamp_sample_32(mid + side);
+		samples[1] = clamp_sample_32(mid - side);
+
+		prev_l = (int)input_l;
+		prev_r = (int)input_r;
+		samples += 2;
+	}
+
+	ctx->surround_prev_l = prev_l;
+	ctx->surround_prev_r = prev_r;
+}
 
 static void emit_messagef(XM6Context *ctx, const char *format, ...)
 {
@@ -416,6 +512,73 @@ static void reset_video_probe_state(XM6Context *ctx)
 	ctx->video_probe_has_signature = FALSE;
 }
 
+static const char* audio_engine_name(int audio_engine)
+{
+	switch (audio_engine) {
+	case XM6CORE_AUDIO_ENGINE_PX68K:
+		return "PX68k";
+	case XM6CORE_AUDIO_ENGINE_YMFM:
+		return "YMFM";
+	default:
+		return "XM6";
+	}
+}
+
+static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_rate, bool *out_using_ymfm)
+{
+	FM::OPM *engine = NULL;
+
+	if (out_using_ymfm) {
+		*out_using_ymfm = false;
+	}
+
+#if defined(XM6CORE_ENABLE_YMFM)
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM) {
+		if (YmfmOpmEngineSupportsRate(k_opm_clock_hz, sample_rate)) {
+			engine = CreateYmfmOpmEngine();
+			if (engine) {
+				if (!engine->Init(k_opm_clock_hz, sample_rate, true)) {
+					delete engine;
+					engine = NULL;
+				} else if (out_using_ymfm) {
+					*out_using_ymfm = true;
+				}
+			}
+			if (!engine) {
+				emit_messagef(ctx,
+					"[xm6-core] YMFM init failed at %u Hz; falling back to FMGEN/XM6 backend",
+					sample_rate);
+			}
+		} else {
+			emit_messagef(ctx,
+				"[xm6-core] YMFM requires native OPM rate (%u Hz requested, %u Hz required); falling back to FMGEN/XM6 backend",
+				sample_rate,
+				k_opm_clock_hz / 64u);
+		}
+	}
+#else
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM) {
+		emit_messagef(ctx,
+			"[xm6-core] YMFM requested but this build was compiled without XM6CORE_ENABLE_YMFM; falling back to FMGEN/XM6 backend");
+	}
+#endif
+
+	if (!engine) {
+		engine = new(std::nothrow) FM::OPM;
+		if (!engine) {
+			return NULL;
+		}
+		if (!engine->Init(k_opm_clock_hz, sample_rate, true)) {
+			delete engine;
+			return NULL;
+		}
+	}
+
+	engine->Reset();
+	engine->SetVolume(ctx->runtime_config.fm_volume);
+	return engine;
+}
+
 static void apply_runtime_config(XM6Context *ctx)
 {
 	ctx->vm->ApplyCfg(&ctx->runtime_config);
@@ -435,8 +598,8 @@ static void apply_default_runtime_config(XM6Context *ctx)
 
 	config->sample_rate = 5;
 	config->master_volume = 100;
-	config->fm_volume = 54;
-	config->adpcm_volume = 52;
+	config->fm_volume = 50;
+	config->adpcm_volume = 50;
 	config->fm_enable = TRUE;
 	config->adpcm_enable = TRUE;
 	config->kbd_connect = TRUE;
@@ -1554,13 +1717,16 @@ static int px68k_clamp_volume16(int value)
 
 static int px68k_runtime_to_fm16(int volume)
 {
-	int mapped = 12 + ((volume - 54) * 15) / 100;
+	if (volume <= 0) {
+		return 0;
+	}
+	int mapped = 12 + ((volume - 50) * 15) / 100;
 	return px68k_clamp_volume16(mapped);
 }
 
 static int px68k_runtime_to_adpcm16(int volume)
 {
-	int mapped = 15 + ((volume - 52) * 15) / 100;
+	int mapped = 15 + ((volume - 50) * 15) / 100;
 	return px68k_clamp_volume16(mapped);
 }
 
@@ -1637,6 +1803,11 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 			ctx->adpcm->Wait(0);
 		}
 
+		if (ctx->surround_enabled) {
+			apply_surround_fx(ctx, ctx->opm_buf, mix_frames);
+			apply_surround_fx(ctx, ctx->adpcm_buf, mix_frames);
+		}
+
 		int *fm_src = (int*)ctx->opm_buf;
 		int *adpcm_src = (int*)ctx->adpcm_buf;
 		for (unsigned int i = 0; i < batch; i++) {
@@ -1669,16 +1840,10 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 	}
 }
 
-//---------------------------------------------------------------------------
-//	xm6_audio_configure - Configure the audio system.
-//
-//	sample_rate: frecuencia en Hz (ej: 44100, 48000).
-//	Inicializa los buffers internos de OPM y ADPCM.
-//---------------------------------------------------------------------------
-XM6CORE_API int XM6CORE_CALL xm6_audio_configure(
-	XM6Handle handle, unsigned int sample_rate)
+static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 {
-	XM6Context *ctx = ctx_from_handle(handle);
+	bool using_ymfm = false;
+
 	if (!ctx_valid(ctx)) {
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
@@ -1687,41 +1852,36 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_configure(
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
-	// Inicializar buffers de síntesis en OPM y ADPCM
 	if (ctx->opmif) {
 		ctx->opmif->SetEngine(NULL);
 	}
+
 	delete ctx->opm_engine;
-	ctx->opm_engine = new(std::nothrow) FM::OPM;
+	ctx->opm_engine = create_selected_opm_engine(ctx, sample_rate, &using_ymfm);
 	if (!ctx->opm_engine) {
 		return XM6CORE_ERR_INIT_FAILED;
 	}
-	ctx->opm_engine->Init(4000000, sample_rate, true);
-	ctx->opm_engine->Reset();
-	ctx->opm_engine->SetVolume(ctx->runtime_config.fm_volume);
 
 	ctx->opmif->InitBuf((DWORD)sample_rate);
 	ctx->opmif->SetEngine(ctx->opm_engine);
-	ctx->opmif->EnableFM(TRUE);
+	ctx->opmif->EnableFM(ctx->runtime_config.fm_enable);
 	ctx->adpcm->InitBuf((DWORD)sample_rate);
-	ctx->adpcm->EnableADPCM(TRUE);
+	ctx->adpcm->EnableADPCM(ctx->runtime_config.adpcm_enable);
 	ctx->adpcm->SetVolume(ctx->runtime_config.adpcm_volume);
 
-	// Realocar buffer temporal de mezcla (stereo: 2 DWORDs por frame)
-	// Tamaño máximo razonable: 1 segundo de audio
-	unsigned int max_frames = sample_rate;
 	delete[] ctx->opm_buf;
-	ctx->opm_buf = new(std::nothrow) DWORD[max_frames * 2];
+	ctx->opm_buf = new(std::nothrow) DWORD[sample_rate * 2];
 	if (!ctx->opm_buf) {
 		return XM6CORE_ERR_INIT_FAILED;
 	}
 
 	ctx->audio_rate = sample_rate;
-	ctx->audio_buf_frames = max_frames;
+	ctx->audio_buf_frames = sample_rate;
+	ctx->surround_prev_l = 0;
+	ctx->surround_prev_r = 0;
 
-	// Buffer temporal separado para ADPCM (usado por el engine PX68k)
 	delete[] ctx->adpcm_buf;
-	ctx->adpcm_buf = new(std::nothrow) DWORD[max_frames * 2];
+	ctx->adpcm_buf = new(std::nothrow) DWORD[sample_rate * 2];
 	if (!ctx->adpcm_buf) {
 		return XM6CORE_ERR_INIT_FAILED;
 	}
@@ -1733,7 +1893,24 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_configure(
 	}
 	reset_px68k_audio_state(ctx);
 
+	if (using_ymfm) {
+		emit_messagef(ctx, "[xm6-core] OPM backend configured: YMFM at %u Hz", sample_rate);
+	}
+
 	return XM6CORE_OK;
+}
+
+//---------------------------------------------------------------------------
+//	xm6_audio_configure - Configure the audio system.
+//
+//	sample_rate: frecuencia en Hz (ej: 44100, 48000).
+//	Inicializa los buffers internos de OPM y ADPCM.
+//---------------------------------------------------------------------------
+XM6CORE_API int XM6CORE_CALL xm6_audio_configure(
+	XM6Handle handle, unsigned int sample_rate)
+{
+	XM6Context *ctx = ctx_from_handle(handle);
+	return configure_audio_backend(ctx, sample_rate);
 }
 
 //---------------------------------------------------------------------------
@@ -1818,15 +1995,22 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	// Limpiar buffer temporal
 	memset(ctx->opm_buf, 0, frames * 2 * sizeof(DWORD));
+	memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
 
 	// Igual que frontend MFC: pedir frames y luego recortar a ready.
 	ctx->opmif->GetBuf(ctx->opm_buf, (int)frames);
-	if (ready < frames) {
-		frames = ready;
-	}
+		if (ready < frames) {
+			frames = ready;
+		}
 
-	// ADPCM: sumar al mismo buffer
-	ctx->adpcm->GetBuf(ctx->opm_buf, (int)frames);
+		if (ctx->runtime_config.fm_volume <= 0) {
+			memset(ctx->opm_buf, 0, frames * 2 * sizeof(DWORD));
+		}
+
+		// ADPCM: buffer separado para poder aplicar surround sin alterar FM o CD-DA
+		if (frames > 0) {
+			ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)frames);
+	}
 
 	// ADPCM: sincronizacion
 	if (ready > frames) {
@@ -1835,20 +2019,28 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		ctx->adpcm->Wait(0);
 	}
 
+	if (ctx->surround_enabled) {
+		apply_surround_fx(ctx, ctx->opm_buf, frames);
+		apply_surround_fx(ctx, ctx->adpcm_buf, frames);
+	}
+
 	// SCSI CD-DA: sumar al mismo buffer
 	if (ctx->scsi) {
 		ctx->scsi->GetBuf(ctx->opm_buf, (int)frames, (DWORD)ctx->audio_rate);
 	}
 
 	// Convertir int32 stereo -> int16 stereo interleaved
-	const int *src = (const int*)ctx->opm_buf;
-	unsigned int total_samples = frames * 2;  // L + R
-	for (unsigned int i = 0; i < total_samples; i++) {
-		int mixed = src[i];
-		if (master != 100) {
-			mixed = (mixed * master) / 100;
-		}
-		out_interleaved_stereo[i] = saturate_s16(mixed);
+	const int *fm_src = (const int*)ctx->opm_buf;
+	const int *adpcm_src = (const int*)ctx->adpcm_buf;
+	for (unsigned int i = 0; i < frames; i++) {
+		const int fm_l = (ctx->runtime_config.fm_volume <= 0) ? 0 : fm_src[(i * 2) + 0];
+		const int fm_r = (ctx->runtime_config.fm_volume <= 0) ? 0 : fm_src[(i * 2) + 1];
+		const int mixed_l = fm_l + adpcm_src[(i * 2) + 0];
+		const int mixed_r = fm_r + adpcm_src[(i * 2) + 1];
+		const int out_l = (master != 100) ? ((mixed_l * master) / 100) : mixed_l;
+		const int out_r = (master != 100) ? ((mixed_r * master) / 100) : mixed_r;
+		out_interleaved_stereo[(i * 2) + 0] = saturate_s16(out_l);
+		out_interleaved_stereo[(i * 2) + 1] = saturate_s16(out_r);
 	}
 
 	*out_frames = frames;
@@ -1863,7 +2055,8 @@ XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_en
 	}
 
 	if (audio_engine != XM6CORE_AUDIO_ENGINE_XM6 &&
-		audio_engine != XM6CORE_AUDIO_ENGINE_PX68K) {
+		audio_engine != XM6CORE_AUDIO_ENGINE_PX68K &&
+		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM) {
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
@@ -1871,23 +2064,27 @@ XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_en
 		return XM6CORE_OK;
 	}
 
+	const int previous_audio_engine = ctx->audio_engine;
 	ctx->audio_engine = audio_engine;
 
 	if (ctx->audio_rate > 0) {
-		if (ctx->opmif) {
-			ctx->opmif->InitBuf((DWORD)ctx->audio_rate);
-		}
-		if (ctx->adpcm) {
-			ctx->adpcm->InitBuf((DWORD)ctx->audio_rate);
+		const int rc = configure_audio_backend(ctx, ctx->audio_rate);
+		if (rc != XM6CORE_OK) {
+			ctx->audio_engine = previous_audio_engine;
+			configure_audio_backend(ctx, ctx->audio_rate);
+			return rc;
 		}
 	}
 
 	if (audio_engine == XM6CORE_AUDIO_ENGINE_PX68K &&
 		ctx->audio_rate > 0 && !ensure_px68k_audio_ring(ctx)) {
+		ctx->audio_engine = previous_audio_engine;
+		configure_audio_backend(ctx, ctx->audio_rate);
 		return XM6CORE_ERR_INIT_FAILED;
 	}
 
 	reset_px68k_audio_state(ctx);
+	emit_messagef(ctx, "[xm6-core] Audio engine selected: %s", audio_engine_name(audio_engine));
 	return XM6CORE_OK;
 }
 

@@ -102,7 +102,7 @@ BOOL FASTCALL ADPCM::Init()
 
 	// Build the lookup table and apply the default settings
 	MakeTable();
-	SetVolume(52);
+	SetVolume(50);
 
 	// Initialize the audio buffer
 	InitBuf(adpcm.sync_rate * 50);

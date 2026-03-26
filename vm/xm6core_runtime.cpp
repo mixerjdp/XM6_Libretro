@@ -27,7 +27,10 @@ struct XM6ContextRuntimeShim {
 	DWORD *adpcm_buf;
 	unsigned int audio_rate;
 	unsigned int audio_buf_frames;
+	BOOL surround_enabled;
 	Config runtime_config;
+	int surround_prev_l;
+	int surround_prev_r;
 };
 
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_joy_type(XM6Handle handle, int port, int type)
@@ -168,6 +171,25 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_volume(XM6Handle handle, i
 	if (ctx->adpcm) {
 		ctx->adpcm->SetVolume(volume);
 	}
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_surround_enabled(XM6Handle handle, int enabled)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	if (!ctx->surround_enabled && enabled) {
+		ctx->surround_prev_l = 0;
+		ctx->surround_prev_r = 0;
+	}
+	ctx->surround_enabled = enabled ? TRUE : FALSE;
 	return XM6CORE_OK;
 }
 

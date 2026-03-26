@@ -66,6 +66,14 @@ endif
 
 INCLUDES := -I. -I../vm -I../cpu -I../cpu/Musashi -I../cpu/Musashi/softfloat
 
+YMFM_SRC ?= ../../ymfm-main/src
+YMFM_SOURCES :=
+ifneq ($(wildcard $(YMFM_SRC)/ymfm_opm.cpp),)
+DEFINES += -DXM6CORE_ENABLE_YMFM
+INCLUDES += -I$(YMFM_SRC)
+YMFM_SOURCES += ../vm/ymfm_opm_engine.cpp $(YMFM_SRC)/ymfm_opm.cpp
+endif
+
 XM6_ENABLE_WINDRV_HOSTFS ?= 0
 WINDRV_SOURCE := ../vm/windrv_posix_stub.cpp
 ifeq ($(IS_WINDOWS),1)
@@ -136,7 +144,7 @@ CPU_SOURCES := \
 	../cpu/Musashi/m68kops.cpp \
 	../cpu/Musashi/m68kdasm.cpp
 
-SOURCES := xm6_libretro.cpp $(VM_SOURCES) $(CPU_SOURCES)
+SOURCES := xm6_libretro.cpp $(VM_SOURCES) $(YMFM_SOURCES) $(CPU_SOURCES)
 OBJECTS := $(SOURCES:.cpp=.o)
 OBJECTS := $(OBJECTS:.c=.o)
 
