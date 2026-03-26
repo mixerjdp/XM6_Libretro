@@ -88,10 +88,9 @@ public:
 	void OnToggleShader();
 	void OnToggleShaderUI(CCmdUI *pCmdUI);
 
-	// XM6 file name
-	CString NombreArchivoXM6;
-	CString RutaCompletaArchivoXM6;
-	CString RutaSaveStates;
+	CString m_strXM6FileName;
+	CString m_strXM6FilePath;
+	CString m_strSaveStatePath;
 
 	// Save the frame window state
 	void SaveFrameWnd();
@@ -176,7 +175,7 @@ protected:
 	afx_msg void OnMRUUI(CCmdUI *pCmdUI);
 										// MRU UI
 	afx_msg void OnReset();
-	afx_msg void OnResetNuevo();
+	afx_msg void OnResetNew();
 										// Reset UI
 	afx_msg void OnResetUI(CCmdUI *pCmdUI);
 										// Custom configuration
@@ -537,7 +536,7 @@ private:
 										// Command-line processing
 
 	void FASTCALL ReadFile(LPCTSTR pszFileName, CString& str);
-	CString FASTCALL CFrmWnd::ProcesarM3u(CString str);
+	CString FASTCALL ProcessM3u(CString str);
 
 	void FASTCALL ApplyCfg();
 										// Apply settings

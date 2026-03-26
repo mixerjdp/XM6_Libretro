@@ -283,7 +283,7 @@ private:
 	DWORD m_dwAddr;
 										// Display start address
 	DWORD m_dwSetAddr;
-										// Address establecida
+										// Set address
 	DWORD *m_pAddrBuf;
 										// Address buffer
 	CString m_Caption;

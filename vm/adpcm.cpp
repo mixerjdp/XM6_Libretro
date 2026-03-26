@@ -54,9 +54,9 @@ ADPCM::ADPCM(VM *p) : MemDevice(p)
 	memset(&diag, 0, sizeof(diag));
 }
 
-//	Initialization
+//---------------------------------------------------------------------------
 //
-//	������
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL ADPCM::Init()
@@ -113,9 +113,9 @@ BOOL FASTCALL ADPCM::Init()
 	return TRUE;
 }
 
-//	Cleanup
+//---------------------------------------------------------------------------
 //
-//	�N���[���A�b�v
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Cleanup()
@@ -128,13 +128,13 @@ void FASTCALL ADPCM::Cleanup()
 		adpcmbuf = NULL;
 	}
 
-	// ��{�N���X��
+	// Cleanup base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Reset()
@@ -142,9 +142,9 @@ void FASTCALL ADPCM::Reset()
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "���Z�b�g");
+	LOG0(Log::Normal, "Reset");
 
-	// �������[�N������
+	// Clear playback registers
 	adpcm.play = FALSE;
 	adpcm.rec = FALSE;
 	adpcm.active = FALSE;
@@ -161,10 +161,10 @@ void FASTCALL ADPCM::Reset()
 	quirk_stuck_l = 0;
 	quirk_stuck_r = 0;
 
-	// �o�b�t�@������
+	// Buffer initialization
 	InitBuf(adpcm.sync_rate * 50);
 
-	// �C�x���g���~�߂�
+	// Stop event
 	event.SetUser(0);
 	event.SetTime(0);
 	event.SetDesc("Sampling");
@@ -172,7 +172,7 @@ void FASTCALL ADPCM::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL ADPCM::Save(Fileio *fio, int ver)
@@ -183,20 +183,20 @@ BOOL FASTCALL ADPCM::Save(Fileio *fio, int ver)
 	ASSERT(fio);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "�Z�[�u");
+	LOG0(Log::Normal, "Save");
 
-	// �T�C�Y���Z�[�u
+	// Save size
 	sz = sizeof(adpcm_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// ���̂��Z�[�u
+	// Save this data
 	if (!fio->Write(&adpcm, (int)sz)) {
 		return FALSE;
 	}
 
-	// �C�x���g���Z�[�u
+	// Save event data
 	if (!event.Save(fio, ver)) {
 		return FALSE;
 	}
@@ -206,7 +206,7 @@ BOOL FASTCALL ADPCM::Save(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL ADPCM::Load(Fileio *fio, int ver)
@@ -217,9 +217,9 @@ BOOL FASTCALL ADPCM::Load(Fileio *fio, int ver)
 	ASSERT(fio);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "���[�h");
+	LOG0(Log::Normal, "Load");
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Load size and verify
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -227,12 +227,12 @@ BOOL FASTCALL ADPCM::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// ���̂����[�h
+	// Load this data
 	if (!fio->Read(&adpcm, (int)sz)) {
 		return FALSE;
 	}
 
-	// �C�x���g�����[�h
+	// Load event data
 	if (!event.Load(fio, ver)) {
 		return FALSE;
 	}
@@ -242,7 +242,7 @@ BOOL FASTCALL ADPCM::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	�ݒ�K�p
+//	Apply config
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::ApplyCfg(const Config *config)
@@ -251,21 +251,21 @@ void FASTCALL ADPCM::ApplyCfg(const Config *config)
 	ASSERT(config);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "�ݒ�K�p");
+	LOG0(Log::Normal, "Apply config");
 
-	// ���`���
+	// Interpolation
 	adpcm.interp = config->adpcm_interp;
 }
 
 #if !defined(NDEBUG)
 //---------------------------------------------------------------------------
 //
-//	�f�f
+//	Assertion
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::AssertDiag() const
 {
-	// ��{�N���X
+	// Base class
 	MemDevice::AssertDiag();
 
 	ASSERT(this);
@@ -298,7 +298,7 @@ void FASTCALL ADPCM::AssertDiag() const
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g�ǂݍ���
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL ADPCM::ReadByte(DWORD addr)
@@ -307,48 +307,48 @@ DWORD FASTCALL ADPCM::ReadByte(DWORD addr)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
 
-	// ��A�h���X�̂݃f�R�[�h����Ă���
+	// Only odd addresses are decoded
 	if ((addr & 1) != 0) {
-		// 4�o�C�g�P�ʂŃ��[�v
+		// Loop at 4 byte boundary
 		addr &= 3;
 
-		// �E�F�C�g
+		// Wait
 		scheduler->Wait(1);
 
-		// �A�h���X�U�蕪��
+		// Upper address
 		if (addr == 3) {
-			// �f�[�^���W�X�^
+			// Data register
 			if (adpcm.rec && adpcm.active) {
-				// �^���f�[�^�Ƃ���0x80��Ԃ�
+				// Returns 0x80 as talk data
 				return 0x80;
 			}
 			return adpcm.data;
 		}
 
-		// �X�e�[�^�X���W�X�^
+		// Status register
 		if (adpcm.play) {
 			if (quirk_arianshuu_loop_fix) {
 				return 0xc0;
 			}
-			// �Đ����A�܂��͍Đ�������
+			// Playing, or playing stopped
 			return 0x7f;
 		}
 		else {
 			if (quirk_arianshuu_loop_fix) {
 				return 0x40;
 			}
-			// �^�����[�h�A�܂��͍Đ��w���Ȃ�
+			// Talk mode, or playback not allowed
 			return 0xff;
 		}
 	}
 
-	// �����A�h���X�̓f�R�[�h����Ă��Ȃ�
+	// Even addresses are not decoded
 	return 0xff;
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h�ǂݍ���
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL ADPCM::ReadWord(DWORD addr)
@@ -363,7 +363,7 @@ DWORD FASTCALL ADPCM::ReadWord(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g��������
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
@@ -373,34 +373,34 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 	ASSERT(data < 0x100);
 	ASSERT_DIAG();
 
-	// ��A�h���X�̂݃f�R�[�h����Ă���
+	// Only odd addresses are decoded
 	if ((addr & 1) != 0) {
-		// 4�o�C�g�P�ʂŃ��[�v
+		// Loop at 4 byte boundary
 		addr &= 3;
 
-		// �E�F�C�g
+		// Wait
 		scheduler->Wait(1);
 
-		// �A�h���X�U�蕪��
+		// Upper address
 		if (addr == 3) {
-			// �f�[�^���W�X�^
+			// Data register
 			adpcm.data = data;
 			return;
 		}
 
 #if defined(ADPCM_LOG)
-		LOG1(Log::Normal, "ADPCM�R�}���h $%02X", data);
+		LOG1(Log::Normal, "ADPCM Command $%02X", data);
 #endif	// ADPCM_LOG
 
-		// �R�}���h���W�X�^
+		// Command register
 		if (quirk_arianshuu_loop_fix) {
-			// PCM8A/MCDRV互換: STOPビット優先（0x03 を STOP として扱う）
+			// PCM8A/MCDRV compatible: STOP bit takes priority (treats 0x03 as STOP)
 			if (data & 1) {
 				Stop();
 				return;
 			}
 			if (data & 2) {
-				// PCM8A互換: STARTは再生中でも境界リセットを行う
+				// PCM8A compatible: START resets boundary even during playback
 				adpcm.offset = 0;
 				adpcm.sample = 0;
 				adpcm.out = 0;
@@ -434,17 +434,17 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 		}
 
 		if (data & 1) {
-			// �����~
+			// Stop
 			Stop();
 		}
 		if (data & 2) {
-			// �Đ��X�^�[�g
+			// Play start
 			adpcm.play = TRUE;
 			Start(0);
 			return;
 		}
 		if (data & 4) {
-			// �^���X�^�[�g
+			// Talk start
 			adpcm.rec = TRUE;
 			Start(1);
 			return;
@@ -452,12 +452,12 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// �����A�h���X�̓f�R�[�h����Ă��Ȃ�
+	// Even addresses are not decoded
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h��������
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::WriteWord(DWORD addr, DWORD data)
@@ -473,7 +473,7 @@ void FASTCALL ADPCM::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	�ǂݍ��݂̂�
+//	Read only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL ADPCM::ReadOnly(DWORD addr) const
@@ -482,33 +482,33 @@ DWORD FASTCALL ADPCM::ReadOnly(DWORD addr) const
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
 
-	// ��A�h���X�̂݃f�R�[�h����Ă���
+	// Only odd addresses are decoded
 	if (addr & 1) {
-		// 4�o�C�g�P�ʂŃ��[�v
+		// Loop at 4 byte boundary
 		addr &= 3;
 
-		// �A�h���X�U�蕪��
+		// Upper address
 		if (addr == 3) {
-			// �f�[�^���W�X�^
+			// Data register
 			if (adpcm.rec && adpcm.active) {
 				return 0x80;
 			}
 			return adpcm.data;
 		}
 
-		// �X�e�[�^�X���W�X�^
+		// Status register
 		if (adpcm.play) {
 			if (quirk_arianshuu_loop_fix) {
 				return 0xc0;
 			}
-			// �Đ����A�܂��͍Đ�������
+			// Playing, or playing stopped
 			return 0x7f;
 		}
 		else {
 			if (quirk_arianshuu_loop_fix) {
 				return 0x40;
 			}
-			// �^�����[�h�A�܂��͍Đ��w���Ȃ�
+			// Talk mode, or playback not allowed
 			return 0xff;
 		}
 	}
@@ -518,7 +518,7 @@ DWORD FASTCALL ADPCM::ReadOnly(DWORD addr) const
 
 //---------------------------------------------------------------------------
 //
-//	�����f�[�^�擾
+//	ADPCM data get
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::GetADPCM(adpcm_t *buffer)
@@ -527,13 +527,13 @@ void FASTCALL ADPCM::GetADPCM(adpcm_t *buffer)
 	ASSERT(buffer);
 	ASSERT_DIAG();
 
-	// �����f�[�^���R�s�[
+	// Copy ADPCM data
 	*buffer = adpcm;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�C�x���g�R�[���o�b�N
+//	Event callback
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL ADPCM::Callback(Event *ev)
@@ -546,18 +546,18 @@ BOOL FASTCALL ADPCM::Callback(Event *ev)
 	ASSERT(ev);
 	ASSERT_DIAG();
 
-	// �E�F�C�g������΍��������A���̎��Ԃ܂ň������΂�
+	// If wait is finished, process now, otherwise continue counting down
 	if (adpcm.wait <= 0) {
 		while (adpcm.wait <= 0) {
-			// �C���A�N�e�B�u�܂���ReqDMA���s�̏ꍇ�A80�Ƃ���
+			// If inactive or ReqDMA fails, set 0x80
 			adpcm.data = 0x80;
 			valid = FALSE;
 			diag.req_total++;
 
-			// 1��̃C�x���g��1�o�C�g(2�T���v��)�̏������s��
+			// Process 1 event = 1 byte (2 samples) of data
 			if (adpcm.active) {
 				if (dmac->ReqDMA(3)) {
-					// DMA�]������
+					// DMA transfer success
 					valid = TRUE;
 					diag.req_ok++;
 				}
@@ -570,19 +570,19 @@ BOOL FASTCALL ADPCM::Callback(Event *ev)
 			}
 			diag.last_data = adpcm.data;
 
-			// �Đ���
+			// Playback
 			if (ev->GetUser() == 0) {
-				// 0x88,0x80,0x00�ȊO�̓X�^�[�g�t���OON
+				// 0x88,0x80,0x00 are flags
 				if ((adpcm.data != 0x88) && (adpcm.data != 0x80) && (adpcm.data != 0x00)) {
 #if defined(ADPCM_LOG)
 					if (!adpcm.started) {
-						LOG0(Log::Normal, "����L���f�[�^���o");
+						LOG0(Log::Normal, "First valid data detected");
 					}
 #endif	// ADPCM_LOG
 					adpcm.started = TRUE;
 				}
 
-				// ADPCM��PCM�ϊ��A�o�b�t�@�փX�g�A
+				// ADPCM to PCM conversion, send to buffer
 				num = adpcm.speed;
 				num >>= 7;
 				ASSERT((num >= 2) && (num <= 16));
@@ -593,10 +593,10 @@ BOOL FASTCALL ADPCM::Callback(Event *ev)
 			adpcm.wait++;
 		}
 
-		// �E�F�C�g�����Z�b�g
+		// Reset wait counter
 		adpcm.wait = 0;
 
-		// ���x�ύX�ɑΉ�
+		// Adapt to speed change
 		if (ev->GetTime() == adpcm.speed) {
 			return TRUE;
 		}
@@ -606,10 +606,10 @@ BOOL FASTCALL ADPCM::Callback(Event *ev)
 		return TRUE;
 	}
 
-	// �E�F�C�g�����炷
+	// Decrement wait counter
 	adpcm.wait--;
 
-	// ���x�ύX�ɑΉ�
+	// Adapt to speed change
 	if (ev->GetTime() == adpcm.speed) {
 		return TRUE;
 	}
@@ -621,7 +621,7 @@ BOOL FASTCALL ADPCM::Callback(Event *ev)
 
 //---------------------------------------------------------------------------
 //
-//	��N���b�N�w��
+//	Master clock setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::SetClock(DWORD clk)
@@ -631,17 +631,17 @@ void FASTCALL ADPCM::SetClock(DWORD clk)
 	ASSERT_DIAG();
 
 #if defined(ADPCM_LOG)
-	LOG1(Log::Normal, "�N���b�N %dMHz", clk);
+	LOG1(Log::Normal, "Clock %dMHz", clk);
 #endif	// ADPCM_LOG
 
-	// ���x���Čv�Z
+	// Recalculate speed
 	adpcm.clock = clk;
 	CalcSpeed();
 }
 
 //---------------------------------------------------------------------------
 //
-//	�N���b�N�䗦�w��
+//	Clock ratio setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::SetRatio(DWORD ratio)
@@ -651,16 +651,16 @@ void FASTCALL ADPCM::SetRatio(DWORD ratio)
 	ASSERT_DIAG();
 
 #if defined(ADPCM_LOG)
-	LOG1(Log::Normal, "���x�䗦 %d", ratio);
+	LOG1(Log::Normal, "Speed ratio %d", ratio);
 #endif	// ADPCM_LOG
 
-	// ratio=3��2�Ƃ݂Ȃ�
+	// ratio=3 is treated as 2
 	if (ratio == 3) {
-		LOG0(Log::Warning, "����`���[�g�w�� $03");
+		LOG0(Log::Warning, "Illegal ratio setting $03");
 		ratio = 2;
 	}
 
-	// ���x���Čv�Z
+	// Recalculate speed
 	if (adpcm.ratio != ratio) {
 		adpcm.ratio = ratio;
 		CalcSpeed();
@@ -669,7 +669,7 @@ void FASTCALL ADPCM::SetRatio(DWORD ratio)
 
 //---------------------------------------------------------------------------
 //
-//	�p���|�b�g�w��
+//	Panpot setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::SetPanpot(DWORD panpot)
@@ -679,7 +679,7 @@ void FASTCALL ADPCM::SetPanpot(DWORD panpot)
 	ASSERT_DIAG();
 
 #if defined(ADPCM_LOG)
-	LOG1(Log::Normal, "�p���|�b�g�w�� %d", panpot);
+	LOG1(Log::Normal, "Panpot setting %d", panpot);
 #endif	// ADPCM_LOG
 
 	adpcm.panpot = panpot;
@@ -687,19 +687,19 @@ void FASTCALL ADPCM::SetPanpot(DWORD panpot)
 
 //---------------------------------------------------------------------------
 //
-//	���x�Čv�Z
+//	Speed recalculation
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::CalcSpeed()
 {
 	ASSERT(this);
 
-	// ���������珇�ɁA2, 3, 4������
+	// First, 2, 3, 4 are possible
 	adpcm.speed = 2 - adpcm.ratio;
 	ASSERT(adpcm.speed <= 2);
 	adpcm.speed += 2;
 
-	// �N���b�N4MHz�Ȃ�256�A8MHz�Ȃ�128���悸��
+	// Clock 4MHz: 256, Clock 8MHz: 128
 	adpcm.speed <<= 7;
 	if (adpcm.clock == 4) {
 		adpcm.speed <<= 1;
@@ -708,7 +708,7 @@ void FASTCALL ADPCM::CalcSpeed()
 
 //---------------------------------------------------------------------------
 //
-//	�^���E�Đ��J�n
+//	Record/playback start
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Start(int type)
@@ -721,30 +721,30 @@ void FASTCALL ADPCM::Start(int type)
 	diag.start_events++;
 
 #if defined(ADPCM_LOG)
-	LOG1(Log::Normal, "�Đ��J�n %d", type);
+	LOG1(Log::Normal, "Playback start %d", type);
 #endif	// ADPCM_LOG
 
-	// �A�N�e�B�u�t���O���グ��
+	// Set active flag
 	adpcm.active = TRUE;
 
-	// �f�[�^��������
+	// Reset data position
 	adpcm.offset = 0;
 
-	// �C�x���g��ݒ�
+	// Set event user
 	event.SetUser(type);
 
-	// �����ŕK�����Ԑݒ�(���@�Ƃ͈قȂ�\�������邪�AFM�����Ƃ̓�����D��)
+	// Set sampling rate (different from FM which is interrupt priority)
 	sprintf(string, "Sampling %dHz", (2 * 1000 * 1000) / adpcm.speed);
 	event.SetDesc(string);
 	event.SetTime(adpcm.speed);
 
-	// ����̃C�x���g�������Ŏ��s(FM�����Ƃ̓������Ƃ���ʑ[�u)
+	// Run this event immediately (unlike FM which is interrupt priority)
 	Callback(&event);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�^���E�Đ���~
+//	Record/playback stop
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Stop()
@@ -754,10 +754,10 @@ void FASTCALL ADPCM::Stop()
 	diag.stop_events++;
 
 #if defined(ADPCM_LOG)
-	LOG0(Log::Normal, "��~");
+	LOG0(Log::Normal, "Stop");
 #endif	// ADPCM_LOG
 
-	// �t���O���~�낷
+	// Stop flags
 	adpcm.active = FALSE;
 	adpcm.play = FALSE;
 	adpcm.rec = FALSE;
@@ -777,7 +777,7 @@ void FASTCALL ADPCM::Stop()
 
 //---------------------------------------------------------------------------
 //
-//	�ψʃe�[�u��
+//	Next table
 //
 //---------------------------------------------------------------------------
 const int ADPCM::NextTable[] = {
@@ -787,7 +787,7 @@ const int ADPCM::NextTable[] = {
 
 //---------------------------------------------------------------------------
 //
-//	�I�t�Z�b�g�e�[�u��
+//	Offset table
 //
 //---------------------------------------------------------------------------
 const int ADPCM::OffsetTable[] = {
@@ -804,7 +804,7 @@ const int ADPCM::OffsetTable[] = {
 
 //---------------------------------------------------------------------------
 //
-//	�f�R�[�h
+//	Decode
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
@@ -821,28 +821,28 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 	ASSERT_DIAG();
 	diag.decode_calls++;
 
-	// �f�B�Z�[�u���Ȃ牽�����Ȃ�
+	// Ignore if disabled
 	if (!adpcm.enable) {
 		return;
 	}
 
-	// �f�[�^���}�X�N
+	// Mask data
 	data &= 0x0f;
 
-	// �����e�[�u�����瓾��
+	// Build diff table index
 	i = adpcm.offset << 4;
 	i |= data;
 	sample = DiffTable[i];
 
-	// ���̃I�t�Z�b�g�����߂Ă���
+	// Return next offset
 	adpcm.offset += NextTable[data];
 	adpcm.offset = OffsetTable[adpcm.offset + 1];
 
-	// �X�g�A�f�[�^�����Z
+	// Scale sample data
 	store = (sample << 8) + (adpcm.sample * 245);
 	store >>= 8;
 
-	// ���ʏ����{�l�L��
+	// Calculate base value
 	base = adpcm.sample;
 	base *= adpcm.vol;
 	base >>= 9;
@@ -851,7 +851,7 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 	store >>= 9;
 	adpcm.out = store;
 
-	// �L���ȃf�[�^�����Ă��Ȃ��Ȃ�A�T���v�����グ��
+	// If no valid data yet, gradually increase sample
 	if (!valid) {
 		if (adpcm.sample < 0) {
 			adpcm.sample++;
@@ -861,17 +861,17 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 		}
 	}
 
-	// �u�s�[�v���̏���
+	// Flattening operation
 	if ((adpcm.sample == 0) || (adpcm.sample == -1) || (adpcm.sample == 1)) {
 		store = 0;
 	}
 
-	// �����𓾂�
+	// Get diff
 	diff = store - base;
 
-	// ���ʂ��l�����āAnum�����T���v�����X�g�A
+	// Calculate and output num interpolated samples
 	switch (adpcm.panpot) {
-		// ���E�Ƃ��o��
+		// Output both
 		case 0:
 			for (i=0; i<num; i++) {
 				store = base + (diff * (i + 1)) / num;
@@ -881,7 +881,7 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 			}
 			break;
 
-		// ���̂ݏo��
+		// Left only output
 		case 1:
 			for (i=0; i<num; i++) {
 				store = base + (diff * (i + 1)) / num;
@@ -891,7 +891,7 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 			}
 			break;
 
-		// �E�̂ݏo��
+		// Right only output
 		case 2:
 			for (i=0; i<num; i++) {
 				store = base + (diff * (i + 1)) / num;
@@ -901,7 +901,7 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 			}
 			break;
 
-		// �����I�t
+		// Mute
 		case 3:
 			for (i=0; i<num; i++) {
 				adpcmbuf[adpcm.writepoint++] = 0;
@@ -910,16 +910,16 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 			}
 			break;
 
-		// �ʏ�A���蓾�Ȃ�
+		// Default, should not occur
 		default:
 			ASSERT(FALSE);
 	}
 
-	// �����X�V
+	// Update sample count
 	adpcm.number += (num << 1);
 	if (adpcm.number >= BufMax) {
 #if defined(ADPCM_LOG)
-		LOG0(Log::Warning, "ADPCM�o�b�t�@ �I�[�o�[����");
+		LOG0(Log::Warning, "ADPCM buffer overflow");
 #endif	// ADPCM_LOG
 		adpcm.number = BufMax;
 		adpcm.readpoint = adpcm.writepoint;
@@ -932,7 +932,7 @@ void FASTCALL ADPCM::Decode(int data, int num, BOOL valid)
 
 //---------------------------------------------------------------------------
 //
-//	�����C�l�[�u��
+//	Internal enable
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Enable(BOOL enable)
@@ -945,7 +945,7 @@ void FASTCALL ADPCM::Enable(BOOL enable)
 
 //---------------------------------------------------------------------------
 //
-//	�o�b�t�@������
+//	Buffer initialization
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::InitBuf(DWORD rate)
@@ -955,10 +955,10 @@ void FASTCALL ADPCM::InitBuf(DWORD rate)
 	ASSERT((rate % 100) == 0);
 
 #if defined(ADPCM_LOG)
-	LOG0(Log::Normal, "�o�b�t�@������");
+	LOG0(Log::Normal, "Buffer initialization");
 #endif	// ADPCM_LOG
 
-	// �J�E���^�A�|�C���^
+	// Counter, pointers
 	adpcm.number = 0;
 	adpcm.readpoint = 0;
 	adpcm.writepoint = 0;
@@ -969,7 +969,7 @@ void FASTCALL ADPCM::InitBuf(DWORD rate)
 	quirk_stuck_l = 0;
 	quirk_stuck_r = 0;
 
-	// �ŏ��̃f�[�^��0���Z�b�g
+	// Set first data to 0
 	if (adpcmbuf) {
 		adpcmbuf[0] = 0;
 		adpcmbuf[1] = 0;
@@ -997,7 +997,7 @@ void FASTCALL ADPCM::GetDiag(adpcm_diag_t *buffer) const
 
 //---------------------------------------------------------------------------
 //
-//	�o�b�t�@����f�[�^�擾
+//	Buffer audio data get
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
@@ -1014,17 +1014,17 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 	ASSERT(samples >= 0);
 	ASSERT_DIAG();
 
-	// �����A�܂��̓`���l���J�b�g�̏ꍇ�́A�o�b�t�@�N���A
+	// If disabled or mono mode, clear buffer
 	if (!adpcm.enable || !adpcm.sound) {
 		ASSERT(adpcm.sync_rate != 0);
 		InitBuf(adpcm.sync_rate * 50);
 		return;
 	}
 
-	// ������
+	// Output
 	ptr = (int*)buffer;
 
-	// �o�b�t�@�ɉ����Ȃ��Ƃ��́A�Ō�̃f�[�^�𑱂��ē����
+	// If buffer cannot keep up, repeat last data
 	if (adpcm.number <= 2) {
 		diag.underrun_head_events++;
 		l = adpcmbuf[adpcm.readpoint];
@@ -1059,18 +1059,18 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 		return;
 	}
 
-	// ���`��Ԃ̗L���ŕ�����
+	// Valid interpolation
 	if (adpcm.interp) {
 
-		// ��Ԃ���
+		// Main loop
 		for (i=samples; i>0; i--) {
-			// �X�e�b�vUp
+			// Step up
 			adpcm.sync_cnt += adpcm.sync_step;
 			if (adpcm.sync_cnt >= 0x4000) {
-				// ��������
+				// Wrap
 				adpcm.sync_cnt &= 0x3fff;
 
-				// ����
+				// Advance
 				if (adpcm.number >= 4) {
 					adpcm.readpoint += 2;
 					adpcm.readpoint &= (BufMax - 1);
@@ -1078,7 +1078,7 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 				}
 			}
 
-			// ���̃f�[�^�����邩
+			// Check remaining data
 			if (adpcm.number < 4 ) {
 				diag.underrun_interp_events++;
 				if (quirk_arianshuu_loop_fix) {
@@ -1092,24 +1092,24 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 					continue;
 				}
 
-				// ���̃f�[�^���Ȃ��̂ŁA���̃f�[�^�����̂܂ܓ����
+				// No data left, repeat last data
 				*ptr += adpcmbuf[adpcm.readpoint];
 				ptr++;
 				*ptr += adpcmbuf[adpcm.readpoint + 1];
 				ptr++;
 			}
 			else {
-				// ���̃|�C���g�����炤
+				// Calculate next point
 				point = adpcm.readpoint + 2;
 				point &= (BufMax - 1);
 
-				// ���f�[�^�Ǝ��̃f�[�^�ŕ��[L]
+				// Interpolate L from next data and current data
 				l = adpcmbuf[point] * (int)adpcm.sync_cnt;
 				r = adpcmbuf[adpcm.readpoint + 0] * (int)(0x4000 - adpcm.sync_cnt);
 				*ptr += ((l + r) >> 14);
 				ptr++;
 
-				// ���f�[�^�Ǝ��̃f�[�^�ŕ��[R]
+				// Interpolate R from next data and current data
 				l = adpcmbuf[point + 1] * (int)adpcm.sync_cnt;
 				r = adpcmbuf[adpcm.readpoint + 1] * (int)(0x4000 - adpcm.sync_cnt);
 				*ptr += ((l + r) >> 14);
@@ -1118,24 +1118,24 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 		}
 	}
 	else {
-		// ��ԂȂ�
+		// Non-interpolation
 		for (i=samples; i>0; i--) {
-			// ���݂̈ʒu����f�[�^���i�[
+			// Output from current position data
 			*buffer += adpcmbuf[adpcm.readpoint];
 			buffer++;
 			*buffer += adpcmbuf[adpcm.readpoint + 1];
 			buffer++;
 
-			// sync_step�����Z
+			// Subtract sync_step
 			adpcm.sync_cnt += adpcm.sync_step;
 
-			// 0x4000�Ɠ�������
+			// Reset when reaching 0x4000
 			if (adpcm.sync_cnt < 0x4000) {
 				continue;
 			}
 			adpcm.sync_cnt &= 0x3fff;
 
-			// ����ADPCM�T���v���ֈړ�
+			// Move to next ADPCM sample
 			if (adpcm.number <= 2) {
 				diag.underrun_linear_events++;
 				if (quirk_arianshuu_loop_fix) {
@@ -1155,7 +1155,7 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 					return;
 				}
 
-				// �Ō�̃f�[�^�𑱂��ē����
+				// Repeat last data
 				l = adpcmbuf[adpcm.readpoint];
 				r = adpcmbuf[adpcm.readpoint + 1];
 				for (j=i-1; j>0; j--) {
@@ -1177,7 +1177,7 @@ void FASTCALL ADPCM::GetBuf(DWORD *buffer, int samples)
 
 //---------------------------------------------------------------------------
 //
-//	�E�F�C�g��������
+//	Wait processing
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::Wait(int num)
@@ -1187,51 +1187,51 @@ void FASTCALL ADPCM::Wait(int num)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	// �C�x���g�J�n���ĂȂ����0
+	// If event not started, 0
 	if (event.GetTime() == 0) {
 		adpcm.wait = 0;
 		return;
 	}
 
-	// ���Ȃ����OPM�̕��������Ă���
+	// If OPM audio is different (waits less)
 	if ((int)adpcm.number <= num) {
-		// ����������B������1/4���E�F�C�g�Ƃ���
+		// Subtract remainder. This adds 1/4 wait
 		num -= (adpcm.number);
 		num >>= 2;
 
-		// �v�Z�́��Ɠ��l�B�������]
+		// Calculation formula, inverse
 		i = adpcm.speed >> 6;
 		i *= adpcm.sync_rate;
 		adpcm.wait = -((625 * num) / i);
 
 #if defined(ADPCM_LOG)
 		if (adpcm.wait != 0) {
-			LOG1(Log::Normal, "�E�F�C�g�ݒ� %d", adpcm.wait);
+			LOG1(Log::Normal, "Wait set %d", adpcm.wait);
 		}
 #endif	// ADPCM_LOG
 		return;
 	}
 
-	// ����������B������1/4���E�F�C�g�Ƃ���
+	// Subtract remainder. This adds 1/4 wait
 	num = adpcm.number - num;
 	num >>= 2;
 
-	// 44.1k,48k etc.�ł̗]��T���v������x�Ƃ����
-	// �E�F�C�g�񐔂� (625 * x) / (adpcm.sync_rate * (adpcm.speed >> 6))
+	// For 44.1k,48k etc. sample rate differences
+	// Wait count: (625 * x) / (adpcm.sync_rate * (adpcm.speed >> 6))
 	i = adpcm.speed >> 6;
 	i *= adpcm.sync_rate;
 	adpcm.wait = (625 * num) / i;
 
 #if defined(ADPCM_LOG)
 	if (adpcm.wait != 0) {
-		LOG1(Log::Normal, "�E�F�C�g�ݒ� %d", adpcm.wait);
+		LOG1(Log::Normal, "Wait set %d", adpcm.wait);
 	}
 #endif	// ADPCM_LOG
 }
 
 //---------------------------------------------------------------------------
 //
-//	�e�[�u���쐬
+//	Table creation
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::MakeTable()
@@ -1244,12 +1244,12 @@ void FASTCALL ADPCM::MakeTable()
 
 	ASSERT(this);
 
-	// �e�[�u���쐬(floor�Ŋۂ߂�����panic���ŗǂ����ʂ�������)
+	// Create table (flood with panic value for safety)
 	p = DiffTable;
 	for (i=0; i<49; i++) {
 		base = (int)floor(16.0 * pow(1.1, i));
 
-		// ���Z�����ׂ�int�ōs��
+		// Division must be done in int
 		for (j=0; j<16; j++) {
 			diff = 0;
 			if (j & 4) {
@@ -1273,7 +1273,7 @@ void FASTCALL ADPCM::MakeTable()
 
 //---------------------------------------------------------------------------
 //
-//	���ʐݒ�
+//	Volume setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL ADPCM::SetVolume(int volume)
@@ -1284,7 +1284,7 @@ void FASTCALL ADPCM::SetVolume(int volume)
 	ASSERT(this);
 	ASSERT((volume >= 0) && (volume < 100));
 
-	// 16384 * 10^((volume-140) / 200)���Z�o�A�Z�b�g
+	// Calculate and set 16384 * 10^((volume-140) / 200)
 	offset = (double)(volume - 140);
 	offset /= (double)200.0;
 	vol = pow((double)10.0, offset);

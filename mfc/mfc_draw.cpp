@@ -783,7 +783,7 @@ void FASTCALL CDrawView::SetupBitmap()
 	// Create bitmap information
 	m_Info.nBMPWidth = rect.Width();
 
-	/* ACA SE ESTABLECE LA ALTURA DEL BITMAP A LEER */
+	/* Bitmap height is set here */
 	m_Info.nBMPHeight = (rect.Height() < 512) ? 512 : rect.Height();
 	p->biSize = sizeof(BITMAPINFOHEADER);
 	p->biWidth = m_Info.nBMPWidth;
@@ -1449,29 +1449,29 @@ void CDrawView::OnDraw(CDC *pDC)
 	}
 
 
-	/* ACA SE ESTABLECE STRETCH HORIZONTAL */
+	/* Horizontal stretch is set here */
 	if(m_Info.bBltStretch){	// If stretching is required
 		// If not 768x512, keep the specified aspect mode
-		int numeroDeMultiplicador = 4;
+		int multiplierCount = 4;
 
 
-		/* Mi  Codigo de prueba para calcular stretch  maximo posible con respecto al anfitrion */
-		int mihmul = hmul;
-		int anchoCalculado = 0;
-		while (anchoCalculado <= rect.Width())
+		/* Test code for calculating maximum possible stretch relative to the host */
+		int myHmul = hmul;
+		int calculatedWidth = 0;
+		while (calculatedWidth <= rect.Width())
 		{
-			numeroDeMultiplicador++;
-			mihmul = hmul * numeroDeMultiplicador;
-			anchoCalculado = (m_Info.nWidth * mihmul) >> 2;
+			multiplierCount++;
+			myHmul = hmul * multiplierCount;
+			calculatedWidth = (m_Info.nWidth * myHmul) >> 2;
 		}
-		numeroDeMultiplicador--;
+		multiplierCount--;
 
 
 		/*CString sz;
 		sz.Format(_T("numeroDeMultiplicador: %d   \r\n"),  numeroDeMultiplicador);
 		OutputDebugStringW(CT2W(sz));		*/
 
-		hmul *= numeroDeMultiplicador;
+		hmul *= multiplierCount;
 
 	}
 	else {
@@ -1479,24 +1479,24 @@ void CDrawView::OnDraw(CDC *pDC)
 		hmul <<= 2;
 	}
 
-	/* ACA SE ESTABLECE STRETCH VERTICAL   */
+	/* Vertical stretch is set here */
 	vmul = 4;
 
 
-	/* Mi  Codigo de prueba para calcular stretch vertical mE½ximo posible con respecto al anfitrion */
+	/* Test code for calculating maximum possible vertical stretch relative to the host */
 		if (m_Info.bBltStretch)
 		{
 			vmul = 1;
-			int mivmul = vmul;
-			int altoCalculado = 0;
-			while(altoCalculado<rect.Height())// Increase the multipliers until the screen resolution is reached
+			int myVmul = vmul;
+			int calculatedHeight = 0;
+			while(calculatedHeight<rect.Height())// Increase the multipliers until the screen resolution is reached
 			{
-				mivmul++;
-				altoCalculado = (m_Info.nRendHeight * mivmul) >> 2;
+				myVmul++;
+				calculatedHeight = (m_Info.nRendHeight * myVmul) >> 2;
 			}
-			if(altoCalculado-rect.Height()>16)// Adjust 256 for 240p when 16 pixels are missing
-				mivmul--;
-			vmul = mivmul;
+			if(calculatedHeight-rect.Height()>16)// Adjust 256 for 240p when 16 pixels are missing
+				myVmul--;
+			vmul = myVmul;
 
 		}
 
@@ -1507,7 +1507,7 @@ void CDrawView::OnDraw(CDC *pDC)
 			// hmul++;
 		}
 
-		if(m_Info.nWidth==704&&m_Info.nHeight==480)// Caso especial: Carat
+		if(m_Info.nWidth==704&&m_Info.nHeight==480)// Special case: Carat
 		{
 			 hmul++;
 			// vmul++;
@@ -1691,7 +1691,7 @@ void FASTCALL CDrawView::ReCalc(CRect& rect)
 	}
 
 	int cx = 0, cy = 0;
-	int bordeAncho = 0, bordeAlto = 0;
+	int borderWidth = 0, borderHeight = 0;
 
 	if (m_pFrmWnd->m_bFullScreen)
 	{
@@ -1702,12 +1702,12 @@ void FASTCALL CDrawView::ReCalc(CRect& rect)
 	if (m_Info.nRendWidth > 256)
 	{
 		if (cx > m_Info.nRendWidth)
-			bordeAncho = cx % m_Info.nRendWidth;
+			borderWidth = cx % m_Info.nRendWidth;
 	}
 	if (m_Info.nRendHeight < 240)
 	{
 		if (cy > m_Info.nRendHeight)
-			bordeAlto = cy % m_Info.nRendHeight;
+			borderHeight = cy % m_Info.nRendHeight;
 	}
 
 
@@ -1722,16 +1722,16 @@ void FASTCALL CDrawView::ReCalc(CRect& rect)
 	//OutputDebugStringW(CT2W(sz4));
 
 
-	/* ACA SE DETERMINAN LAS ESQUINAS SUPERIORES IZQ Y TOP DEL FRAME PRINCIPAL */
+	/* The upper-left corner positions and TOP of the main frame are determined here */
 
 		if (m_Info.bBltStretch)
-			m_Info.nLeft = (bordeAncho > 0) ? (bordeAncho >> 3) : bordeAncho;
+			m_Info.nLeft = (borderWidth > 0) ? (borderWidth >> 3) : borderWidth;
 		else
 		    m_Info.nLeft = (rect.Width() - width) >> 1;
 
 
 		if (m_Info.bBltStretch)
-			m_Info.nTop = (bordeAlto > 0) ? (bordeAlto >> 3) : bordeAlto;
+			m_Info.nTop = (borderHeight > 0) ? (borderHeight >> 3) : borderHeight;
 		else
 			m_Info.nTop = (rect.Height() - height) >> 1;
 
@@ -1794,7 +1794,7 @@ void FASTCALL CDrawView::DrawRect(CDC *pDC)
 	GetClientRect(&crect);
 
 
-	/* ACA SE ESTABLECEN LOS BORDES EXTERIORES DE VENTANA DE JUEGO Y SUS COLORES */
+	/* The outer borders of the game window and their colors are set here */
 	if (m_Info.nLeft > 0) {
 		// Left half
 		brect.left = 0;

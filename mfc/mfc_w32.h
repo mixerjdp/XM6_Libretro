@@ -1,9 +1,9 @@
 //---------------------------------------------------------------------------
 //
-//	EMULADOR X68000 "XM6"
+//	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ Subventana MFC (Win32) ]
+//	Copyright (C) 2001-2005 PI. (ytanaka@ipc-tokai.or.jp)
+//	[ MFC Sub-window (Win32) ]
 //
 //---------------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 
 //===========================================================================
 //
-//	Window of Componentes
+//	Components Window
 //
 //===========================================================================
 class CComponentWnd : public CSubTextWnd
@@ -31,12 +31,12 @@ public:
 
 private:
 	CComponent *m_pComponent;
-										// Primer componente
+										// First component
 };
 
 //===========================================================================
 //
-//	Window of información del SO
+//	OS Information Window
 //
 //===========================================================================
 class COSInfoWnd : public CSubTextWnd
@@ -50,7 +50,7 @@ public:
 
 //===========================================================================
 //
-//	Window of sonido
+//	Sound Window
 //
 //===========================================================================
 class CSoundWnd : public CSubTextWnd
@@ -63,18 +63,18 @@ public:
 
 private:
 	Scheduler *m_pScheduler;
-										// Planificador
+										// Scheduler
 	OPMIF *m_pOPMIF;
 										// OPM
 	ADPCM *m_pADPCM;
 										// ADPCM
 	CSound *m_pSound;
-										// Componente de sonido
+										// Sound component
 };
 
 //===========================================================================
 //
-//	Window of entrada
+//	Input Window
 //
 //===========================================================================
 class CInputWnd : public CSubTextWnd
@@ -95,12 +95,12 @@ private:
 	void FASTCALL SetupJoy(int x, int y, int nJoy);
                                         // Configuration (joystick)
 	CInput *m_pInput;
-										// Componente de entrada
+										// Input component
 };
 
 //===========================================================================
 //
-//	Window of puertos
+//	Ports Window
 //
 //===========================================================================
 class CPortWnd : public CSubTextWnd
@@ -113,12 +113,12 @@ public:
 
 private:
 	CPort *m_pPort;
-										// Componente de puerto
+										// Port component
 };
 
 //===========================================================================
 //
-//	Window of mapa de bits
+//	Bitmap Window
 //
 //===========================================================================
 class CBitmapWnd : public CSubTextWnd
@@ -131,12 +131,12 @@ public:
 
 private:
 	CDrawView *m_pView;
-										// Window of dibujo
+										// Drawing window
 };
 
 //===========================================================================
 //
-//	Window ofl controlador MIDI
+//	MIDI controller window
 //
 //===========================================================================
 class CMIDIDrvWnd : public CSubTextWnd
@@ -153,7 +153,7 @@ private:
 	void FASTCALL SetupExCnt(int x, int y, DWORD dwStart, DWORD dwEnd);
                                         // Configuration (exclusive counter)
 	static LPCTSTR DescTable[];
-										// Tabla de cadenas
+										// String table
 	MIDI *m_pMIDI;
 										// MIDI
 	CMIDI *m_pMIDIDrv;
@@ -187,25 +187,25 @@ protected:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
                                         // Window resize
 	afx_msg BOOL OnEraseBkgnd(CDC *pDC);
-										// Dibujo de fondo
+										// Draw background
 	afx_msg void OnPaint();
                                         // Redraw window
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-										// Botón izquierdo presionado
+										// Left button pressed
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-										// Botón izquierdo soltado
+										// Left button released
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-										// Botón derecho presionado
+										// Right button pressed
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
-										// Botón derecho soltado
+										// Right button released
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
                                         // Mouse movement
 	afx_msg UINT OnGetDlgCode();
-										// Obtención de código de diálogo
+										// Get dialog code
 
 private:
 	void FASTCALL SetupBitmap();
-										// Preparación de mapa de bits
+										// Prepare bitmap
 	void FASTCALL OnDraw(CDC *pDC);
                                         // Window drawing
 	LPCTSTR FASTCALL GetKeyString(int nKey);
@@ -219,13 +219,13 @@ private:
 	void FASTCALL DrawCRBox(int nColorOut, int nColorIn, RECT& rect);
                                         // Key box drawing CR
 	void FASTCALL DrawChar(int x, int y, int nColor, DWORD dwChar);
-										// Dibujo de carácter
+										// Draw character
 	void FASTCALL DrawCRChar(int x, int y, int nColor);
-										// Dibujo de carácter CR
+										// Draw character CR
 	int FASTCALL CalcCGAddr(DWORD dwChar);
-										// Cálculo de dirección CGROM de ancho completo
+										// Calculate full-width CGROM address
 	UINT m_nMode;
-										// Modo SHIFT
+										// SHIFT mode
 	UINT m_nKey[0x80];
                                         // Key state (display)
 	BOOL m_bKey[0x80];
@@ -235,32 +235,32 @@ private:
 	const BYTE* m_pCG;
 										// CGROM
 	HBITMAP m_hBitmap;
-										// Manejador de mapa de bits
+										// Bitmap handle
 	BYTE *m_pBits;
-										// Bits de mapa de bits
+										// Bitmap bits
 	UINT m_nBMPWidth;
-										// Ancho de mapa de bits
+										// Bitmap width
 	UINT m_nBMPHeight;
-										// Altura de mapa de bits
+										// Bitmap height
 	UINT m_nBMPMul;
-										// Ancho de multiplicación de mapa de bits
+										// Bitmap multiplication width
 	static RGBQUAD PalTable[0x10];
-										// Tabla de paleta
+										// Palette table
 	static const RECT RectTable[0x75];
-										// Tabla de rectángulos
+										// Rectangle table
 	static LPCTSTR NormalTable[];
-										// Tabla de cadenas
+										// String table
 	static LPCTSTR KanaTable[];
-										// Tabla de cadenas
+										// String table
 	static LPCTSTR KanaShiftTable[];
-										// Tabla de cadenas
+										// String table
 	static LPCTSTR MarkTable[];
-										// Tabla de cadenas
+										// String table
 	static LPCTSTR AnotherTable[];
-										// Tabla de cadenas
+										// String table
 
 	DECLARE_MESSAGE_MAP()
-										// Con mapa de mensajes
+										// With message map
 };
 
 //===========================================================================
@@ -282,7 +282,7 @@ protected:
 	afx_msg void OnDestroy();
                                         // Window destruction
 	afx_msg void OnActivate(UINT nState, CWnd *pWnd, BOOL bMinimized);
-										// Activar
+										// Activate
 	afx_msg LONG OnApp(UINT uParam, LONG lParam);
                                         // User (lower window notification)
 
@@ -292,16 +292,16 @@ private:
 	Keyboard *m_pKeyboard;
 										// Keyboard
 	CInput *m_pInput;
-										// Entrada
+										// Input
 	CStatusBar m_StatusBar;
                                         // Status bar
 	CKeyDispWnd *m_pDispWnd;
 //  Key display window
 	UINT m_nSoftKey;
-										// Key de software presionada
+										// Software key pressed
 
 	DECLARE_MESSAGE_MAP()
-										// Con mapa de mensajes
+										// With message map
 };
 
 #endif	// mfc_w32_h

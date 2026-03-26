@@ -895,24 +895,23 @@ e->ReportError();// see what's going wrong
 
 
 
-// Build a string containing full paths for playlist entries
-CString CFrmWnd::ProcesarM3u(CString str)
+CString CFrmWnd::ProcessM3u(CString str)
 {
-	CString nuevaRuta = RutaCompletaArchivoXM6;
-	PathRemoveFileSpecA(nuevaRuta.GetBuffer());
-	nuevaRuta.ReleaseBuffer();
+	CString newPath = m_strXM6FilePath;
+	PathRemoveFileSpecA(newPath.GetBuffer());
+	newPath.ReleaseBuffer();
 
 	int curPos = 0;
 	CString resToken = str.Tokenize(_T("\r\n"), curPos);
-	CString cadTot;
+	CString fullString;
 
 	while (!resToken.IsEmpty())
 	{
-		cadTot += "\"" + nuevaRuta + "\\" + resToken + "\"  ";
+		fullString += "\"" + newPath + "\\" + resToken + "\"  ";
 		resToken = str.Tokenize(_T("\r\n"), curPos);
 	}
 
-	return cadTot;
+	return fullString;
 }
 
 
@@ -932,13 +931,12 @@ void FASTCALL CFrmWnd::InitCmd(LPCTSTR lpszCmd)
 	sz.Format(_T("%s"), lpszCmd);
 	CString fileName = sz.Mid(sz.ReverseFind('\\') + 1);
 
-	RutaCompletaArchivoXM6 = lpszCmd;
-	NombreArchivoXM6 = fileName;
+	m_strXM6FilePath = lpszCmd;
+	m_strXM6FileName = fileName;
 
 	/* Parse and apply command-line parameters here */
 
-	// Extract file extension
-	CString str = RutaCompletaArchivoXM6;
+	CString str = m_strXM6FilePath;
 	CString extensionArchivo = "";
 
 	int curPos = 0;
@@ -952,9 +950,9 @@ void FASTCALL CFrmWnd::InitCmd(LPCTSTR lpszCmd)
 	/* If this is an M3U file, parse and expand its entries */
 	if (extensionArchivo.MakeUpper() == "M3U")
 	{
-		CString contenidoM3u, cont2;
-		ReadFile(lpszCmd, contenidoM3u);
-		cont2 = ProcesarM3u(contenidoM3u).Trim();
+		CString m3uContent, cont2;
+		ReadFile(lpszCmd, m3uContent);
+		cont2 = ProcessM3u(m3uContent).Trim();
 		strcpy((char*)lpszCmd, cont2);
 	}
 
@@ -1330,9 +1328,9 @@ void FASTCALL CFrmWnd::ApplyCfg()
 	GetView()->ApplyRendererConfig(config.render_mode);
 
 	// Keep SaveState path initialized once
-	if (RutaSaveStates.GetLength() == 0)
-		RutaSaveStates = config.ruta_savestate;
-	//int msgboxID = MessageBox(RutaSaveStates,"rutasave",  2 );
+	if (m_strSaveStatePath.GetLength() == 0)
+		m_strSaveStatePath = config.ruta_savestate;
+	//int msgboxID = MessageBox(m_strSaveStatePath,"rutasave",  2 );
 	if (config.mouse_port == 0) {
 		// Disable mouse-capture mode when no mouse is connected.
 		if (GetInput()->GetMouseMode()) {

@@ -23,31 +23,31 @@ class ADPCM : public MemDevice
 public:
 	// Sample data definition
 	typedef struct {
-		DWORD panpot;					// �p���|�b�g
-		BOOL play;						// �Đ����[�h
-		BOOL rec;						// �^�����[�h
-		BOOL active;					// �A�N�e�B�u�t���O
-		BOOL started;					// �Đ���L�ׂȃf�[�^�����o
-		DWORD clock;					// �����N���b�N(4 or 8)
-		DWORD ratio;					// �N���b�N�䗦 (0 or 1 or 2)
-		DWORD speed;					// �i�s���x(128,192,256,384,512)
-		DWORD data;						// �T���v���f�[�^(4bit * 2sample)
+		DWORD panpot;					// Panpot
+		BOOL play;						// Play mode
+		BOOL rec;						// Record mode
+		BOOL active;					// Active flag
+		BOOL started;					// Play started, data flag received
+		DWORD clock;					// Master clock (4 or 8)
+		DWORD ratio;					// Clock ratio (0 or 1 or 2)
+		DWORD speed;					// Playback speed (128,192,256,384,512)
+		DWORD data;						// Sample data (4bit * 2sample)
 
-		int offset;						// �����I�t�Z�b�g (0-48)
-		int sample;						// �T���v���f�[�^
-		int out;						// �o�̓f�[�^
-		int vol;						// ����
+		int offset;						// Current offset (0-48)
+		int sample;						// Sample data
+		int out;						// Output data
+		int vol;						// Volume
 
-		BOOL enable;					// �C�l�[�u���t���O
-		BOOL sound;						// ADPCM�o�͗L���t���O
-		DWORD readpoint;				// �o�b�t�@�ǂݍ��݃|�C���g
-		DWORD writepoint;				// �o�b�t�@�������݃|�C���g
-		DWORD number;					// �o�b�t�@�L���f�[�^��
-		int wait;						// �����E�F�C�g
-		DWORD sync_cnt;					// �����J�E���^
-		DWORD sync_rate;				// �������[�g(882,960,etc...)
-		DWORD sync_step;				// �����X�e�b�v(���`��ԑΉ�)
-		BOOL interp;					// ��ԃt���O
+		BOOL enable;					// Enable flag
+		BOOL sound;						// ADPCM output enable flag
+		DWORD readpoint;				// Buffer read point
+		DWORD writepoint;				// Buffer write point
+		DWORD number;					// Buffer valid data count
+		int wait;						// Internal wait
+		DWORD sync_cnt;					// Internal counter
+		DWORD sync_rate;				// Internal rate (882,960,etc...)
+		DWORD sync_step;				// Internal step (linear interpolation)
+		BOOL interp;					// Interpolation flag
 	} adpcm_t;
 
 	typedef struct {
@@ -67,100 +67,100 @@ public:
 	} adpcm_diag_t;
 
 public:
-	// ��{�t�@���N�V����
+	// Basic functions
 	ADPCM(VM *p);
-										// �R���X�g���N�^
+										// Constructor
 	BOOL FASTCALL Init();
-										// ������
+										// Initialization
 	void FASTCALL Cleanup();
-										// �N���[���A�b�v
+										// Cleanup
 	void FASTCALL Reset();
-										// ���Z�b�g
+										// Reset
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// �Z�[�u
+										// Save
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// ���[�h
+										// Load
 	void FASTCALL ApplyCfg(const Config *config);
-										// �ݒ�K�p
+										// Apply config
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// �f�f
+										// Assertion
 #endif	// NDEBUG
 
-	// �������f�o�C�X
+	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// �o�C�g�ǂݍ���
+										// Byte read
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// ���[�h�ǂݍ���
+										// Word read
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// �o�C�g��������
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ���[�h��������
+										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// �ǂݍ��݂̂�
+										// Read only
 
-	// �O��API
+	// External API
 	void FASTCALL GetADPCM(adpcm_t *buffer);
-										// �����f�[�^�擾
+										// Get ADPCM data
 	BOOL FASTCALL Callback(Event *ev);
-										// �C�x���g�R�[���o�b�N
+										// Event callback
 	void FASTCALL SetClock(DWORD clk);
-										// ��N���b�N�w��
+										// Set master clock
 	void FASTCALL SetRatio(DWORD ratio);
-										// �N���b�N�䗦�w��
+										// Set clock ratio
 	void FASTCALL SetPanpot(DWORD pan);
-										// �p���|�b�g�w��
+										// Set panpot
 	void FASTCALL Enable(BOOL enable);
-										// �����C�l�[�u��
+										// Internal enable
 	void FASTCALL InitBuf(DWORD rate);
-										// �o�b�t�@������
+										// Buffer initialization
 	void FASTCALL GetBuf(DWORD *buffer, int samples);
-										// �o�b�t�@�擾
+										// Get buffer
 	void FASTCALL Wait(int num);
-										// �E�F�C�g�w��
+										// Wait
 	void FASTCALL EnableADPCM(BOOL flag) { adpcm.sound = flag; }
-										// �Đ��L��
+										// Play enable
 	void FASTCALL SetVolume(int volume);
-										// ���ʐݒ�
+										// Volume setting
 	void FASTCALL SetArianshuuLoopFix(BOOL enabled);
-										// Arianshuu: evita hold infinito al vaciar ADPCM
+										// Arianshuu: prevents infinite hold on ADPCM drain
 	void FASTCALL GetDiag(adpcm_diag_t *buffer) const;
-										// Telemetria interna ADPCM
+										// Internal ADPCM telemetry
 	BOOL FASTCALL IsArianshuuLoopFixEnabled() const { return quirk_arianshuu_loop_fix; }
-										// State del quirk Arianshuu
+										// Arianshuu quirk state
 	void FASTCALL ClrStarted()			{ adpcm.started = FALSE; }
-										// �X�^�[�g�t���O�N���A
+										// Clear started flag
 	BOOL FASTCALL IsStarted() const		{ return adpcm.started; }
-										// �X�^�[�g�t���O�擾
+										// Get started flag
 
 private:
 	enum {
-		BufMax = 0x10000				// �o�b�t�@�T�C�Y
+		BufMax = 0x10000				// Buffer size
 	};
 	void FASTCALL MakeTable();
-										// �e�[�u���쐬
+										// Make table
 	void FASTCALL CalcSpeed();
-										// ���x�Čv�Z
+										// Recalculate speed
 	void FASTCALL Start(int type);
-										// �^���E�Đ��X�^�[�g
+										// Record/play start
 	void FASTCALL Stop();
-										// �^���E�Đ��X�g�b�v
+										// Record/play stop
 	void FASTCALL Decode(int data, int num, BOOL valid);
-										// 4bit�f�R�[�h
+										// 4bit decode
 	Event event;
-										// �^�C�}�[�C�x���g
+										// Timer event
 	adpcm_t adpcm;
-										// �����f�[�^
+										// Internal data
 	DMAC *dmac;
 										// DMAC
 	DWORD *adpcmbuf;
-										// �����o�b�t�@
+										// Internal buffer
 	int DiffTable[49 * 16];
-										// �����e�[�u��
+										// Diff table
 	static const int NextTable[16];
-										// �ψʃe�[�u��
+										// Next table
 	static const int OffsetTable[58];
-										// �I�t�Z�b�g�e�[�u��
+										// Offset table
 	BOOL quirk_arianshuu_loop_fix;
 	int quirk_stuck_l;
 	int quirk_stuck_r;

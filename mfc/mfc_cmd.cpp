@@ -1,9 +1,9 @@
 //---------------------------------------------------------------------------
 //
-//	EMULADOR X68000 "XM6"
+//	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ÅEΩoÅEΩhÅEΩD(ytanaka@ipc-tokai.or.jp)
-//	[ MFC Procesamiento de comandos ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ MFC Command Processing ]
 //
 //---------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@
 
 //---------------------------------------------------------------------------
 //
-//	Abrir
+//	Open
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOpen()
@@ -50,7 +50,7 @@ void CFrmWnd::OnOpen()
 	Filepath path;
 	TCHAR szPath[_MAX_PATH];
 
-	// Execute dialogo comun
+	// Execute common dialog
 	::GetVM()->GetPath(path);
 	_tcscpy(szPath, path.GetPath());
 	if (!::FileOpenDlg(this, szPath, IDS_XM6OPEN)) {
@@ -59,45 +59,39 @@ void CFrmWnd::OnOpen()
 	}
 	path.SetPath(szPath);
 
-	// Pre-procesamiento de apertura
+	// Pre-open processing
 	if (!OnOpenPrep(path)) {
 		return;
 	}
 
-	// Sub-apertura
+	// Sub-open
 	OnOpenSub(path);
 }
 
 
-// Apertura rÅEΩpida de estados
 void CFrmWnd::OnFastOpen()
 {
 	Filepath path;
 	TCHAR szPath[_MAX_PATH];
-	TCHAR rutaCargaRapida[_MAX_PATH];
-	 sprintf(rutaCargaRapida, "%s\\%s.xm6", RutaSaveStates, NombreArchivoXM6);
+	TCHAR quickLoadPath[_MAX_PATH];
+	 sprintf(quickLoadPath, "%s\\%s.xm6", m_strSaveStatePath, m_strXM6FileName);
 
-
-	/* int msgboxID = MessageBox(
-		 rutaCargaRapida,"ruta",
-        2 );	*/
-
-	_tcscpy(szPath, rutaCargaRapida);
+	_tcscpy(szPath, quickLoadPath);
 	path.SetPath(szPath);
 
 
-	// Pre-procesamiento de apertura
+	// Pre-open processing
 	if (!OnOpenPrep(path)) {
 		return;
 	}
 
-	// Sub-apertura
+	// Sub-open
 	OnOpenSub(path);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Abrir UI
+//	Open UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
@@ -116,14 +110,14 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 	int nEnable;
 	int i;
 
-	// Get estado de energia y ruta de archivo (bajo bloqueo de VM)
+	// Get power state and file path (under VM lock)
 	::LockVM();
 	bPower = ::GetVM()->IsPower();
 	bSW = ::GetVM()->IsPowerSW();
 	::GetVM()->GetPath(path);
 	::UnlockVM();
 
-	// Abrir
+	// Open
 	pCmdUI->Enable(bPower);
 
 	// Get submenu
@@ -134,11 +128,11 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pMenu = &m_Menu;
 	}
 	ASSERT(pMenu);
-	// El menu de archivos es el primero
+	// File menu is first
 	pSubMenu = pMenu->GetSubMenu(0);
 	ASSERT(pSubMenu);
 
-	// UI de sobrescribir (medida para el timing de ON_UPDATE_COMMAND_UI a continuacion)
+	// Overwrite UI (workaround for ON_UPDATE_COMMAND_UI timing)
 	if (bPower && (_tcslen(path.GetPath()) > 0)) {
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -146,7 +140,7 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// UI de guardar como
+	// Save as UI
 	if (bPower) {
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_GRAYED);
 	}
@@ -154,7 +148,7 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_ENABLED);
 	}
 
-	// UI de reinicio
+	// Reset UI
 	if (bPower) {
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -162,7 +156,7 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// UI de interrupcion
+	// Interrupt UI
 	if (bPower) {
 		pSubMenu->EnableMenuItem(6, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -170,7 +164,7 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(6, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// UI de interruptor de encendido
+	// Power switch UI
 	if (bSW) {
 		pSubMenu->EnableMenuItem(7, MF_BYPOSITION | MF_CHECKED);
 	}
@@ -178,12 +172,12 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(7, MF_BYPOSITION | MF_UNCHECKED);
 	}
 
-	// Abrir separador y eliminar todos los menus posteriores
+	// Open separator and delete all following menus
 	while (pSubMenu->GetMenuItemCount() > 9) {
 		pSubMenu->RemoveMenu(9, MF_BYPOSITION);
 	}
 
-	// Si no hay MRU, anadir menu de salida y terminar
+	// If no MRU, add exit menu and return
 	if (GetConfig()->GetMRUNum(4) == 0) {
 		::GetMsg(IDS_EXIT, strExit);
 		pSubMenu->AppendMenu(MF_STRING, IDM_EXIT, strExit);
@@ -198,15 +192,15 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		nEnable = MF_BYCOMMAND | MF_ENABLED;
 	}
 
-	// Procesamiento MRU - Anadir
+	// MRU processing - Add
 	for (i=0; i<9; i++) {
-		// Intentar obtener
+		// Try to get
 		GetConfig()->GetMRUFile(4, i, szMRU);
 		if (szMRU[0] == _T('\0')) {
 			break;
 		}
 
-		// ÅEΩÅEΩÅEΩÅEΩÅEΩMenuÅEΩ…í«âÔøΩ
+		// Add to menu
 		_tsplitpath(szMRU, szDrive, szDir, szFile, szExt);
 		if (_tcslen(szDir) > 1) {
 			_tcscpy(szDir, _T("\\...\\"));
@@ -221,17 +215,17 @@ void CFrmWnd::OnOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(IDM_XM6_MRU0 + i, nEnable);
 	}
 
-	// Anadir separador
+	// Add separator
 	pSubMenu->AppendMenu(MF_SEPARATOR, 0, (LPCTSTR)NULL);
 
-	// Anadir menu de salida
+	// Add exit menu
 	::GetMsg(IDS_EXIT, strExit);
 	pSubMenu->AppendMenu(MF_STRING, IDM_EXIT, strExit);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Check previa a la apertura
+//	Pre-open check
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
@@ -247,7 +241,7 @@ BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
 
 	ASSERT(this);
 
-	// Check de existencia de archivo
+	// Check file existence
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		if (bWarning) {
 			::GetMsg(IDS_XM6LOADFILE, strMsg);
@@ -256,23 +250,23 @@ BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
 		return FALSE;
 	}
 
-	// Lectura de cabecera
+	// Read header
 	memset(cHeader, 0, sizeof(cHeader));
 	fio.Read(cHeader, sizeof(cHeader));
 	fio.Close();
 
-	// Get version grabada
+	// Get recorded version
 	cHeader[0x0a] = '\0';
 	nRecVer = ::strtoul(&cHeader[0x09], NULL, 16);
 	nRecVer <<= 8;
 	cHeader[0x0d] = '\0';
 	nRecVer |= ::strtoul(&cHeader[0x0b], NULL, 16);
 
-	// Get version actual
+	// Get current version
 	::GetVM()->GetVersion(dwMajor, dwMinor);
 	nNowVer = (int)((dwMajor << 8) | dwMinor);
 
-	// Check de cabecera
+	// Header check
 	cHeader[0x09] = '\0';
 	if (strcmp(cHeader, "XM6 DATA ") != 0) {
 		if (bWarning) {
@@ -282,9 +276,9 @@ BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
 		return FALSE;
 	}
 
-	// ÅEΩoÅEΩ[ÅEΩWÅEΩÅEΩÅEΩÅEΩÅEΩ`ÅEΩFÅEΩbÅEΩN
+	// Version check
 	if (nNowVer < nRecVer) {
-		// La version grabada es mas reciente (formato desconocido)
+		// Recorded version is newer (unknown format)
 		::GetMsg(IDS_XM6LOADVER, strMsg);
 		strFmt.Format(strMsg,
 						nNowVer >> 8, nNowVer & 0xff,
@@ -293,13 +287,13 @@ BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
 		return FALSE;
 	}
 
-	// Continuar
+	// Continue
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	Sub-apertura
+//	Sub-open
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
@@ -311,7 +305,7 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 	Filepath diskpath;
 	int nDrive;
 
-	// Detener planificador y sonido
+	// Stop scheduler and sound
 	bRun = GetScheduler()->IsEnable();
 	GetScheduler()->Enable(FALSE);
 	::LockVM();
@@ -328,7 +322,7 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 	if (dwPos == 0) {
 		AfxGetApp()->EndWaitCursor();
 
-		// El fallo es peligroso por interrupcion a medias; resetear siempre
+		// Failure is dangerous due to half interrupt; always reset
 		::GetVM()->Reset();
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
@@ -338,7 +332,7 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 		// LoadError
 		::GetMsg(IDS_XM6LOADERR, strMsg);
 		CString msg;
-		msg.Format(_T("Lectura de archivo (VM): %u"), dwPos);
+		msg.Format(_T("File read (VM): %u"), dwPos);
 		MessageBox(msg, NULL, MB_ICONSTOP | MB_OK);
 
 		return FALSE;
@@ -348,7 +342,7 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 	if (!LoadComponent(path, dwPos)) {
 		AfxGetApp()->EndWaitCursor();
 
-		// El fallo es peligroso por interrupcion a medias; resetear siempre
+		// Failure is dangerous due to half interrupt; always reset
 		::GetVM()->Reset();
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
@@ -357,14 +351,14 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 
 		// LoadError
 		::GetMsg(IDS_XM6LOADERR, strMsg);
-		MessageBox("Fallo en Lectura de archivo (MFC)", NULL, MB_ICONSTOP | MB_OK);
+		MessageBox("File read failed (MFC)", NULL, MB_ICONSTOP | MB_OK);
 		return FALSE;
 	}
 
-	// LoadSalir
+	// Load finish
 	AfxGetApp()->EndWaitCursor();
 
-	// Anadir FD, MO, CD a MRU (medida para reanudacion desde v2.04)
+	// Add FD, MO, CD to MRU (measure for resume from v2.04)
 	for (nDrive=0; nDrive<2; nDrive++) {
 		if (m_pFDD->IsReady(nDrive, FALSE)) {
 			m_pFDD->GetPath(nDrive, diskpath);
@@ -380,24 +374,24 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 		GetConfig()->SetMRUFile(3, diskpath.GetPath());
 	}
 
-	// Si se guardo con el planificador detenido, permanecer detenido (v2.04)
+	// If saved with scheduler stopped, remain stopped (v2.04)
 	if (GetScheduler()->HasSavedEnable()) {
 		bRun = GetScheduler()->GetSavedEnable();
 	}
 
-	// Limpiar contador de ejecucion
+	// Clear execution counter
 	m_dwExec = 0;
 
-	// Exito
+	// Success
 	GetSound()->Enable(bSound);
 	GetScheduler()->Reset();
 	GetScheduler()->Enable(bRun);
 	ResetCaption();
 
-	// Anadir a MRU
+	// Add to MRU
 	GetConfig()->SetMRUFile(4, path.GetPath());
 
-	// Mostrar mensaje de information
+	// Show information message
 	::GetMsg(IDS_XM6LOADOK, strMsg);
 	SetInfo(strMsg);
 
@@ -406,56 +400,56 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 
 //---------------------------------------------------------------------------
 //
-//	Save/Sobrescribir
+//	Save/Overwrite
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSave()
 {
 	Filepath path;
 
-	// Recibir ruta actual de la VM
+	// Get current VM path
 	::GetVM()->GetPath(path);
 
-	// Si esta limpio, terminar
+	// If clear, return
 	if (path.IsClear()) {
 		return;
 	}
 
-	// Sub-guardado
+	// Sub-save
 	OnSaveSub(path);
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de sobrescribir
+//	Overwrite UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSaveUI(CCmdUI *pCmdUI)
 {
 	Filepath path;
 
-	// Prohibir si la energia esta apagada
+	// Prohibit if power is off
 	if (!::GetVM()->IsPower()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// Recibir ruta actual de la VM
+	// Get current VM path
 	::GetVM()->GetPath(path);
 
-	// Prohibir uso si esta limpio
+	// Prohibit if clear
 	if (path.IsClear()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// Permitir uso
+	// Allow
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Guardado rÅEΩpido
+//	Fast save
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSaveAs()
@@ -463,7 +457,7 @@ void CFrmWnd::OnSaveAs()
 	Filepath path;
 	TCHAR szPath[_MAX_PATH];
 
-	// Execute dialogo comun
+	// Execute common dialog
 	::GetVM()->GetPath(path);
 	_tcscpy(szPath, path.GetPath());
 	/*if (!::FileSaveDlg(this, szPath, _T("xm6"), IDS_XM6OPEN)) {
@@ -473,40 +467,40 @@ void CFrmWnd::OnSaveAs()
 	}*/
 
 	 TCHAR lpFile[_MAX_PATH];
-	 strcpy(lpFile,RutaSaveStates);
-	 TCHAR cadenaArchivo[_MAX_PATH];
-	 sprintf(cadenaArchivo, "%s\\%s.xm6", lpFile, NombreArchivoXM6);
+	 strcpy(lpFile, m_strSaveStatePath);
+	 TCHAR fileString[_MAX_PATH];
+	 sprintf(fileString, "%s\\%s.xm6", lpFile, m_strXM6FileName);
 
-	 /* ACA SE GUARDA UN ESTADO RAPIDO */
+	 /* QUICK STATE SAVE HERE */
 
 
 	/* int msgboxID = MessageBox(
-		 cadenaArchivo, "GUARDADO",
-        4     );*/
+		 cadenaArchivo, "SAVED",
+         4     );*/
 
 
 
-	 path.SetPath(cadenaArchivo);
+	 path.SetPath(fileString);
 
 
-	// Sub-guardado
+	// Sub-save
 	OnSaveSub(path);
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de guardar como
+//	Save as UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSaveAsUI(CCmdUI *pCmdUI)
 {
-	// Solo si la energia esta activada
+	// Only if power is on
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
 //---------------------------------------------------------------------------
 //
-//	Sub-guardado
+//	Sub-save
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
@@ -516,7 +510,7 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 	CString strMsg;
 	DWORD dwPos;
 
-	// Detener planificador y sonido
+	// Stop scheduler and sound
 	bRun = GetScheduler()->IsEnable();
 	GetScheduler()->Enable(FALSE);
 	::LockVM();
@@ -526,23 +520,23 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 
 	AfxGetApp()->BeginWaitCursor();
 
-	// Notificar al planificador el estado al momento de guardar (v2.04)
+	// Notify scheduler the state at save time (v2.04)
 	GetScheduler()->SetSavedEnable(bRun);
 
 	// VM
-	// AsegÅEΩVate de incluir un nombre de archivo completo; ajusta segÅEΩR necesites
+	// Make sure to include a full filename; adjust as needed
 	dwPos = ::GetVM()->Save(path);
 
 	if (dwPos== 0) {
 		AfxGetApp()->EndWaitCursor();
 
-		// Fallo al guardar
+		// Save failed
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
 		ResetCaption();
 
-		// Error al guardar
+		// Save error
 		::GetMsg(IDS_XM6SAVEERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		return;
@@ -552,32 +546,32 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 	if (!SaveComponent(path, dwPos)) {
 		AfxGetApp()->EndWaitCursor();
 
-		// Fallo al guardar
+		// Save failed
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
 		ResetCaption();
 
-		// Error al guardar
+		// Save error
 		::GetMsg(IDS_XM6SAVEERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		return;
 	}
 
-	// Limpiar contador de ejecucion
+	// Clear execution counter
 	m_dwExec = 0;
 	AfxGetApp()->EndWaitCursor();
 
-	// Exito
+	// Success
 	GetSound()->Enable(bSound);
 	GetScheduler()->Reset();
 	GetScheduler()->Enable(bRun);
 	ResetCaption();
 
-	// Anadir a MRU
+	// Add to MRU
 	GetConfig()->SetMRUFile(4, path.GetPath());
 
-	// Mostrar mensaje de information
+	// Show information message
 	::GetMsg(IDS_XM6SAVEOK, strMsg);
 	SetInfo(strMsg);
 }
@@ -594,25 +588,25 @@ void CFrmWnd::OnMRU(UINT uID)
 
 	ASSERT(uID >= IDM_XM6_MRU0);
 
-	// Conversion de uID
+	// Convert uID
 	uID -= IDM_XM6_MRU0;
 	ASSERT(uID <= 8);
 
-	// Get MRU, crear ruta
+	// Get MRU, create path
 	GetConfig()->GetMRUFile(4, (int)uID, szMRU);
 	if (szMRU[0] == _T('\0')) {
 		return;
 	}
 	path.SetPath(szMRU);
 
-	// Pre-procesamiento de apertura
+	// Pre-open processing
 	if (!OnOpenPrep(path)) {
 		return;
 	}
 
-	// Apertura comun
+	// Normal open
 	if (OnOpenSub(path)) {
-		// Update directorio por defecto
+		// Update default directory
 		Filepath::SetDefaultDir(szMRU);
 	}
 }
@@ -624,13 +618,13 @@ void CFrmWnd::OnMRU(UINT uID)
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMRUUI(CCmdUI *pCmdUI)
 {
-	// Solo si la energia esta activada
+	// Only if power is on
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
 //---------------------------------------------------------------------------
 //
-//	Resetr
+//	Reset
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnReset()
@@ -645,20 +639,20 @@ void CFrmWnd::OnReset()
 	int i;
 
 
-	// Operacion no disponible si la energia esta desactivada
+	// Operation not available if power is off
 	if (!::GetVM()->IsPower()) {
 		return;
 	}
 
 	::LockVM();
 
-	// Resetr y redibujar
+	// Reset and redraw
 	::GetVM()->Reset();
 	//OutputDebugString("\n\nExecuted GetVM->Reset\n\n");
 	GetView()->Refresh();
 	ResetCaption();
 
-	// Get interruptores de memoria
+	// Get memory switches
 	pSRAM = (SRAM*)::GetVM()->SearchDevice(MAKEID('S', 'R', 'A', 'M'));
 	ASSERT(pSRAM);
 	for (i=0; i<0x100; i++) {
@@ -668,21 +662,21 @@ void CFrmWnd::OnReset()
 	::UnlockVM();
 	//OutputDebugString("\n\nExecuted UnlockVm\n\n");
 
-	// Load mensaje de reinicio
+	// Load reset message
 	::GetMsg(IDS_RESET, strReset);
 
-	// Comparar el inicio de los interruptores de memoria
+	// Compare beginning of memory switches
 	if (memcmp(Sw, SigTable, sizeof(DWORD) * 7) != 0) {
 		SetInfo(strReset);
 		return;
 	}
 
-	// Get dispositivo de arranque
+	// Get boot device
 	dwDevice = Sw[0x18];
 	dwDevice <<= 8;
 	dwDevice |= Sw[0x19];
 
-	// Discriminar dispositivo de arranque
+	// Discriminate boot device
 	bFlag = FALSE;
 	if (dwDevice == 0x0000) {
 		// STD
@@ -696,7 +690,7 @@ void CFrmWnd::OnReset()
 		dwAddr = (dwAddr << 8) | Sw[0x0e];
 		dwAddr = (dwAddr << 8) | Sw[0x0f];
 
-		// FC0000ÅEΩ`FC001CÅEΩ∆ÅAEA0020ÅEΩ`EA003CÅEΩÅEΩSCSI#
+		// FC0000~FC001C and EA0020~EA003C are SCSI#
 		strSub.Format(_T("ROM $%06X)"), dwAddr);
 		if ((dwAddr >= 0xfc0000) && (dwAddr < 0xfc0020)) {
 			strSub.Format(_T("SCSI%1d)"), (dwAddr & 0x001f) >> 2);
@@ -727,47 +721,45 @@ void CFrmWnd::OnReset()
 		strSub = _T("Unknown)");
 	}
 
-	// Mostrar
+	// Show
 	strReset += _T(" (");
 	strReset += strSub;
 	SetInfo(strReset);
-	OutputDebugString("\n\nExecuted OnReset viejo...\n\n");
+	OutputDebugString("\n\nExecuted OnReset old...\n\n");
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de reinicio
+//	Reset UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnResetUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩdÅEΩÅEΩONÅEΩ»ÇÁëÄÅEΩÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Only when power is ON
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
 
 
-void CFrmWnd::OnResetNuevo()	// Command to save configuration and then perform a reset
+void CFrmWnd::OnResetNew()
 {
 	char buffer[MAX_PATH];
 	GetModuleFileNameA(NULL, buffer, MAX_PATH);
-	//MessageBox(buffer, "Configuration", MB_OK);
 	ShellExecute(GetSafeHwnd(), "open", buffer, NULL, NULL, 1);
 
-	OutputDebugString("\n\nOnResetNuevo executed...\n\n");
+	OutputDebugString("\n\nOnResetNew executed...\n\n");
 	PostMessage(WM_CLOSE, 0, 0);
 }
 
-// Save custom configuration per game
 void CFrmWnd::OnScc()
 {
-	if (NombreArchivoXM6.GetLength() > 0)
+	if (m_strXM6FileName.GetLength() > 0)
 	{
 		m_pConfig->CustomInit(FALSE);
 		m_pConfig->Cleanup2();
 
 		CString sz;
-		sz.Format(_T("\n\nConfiguration saved for %s\n\n"), NombreArchivoXM6);
+		sz.Format(_T("\n\nConfiguration saved for %s\n\n"), m_strXM6FileName);
 		OutputDebugStringW(CT2W(sz));
 
 		MessageBox(sz, "Configuration", MB_OK);
@@ -780,7 +772,7 @@ void CFrmWnd::OnScc()
 
 void CFrmWnd::OnSccUI(CCmdUI* pCmdUI)
 {
-	// Solo si la energia esta activada
+	// Only if power is on
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
@@ -799,27 +791,27 @@ void CFrmWnd::OnSgc()
 
 void CFrmWnd::OnSgcUI(CCmdUI* pCmdUI)
 {
-	// Solo si la energia esta activada
+	// Only if power is on
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
-void CFrmWnd::OnSgcr()	// Save global configuration and restart the application
+void CFrmWnd::OnSgcr()
 {
 	m_pConfig->CustomInit(TRUE);
 	m_pConfig->Cleanup2();
-	OnResetNuevo();
+	OnResetNew();
 }
 
 void CFrmWnd::OnSgcrUI(CCmdUI* pCmdUI)
 {
-	// Solo si la energia esta activada
+	// Only if power is on
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
 
 //---------------------------------------------------------------------------
 //
-//	Tabla de firmas SRAM
+//	SRAM signature table
 //
 //---------------------------------------------------------------------------
 const DWORD CFrmWnd::SigTable[] = {
@@ -828,21 +820,21 @@ const DWORD CFrmWnd::SigTable[] = {
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩCÅEΩÅEΩÅEΩ^ÅEΩÅEΩÅEΩvÅEΩg
+//	Interrupt
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnInterrupt()
 {
 	CString strIntr;
 
-	// ÅEΩdÅEΩÅEΩONÅEΩ»ÇÁëÄÅEΩÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Only when power is ON
 	if (::GetVM()->IsPower()) {
 		// Interrupt NMI
 		::LockVM();
 		::GetVM()->Interrupt();
 		::UnlockVM();
 
-		// ÅEΩÅEΩÅEΩbÅEΩZÅEΩ[ÅEΩW
+		// Set info message
 		::GetMsg(IDS_INTERRUPT, strIntr);
 		SetInfo(strIntr);
 	}
@@ -850,18 +842,18 @@ void CFrmWnd::OnInterrupt()
 
 //---------------------------------------------------------------------------
 //
-//	UI de interrupcion
+//	Interrupt UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnInterruptUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩdÅEΩÅEΩONÅEΩ»ÇÁëÄÅEΩÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Only when power is ON
 	pCmdUI->Enable(::GetVM()->IsPower());
 }
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩdÅEΩÅEΩÅEΩXÅEΩCÅEΩbÅEΩ`
+//	Power switch
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPower()
@@ -871,41 +863,41 @@ void CFrmWnd::OnPower()
 	::LockVM();
 
 	if (::GetVM()->IsPowerSW()) {
-		// Si esta encendido, apagar
+		// If on, turn off
 		::GetVM()->PowerSW(FALSE);
 		::UnlockVM();
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩ›ÇÃìdÅEΩÅEΩÅEΩÃèÔøΩ‘ÇÔøΩSaveÅEΩÅEΩÅEΩƒÅAÅEΩdÅEΩÅEΩON
+	// If power was OFF, save state and turn ON
 	bPower = ::GetVM()->IsPower();
 	::GetVM()->PowerSW(TRUE);
 
-	// ÅEΩdÅEΩÅEΩÅEΩÅEΩÅEΩÿÇÔøΩƒÇÔøΩÅEΩƒÉXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩÅEΩ~ÅEΩ‹ÇÔøΩÅEΩƒÇÔøΩÅEΩÅEΩŒÅAÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩ
+	// If previous was OFF and scheduler was not running, start scheduler
 	if (!bPower && !GetScheduler()->IsEnable()) {
 		GetScheduler()->Enable(TRUE);
 	}
 
 	::UnlockVM();
 
-	// Resetr(Barra de estadoMostrarÅEΩÃÇÔøΩÅEΩÅEΩ)
+	// Reset (Show in status bar)
 	OnReset();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de interruptor de encendido
+//	Power switch UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPowerUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩ∆ÇËÇ†ÅEΩÅEΩÅEΩÅEΩÅEΩASi esta encendido, marcar (check)
+	// Check if on, otherwise uncheck
 	pCmdUI->SetCheck(::GetVM()->IsPowerSW());
 }
 
 //---------------------------------------------------------------------------
 //
-//	Salir
+//	Exit
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnExit()
@@ -915,14 +907,14 @@ void CFrmWnd::OnExit()
 
 //---------------------------------------------------------------------------
 //
-//	Procesamiento de disco floppy
+//	Floppy disk processing
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFD(UINT uID)
 {
 	int nDrive;
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (uID >= IDM_D1OPEN) {
 		nDrive = 1;
@@ -930,32 +922,32 @@ void CFrmWnd::OnFD(UINT uID)
 	}
 
 	switch (uID) {
-		// Abrir
+		// Open
 		case IDM_D0OPEN:
 			OnFDOpen(nDrive);
 			break;
 
-		// Expulsar
+		// Eject
 		case IDM_D0EJECT:
 			OnFDEject(nDrive);
 			break;
 
-		// Proteccion contra escritura
+		// Write protect
 		case IDM_D0WRITEP:
 			OnFDWriteP(nDrive);
 			break;
 
-		// Expulsion forzada
+		// Forced ejection
 		case IDM_D0FORCE:
 			OnFDForce(nDrive);
 			break;
 
-		// ÅEΩÅEΩ}ÅEΩÅEΩ
+		// Invalid insert
 		case IDM_D0INVALID:
 			OnFDInvalid(nDrive);
 			break;
 
-		// ÅEΩÅEΩÅEΩÅEΩ»äO
+		// Others
 		default:
 			if (uID >= IDM_D0_MRU0) {
 				// MRU
@@ -975,7 +967,7 @@ void CFrmWnd::OnFD(UINT uID)
 
 //---------------------------------------------------------------------------
 //
-//	Abrir rom floppy
+//	Open floppy ROM
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDOpen(int nDrive)
@@ -988,7 +980,7 @@ void FASTCALL CFrmWnd::OnFDOpen(int nDrive)
 	ASSERT((nDrive == 0) || (nDrive == 1));
 	ASSERT(m_pFDD);
 
-	// Execute dialogo comun
+	// Execute common dialog
 	memset(szPath, 0, sizeof(szPath));
 	if (!::FileOpenDlg(this, szPath, IDS_FDOPEN)) {
 		ResetCaption();
@@ -996,45 +988,45 @@ void FASTCALL CFrmWnd::OnFDOpen(int nDrive)
 	}
 	path.SetPath(szPath);
 
-	/* ACA SE ABREN ARCHIVOS DE FLOPPY (ROMS) */
+	/* FLOPPY FILES (ROMS) ARE OPENED HERE */
 
 
 	CString sz;
 	sz.Format(_T("%s"),  szPath);
     CString fileName= sz.Mid(sz.ReverseFind('\\')+1);
 
-	RutaCompletaArchivoXM6 = szPath;
-	NombreArchivoXM6 = fileName;
+	m_strXM6FilePath = szPath;
+	m_strXM6FileName = fileName;
 
 
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// Asignar disco
+	// Assign disk
 	if (!m_pFDD->Open(nDrive, path)) {
 		GetScheduler()->Reset();
 		::UnlockVM();
 
-		// AbrirError
+		// Open error
 		::GetMsg(IDS_FDERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		ResetCaption();
 		return;
 	}
 
-	// Get FDI antes de reiniciar la VM
+	// Get FDI before restarting VM
 	pFDI = m_pFDD->GetFDI(nDrive);
 
-	// Exito
+	// Success
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
 
-	// Anadir a MRU
+	// Add to MRU
 	GetConfig()->SetMRUFile(nDrive, szPath);
 
-	// ExitoÅEΩ»ÇÔøΩABADÅEΩCÅEΩÅEΩÅEΩ[ÅEΩWAdvertencia
+	// Success but BAD FDI warning
 	if (pFDI->GetID() == MAKEID('B', 'A', 'D', ' ')) {
 		::GetMsg(IDS_BADFDI_WARNING, strMsg);
 		//MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
@@ -1043,7 +1035,7 @@ void FASTCALL CFrmWnd::OnFDOpen(int nDrive)
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de floppy
+//	Floppy ejection
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDEject(int nDrive)
@@ -1051,7 +1043,7 @@ void FASTCALL CFrmWnd::OnFDEject(int nDrive)
 	ASSERT(m_pFDD);
 	ASSERT((nDrive == 0) || (nDrive == 1));
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pFDD->Eject(nDrive, FALSE);
 	::UnlockVM();
@@ -1059,7 +1051,7 @@ void FASTCALL CFrmWnd::OnFDEject(int nDrive)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[Proteccion contra escritura
+//	Write protect
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDWriteP(int nDrive)
@@ -1067,7 +1059,7 @@ void FASTCALL CFrmWnd::OnFDWriteP(int nDrive)
 	ASSERT(m_pFDD);
 	ASSERT((nDrive == 0) || (nDrive == 1));
 
-	// ÅEΩCÅEΩÅEΩÅEΩ[ÅEΩWÅEΩëÄçÔøΩ
+	// Toggle write protect
 	::LockVM();
 	m_pFDD->WriteP(nDrive, !m_pFDD->IsWriteP(nDrive));
 	::UnlockVM();
@@ -1075,7 +1067,7 @@ void FASTCALL CFrmWnd::OnFDWriteP(int nDrive)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[Expulsion forzada
+//	Forced ejection
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDForce(int nDrive)
@@ -1083,7 +1075,7 @@ void FASTCALL CFrmWnd::OnFDForce(int nDrive)
 	ASSERT(m_pFDD);
 	ASSERT((nDrive == 0) || (nDrive == 1));
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pFDD->Eject(nDrive, TRUE);
 	::UnlockVM();
@@ -1091,7 +1083,7 @@ void FASTCALL CFrmWnd::OnFDForce(int nDrive)
 
 //---------------------------------------------------------------------------
 //
-//	Insercion incorrecta de floppy
+//	Invalid floppy insert
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDInvalid(int nDrive)
@@ -1099,7 +1091,7 @@ void FASTCALL CFrmWnd::OnFDInvalid(int nDrive)
 	ASSERT(m_pFDD);
 	ASSERT((nDrive == 0) || (nDrive == 1));
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pFDD->Invalid(nDrive);
 	::UnlockVM();
@@ -1107,7 +1099,7 @@ void FASTCALL CFrmWnd::OnFDInvalid(int nDrive)
 
 //---------------------------------------------------------------------------
 //
-//	Medios (discos) floppy
+//	Floppy media (disks)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDMedia(int nDrive, int nMedia)
@@ -1117,24 +1109,24 @@ void FASTCALL CFrmWnd::OnFDMedia(int nDrive, int nMedia)
 	ASSERT((nDrive == 0) || (nDrive == 1));
 	ASSERT((nMedia >= 0) && (nMedia <= 15));
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// Confirmar por si acaso
+	// Confirm just in case
 	if (nMedia < m_pFDD->GetDisks(nDrive)) {
 		m_pFDD->GetPath(nDrive, path);
 
-		// ÅEΩÅEΩAbrir
+		// Open
 		m_pFDD->Open(nDrive, path, nMedia);
 	}
 
-	// VMÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// VM unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	Abrir desde MRU guardada
+//	Open from saved MRU
 //
 //---------------------------------------------------------------------------
 void FASTCALL CFrmWnd::OnFDMRU(int nDrive, int nMRU)
@@ -1148,7 +1140,7 @@ void FASTCALL CFrmWnd::OnFDMRU(int nDrive, int nMRU)
 	ASSERT((nDrive == 0) || (nDrive == 1));
 	ASSERT((nMRU >= 0) && (nMRU <= 8));
 
-	// Get MRU, crear ruta
+	// Get MRU, create path
 	GetConfig()->GetMRUFile(nDrive, nMRU, szMRU);
 	if (szMRU[0] == _T('\0')) {
 		return;
@@ -1160,32 +1152,32 @@ void FASTCALL CFrmWnd::OnFDMRU(int nDrive, int nMRU)
     CString fileName= sz.Mid(sz.ReverseFind('\\')+1);
 
 
-	/* Cuando se carga rom desde lista MRU */
-	RutaCompletaArchivoXM6 = szMRU;
-	NombreArchivoXM6 = fileName;
+	/* When loading ROM from MRU list */
+	m_strXM6FilePath = szMRU;
+	m_strXM6FileName = fileName;
 
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// Intentar asignar disco
+	// Try to assign disk
 	bResult = m_pFDD->Open(nDrive, path);
 	pFDI = m_pFDD->GetFDI(nDrive);
 	GetScheduler()->Reset();
 	ResetCaption();
 
-	// VMÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// VM unlock
 	::UnlockVM();
 
-	// Si tiene exito, actualizar directorio y anadir a MRU
+	// If successful, update directory and add to MRU
 	if (bResult) {
-		// Update directorio por defecto
+		// Update default directory
 		Filepath::SetDefaultDir(szMRU);
 
-		// Anadir a MRU
+		// Add to MRU
 		GetConfig()->SetMRUFile(nDrive, szMRU);
 
-		// BADÅEΩCÅEΩÅEΩÅEΩ[ÅEΩWAdvertencia
+		// BAD FDI warning
 		if (pFDI->GetID() == MAKEID('B', 'A', 'D', ' ')) {
 			::GetMsg(IDS_BADFDI_WARNING, strMsg);
 			//MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
@@ -1195,7 +1187,7 @@ void FASTCALL CFrmWnd::OnFDMRU(int nDrive, int nMRU)
 
 //---------------------------------------------------------------------------
 //
-//	UI de apertura de floppy
+//	Floppy open UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
@@ -1219,13 +1211,13 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ExpulsarÅEΩ÷é~ÅEΩ≈ÅAÅEΩfÅEΩBÅEΩXÅEΩNÅEΩÅEΩÅEΩÅEΩ»äOÅEΩÅEΩAbrirÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Eject prohibited, disk already open
 	::LockVM();
 	nStat = m_pFDD->GetStatus(nDrive);
 	m_nFDDStatus[nDrive] = nStat;
@@ -1246,10 +1238,10 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 	else {
 		pMenu = &m_Menu;
 	}
-	// Floppy 0 y Floppy 1 se alinean despues de File (F)
+	// Floppy 0 and Floppy 1 align after File (F)
 	pSubMenu = pMenu->GetSubMenu(nDrive + 1);
 
-	// UI de expulsion (medida para el timing de ON_UPDATE_COMMAND_UI a continuacion)
+	// Ejection UI (workaround for ON_UPDATE_COMMAND_UI timing)
 	if ((nStat & FDST_INSERT) && (nStat & FDST_EJECT)) {
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -1257,7 +1249,7 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// Proteccion contra escrituraUI
+	// Write protect UI
 	if (m_pFDD->IsReadOnly(nDrive) || !(nStat & FDST_INSERT)) {
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_GRAYED);
 	}
@@ -1265,7 +1257,7 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_ENABLED);
 	}
 
-	// Expulsion forzadaUI
+	// Forced ejection UI
 	if (!(nStat & FDST_EJECT) && (nStat & FDST_INSERT)) {
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -1273,7 +1265,7 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// ÅEΩÅEΩ}ÅEΩÅEΩUI
+	// Invalid insert UI
 	if (!(nStat & FDST_INSERT) && !(nStat & FDST_INVALID)) {
 		pSubMenu->EnableMenuItem(5, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -1281,12 +1273,12 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(5, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// ÅEΩ»ç~ÅEΩÅEΩMenuÅEΩÕÇÔøΩÅEΩ◊ÇÔøΩDelete
+	// Delete subsequent menus
 	while (pSubMenu->GetMenuItemCount() > 6) {
 		pSubMenu->RemoveMenu(6, MF_BYPOSITION);
 	}
 
-	// Procesamiento multidisco
+	// Multi-disk processing
 	if (nDisks > 1) {
 		// On/off constants configuration
 		if (!(nStat & FDST_EJECT) && (nStat & FDST_INSERT)) {
@@ -1296,17 +1288,17 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 			nEnable = MF_BYCOMMAND | MF_GRAYED;
 		}
 
-		// ÅEΩZÅEΩpÅEΩÅEΩÅEΩ[ÅEΩ^ÅEΩÅEΩ}ÅEΩÅEΩ
+		// Separator
 		pSubMenu->AppendMenu(MF_SEPARATOR, 0, (LPCTSTR)NULL);
 
-		// Bucle de medios (discos)
+		// Media (disks) loop
 		ASSERT(nDisks <= 16);
 		for (i=0; i<nDisks; i++) {
-			// Los nombres de disco se almacenan como char*; convertir a TCHAR
+			// Disk names stored as char*; convert to TCHAR
 			m_pFDD->GetName(nDrive, szShort, i);
 			lpszShort = A2T(szShort);
 
-			// ÅEΩ«âÔøΩ
+			// Add
 			if (nDrive == 0) {
 				pSubMenu->AppendMenu(MF_STRING, IDM_D0_MEDIA0 + i, lpszShort);
 				pSubMenu->EnableMenuItem(IDM_D0_MEDIA0 + i, nEnable);
@@ -1328,7 +1320,7 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 		}
 	}
 
-	// Procesamiento MRU - Separador
+	// MRU processing - Separator
 	if (GetConfig()->GetMRUNum(nDrive) == 0) {
 		return;
 	}
@@ -1345,15 +1337,15 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 
 
 
-	// Procesamiento MRU - Anadir
+	// MRU processing - Add
 	for (i=0; i<9; i++) {
-		// Intentar obtener
+		// Try to get
 		GetConfig()->GetMRUFile(nDrive, i, szMRU);
 		if (szMRU[0] == _T('\0')) {
 			break;
 		}
 
-		// ÅEΩÅEΩÅEΩÅEΩÅEΩMenuÅEΩ…í«âÔøΩ
+		// Add to menu
 		_tsplitpath(szMRU, szDrive, szDir, szFile, szExt);
 		if (_tcslen(szDir) > 1) {
 			_tcscpy(szDir, _T("\\...\\"));
@@ -1376,7 +1368,7 @@ void CFrmWnd::OnFDOpenUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de floppy UI
+//	Floppy ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDEjectUI(CCmdUI *pCmdUI)
@@ -1386,16 +1378,16 @@ void CFrmWnd::OnFDEjectUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// Se puede expulsar si esta insertado y la expulsion no esta prohibida
+	// Can eject if inserted and ejection not prohibited
 	if ((nStat & FDST_INSERT) && (nStat & FDST_EJECT)) {
 		pCmdUI->Enable(TRUE);
 		return;
@@ -1405,7 +1397,7 @@ void CFrmWnd::OnFDEjectUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[Proteccion contra escritura UI
+//	Write protect UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDWritePUI(CCmdUI *pCmdUI)
@@ -1415,19 +1407,19 @@ void CFrmWnd::OnFDWritePUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// Marcar segun la proteccion contra escritura
+	// Check according to write protect
 	pCmdUI->SetCheck(m_pFDD->IsWriteP(nDrive));
 
-	// Desactivar si es de solo lectura o no esta insertado
+	// Disable if read only or not inserted
 	if (m_pFDD->IsReadOnly(nDrive) || !(nStat & FDST_INSERT)) {
 		pCmdUI->Enable(FALSE);
 		return;
@@ -1437,7 +1429,7 @@ void CFrmWnd::OnFDWritePUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[Expulsion forzada UI
+//	Forced ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDForceUI(CCmdUI *pCmdUI)
@@ -1447,16 +1439,16 @@ void CFrmWnd::OnFDForceUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// ExpulsarÅEΩ÷é~ÅEΩÃéÔøΩÅEΩÃÇÔøΩActivado
+	// Enabled only when ejection prohibited
 	if (!(nStat & FDST_EJECT) && (nStat & FDST_INSERT)) {
 		pCmdUI->Enable(TRUE);
 		return;
@@ -1466,7 +1458,7 @@ void CFrmWnd::OnFDForceUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Insercion incorrecta de floppy UI
+//	Invalid floppy insert UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDInvalidUI(CCmdUI *pCmdUI)
@@ -1476,16 +1468,16 @@ void CFrmWnd::OnFDInvalidUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// ÅEΩ}ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩ»ÇÔøΩÅEΩÅEΩÅEΩÃÇÔøΩActivado
+	// Enabled only when not inserted and not invalid
 	if (!(nStat & FDST_INSERT) && !(nStat & FDST_INVALID)) {
 		pCmdUI->Enable(TRUE);
 		return;
@@ -1495,7 +1487,7 @@ void CFrmWnd::OnFDInvalidUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Medios (discos) floppy UI
+//	Floppy media UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDMediaUI(CCmdUI *pCmdUI)
@@ -1505,16 +1497,16 @@ void CFrmWnd::OnFDMediaUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// ExpulsarÅEΩ÷é~ÅEΩ≈ÅAÅEΩfÅEΩBÅEΩXÅEΩNÅEΩÅEΩÅEΩÅEΩ»äOÅEΩÅEΩAbrirÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Eject prohibited, disk already open
 	if (!(nStat & FDST_EJECT) && (nStat & FDST_INSERT)) {
 		pCmdUI->Enable(FALSE);
 	}
@@ -1525,7 +1517,7 @@ void CFrmWnd::OnFDMediaUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[MRU UI
+//	MRU UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDMRUUI(CCmdUI *pCmdUI)
@@ -1535,16 +1527,16 @@ void CFrmWnd::OnFDMRUUI(CCmdUI *pCmdUI)
 
 	ASSERT(m_pFDD);
 
-	// Determinar unidad
+	// Determine drive
 	nDrive = 0;
 	if (pCmdUI->m_nID >= IDM_D1OPEN) {
 		nDrive = 1;
 	}
 
-	// ÅEΩXÅEΩeÅEΩ[ÅEΩ^ÅEΩXGet
+	// Get status
 	nStat = m_nFDDStatus[nDrive];
 
-	// ExpulsarÅEΩ÷é~ÅEΩ≈ÅAÅEΩfÅEΩBÅEΩXÅEΩNÅEΩÅEΩÅEΩÅEΩ»äOÅEΩÅEΩAbrirÅEΩ≈ÇÔøΩÅEΩÅEΩ
+	// Eject prohibited, disk already open
 	if (!(nStat & FDST_EJECT) && (nStat & FDST_INSERT)) {
 		pCmdUI->Enable(FALSE);
 	}
@@ -1555,7 +1547,7 @@ void CFrmWnd::OnFDMRUUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Apertura de disco MO
+//	MO disk open
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOOpen()
@@ -1567,7 +1559,7 @@ void CFrmWnd::OnMOOpen()
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// Execute dialogo comun
+	// Execute common dialog
 	memset(szPath, 0, sizeof(szPath));
 	if (!::FileOpenDlg(this, szPath, IDS_MOOPEN)) {
 		ResetCaption();
@@ -1575,33 +1567,33 @@ void CFrmWnd::OnMOOpen()
 	}
 	path.SetPath(szPath);
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// MOAsignar disco
+	// Assign MO disk
 	if (!m_pSASI->Open(path)) {
 		GetScheduler()->Reset();
 		::UnlockVM();
 
-		// AbrirError
+		// Open error
 		::GetMsg(IDS_MOERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		ResetCaption();
 		return;
 	}
 
-	// Exito
+	// Success
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
 
-	// Anadir a MRU
+	// Add to MRU
 	GetConfig()->SetMRUFile(2, szPath);
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de apertura de disco MO
+//	MO disk open UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
@@ -1624,7 +1616,7 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuÅEΩÃèÔøΩ‘ÇÔøΩGet(ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ)
+	// Get window status (under lock)
 	::LockVM();
 	bValid = m_pSASI->IsValid();
 	bReady = m_pSASI->IsReady();
@@ -1633,7 +1625,7 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 	bLocked = m_pSASI->IsLocked();
 	::UnlockVM();
 
-	// Abrir
+	// Open
 	if (bValid) {
 		if (bReady && bLocked) {
 			pCmdUI->Enable(FALSE);
@@ -1654,11 +1646,11 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 		pMenu = &m_Menu;
 	}
 	ASSERT(pMenu);
-	// MOMenuÅEΩÕÉtÅEΩ@ÅEΩCÅEΩÅEΩÅEΩAÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[0ÅEΩAÅEΩtÅEΩÅEΩÅEΩbÅEΩsÅEΩ[1ÅEΩÃéÔøΩ
+	// MO menu follows File, Floppy 0, Floppy 1
 	pSubMenu = pMenu->GetSubMenu(3);
 	ASSERT(pSubMenu);
 
-	// UI de expulsion (medida para el timing de ON_UPDATE_COMMAND_UI a continuacion)
+	// Ejection UI (workaround for ON_UPDATE_COMMAND_UI timing)
 	if (bReady && !bLocked) {
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -1666,7 +1658,7 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// Proteccion contra escrituraUI
+	// Write protect UI
 	if (bReady && !bReadOnly) {
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_GRAYED);
 	}
@@ -1674,7 +1666,7 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(2, MF_BYPOSITION | MF_ENABLED);
 	}
 
-	// Expulsion forzadaUI
+	// Forced ejection UI
 	if (bReady && bLocked) {
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -1682,12 +1674,12 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(4, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// ÅEΩ»ç~ÅEΩÅEΩMenuÅEΩÕÇÔøΩÅEΩ◊ÇÔøΩDelete
+	// Delete subsequent menus
 	while (pSubMenu->GetMenuItemCount() > 5) {
 		pSubMenu->RemoveMenu(5, MF_BYPOSITION);
 	}
 
-	// Procesamiento MRU - Separador
+	// MRU processing - Separator
 	if (GetConfig()->GetMRUNum(2) == 0) {
 		return;
 	}
@@ -1696,22 +1688,22 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 	// On/off constants configuration
 	nEnable = MF_BYCOMMAND | MF_GRAYED;
 	if (bValid) {
-		// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuActivadoÅEΩÅEΩ
+		// Window enabled
 		if (!bReady || !bLocked) {
-			// Si no hay medio o no esta bloqueado, se puede insertar
+			// If no media or not locked, can insert
 			nEnable = MF_BYCOMMAND | MF_ENABLED;
 		}
 	}
 
-	// Procesamiento MRU - Anadir
+	// MRU processing - Add
 	for (i=0; i<9; i++) {
-		// Intentar obtener
+		// Try to get
 		GetConfig()->GetMRUFile(2, i, szMRU);
 		if (szMRU[0] == _T('\0')) {
 			break;
 		}
 
-		// ÅEΩÅEΩÅEΩÅEΩÅEΩMenuÅEΩ…í«âÔøΩ
+		// Add to menu
 		_tsplitpath(szMRU, szDrive, szDir, szFile, szExt);
 		if (_tcslen(szDir) > 1) {
 			_tcscpy(szDir, _T("\\...\\"));
@@ -1729,7 +1721,7 @@ void CFrmWnd::OnMOOpenUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de disco MO
+//	MO disk ejection
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOEject()
@@ -1737,7 +1729,7 @@ void CFrmWnd::OnMOEject()
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pSASI->Eject(FALSE);
 	::UnlockVM();
@@ -1745,7 +1737,7 @@ void CFrmWnd::OnMOEject()
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de disco MO UI
+//	MO disk ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOEjectUI(CCmdUI *pCmdUI)
@@ -1753,25 +1745,25 @@ void CFrmWnd::OnMOEjectUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// ÅEΩÅEΩÅEΩfÅEΩBÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If no disk, prohibit
 	if (!m_pSASI->IsReady()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩÅEΩŒã÷é~
+	// If locked, prohibit
 	if (m_pSASI->IsLocked()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNProteccion contra escritura
+//	MO write protect
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOWriteP()
@@ -1779,7 +1771,7 @@ void CFrmWnd::OnMOWriteP()
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pSASI->WriteP(!m_pSASI->IsWriteP());
 	::UnlockVM();
@@ -1787,7 +1779,7 @@ void CFrmWnd::OnMOWriteP()
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNProteccion contra escritura UI
+//	MO write protect UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOWritePUI(CCmdUI *pCmdUI)
@@ -1795,28 +1787,28 @@ void CFrmWnd::OnMOWritePUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// ÅEΩÅEΩÅEΩfÅEΩBÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩŒÉ`ÅEΩFÅEΩbÅEΩNÅEΩ»ÇÔøΩÅEΩAÅEΩ÷é~
+	// If no disk, cannot check
 	if (!m_pSASI->IsReady()) {
 		pCmdUI->SetCheck(0);
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// Read OnlyÅEΩ≈ÇÔøΩÅEΩÅEΩŒÉ`ÅEΩFÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩAÅEΩ÷é~
+	// If read only, cannot check
 	if (m_pSASI->IsReadOnly()) {
 		pCmdUI->SetCheck(1);
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ…âÔøΩÅEΩÅEΩÅEΩƒÉ`ÅEΩFÅEΩbÅEΩNÅEΩÅEΩÅEΩƒÅAÅEΩÅEΩÅEΩÅEΩ
+	// Check according to write protect, enable
 	pCmdUI->SetCheck(m_pSASI->IsWriteP());
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNExpulsion forzada
+//	MO forced ejection
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOForce()
@@ -1824,7 +1816,7 @@ void CFrmWnd::OnMOForce()
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pSASI->Eject(TRUE);
 	::UnlockVM();
@@ -1832,7 +1824,7 @@ void CFrmWnd::OnMOForce()
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNExpulsion forzada UI
+//	MO forced ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOForceUI(CCmdUI *pCmdUI)
@@ -1840,25 +1832,25 @@ void CFrmWnd::OnMOForceUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// ÅEΩÅEΩÅEΩfÅEΩBÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If no disk, prohibit
 	if (!m_pSASI->IsReady()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩ»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If not locked, prohibit
 	if (!m_pSASI->IsLocked()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNMRU
+//	MO MRU
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOMRU(UINT uID)
@@ -1872,39 +1864,39 @@ void CFrmWnd::OnMOMRU(UINT uID)
 	ASSERT(m_pSASI);
 	ASSERT((uID >= IDM_MO_MRU0) && (uID <= IDM_MO_MRU8));
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXCreate
+	// MRU index
 	nMRU = uID - IDM_MO_MRU0;
 	ASSERT((nMRU >= 0) && (nMRU <= 8));
 
-	// MRUGet
+	// Get MRU
 	GetConfig()->GetMRUFile(2, nMRU, szMRU);
 	if (szMRU[0] == _T('\0')) {
 		return;
 	}
 	path.SetPath(szMRU);
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// Abrir
+	// Open
 	bResult = m_pSASI->Open(path);
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
 
-	// Si tiene exito, actualizar directorio y anadir a MRU
+	// If successful, update directory and add to MRU
 	if (bResult) {
-		// ÅEΩCÅEΩjÅEΩVÅEΩÅEΩÅEΩÅEΩÅEΩfÅEΩBÅEΩÅEΩÅEΩNÅEΩgÅEΩÅEΩUpdate
+		// Update default directory
 		Filepath::SetDefaultDir(szMRU);
 
-		// Anadir a MRU
+		// Add to MRU
 		GetConfig()->SetMRUFile(2, szMRU);
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	MOÅEΩfÅEΩBÅEΩXÅEΩNMRU UI
+//	MO MRU UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMOMRUUI(CCmdUI *pCmdUI)
@@ -1912,25 +1904,25 @@ void CFrmWnd::OnMOMRUUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSASI);
 
-	// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuÅEΩÅEΩActivadoÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩDesactivado
+	// Disabled if window not enabled
 	if (!m_pSASI->IsValid()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩÅEΩŒã÷é~
+	// If locked, prohibit
 	if (m_pSASI->IsLocked()) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Apertura de CD-ROM
+//	CD-ROM open
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDOpen()
@@ -1942,7 +1934,7 @@ void CFrmWnd::OnCDOpen()
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// Execute dialogo comun
+	// Execute common dialog
 	memset(szPath, 0, sizeof(szPath));
 	if (!::FileOpenDlg(this, szPath, IDS_CDOPEN)) {
 		ResetCaption();
@@ -1950,33 +1942,33 @@ void CFrmWnd::OnCDOpen()
 	}
 	path.SetPath(szPath);
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// CDAsignar disco
+	// Assign CD disk
 	if (!m_pSCSI->Open(path, FALSE)) {
 		GetScheduler()->Reset();
 		::UnlockVM();
 
-		// AbrirError
+		// Open error
 		::GetMsg(IDS_CDERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		ResetCaption();
 		return;
 	}
 
-	// Exito
+	// Success
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
 
-	// Anadir a MRU
+	// Add to MRU
 	GetConfig()->SetMRUFile(3, szPath);
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de apertura de CD-ROM
+//	CD-ROM open UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
@@ -1997,14 +1989,14 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuÅEΩÃèÔøΩ‘ÇÔøΩGet(ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ)
+	// Get window status (under lock)
 	::LockVM();
 	bValid = m_pSCSI->IsValid(FALSE);
 	bReady = m_pSCSI->IsReady(FALSE);
 	bLocked = m_pSCSI->IsLocked(FALSE);
 	::UnlockVM();
 
-	// Abrir
+	// Open
 	if (bValid) {
 		if (bReady && bLocked) {
 			pCmdUI->Enable(FALSE);
@@ -2026,11 +2018,11 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 	}
 	ASSERT(pMenu);
 
-	// El menu CD esta despues de File, Floppy 0, Floppy 1, MO
+	// CD menu follows File, Floppy 0, Floppy 1, MO
 	pSubMenu = pMenu->GetSubMenu(4);
 	ASSERT(pSubMenu);
 
-	// UI de expulsion (medida para el timing de ON_UPDATE_COMMAND_UI a continuacion)
+	// Ejection UI (workaround for ON_UPDATE_COMMAND_UI timing)
 	if (bReady && !bLocked) {
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -2038,7 +2030,7 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(1, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// Expulsion forzadaUI
+	// Forced ejection UI
 	if (bReady && bLocked) {
 		pSubMenu->EnableMenuItem(3, MF_BYPOSITION | MF_ENABLED);
 	}
@@ -2046,12 +2038,12 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 		pSubMenu->EnableMenuItem(3, MF_BYPOSITION | MF_GRAYED);
 	}
 
-	// ÅEΩ»ç~ÅEΩÅEΩMenuÅEΩÕÇÔøΩÅEΩ◊ÇÔøΩDelete
+	// Delete subsequent menus
 	while (pSubMenu->GetMenuItemCount() > 4) {
 		pSubMenu->RemoveMenu(4, MF_BYPOSITION);
 	}
 
-	// Procesamiento MRU - Separador
+	// MRU processing - Separator
 	if (GetConfig()->GetMRUNum(3) == 0) {
 		return;
 	}
@@ -2060,22 +2052,22 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 	// On/off constants configuration
 	nEnable = MF_BYCOMMAND | MF_GRAYED;
 	if (bValid) {
-		// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuActivadoÅEΩÅEΩ
+		// Window enabled
 		if (!bReady || !bLocked) {
-			// Si no hay medio o no esta bloqueado, se puede insertar
+			// If no media or not locked, can insert
 			nEnable = MF_BYCOMMAND | MF_ENABLED;
 		}
 	}
 
-	// Procesamiento MRU - Anadir
+	// MRU processing - Add
 	for (i=0; i<9; i++) {
-		// Intentar obtener
+		// Try to get
 		GetConfig()->GetMRUFile(3, i, szMRU);
 		if (szMRU[0] == _T('\0')) {
 			break;
 		}
 
-		// ÅEΩÅEΩÅEΩÅEΩÅEΩMenuÅEΩ…í«âÔøΩ
+		// Add to menu
 		_tsplitpath(szMRU, szDrive, szDir, szFile, szExt);
 		if (_tcslen(szDir) > 1) {
 			_tcscpy(szDir, _T("\\...\\"));
@@ -2093,7 +2085,7 @@ void CFrmWnd::OnCDOpenUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de CD-ROM
+//	CD-ROM ejection
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDEject()
@@ -2101,7 +2093,7 @@ void CFrmWnd::OnCDEject()
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pSCSI->Eject(FALSE, FALSE);
 	::UnlockVM();
@@ -2109,7 +2101,7 @@ void CFrmWnd::OnCDEject()
 
 //---------------------------------------------------------------------------
 //
-//	Expulsion de CD-ROM UI
+//	CD-ROM ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDEjectUI(CCmdUI *pCmdUI)
@@ -2117,25 +2109,25 @@ void CFrmWnd::OnCDEjectUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// ÅEΩÅEΩÅEΩfÅEΩBÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If no disk, prohibit
 	if (!m_pSCSI->IsReady(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩÅEΩŒã÷é~
+	// If locked, prohibit
 	if (m_pSCSI->IsLocked(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	CD-ROMExpulsion forzada
+//	CD-ROM forced ejection
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDForce()
@@ -2143,7 +2135,7 @@ void CFrmWnd::OnCDForce()
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩƒçsÅEΩÅEΩ
+	// VM lock and execute
 	::LockVM();
 	m_pSCSI->Eject(TRUE, FALSE);
 	::UnlockVM();
@@ -2151,7 +2143,7 @@ void CFrmWnd::OnCDForce()
 
 //---------------------------------------------------------------------------
 //
-//	CD-ROMExpulsion forzada UI
+//	CD-ROM forced ejection UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCDForceUI(CCmdUI *pCmdUI)
@@ -2159,19 +2151,19 @@ void CFrmWnd::OnCDForceUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// ÅEΩÅEΩÅEΩfÅEΩBÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If no disk, prohibit
 	if (!m_pSCSI->IsReady(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩ»ÇÔøΩÅEΩÅEΩŒã÷é~
+	// If not locked, prohibit
 	if (!m_pSCSI->IsLocked(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
@@ -2191,32 +2183,32 @@ void CFrmWnd::OnCDMRU(UINT uID)
 	ASSERT(m_pSCSI);
 	ASSERT((uID >= IDM_CD_MRU0) && (uID <= IDM_CD_MRU8));
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXCreate
+	// MRU index
 	nMRU = uID - IDM_CD_MRU0;
 	ASSERT((nMRU >= 0) && (nMRU <= 8));
 
-	// MRUGet
+	// Get MRU
 	GetConfig()->GetMRUFile(3, nMRU, szMRU);
 	if (szMRU[0] == _T('\0')) {
 		return;
 	}
 	path.SetPath(szMRU);
 
-	// VMÅEΩÅEΩÅEΩbÅEΩN
+	// VM lock
 	::LockVM();
 
-	// Abrir
+	// Open
 	bResult = m_pSCSI->Open(path, FALSE);
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
 
-	// Si tiene exito, actualizar directorio y anadir a MRU
+	// If successful, update directory and add to MRU
 	if (bResult) {
-		// ÅEΩCÅEΩjÅEΩVÅEΩÅEΩÅEΩÅEΩÅEΩfÅEΩBÅEΩÅEΩÅEΩNÅEΩgÅEΩÅEΩUpdate
+		// Update default directory
 		Filepath::SetDefaultDir(szMRU);
 
-		// Anadir a MRU
+		// Add to MRU
 		GetConfig()->SetMRUFile(3, szMRU);
 	}
 }
@@ -2231,35 +2223,35 @@ void CFrmWnd::OnCDMRUUI(CCmdUI *pCmdUI)
 	ASSERT(this);
 	ASSERT(m_pSCSI);
 
-	// ÅEΩhÅEΩÅEΩÅEΩCÅEΩuÅEΩÅEΩActivadoÅEΩ≈Ç»ÇÔøΩÅEΩÅEΩDesactivado
+	// Disabled if window not enabled
 	if (!m_pSCSI->IsValid(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩNÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩÅEΩŒã÷é~
+	// If locked, prohibit
 	if (m_pSCSI->IsLocked(FALSE)) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Macro de comando/UI para subventanas
+//	Macro for subwindow command/UI
 //
 //---------------------------------------------------------------------------
 #define ON_SUB_WINDOW(id, wndcls)	do { \
-									CSubWnd *pWnd = GetView()->SearchSWnd(id); \
-									if (pWnd) { pWnd->DestroyWindow(); return; } \
-									wndcls *pNewWnd = new wndcls; \
-									pNewWnd->Init(GetView()); \
-									} while (0)
+								CSubWnd *pWnd = GetView()->SearchSWnd(id); \
+								if (pWnd) { pWnd->DestroyWindow(); return; } \
+								wndcls *pNewWnd = new wndcls; \
+								pNewWnd->Init(GetView()); \
+								} while (0)
 #define ON_UPDATE_SUB_WINDOW(id)	if (GetView()->SearchSWnd(id)) pCmdUI->SetCheck(1); \
-									else pCmdUI->SetCheck(0);
+								else pCmdUI->SetCheck(0);
 
 //---------------------------------------------------------------------------
 //
@@ -2283,7 +2275,7 @@ void CFrmWnd::OnLogUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩ
+//	Scheduler
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnScheduler()
@@ -2293,7 +2285,7 @@ void CFrmWnd::OnScheduler()
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩ UI
+//	Scheduler UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSchedulerUI(CCmdUI *pCmdUI)
@@ -2303,7 +2295,7 @@ void CFrmWnd::OnSchedulerUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Dispositivo
+//	Device
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDevice()
@@ -2313,7 +2305,7 @@ void CFrmWnd::OnDevice()
 
 //---------------------------------------------------------------------------
 //
-//	Dispositivo UI
+//	Device UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDeviceUI(CCmdUI *pCmdUI)
@@ -2323,7 +2315,7 @@ void CFrmWnd::OnDeviceUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Registers de CPU
+//	CPU registers
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCPUReg()
@@ -2333,7 +2325,7 @@ void CFrmWnd::OnCPUReg()
 
 //---------------------------------------------------------------------------
 //
-//	Registers de CPU UI
+//	CPU registers UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCPURegUI(CCmdUI *pCmdUI)
@@ -2343,7 +2335,7 @@ void CFrmWnd::OnCPURegUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩÅEΩÅEΩËçûÔøΩÅEΩ
+//	Interrupt
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnInt()
@@ -2353,7 +2345,7 @@ void CFrmWnd::OnInt()
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩÅEΩÅEΩËçûÔøΩÅEΩ UI
+//	Interrupt UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnIntUI(CCmdUI *pCmdUI)
@@ -2363,7 +2355,7 @@ void CFrmWnd::OnIntUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Desensamblar
+//	Disassemble
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDisasm()
@@ -2372,7 +2364,7 @@ void CFrmWnd::OnDisasm()
 	int i;
 	BOOL flag;
 
-	// Check los 8 tipos
+	// Check 8 types
 	flag = FALSE;
 	for (i=0; i<8; i++) {
 		pWnd = (CDisasmWnd*)GetView()->SearchSWnd(MAKEID('D', 'I', 'S', 'A' + i));
@@ -2382,7 +2374,7 @@ void CFrmWnd::OnDisasm()
 		}
 	}
 
-	// Creacion nueva
+	// New creation
 	if (!flag) {
 		pWnd = new CDisasmWnd(0);
 		VERIFY(pWnd->Init(GetView()));
@@ -2391,7 +2383,7 @@ void CFrmWnd::OnDisasm()
 
 //---------------------------------------------------------------------------
 //
-//	UI de desensamblar
+//	Disassemble UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDisasmUI(CCmdUI *pCmdUI)
@@ -2399,7 +2391,7 @@ void CFrmWnd::OnDisasmUI(CCmdUI *pCmdUI)
 	CSubWnd *pSubWnd;
 	int i;
 
-	// Check los 8 tipos
+	// Check 8 types
 	for (i=0; i<8; i++) {
 		pSubWnd = GetView()->SearchSWnd(MAKEID('D', 'I', 'S', 'A' + i));
 		if (pSubWnd) {
@@ -2413,7 +2405,7 @@ void CFrmWnd::OnDisasmUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩ
+//	Memory
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMemory()
@@ -2422,7 +2414,7 @@ void CFrmWnd::OnMemory()
 	int i;
 	BOOL flag;
 
-	// Check los 8 tipos
+	// Check 8 types
 	flag = FALSE;
 	for (i=0; i<8; i++) {
 		pWnd = (CMemoryWnd*)GetView()->SearchSWnd(MAKEID('M', 'E', 'M', 'A' + i));
@@ -2432,7 +2424,7 @@ void CFrmWnd::OnMemory()
 		}
 	}
 
-	// Creacion nueva
+	// New creation
 	if (!flag) {
 		pWnd = new CMemoryWnd(0);
 		VERIFY(pWnd->Init(GetView()));
@@ -2441,7 +2433,7 @@ void CFrmWnd::OnMemory()
 
 //---------------------------------------------------------------------------
 //
-//	UI de memoria
+//	Memory UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMemoryUI(CCmdUI *pCmdUI)
@@ -2449,7 +2441,7 @@ void CFrmWnd::OnMemoryUI(CCmdUI *pCmdUI)
 	CSubWnd *pSubWnd;
 	int i;
 
-	// Check los 8 tipos
+	// Check 8 types
 	for (i=0; i<8; i++) {
 		pSubWnd = GetView()->SearchSWnd(MAKEID('M', 'E', 'M', 'A' + i));
 		if (pSubWnd) {
@@ -2463,7 +2455,7 @@ void CFrmWnd::OnMemoryUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Punto de interrupcion (Breakpoint)
+//	Breakpoint
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBreakP()
@@ -2473,7 +2465,7 @@ void CFrmWnd::OnBreakP()
 
 //---------------------------------------------------------------------------
 //
-//	UI de puntos de interrupcion
+//	Breakpoint UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBreakPUI(CCmdUI *pCmdUI)
@@ -2493,7 +2485,7 @@ void CFrmWnd::OnMFP()
 
 //---------------------------------------------------------------------------
 //
-//	UI de MFP
+//	MFP UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMFPUI(CCmdUI *pCmdUI)
@@ -2513,7 +2505,7 @@ void CFrmWnd::OnDMAC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de DMAC
+//	DMAC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDMACUI(CCmdUI *pCmdUI)
@@ -2533,7 +2525,7 @@ void CFrmWnd::OnCRTC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de CRTC
+//	CRTC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCRTCUI(CCmdUI *pCmdUI)
@@ -2553,7 +2545,7 @@ void CFrmWnd::OnVC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de VC
+//	VC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnVCUI(CCmdUI *pCmdUI)
@@ -2573,7 +2565,7 @@ void CFrmWnd::OnRTC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de RTC
+//	RTC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnRTCUI(CCmdUI *pCmdUI)
@@ -2593,7 +2585,7 @@ void CFrmWnd::OnOPM()
 
 //---------------------------------------------------------------------------
 //
-//	UI de OPM
+//	OPM UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOPMUI(CCmdUI *pCmdUI)
@@ -2603,7 +2595,7 @@ void CFrmWnd::OnOPMUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩLÅEΩ[ÅEΩ{ÅEΩ[ÅEΩh
+//	Keyboard
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnKeyboard()
@@ -2613,7 +2605,7 @@ void CFrmWnd::OnKeyboard()
 
 //---------------------------------------------------------------------------
 //
-//	UI de teclado
+//	Keyboard UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnKeyboardUI(CCmdUI *pCmdUI)
@@ -2633,7 +2625,7 @@ void CFrmWnd::OnFDD()
 
 //---------------------------------------------------------------------------
 //
-//	UI de FDD
+//	FDD UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDDUI(CCmdUI *pCmdUI)
@@ -2653,7 +2645,7 @@ void CFrmWnd::OnFDC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de FDC
+//	FDC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFDCUI(CCmdUI *pCmdUI)
@@ -2673,7 +2665,7 @@ void CFrmWnd::OnSCC()
 
 //---------------------------------------------------------------------------
 //
-//	UI de SCC
+//	SCC UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSCCUI(CCmdUI *pCmdUI)
@@ -2693,7 +2685,7 @@ void CFrmWnd::OnCynthia()
 
 //---------------------------------------------------------------------------
 //
-//	UI de CYNTHIA
+//	CYNTHIA UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCynthiaUI(CCmdUI *pCmdUI)
@@ -2713,7 +2705,7 @@ void CFrmWnd::OnSASI()
 
 //---------------------------------------------------------------------------
 //
-//	UI de SASI
+//	SASI UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSASIUI(CCmdUI *pCmdUI)
@@ -2733,7 +2725,7 @@ void CFrmWnd::OnMIDI()
 
 //---------------------------------------------------------------------------
 //
-//	UI de MIDI
+//	MIDI UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMIDIUI(CCmdUI *pCmdUI)
@@ -2753,7 +2745,7 @@ void CFrmWnd::OnSCSI()
 
 //---------------------------------------------------------------------------
 //
-//	UI de SCSI
+//	SCSI UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSCSIUI(CCmdUI *pCmdUI)
@@ -2763,7 +2755,7 @@ void CFrmWnd::OnSCSIUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla de texto
+//	Text screen
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTVRAM()
@@ -2773,7 +2765,7 @@ void CFrmWnd::OnTVRAM()
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla de texto
+//	Text screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTVRAMUI(CCmdUI *pCmdUI)
@@ -2783,7 +2775,7 @@ void CFrmWnd::OnTVRAMUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla grafica 1024x1024
+//	Graphic screen 1024x1024
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG1024()
@@ -2793,7 +2785,7 @@ void CFrmWnd::OnG1024()
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla grafica 1024x1024
+//	Graphic screen 1024x1024 UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG1024UI(CCmdUI *pCmdUI)
@@ -2803,7 +2795,7 @@ void CFrmWnd::OnG1024UI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla grafica 16 colores
+//	16 color graphic screen
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG16(UINT uID)
@@ -2811,25 +2803,25 @@ void CFrmWnd::OnG16(UINT uID)
 	CG16Wnd *pWnd;
 	int index;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(uID - IDM_G16P0);
 	ASSERT((index >= 0) || (index <= 3));
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CG16Wnd*)GetView()->SearchSWnd(MAKEID('G', '1', '6', ('A' + index)));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CG16Wnd(index);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla grafica 16 colores
+//	16 color graphic screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG16UI(CCmdUI *pCmdUI)
@@ -2837,7 +2829,7 @@ void CFrmWnd::OnG16UI(CCmdUI *pCmdUI)
 	int index;
 	CSubWnd *pSubWnd;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(pCmdUI->m_nID - IDM_G16P0);
 	ASSERT((index >= 0) || (index <= 3));
 
@@ -2852,7 +2844,7 @@ void CFrmWnd::OnG16UI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla grafica 256 colores
+//	256 color graphic screen
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG256(UINT uID)
@@ -2860,25 +2852,25 @@ void CFrmWnd::OnG256(UINT uID)
 	CG256Wnd *pWnd;
 	int index;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(uID - IDM_G256P0);
 	ASSERT((index == 0) || (index == 1));
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CG256Wnd*)GetView()->SearchSWnd(MAKEID('G', '2', '5', ('A' + index)));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CG256Wnd(index);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla grafica 256 colores
+//	256 color graphic screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG256UI(CCmdUI *pCmdUI)
@@ -2886,7 +2878,7 @@ void CFrmWnd::OnG256UI(CCmdUI *pCmdUI)
 	int index;
 	CSubWnd *pSubWnd;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(pCmdUI->m_nID - IDM_G256P0);
 	ASSERT((index == 0) || (index == 1));
 
@@ -2901,28 +2893,28 @@ void CFrmWnd::OnG256UI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla grafica 65536 colores
+//	65536 color graphic screen
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG64K()
 {
 	CG64KWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CG64KWnd*)GetView()->SearchSWnd(MAKEID('G', '6', '4', 'K'));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CG64KWnd;
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla grafica 65536 colores
+//	65536 color graphic screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnG64KUI(CCmdUI *pCmdUI)
@@ -2939,21 +2931,21 @@ void CFrmWnd::OnPCG()
 {
 	CPCGWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CPCGWnd*)GetView()->SearchSWnd(MAKEID('P', 'C', 'G', ' '));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CPCGWnd;
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de PCG
+//	PCG UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPCGUI(CCmdUI *pCmdUI)
@@ -2963,7 +2955,7 @@ void CFrmWnd::OnPCGUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Pantalla BG
+//	BG screen
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBG(UINT uID)
@@ -2971,25 +2963,25 @@ void CFrmWnd::OnBG(UINT uID)
 	CBGWnd *pWnd;
 	int index;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(uID - IDM_BG0);
 	ASSERT((index == 0) || (index == 1));
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CBGWnd*)GetView()->SearchSWnd(MAKEID('B', 'G', ('0' + index), ' '));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CBGWnd(index);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla BG
+//	BG screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBGUI(CCmdUI *pCmdUI)
@@ -2997,7 +2989,7 @@ void CFrmWnd::OnBGUI(CCmdUI *pCmdUI)
 	int index;
 	CSubWnd *pSubWnd;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(pCmdUI->m_nID - IDM_BG0);
 	ASSERT((index == 0) || (index == 1));
 
@@ -3012,28 +3004,28 @@ void CFrmWnd::OnBGUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Paleta
+//	Palette
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPalet()
 {
 	CPaletteWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CPaletteWnd*)GetView()->SearchSWnd(MAKEID('P', 'A', 'L', ' '));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CPaletteWnd(FALSE);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de paleta
+//	Palette UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPaletUI(CCmdUI *pCmdUI)
@@ -3043,28 +3035,28 @@ void CFrmWnd::OnPaletUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer de texto
+//	Text buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTextBuf()
 {
 	CRendBufWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CRendBufWnd*)GetView()->SearchSWnd(MAKEID('T', 'E', 'X', 'B'));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CRendBufWnd(0);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer de texto
+//	Text buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTextBufUI(CCmdUI *pCmdUI)
@@ -3074,7 +3066,7 @@ void CFrmWnd::OnTextBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer grafico
+//	Graphic buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnGrpBuf(UINT uID)
@@ -3082,25 +3074,25 @@ void CFrmWnd::OnGrpBuf(UINT uID)
 	CRendBufWnd *pWnd;
 	int index;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(uID - IDM_REND_GP0);
 	ASSERT((index >= 0) || (index <= 4));
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CRendBufWnd*)GetView()->SearchSWnd(MAKEID('G', 'P', ('0' + index), 'B'));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CRendBufWnd(index + 1);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer grafico
+//	Graphic buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnGrpBufUI(CCmdUI *pCmdUI)
@@ -3108,7 +3100,7 @@ void CFrmWnd::OnGrpBufUI(CCmdUI *pCmdUI)
 	int index;
 	CSubWnd *pSubWnd;
 
-	// ÅEΩCÅEΩÅEΩÅEΩfÅEΩbÅEΩNÅEΩXAceptar
+	// Accept index
 	index = (int)(pCmdUI->m_nID - IDM_REND_GP0);
 	ASSERT((index >= 0) || (index <= 4));
 
@@ -3123,7 +3115,7 @@ void CFrmWnd::OnGrpBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer PCG
+//	PCG buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPCGBuf()
@@ -3133,7 +3125,7 @@ void CFrmWnd::OnPCGBuf()
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer PCG
+//	PCG buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPCGBufUI(CCmdUI *pCmdUI)
@@ -3143,28 +3135,28 @@ void CFrmWnd::OnPCGBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer BG/Sprite
+//	BG/Sprite buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBGSpBuf()
 {
 	CRendBufWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CRendBufWnd*)GetView()->SearchSWnd(MAKEID('B', 'G', 'S', 'P'));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CRendBufWnd(5);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer BG/Sprite
+//	BG/Sprite buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBGSpBufUI(CCmdUI *pCmdUI)
@@ -3174,28 +3166,28 @@ void CFrmWnd::OnBGSpBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer de paleta
+//	Palette buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPaletBuf()
 {
 	CPaletteWnd *pWnd;
 
-	// ÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩŒèÔøΩÅEΩÅEΩ
+	// If already exists, close
 	pWnd = (CPaletteWnd*)GetView()->SearchSWnd(MAKEID('P', 'A', 'L', 'B'));
 	if (pWnd) {
 		pWnd->PostMessage(WM_CLOSE, 0, 0);
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩECreate
+	// Create subwindow
 	pWnd = new CPaletteWnd(TRUE);
 	VERIFY(pWnd->Init(GetView()));
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer de paleta
+//	Palette buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPaletBufUI(CCmdUI *pCmdUI)
@@ -3205,7 +3197,7 @@ void CFrmWnd::OnPaletBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Buffer de composicion (Mix)
+//	Mix buffer
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMixBuf()
@@ -3215,7 +3207,7 @@ void CFrmWnd::OnMixBuf()
 
 //---------------------------------------------------------------------------
 //
-//	UI de buffer de composicion
+//	Mix buffer UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMixBufUI(CCmdUI *pCmdUI)
@@ -3225,7 +3217,7 @@ void CFrmWnd::OnMixBufUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Componente
+//	Component
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnComponent()
@@ -3235,7 +3227,7 @@ void CFrmWnd::OnComponent()
 
 //---------------------------------------------------------------------------
 //
-//	UI de componente
+//	Component UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnComponentUI(CCmdUI *pCmdUI)
@@ -3245,7 +3237,7 @@ void CFrmWnd::OnComponentUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Informacion de OS
+//	OS information
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOSInfo()
@@ -3255,7 +3247,7 @@ void CFrmWnd::OnOSInfo()
 
 //---------------------------------------------------------------------------
 //
-//	UI de information de OS
+//	OS information UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOSInfoUI(CCmdUI *pCmdUI)
@@ -3265,7 +3257,7 @@ void CFrmWnd::OnOSInfoUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩTÅEΩEÅEΩÅEΩÅEΩh
+//	Sound
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSound()
@@ -3275,7 +3267,7 @@ void CFrmWnd::OnSound()
 
 //---------------------------------------------------------------------------
 //
-//	UI de sonido
+//	Sound UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSoundUI(CCmdUI *pCmdUI)
@@ -3285,7 +3277,7 @@ void CFrmWnd::OnSoundUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Entrada (Input)
+//	Input
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnInput()
@@ -3295,7 +3287,7 @@ void CFrmWnd::OnInput()
 
 //---------------------------------------------------------------------------
 //
-//	UI de entrada
+//	Input UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnInputUI(CCmdUI *pCmdUI)
@@ -3305,7 +3297,7 @@ void CFrmWnd::OnInputUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Puertos
+//	Ports
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPort()
@@ -3315,7 +3307,7 @@ void CFrmWnd::OnPort()
 
 //---------------------------------------------------------------------------
 //
-//	UI de puertos
+//	Ports UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnPortUI(CCmdUI *pCmdUI)
@@ -3335,7 +3327,7 @@ void CFrmWnd::OnBitmap()
 
 //---------------------------------------------------------------------------
 //
-//	UI de bitmap
+//	Bitmap UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBitmapUI(CCmdUI *pCmdUI)
@@ -3345,7 +3337,7 @@ void CFrmWnd::OnBitmapUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Controller (Driver) MIDI
+//	MIDI controller (Driver)
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMIDIDrv()
@@ -3355,7 +3347,7 @@ void CFrmWnd::OnMIDIDrv()
 
 //---------------------------------------------------------------------------
 //
-//	UI de controlador MIDI
+//	MIDI controller UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMIDIDrvUI(CCmdUI *pCmdUI)
@@ -3365,21 +3357,21 @@ void CFrmWnd::OnMIDIDrvUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Titulo de ventana
+//	Window title
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCaption()
 {
-	// ÅEΩtÅEΩÅEΩÅEΩOÅEΩîΩì]
+	// Toggle flag
 	m_bCaption = !m_bCaption;
 
-	// ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩShowCaptionÅEΩ…îCÅEΩÅEΩÅEΩÅEΩ
+	// Show or hide caption
 	ShowCaption();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de titulo de ventana
+//	Window title UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCaptionUI(CCmdUI *pCmdUI)
@@ -3389,21 +3381,21 @@ void CFrmWnd::OnCaptionUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Barra de menu
+//	Menu bar
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMenu()
 {
-	// ÅEΩtÅEΩÅEΩÅEΩOÅEΩîΩì]
+	// Toggle flag
 	m_bMenuBar = !m_bMenuBar;
 
-	// ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩShowMenuÅEΩ…îCÅEΩÅEΩÅEΩÅEΩ
+	// Show or hide menu
 	ShowMenu();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de barra de menu
+//	Menu bar UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMenuUI(CCmdUI *pCmdUI)
@@ -3413,21 +3405,21 @@ void CFrmWnd::OnMenuUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Barra de estado
+//	Status bar
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnStatus()
 {
-	// ÅEΩtÅEΩÅEΩÅEΩOÅEΩîΩì]
+	// Toggle flag
 	m_bStatusBar = !m_bStatusBar;
 
-	// ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩShowStatusÅEΩ…îCÅEΩÅEΩÅEΩÅEΩ
+	// Show or hide status
 	ShowStatus();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de barra de estado
+//	Status bar UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnStatusUI(CCmdUI *pCmdUI)
@@ -3437,47 +3429,47 @@ void CFrmWnd::OnStatusUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Refrescar
+//	Refresh
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnRefresh()
 {
-	// ÅEΩÅEΩÅEΩbÅEΩN
+	// Lock
 	::LockVM();
 
-	// ÅEΩÅEΩDibujo
+	// Draw
 	GetView()->Refresh();
 
-	// ÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	Expandir
+//	Stretch
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnStretch()
 {
 	BOOL bFlag;
 
-	// VMÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Lock VM
 	::LockVM();
 
-	// ÅEΩÅEΩÅEΩ]
+	// Toggle
 	bFlag = GetView()->IsStretch();
 	GetView()->Stretch(!bFlag);
 
-	// ÅEΩRÅEΩÅEΩÅEΩtÅEΩBÅEΩOÅEΩÅEΩœÇÔøΩÅEΩÅEΩ
+	// Save stretch setting
 	GetConfig()->SetStretch(!bFlag);
 
-	// VMÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock VM
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de expansion
+//	Stretch UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnStretchUI(CCmdUI *pCmdUI)
@@ -3487,7 +3479,7 @@ void CFrmWnd::OnStretchUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Evento de pantalla completa
+//	Full screen event
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFullScreen()
@@ -3496,7 +3488,7 @@ void CFrmWnd::OnFullScreen()
 	BOOL bSound;
 	BOOL bMouse;
 
-	// Detener emulacion y sonido brevemente para el cambio de layout
+	// Stop emulation and sound briefly for layout change
 	bEnable = GetScheduler()->IsEnable();
 	bMouse = GetInput()->GetMouseMode();
 	if (bMouse) {
@@ -3511,7 +3503,7 @@ void CFrmWnd::OnFullScreen()
 	::UnlockVM();
 
 	if (m_bFullScreen) {
-		// Salir de pantalla completa (Modo Window)
+		// Exit full screen (Window mode)
 		ExitBorderlessFullscreen();
 		m_bFullScreen = FALSE;
 
@@ -3524,7 +3516,7 @@ void CFrmWnd::OnFullScreen()
 		RecalcLayout();
 	}
 	else {
-		// Entrar a pantalla completa (Borderless)
+		// Enter full screen (Borderless)
 		EnterBorderlessFullscreen();
 		m_bFullScreen = TRUE;
 
@@ -3536,14 +3528,14 @@ void CFrmWnd::OnFullScreen()
 		RecalcStatusView();
 	}
 
-	// Restaurar estados
+	// Restore states
 	GetScheduler()->Enable(bEnable);
 	GetSound()->Enable(bSound);
 	GetInput()->SetMouseMode(bMouse);
 	ResetCaption();
 	ResetStatus();
 
-	// Auto-captura de mouse si es necesario
+	// Auto-capture mouse if necessary
 	if (m_bAutoMouse && bEnable && !bMouse && m_bFullScreen) {
 		OnMouseMode();
 	}
@@ -3552,7 +3544,7 @@ void CFrmWnd::OnFullScreen()
 
 //---------------------------------------------------------------------------
 //
-//	UI de pantalla completa
+//	Full screen UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnFullScreenUI(CCmdUI *pCmdUI)
@@ -3567,26 +3559,26 @@ void CFrmWnd::OnFullScreenUI(CCmdUI *pCmdUI)
 //---------------------------------------------------------------------------
 void CFrmWnd::OnExec()
 {
-	// ÅEΩÅEΩÅEΩbÅEΩN
+	// Lock
 	::LockVM();
 
-	// ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩActivadoÅEΩÅEΩ
+	// Enable scheduler
 	GetScheduler()->Reset();
 	GetScheduler()->Enable(TRUE);
 	ResetCaption();
 
-	// ÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de ejecucion
+//	Execute UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnExecUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩPararÅEΩÅEΩÅEΩ»ÇÔøΩActivado
+	// Enable if scheduler stopped and power on
 	if ((!GetScheduler()->IsEnable()) && ::GetVM()->IsPower()) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -3597,29 +3589,29 @@ void CFrmWnd::OnExecUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Parar
+//	Stop
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBreak()
 {
-	// ÅEΩÅEΩÅEΩbÅEΩN
+	// Lock
 	::LockVM();
 
-	// ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩDesactivadoÅEΩÅEΩ
+	// Disable scheduler
 	GetScheduler()->Enable(FALSE);
 
-	// ÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de parada
+//	Stop UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBreakUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩÅEÅEøΩ»ÇÔøΩActivado
+	// Enable if scheduler is running
 	if (GetScheduler()->IsEnable()) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -3630,30 +3622,30 @@ void CFrmWnd::OnBreakUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Rastro (Trace)
+//	Trace
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTrace()
 {
-	// ÅEΩÅEΩÅEΩbÅEΩN
+	// Lock
 	::LockVM();
 
-	// Rastro (Trace)
+	// Trace
 	::GetVM()->Trace();
 	GetScheduler()->SyncDisasm();
 
-	// ÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de rastro
+//	Trace UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTraceUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩXÅEΩPÅEΩWÅEΩÅEΩÅEΩ[ÅEΩÅEΩÅEΩÅEΩPararÅEΩÅEΩÅEΩ»ÇÔøΩActivado
+	// Enable if scheduler stopped and power on
 	if ((!GetScheduler()->IsEnable()) && ::GetVM()->IsPower()) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -3664,7 +3656,7 @@ void CFrmWnd::OnTraceUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩ}ÅEΩEÅEΩXÅEΩÅEΩÅEΩ[ÅEΩh
+//	Mouse mode
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnMouseMode()
@@ -3676,73 +3668,73 @@ void CFrmWnd::OnMouseMode()
 	LONG cx;
 	LONG cy;
 
-	// ÅEΩÅEΩÅEΩ›ÇÃÅEøΩÅEΩ[ÅEΩhÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩ
+	// Get current mouse mode
 	b = GetInput()->GetMouseMode();
 
-	// Durante la minimizacion y con el planificador apagado, solo funciona el apagado
+	// During minimization and with scheduler off, only turn off works
 	if (!b) {
-		// No permitir encender si esta minimizado
+		// Cannot turn on if minimized
 		if (IsIconic()) {
 			return;
 		}
-		// No permitir encender si el planificador esta apagado
+		// Cannot turn on if scheduler is off
 		if (!GetScheduler()->IsEnable()) {
 			return;
 		}
-		// No permitir encender si no esta activo
+		// Cannot turn on if not active
 		if (!GetInput()->IsActive()) {
 			return;
 		}
 	}
 
 	if (b) {
-		// Hacia modo mouse desactivado
+		// To mouse disabled mode
 		GetInput()->SetMouseMode(FALSE);
 
-		// Deshacer clip (liberar mouse)
+		// Undo clip (release mouse)
 		ClipCursor(NULL);
 
-		// Mover cursor del mouse al centro de la pantalla
+		// Move cursor to center of screen
 		cx = ::GetSystemMetrics(SM_CXSCREEN);
 		cy = ::GetSystemMetrics(SM_CYSCREEN);
 		SetCursorPos(cx >> 1, cy >> 1);
 
-		// Cursor del mouse activado
+		// Show cursor
 		cnt = ::ShowCursor(TRUE);
 		while (cnt < 0) {
 			cnt = ::ShowCursor(TRUE);
 		}
 
-		// ÅEΩÅEΩÅEΩbÅEΩZÅEΩ[ÅEΩW
+		// Set info message
 		::GetMsg(IDS_MOUSE_WIN, string);
 	}
 	else {
-		// ÅEΩ}ÅEΩEÅEΩXÅEΩJÅEΩ[ÅEΩ\ÅEΩÅEΩÅEΩÅEΩÅEΩNÅEΩÅEΩÅEΩbÅEΩvÅEΩBViewÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩ+16ÅEΩÃÇÔøΩ
+		// Mouse cursor window is View window + 16
 		GetView()->GetWindowRect(&rect);
 		rect.right = rect.left + 16;
 		rect.bottom = rect.top + 16;
 		ClipCursor(&rect);
 
-		// ÅEΩ}ÅEΩEÅEΩXÅEΩJÅEΩ[ÅEΩ\ÅEΩÅEΩOFF
+		// Hide mouse cursor
 		cnt = ::ShowCursor(FALSE);
 		while (cnt >= 0) {
 			cnt = ::ShowCursor(FALSE);
 		}
 
-		// Hacia modo mouse activado
+		// To mouse enabled mode
 		GetInput()->SetMouseMode(TRUE);
 
-		// ÅEΩÅEΩÅEΩbÅEΩZÅEΩ[ÅEΩW
+		// Set info message
 		::GetMsg(IDS_MOUSE_X68K, string);
 	}
 
-	// ÅEΩÅEΩÅEΩbÅEΩZÅEΩ[ÅEΩWÅEΩZÅEΩbÅEΩg
+	// Update info message
 	SetInfo(string);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Keyboard por software
+//	Software keyboard
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSoftKey()
@@ -3752,42 +3744,42 @@ void CFrmWnd::OnSoftKey()
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩ\ÅEΩtÅEΩgÅEΩEÅEΩFÅEΩAUI de teclado
+//	Software keyboard UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSoftKeyUI(CCmdUI *pCmdUI)
 {
 	ON_UPDATE_SUB_WINDOW(MAKEID('S', 'K', 'E', 'Y'));
 
-	// ÅEΩLÅEΩ[ÅEΩ{ÅEΩ[ÅEΩhDispositivoÅEΩÅEΩÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩ»ÇÔøΩÅEΩÅEΩŒÅANo hacer nada
+	// If keyboard device does not exist, do nothing
 	if (!m_pKeyboard) {
 		return;
 	}
 
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩ
+	// If subwindow does not exist
 	if (GetView()->SearchSWnd(MAKEID('S', 'K', 'E', 'Y')) == NULL) {
-		// ÅEΩLÅEΩ[ÅEΩ{ÅEΩ[ÅEΩhÅEΩÅEΩÅEΩ⁄ëÔøΩÅEΩÅEΩÅEΩÅEΩƒÇÔøΩÅEΩ»ÇÔøΩÅEΩÅEΩÅEΩ
+		// If keyboard not connected
 		if (!m_pKeyboard->IsConnect()) {
-			// ÅEΩ÷é~
+			// Prohibit
 			pCmdUI->Enable(FALSE);
 			return;
 		}
 	}
 
-	// Activado
+	// Enabled
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Ajuste de hora
+//	Time adjustment
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTimeAdj()
 {
 	RTC *pRTC;
 
-	// pRTC->Adjust()ÅEΩ≈çÔøΩÅEΩÌÇπÅEΩÅEΩ
+	// Called from pRTC->Adjust()
 	::LockVM();
 	pRTC = (RTC*)::GetVM()->SearchDevice(MAKEID('R', 'T', 'C', ' '));
 	ASSERT(pRTC);
@@ -3797,7 +3789,7 @@ void CFrmWnd::OnTimeAdj()
 
 //---------------------------------------------------------------------------
 //
-//	Captura WAV
+//	WAV capture
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSaveWav()
@@ -3806,7 +3798,7 @@ void CFrmWnd::OnSaveWav()
 	CString strMsg;
 	BOOL bResult;
 
-	// Detener si se esta guardando WAV
+	// Stop if saving WAV
 	if (GetSound()->IsSaveWav()) {
 		GetSound()->EndSaveWav();
 		::GetMsg(IDS_WAVSTOP, strMsg);
@@ -3814,19 +3806,19 @@ void CFrmWnd::OnSaveWav()
 		return;
 	}
 
-	// ÅEΩtÅEΩ@ÅEΩCÅEΩÅEΩÅEΩIÅEΩÅEΩ
+	// File save dialog
 	szPath[0] = _T('\0');
 	if (!FileSaveDlg(this, szPath, _T("wav"), IDS_WAVOPEN)) {
 		ResetCaption();
 		return;
 	}
 
-	// Intentar guardado WAV
+	// Try WAV save
 	::LockVM();
 	bResult = GetSound()->StartSaveWav(szPath);
 	::UnlockVM();
 
-	// ÅEΩÅEΩÅEΩ ï]ÅEΩÅEΩ
+	// Result notification
 	if (bResult) {
 		::GetMsg(IDS_WAVSTART, strMsg);
 		SetInfo(strMsg);
@@ -3839,7 +3831,7 @@ void CFrmWnd::OnSaveWav()
 
 //---------------------------------------------------------------------------
 //
-//	UI de captura WAV
+//	WAV capture UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnSaveWavUI(CCmdUI *pCmdUI)
@@ -3862,20 +3854,20 @@ void CFrmWnd::OnTrap()
 	DWORD dwAddr;
 	DWORD dwCode;
 
-	// DispositivoGet
+	// Get device
 	pMFP = (MFP*)::GetVM()->SearchDevice(MAKEID('M', 'F', 'P', ' '));
 	ASSERT(pMFP);
 	pMemory = (Memory*)::GetVM()->SearchDevice(MAKEID('M', 'E', 'M', ' '));
 	ASSERT(pMemory);
 
-	// ÅEΩÅEΩÅEΩbÅEΩN
+	// Lock
 	::LockVM();
 
-	// MFPÅEΩÅEΩÅEΩAÅEΩxÅEΩNÅEΩ^ÅEΩÅEΩGet
+	// Get MFP interrupt vector
 	dwVector = (pMFP->GetVR() & 0xf0) + 5;
 	dwVector <<= 2;
 
-	// Get la direccion actual del vector Timer-C
+	// Get current Timer-C vector address
 	dwAddr = pMemory->ReadOnly(dwVector);
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(dwVector + 1);
@@ -3884,22 +3876,22 @@ void CFrmWnd::OnTrap()
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(dwVector + 3);
 
-	// Invalido si no esta inicializado (24 bits o mas)
+	// Invalid if not initialized (24 bits or more)
 	if (dwAddr > 0xffffff) {
 		::UnlockVM();
 		return;
 	}
 
-	// Invalido si ya es 0x6800
+	// Invalid if already 0x6800
 	if (dwAddr == 0x6800) {
 		::UnlockVM();
 		return;
 	}
 
-	// ÅEΩRÅEΩ[ÅEΩhÅEΩIÅEΩÅEΩ
+	// Get code
 	dlg.m_dwCode = pMemory->ReadOnly(0x6809);
 	if (pMemory->ReadOnly(0x6808) == 0xff) {
-		// Considerado no inicializado, comenzar desde 0
+		// Considered not initialized, start from 0
 		dlg.m_dwCode = 1;
 	}
 	::UnlockVM();
@@ -3908,7 +3900,7 @@ void CFrmWnd::OnTrap()
 	}
 	dwCode = dlg.m_dwCode;
 
-	// ÅEΩRÅEΩ[ÅEΩhÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩ
+	// Write code
 	::LockVM();
 	pMemory->WriteWord(0x6800, 0x2f00);
 	pMemory->WriteWord(0x6802, 0x2f00);
@@ -3926,17 +3918,17 @@ void CFrmWnd::OnTrap()
 	pMemory->WriteWord(0x681a, 0x201f);
 	pMemory->WriteWord(0x681c, 0x4e75);
 
-	// Timer-CÅEΩxÅEΩNÅEΩ^ÅEΩœçX
+	// Change Timer-C vector
 	pMemory->WriteWord(dwVector, 0x0000);
 	pMemory->WriteWord(dwVector + 2, 0x6800);
 
-	// ÅEΩAÅEΩÅEΩÅEΩÅEΩÅEΩbÅEΩN
+	// Unlock
 	::UnlockVM();
 }
 
 //---------------------------------------------------------------------------
 //
-//	UI de trap#0
+//	trap#0 UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTrapUI(CCmdUI *pCmdUI)
@@ -3946,17 +3938,17 @@ void CFrmWnd::OnTrapUI(CCmdUI *pCmdUI)
 	Memory *pMemory;
 	DWORD dwAddr;
 
-	// DispositivoGet
+	// Get device
 	pMFP = (MFP*)::GetVM()->SearchDevice(MAKEID('M', 'F', 'P', ' '));
 	ASSERT(pMFP);
 	pMemory = (Memory*)::GetVM()->SearchDevice(MAKEID('M', 'E', 'M', ' '));
 	ASSERT(pMemory);
 
-	// MFPÅEΩÅEΩÅEΩAÅEΩxÅEΩNÅEΩ^ÅEΩÅEΩGet
+	// Get MFP interrupt vector
 	dwVector = (pMFP->GetVR() & 0xf0) + 5;
 	dwVector <<= 2;
 
-	// Get la direccion actual del vector Timer-C
+	// Get current Timer-C vector address
 	dwAddr = pMemory->ReadOnly(dwVector);
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(dwVector + 1);
@@ -3965,19 +3957,19 @@ void CFrmWnd::OnTrapUI(CCmdUI *pCmdUI)
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(dwVector + 3);
 
-	// Prohibir si no esta inicializado (24 bits o mas)
+	// Prohibit if not initialized (24 bits or more)
 	if (dwAddr > 0xffffff) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// Prohibir si ya es 0x6800
+	// Prohibit if already 0x6800
 	if (dwAddr == 0x6800) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// trap #0ÅEΩxÅEΩNÅEΩ^ÅEΩÅEΩGet
+	// Get trap #0 vector
 	dwAddr = pMemory->ReadOnly(0x0080);
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(0x0081);
@@ -3986,19 +3978,19 @@ void CFrmWnd::OnTrapUI(CCmdUI *pCmdUI)
 	dwAddr <<= 8;
 	dwAddr |= pMemory->ReadOnly(0x0083);
 
-	// Prohibir si no esta inicializado (24 bits o mas)
+	// Prohibit if not initialized (24 bits or more)
 	if (dwAddr > 0xffffff) {
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// ÅEΩÅEΩÅEΩÅEΩ
+	// Enable
 	pCmdUI->Enable(TRUE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Nuevo disco floppy
+//	New floppy disk
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnNewFD()
@@ -4010,21 +4002,21 @@ void CFrmWnd::OnNewFD()
 	BOOL bRun;
 	Filepath path;
 
-	// Execute dialogo
+	// Execute dialog
 	if (dlg.DoModal() != IDOK) {
 		return;
 	}
 
-	// ÅEΩpÅEΩXCreate
+	// Path create
 	path.SetPath(dlg.m_szFileName);
 
-	// ÅEΩIÅEΩvÅEΩVÅEΩÅEΩÅEΩÅEΩÅEΩ\ÅEΩÅEΩÅEΩÅEΩCreate
+	// Create option
 	opt.phyfmt = dlg.m_dwPhysical;
 	opt.logfmt = dlg.m_bLogical;
 	ASSERT(_tcslen(dlg.m_szDiskName) < 60);
 	_tcscpy(opt.name, dlg.m_szDiskName);
 
-	// Create imagen segun el tipo
+	// Create image according to type
 	switch (dlg.m_dwType) {
 		case 0:
 			pDisk = (FDIDisk*)new FDIDisk2HD(0, NULL);
@@ -4046,8 +4038,8 @@ void CFrmWnd::OnNewFD()
 			return;
 	}
 
-	// Formato (incluye fisico, logico y guardado)
-	// Detener planificador durante el formato
+	// Format (includes physical, logical and save)
+	// Stop scheduler during format
 	AfxGetApp()->BeginWaitCursor();
 	bRun = GetScheduler()->IsEnable();
 	GetScheduler()->Enable(FALSE);
@@ -4055,10 +4047,10 @@ void CFrmWnd::OnNewFD()
 	::UnlockVM();
 	if (!pDisk->Create(path, &opt)) {
 		AfxGetApp()->EndWaitCursor();
-		// ÅEΩÅEΩxDelete
+		// Delete
 		delete pDisk;
 
-		// ÅEΩÅEΩÅEΩbÅEΩZÅEΩ[ÅEΩWÅEΩ{ÅEΩbÅEΩNÅEΩX
+		// Create error
 		::GetMsg(IDS_CREATEERR, strMsg);
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		GetScheduler()->Reset();
@@ -4068,15 +4060,15 @@ void CFrmWnd::OnNewFD()
 	}
 	AfxGetApp()->EndWaitCursor();
 
-	// ÅEΩÅEΩxDelete
+	// Delete
 	delete pDisk;
 
-	// Automontaje (opcional)
+	// Auto mount (optional)
 	if (dlg.m_nDrive >= 0) {
 		InitCmdSub(dlg.m_nDrive, dlg.m_szFileName);
 	}
 
-	// Mensaje de estado, reanudar
+	// Status message, resume
 	::GetMsg(IDS_NEWFD, strMsg);
 	SetInfo(strMsg);
 	GetScheduler()->Reset();
@@ -4086,7 +4078,7 @@ void CFrmWnd::OnNewFD()
 
 //---------------------------------------------------------------------------
 //
-//	Nuevo disco de gran capacidad
+//	New large capacity disk
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnNewDisk(UINT uID)
@@ -4098,32 +4090,32 @@ void CFrmWnd::OnNewDisk(UINT uID)
 	LPCTSTR lpszPath;
 	Filepath path;
 
-	// ÅEΩpÅEΩÅEΩÅEΩÅEΩÅEΩ[ÅEΩ^ÅEΩÛÇØéÔøΩÅEΩ
+	// Receive parameters
 	ASSERT(this);
 	ASSERT((uID >= IDM_NEWSASI) && (uID <= IDM_NEWMO));
 	uID -= IDM_NEWSASI;
 	ASSERT(uID <= 2);
 
-	// ÅEΩÅEΩ ÇÔøΩnÅEΩÅEΩ
+	// Set type
 	dlg.m_nType = (int)uID;
 
-	// Get estado del planificador (la parada se realiza dentro del dialogo)
+	// Get scheduler state (stop is done inside dialog)
 	bRun = GetScheduler()->IsEnable();
 
-	// Execute dialogo
+	// Execute dialog
 	if (dlg.DoModal() != IDOK) {
-		// CancelarÅEΩÅEΩÅEΩÅEΩÅEΩÍçÅE
+		// Canceled
 		return;
 	}
 
-	// ExecuteÅEΩÅEΩÅEΩÅEΩÅEΩÍçÅEøΩÕÅAÅEΩÅEΩÅEΩ ï]ÅEΩÅEΩ
+	// If dialog canceled, or failed
 	if (!dlg.IsSucceeded()) {
 		if (dlg.IsCanceled()) {
-			// CancelarÅEΩÅEΩÅEΩÅEΩ
+			// Canceled
 			::GetMsg(IDS_CANCEL, strMsg);
 		}
 		else {
-			// ÅEΩÅEΩÅE§ÅEΩ∆ÇÔøΩÅEΩÅEΩÅEΩÅEΩFalloÅEΩÅEΩÅEΩÅEΩ
+			// Create error
 			::GetMsg(IDS_CREATEERR, strMsg);
 		}
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
@@ -4133,7 +4125,7 @@ void CFrmWnd::OnNewDisk(UINT uID)
 		return;
 	}
 
-	// Get mensaje de information
+	// Get information message
 	switch (uID) {
 		// SASI-HD
 		case 0:
@@ -4150,26 +4142,26 @@ void CFrmWnd::OnNewDisk(UINT uID)
 			nMsg = IDS_NEWMO;
 			break;
 
-		// ÅEΩÅEΩÅEΩÃëÔøΩ(ÅEΩÅEΩÅEΩËìæÅEΩ»ÇÔøΩ)
+		// Others (should not occur)
 		default:
 			ASSERT(FALSE);
 			nMsg = 0;
 			break;
 	}
 
-	// Load mensaje
+	// Load message
 	::GetMsg(nMsg, strMsg);
 
-	// Montaje de MO
+	// MO mount
 	if (uID == 2) {
-		// ÅEΩtÅEΩÅEΩÅEΩOÅEΩ`ÅEΩFÅEΩbÅEΩN
+		// Set flag
 		if (dlg.m_bMount) {
-			// MOActivadoÅEΩÅEΩ
+			// Enable MO
 			if (m_pSASI->IsValid()) {
 				// Get file name
 				lpszPath = dlg.GetPath();
 
-				// AbrirÅEΩÅEΩMRU
+				// Open and MRU
 				path.SetPath(lpszPath);
 				if (m_pSASI->Open(path)) {
 					GetConfig()->SetMRUFile(2, lpszPath);
@@ -4178,7 +4170,7 @@ void CFrmWnd::OnNewDisk(UINT uID)
 		}
 	}
 
-	// Mensaje de estado, reanudar
+	// Status message, resume
 	SetInfo(strMsg);
 	GetScheduler()->Reset();
 	GetScheduler()->Enable(bRun);
@@ -4187,7 +4179,7 @@ void CFrmWnd::OnNewDisk(UINT uID)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩIÅEΩvÅEΩVÅEΩÅEΩÅEΩÅEΩ
+//	Options
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnOptions()
@@ -4195,19 +4187,19 @@ void CFrmWnd::OnOptions()
 	Config config;
 	CConfigSheet sheet(this);
 
-	// Data de configuracionÅEΩÅEΩGet
+	// Get configuration data
 	GetConfig()->GetConfig(&config);
 
-	// Execute hoja de propiedades
+	// Execute property sheet
 	sheet.m_pConfig = &config;
 	if (sheet.DoModal() != IDOK) {
 		return;
 	}
 
-	// ÅEΩfÅEΩ[ÅEΩ^ÅEΩ]ÅEΩÅEΩ
+	// Set configuration
 	GetConfig()->SetConfig(&config);
 
-	// Aplicar (bajo bloqueo de VM)
+	// Apply (under VM lock)
 	::LockVM();
 	ApplyCfg();
 	GetScheduler()->Reset();
@@ -4217,7 +4209,7 @@ void CFrmWnd::OnOptions()
 
 //---------------------------------------------------------------------------
 //
-//	Mostrar en cascada
+//	Show cascaded
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCascade()
@@ -4229,7 +4221,7 @@ void CFrmWnd::OnCascade()
 
 //---------------------------------------------------------------------------
 //
-//	UI de mostrar en cascada
+//	Show cascaded UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
@@ -4247,13 +4239,13 @@ void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
 	ASSERT(GetView());
 	ASSERT(GetView()->m_hWnd);
 
-	// ÅEΩÅEΩÅEΩÅEΩMenuÅEΩÅEΩÅEΩÃÇÃèÔøΩÅEΩÅEΩ
+	// Determine if in popup window mode
 	if (IsPopupSWnd()) {
-		// ÅEΩ|ÅEΩbÅEΩvÅEΩAÅEΩbÅEΩvÅEΩÃèÍçáÅEΩÕà”ñÔøΩÅEΩÅEΩÅEΩ»ÇÔøΩ
+		// If popup, meaningless
 		pCmdUI->Enable(FALSE);
 	}
 	else {
-		// En caso de ser hijo, es TRUE si hay una o mas subventanas
+		// If child, TRUE if one or more subwindows
 		if (GetView()->GetSubWndNum() >= 1) {
 			pCmdUI->Enable(TRUE);
 		}
@@ -4262,7 +4254,7 @@ void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
 		}
 	}
 
-	// Buscar menu Window
+	// Find Window menu
 	if (m_bPopupMenu) {
 		pMenu = m_PopupMenu.GetSubMenu(0);
 	}
@@ -4282,24 +4274,24 @@ void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
 	ASSERT(pSubMenu);
 	ASSERT(i < n);
 
-	// 6ÅEΩ¬ÇÔøΩÅEΩcÅEΩÅEΩÅEΩÅEΩDelete
+	// Delete 6 or more
 	while (pSubMenu->GetMenuItemCount() > 6) {
 		pSubMenu->DeleteMenu(6, MF_BYPOSITION);
 	}
 
-	// ActivadoÅEΩ»ÉTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩÅEΩÅEΩÅEΩÈÇ©
+	// Enable if subwindows exist
 	pWnd = GetView()->GetFirstSWnd();
 	if (!pWnd) {
 		return;
 	}
 
-	// Anadir separador
+	// Add separator
 	pSubMenu->AppendMenu(MF_SEPARATOR, 0);
 
-	// MenuÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩÅEΩ«âÔøΩ
+	// Add menu items
 	uID = IDM_SWND_START;
 	while (pWnd) {
-		// Get titulo e ID de ventana
+		// Get title and window ID
 		pWnd->GetWindowText(string);
 		dwID = pWnd->GetID();
 		temp.Format("%c%c%c%c - ",
@@ -4309,10 +4301,10 @@ void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
 			dwID & 0xff);
 		string = temp + string;
 
-		// MenuÅEΩ«âÔøΩ
+		// Add to menu
 		pSubMenu->AppendMenu(MF_STRING, uID, string);
 
-		// ÅEΩÅEΩÅEΩÅEΩ
+		// Next
 		pWnd = pWnd->m_pNextWnd;
 		uID++;
 	}
@@ -4320,7 +4312,7 @@ void CFrmWnd::OnCascadeUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Mostrar en mosaico (Tile)
+//	Tile
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTile()
@@ -4332,17 +4324,17 @@ void CFrmWnd::OnTile()
 
 //---------------------------------------------------------------------------
 //
-//	UI de mostrar en mosaico
+//	Tile UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnTileUI(CCmdUI *pCmdUI)
 {
 	if (IsPopupSWnd()) {
-		// ÅEΩ|ÅEΩbÅEΩvÅEΩAÅEΩbÅEΩvÅEΩÃèÍçáÅEΩÕà”ñÔøΩÅEΩÅEΩÅEΩ»ÇÔøΩ
+		// If popup, meaningless
 		pCmdUI->Enable(FALSE);
 	}
 	else {
-		// En caso de ser hijo, es TRUE si hay una o mas subventanas
+		// If child, TRUE if one or more subwindows
 		if (GetView()->GetSubWndNum() >= 1) {
 			pCmdUI->Enable(TRUE);
 		}
@@ -4354,7 +4346,7 @@ void CFrmWnd::OnTileUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Minimizar todo (Iconificar)
+//	Minimize all
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnIconic()
@@ -4365,10 +4357,10 @@ void CFrmWnd::OnIconic()
 	ASSERT(GetView());
 	ASSERT(GetView()->m_hWnd);
 
-	// Get la primera subventana
+	// Get first subwindow
 	pSubWnd = GetView()->GetFirstSWnd();
 
-	// ÅEΩÅEΩÅEΩ[ÅEΩv
+	// Loop
 	while (pSubWnd) {
 		pSubWnd->ShowWindow(SW_MINIMIZE);
 		pSubWnd = pSubWnd->m_pNextWnd;
@@ -4377,12 +4369,12 @@ void CFrmWnd::OnIconic()
 
 //---------------------------------------------------------------------------
 //
-//	UI de minimizar todo
+//	Minimize all UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnIconicUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩÅEΩTRUE
+	// TRUE if subwindows exist
 	if (GetView()->GetSubWndNum() > 0) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -4393,7 +4385,7 @@ void CFrmWnd::OnIconicUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩAÅEΩCÅEΩRÅEΩÅEΩÅEΩÃêÔøΩÅEΩÅEΩ
+//	Arrange icons
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnArrangeIcon()
@@ -4405,7 +4397,7 @@ void CFrmWnd::OnArrangeIcon()
 
 //---------------------------------------------------------------------------
 //
-//	UI de organizar iconos
+//	Arrange icons UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnArrangeIconUI(CCmdUI *pCmdUI)
@@ -4413,31 +4405,31 @@ void CFrmWnd::OnArrangeIconUI(CCmdUI *pCmdUI)
 	CSubWnd *pSubWnd;
 
 	if (IsPopupSWnd()) {
-		// ÅEΩ|ÅEΩbÅEΩvÅEΩAÅEΩbÅEΩvÅEΩÃèÍçáÅEΩÕà”ñÔøΩÅEΩÅEΩÅEΩ»ÇÔøΩ
+		// If popup, meaningless
 		pCmdUI->Enable(FALSE);
 		return;
 	}
 
-	// Activado si hay alguna subventana en estado de icono
+	// Enabled if any subwindow is minimized
 	pSubWnd = GetView()->GetFirstSWnd();
 	while (pSubWnd) {
-		// Esta minimizado?
+		// Is minimized?
 		if (pSubWnd->IsIconic()) {
 			pCmdUI->Enable(TRUE);
 			return;
 		}
 
-		// ÅEΩÅEΩÅEΩÃÉTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩE
+		// Next subwindow
 		pSubWnd = pSubWnd->m_pNextWnd;
 	}
 
-	// Desactivado porque ninguna esta minimizada
+	// Disabled because none are minimized
 	pCmdUI->Enable(FALSE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Ocultar todo
+//	Hide all
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnHide()
@@ -4448,10 +4440,10 @@ void CFrmWnd::OnHide()
 	ASSERT(GetView());
 	ASSERT(GetView()->m_hWnd);
 
-	// Get la primera subventana
+	// Get first subwindow
 	pSubWnd = GetView()->GetFirstSWnd();
 
-	// ÅEΩÅEΩÅEΩ[ÅEΩv
+	// Loop
 	while (pSubWnd) {
 		pSubWnd->ShowWindow(SW_HIDE);
 		pSubWnd = pSubWnd->m_pNextWnd;
@@ -4460,12 +4452,12 @@ void CFrmWnd::OnHide()
 
 //---------------------------------------------------------------------------
 //
-//	UI de ocultar todo
+//	Hide all UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnHideUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩÅEΩTRUE
+	// TRUE if subwindows exist
 	if (GetView()->GetSubWndNum() > 0) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -4476,7 +4468,7 @@ void CFrmWnd::OnHideUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Restaurar todo
+//	Restore all
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnRestore()
@@ -4487,10 +4479,10 @@ void CFrmWnd::OnRestore()
 	ASSERT(GetView());
 	ASSERT(GetView()->m_hWnd);
 
-	// Get la primera subventana
+	// Get first subwindow
 	pSubWnd = GetView()->GetFirstSWnd();
 
-	// ÅEΩÅEΩÅEΩ[ÅEΩv
+	// Loop
 	while (pSubWnd) {
 		pSubWnd->ShowWindow(SW_RESTORE);
 		pSubWnd = pSubWnd->m_pNextWnd;
@@ -4499,12 +4491,12 @@ void CFrmWnd::OnRestore()
 
 //---------------------------------------------------------------------------
 //
-//	ÅEΩSÅEΩÅEΩUI de restaurar
+//	Restore all UI
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnRestoreUI(CCmdUI *pCmdUI)
 {
-	// ÅEΩTÅEΩuÅEΩEÅEΩBÅEΩÅEΩÅEΩhÅEΩEÅEΩÅEΩÅEΩÅEΩÅEΩ›ÇÔøΩÅEΩÅEΩÅEΩTRUE
+	// TRUE if subwindows exist
 	if (GetView()->GetSubWndNum() > 0) {
 		pCmdUI->Enable(TRUE);
 	}
@@ -4515,7 +4507,7 @@ void CFrmWnd::OnRestoreUI(CCmdUI *pCmdUI)
 
 //---------------------------------------------------------------------------
 //
-//	Especificar ventana
+//	Specify window
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnWindow(UINT uID)
@@ -4527,14 +4519,14 @@ void CFrmWnd::OnWindow(UINT uID)
 	ASSERT(GetView());
 	ASSERT(GetView()->m_hWnd);
 
-	// Identificar subventana
+	// Identify subwindow
 	n = (int)(uID - IDM_SWND_START);
 	pSubWnd = GetView()->GetFirstSWnd();
 	if (!pSubWnd) {
 		return;
 	}
 
-	// BusquedaÅEΩÅEΩÅEΩ[ÅEΩv
+	// Search loop
 	while (n > 0) {
 		if (!pSubWnd) {
 			return;
@@ -4544,21 +4536,21 @@ void CFrmWnd::OnWindow(UINT uID)
 		pSubWnd = pSubWnd->m_pNextWnd;
 	}
 
-	// pSubWndÅEΩÅEΩÅEΩZÅEΩÅEΩÅEΩNÅEΩg
+	// Activate subwindow
 	pSubWnd->ShowWindow(SW_RESTORE);
 	pSubWnd->SetWindowPos(&wndTop, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Informacion de version
+//	Version information
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnAbout()
 {
 	CAboutDlg dlg(this);
 
-	// Execute dialogo modal
+	// Execute modal dialog
 	dlg.DoModal();
 }
 

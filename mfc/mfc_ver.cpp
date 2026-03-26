@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ÇoÇhÅD(ytanaka@ipc-tokai.or.jp)
-//	[ MFC ÉoÅ[ÉWÉáÉìèÓïÒÉ_ÉCÉAÉçÉO ]
+//	Copyright (C) 2001-2006 ÔøΩoÔøΩhÔøΩD(ytanaka@ipc-tokai.or.jp)
+//	[ MFC ÔøΩoÔøΩ[ÔøΩWÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ_ÔøΩCÔøΩAÔøΩÔøΩÔøΩO ]
 //
 //---------------------------------------------------------------------------
 
@@ -28,23 +28,23 @@
 
 //---------------------------------------------------------------------------
 //
-//	ÉRÉìÉXÉgÉâÉNÉ^
+	// Constructor
 //
 //---------------------------------------------------------------------------
 CAboutDlg::CAboutDlg(CWnd *pParent) : CDialog(IDD_ABOUTDLG, pParent)
 {
-	// âpåÍä¬ã´Ç÷ÇÃëŒâû
+	// Support for non-Japanese environment
 	if (!::IsJapanese()) {
 		m_lpszTemplateName = MAKEINTRESOURCE(IDD_US_ABOUTDLG);
 		m_nIDHelp = IDD_US_ABOUTDLG;
 	}
 
-	// ÉfÉoÉCÉX
+	// Devices
 	m_pRTC = NULL;
 	m_pSASI = NULL;
 	m_pFDD = NULL;
 
-	// ÇªÇÃëº
+	// Others
 	m_nTimerID = NULL;
 	m_pDrawView = NULL;
 	m_bFloppyLED = FALSE;
@@ -52,7 +52,7 @@ CAboutDlg::CAboutDlg(CWnd *pParent) : CDialog(IDD_ABOUTDLG, pParent)
 
 //---------------------------------------------------------------------------
 //
-//	ÉÅÉbÉZÅ[ÉW É}ÉbÉv
+	// Message map
 //
 //---------------------------------------------------------------------------
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
@@ -64,7 +64,7 @@ END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------
 //
-//	É_ÉCÉAÉçÉOèâä˙âª
+	// Dialog initialization
 //
 //---------------------------------------------------------------------------
 BOOL CAboutDlg::OnInitDialog()
@@ -77,12 +77,12 @@ BOOL CAboutDlg::OnInitDialog()
 	DWORD dwMinor;
 	Config config;
 
-	// äÓñ{ÉNÉâÉX
+	// ÔøΩÔøΩ{ÔøΩNÔøΩÔøΩÔøΩX
 	if (!CDialog::OnInitDialog()) {
 		return FALSE;
 	}
 
-	// URLï∂éöóÒÅEãÈå`ÇéÊìæÇµÅAè¡ãé
+	// URLÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩEÔøΩÔøΩ`ÔøΩÔøΩÔøΩÊìæÔøΩÔøΩÔøΩAÔøΩÔøΩÔøΩÔøΩ
 	pStatic = (CStatic*)GetDlgItem(IDC_ABOUT_URL);
 	ASSERT(pStatic);
 	pStatic->GetWindowText(m_URLString);
@@ -91,14 +91,14 @@ BOOL CAboutDlg::OnInitDialog()
 	pStatic->DestroyWindow();
 	m_bURLHit = FALSE;
 
-	// ÉAÉCÉRÉìãÈå`ÇéÊìæÇµÅAè¡ãé
+	// ÔøΩAÔøΩCÔøΩRÔøΩÔøΩÔøΩÔøΩ`ÔøΩÔøΩÔøΩÊìæÔøΩÔøΩÔøΩAÔøΩÔøΩÔøΩÔøΩ
 	pStatic = (CStatic*)GetDlgItem(IDC_ABOUT_ICON);
 	ASSERT(pStatic);
 	pStatic->GetWindowRect(&m_IconRect);
 	ScreenToClient(&m_IconRect);
 	pStatic->DestroyWindow();
 
-	// ÉoÅ[ÉWÉáÉìÇÃèàóù
+	// Version string update
 	pStatic = (CStatic*)GetDlgItem(IDC_ABOUT_VER);
 	ASSERT(pStatic);
 	pStatic->GetWindowText(strFormat);
@@ -106,32 +106,32 @@ BOOL CAboutDlg::OnInitDialog()
 	strText.Format(strFormat, dwMajor, dwMinor);
 	pStatic->SetWindowText(strText);
 
-	// É^ÉCÉ}ÉXÉ^Å[Ég(80ms)
+	// Timer start (80ms)
 	m_nTimerID = SetTimer(IDD_ABOUTDLG, 100, NULL);
 	ASSERT(m_nTimerID);
 
-	// RTCéÊìæ
+	// Get RTC
 	ASSERT(!m_pRTC);
 	m_pRTC = (RTC*)::GetVM()->SearchDevice(MAKEID('R', 'T', 'C', ' '));
 	ASSERT(m_pRTC);
 
-	// SASIéÊìæ
+	// Get SASI
 	ASSERT(!m_pSASI);
 	m_pSASI = (SASI*)::GetVM()->SearchDevice(MAKEID('S', 'A', 'S', 'I'));
 	ASSERT(m_pSASI);
 
-	// FDDéÊìæ
+	// Get FDD
 	ASSERT(!m_pFDD);
 	m_pFDD = (FDD*)::GetVM()->SearchDevice(MAKEID('F', 'D', 'D', ' '));
 	ASSERT(m_pFDD);
 
-	// DrawÉrÉÖÅ[éÊìæ
+	// Get Draw view
 	pFrmWnd = (CFrmWnd*)GetParent();
 	ASSERT(pFrmWnd);
 	m_pDrawView = pFrmWnd->GetView();
 	ASSERT(m_pDrawView);
 
-	// ConfigÉIÉvÉVÉáÉìÇéÊìæ
+	// Get Config option
 	pFrmWnd->GetConfig()->GetConfig(&config);
 	m_bFloppyLED = config.floppy_led;
 	m_bPowerLED = config.power_led;
@@ -146,36 +146,36 @@ BOOL CAboutDlg::OnInitDialog()
 //---------------------------------------------------------------------------
 void CAboutDlg::OnOK()
 {
-	// É^ÉCÉ}çÌèú
+	// ÔøΩ^ÔøΩCÔøΩ}ÔøΩÌèú
 	if (m_nTimerID) {
 		KillTimer(m_nTimerID);
 		m_nTimerID = NULL;
 	}
 
-	// É_ÉCÉAÉçÉOèIóπ
+	// ÔøΩ_ÔøΩCÔøΩAÔøΩÔøΩÔøΩOÔøΩIÔøΩÔøΩ
 	CDialog::OnOK();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ÉLÉÉÉìÉZÉã
+	// Cancel
 //
 //---------------------------------------------------------------------------
 void CAboutDlg::OnCancel()
 {
-	// É^ÉCÉ}çÌèú
+	// ÔøΩ^ÔøΩCÔøΩ}ÔøΩÌèú
 	if (m_nTimerID) {
 		KillTimer(m_nTimerID);
 		m_nTimerID = NULL;
 	}
 
-	// É_ÉCÉAÉçÉOèIóπ
+	// ÔøΩ_ÔøΩCÔøΩAÔøΩÔøΩÔøΩOÔøΩIÔøΩÔøΩ
 	CDialog::OnCancel();
 }
 
 //---------------------------------------------------------------------------
 //
-//	dibujo
+//	Drawing
 //
 //---------------------------------------------------------------------------
 void CAboutDlg::OnPaint()
@@ -186,22 +186,22 @@ void CAboutDlg::OnPaint()
 	CBitmap Bitmap;
 	CBitmap *pBitmap;
 
-	// Representacion de la URL
+	// URL representation
 	DrawURL(&dc);
 
-	//  Create DCs de memoria, mapas de bits compatibles y copiar mapas de bits.
+	// Create compatible memory DCs and bitmaps, then copy bitmaps.
 	VERIFY(mDC.CreateCompatibleDC(&dc));
 	VERIFY(Bitmap.CreateCompatibleBitmap(&dc,
 						m_IconRect.Width(), m_IconRect.Height()));
 
-	// Seleccionar mapa de bits
+	// Select bitmap
 	pBitmap = mDC.SelectObject(&Bitmap);
 	ASSERT(pBitmap);
 
-	// Claro, copia los preparativos de DC.
+	// Clear, copy DC preparations.
 	mDC.FillSolidRect(0, 0, m_IconRect.Width(), m_IconRect.Height(), ::GetSysColor(COLOR_3DFACE));
 
-	// Dibujo de mapa de bits Principal
+	// Main bitmap drawing
 	DrawCRT(&mDC);
 	DrawX68k(&mDC);
 	DrawLED(0, 0, &mDC);
@@ -211,7 +211,7 @@ void CAboutDlg::OnPaint()
 	VERIFY(dc.BitBlt(m_IconRect.left, m_IconRect.top,
 					m_IconRect.Width(), m_IconRect.Height(), &mDC, 0, 0, SRCCOPY));
 
-	// fin del dibujo
+	// End of drawing
 	VERIFY(mDC.SelectObject(pBitmap));
 	VERIFY(Bitmap.DeleteObject());
 	VERIFY(mDC.DeleteDC());
@@ -219,7 +219,7 @@ void CAboutDlg::OnPaint()
 
 //---------------------------------------------------------------------------
 //
-//	Dibujo (URL)
+//	Draw (URL)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
@@ -231,7 +231,7 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 
 	ASSERT(pDC);
 
-	// Get las metricas de las fuentes de la interfaz de usuario
+	// Get UI font metrics
 	hFont = (HFONT)::GetStockObject(DEFAULT_GUI_FONT);
 	ASSERT(hFont);
 	hDefFont = (HFONT)::SelectObject(pDC->m_hDC, hFont);
@@ -240,7 +240,7 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 	::GetTextFace(pDC->m_hDC, LF_FACESIZE, lf.lfFaceName);
 	::SelectObject(pDC->m_hDC, hDefFont);
 
-	// Create fuentes con subrayados anadidos.
+	// Create fonts with underline added.
 	lf.lfHeight = tm.tmHeight;
 	lf.lfWidth = 0;
 	lf.lfEscapement = 0;
@@ -257,7 +257,7 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 	hFont = ::CreateFontIndirect(&lf);
 	ASSERT(hFont);
 
-	// Seleccionar, dibujar.
+	// Select, draw.
 	hDefFont = (HFONT)::SelectObject(pDC->m_hDC, hFont);
 	ASSERT(hDefFont);
 	if (m_bURLHit) {
@@ -270,14 +270,14 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 	::DrawText(pDC->m_hDC, (LPCTSTR)m_URLString, m_URLString.GetLength(),
 				&m_URLRect, DT_CENTER | DT_SINGLELINE);
 
-	// Poniendo la fuente de nuevo.
+	// Restore font.
 	::SelectObject(pDC->m_hDC, hDefFont);
 	::DeleteObject(hFont);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Dibujo (CRT)
+//	Draw (CRT)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CAboutDlg::DrawCRT(CDC *pDC)
@@ -290,19 +290,19 @@ void FASTCALL CAboutDlg::DrawCRT(CDC *pDC)
 	RGBQUAD *prgb;
 	DWORD color3d;
 
-	// Carga manual del recurso IDB_CRT
+	// Manual load of IDB_CRT resource
 	hResource = ::FindResource(AfxGetApp()->m_hInstance,
 								MAKEINTRESOURCE(IDB_CRT), RT_BITMAP);
 	ASSERT(hResource);
 	hGlobal = ::LoadResource(AfxGetApp()->m_hInstance, hResource);
 	ASSERT(hGlobal);
 
-	// Copie la seccion de cabecera del mapa de bits de carga.
+	// Copy bitmap header section.
 	pbmp = (BYTE*)::LockResource(hGlobal);
 	ASSERT(pbmp);
 	memcpy(Info, pbmp, sizeof(Info));
 
-	// Cambiar la paleta
+	// Change palette
 	pbmi = (BITMAPINFOHEADER*)Info;
 	prgb = (RGBQUAD*)&Info[pbmi->biSize];
 	color3d = ::GetSysColor(COLOR_3DFACE);
@@ -310,18 +310,18 @@ void FASTCALL CAboutDlg::DrawCRT(CDC *pDC)
 	prgb->rgbGreen = GetGValue(color3d);
 	prgb->rgbRed = GetRValue(color3d);
 
-	// Dibujo con SetDIBitsToDevice
+	// Draw with SetDIBitsToDevice
 	::SetDIBitsToDevice(pDC->m_hDC, 2, 2, 62, 64, 0, 0, 0, 64,
 						&pbmp[pbmi->biSize + sizeof(RGBQUAD) * 256],
 						(BITMAPINFO*)pbmi, DIB_RGB_COLORS);
 
-	// Release recursos (solo es necesario para los sistemas Win9x).
+	// Release resources (only needed for Win9x systems).
 	::FreeResource(hGlobal);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Dibujo (X68k)
+//	Draw (X68k)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CAboutDlg::DrawX68k(CDC *pDC)
@@ -334,19 +334,19 @@ void FASTCALL CAboutDlg::DrawX68k(CDC *pDC)
 	RGBQUAD *prgb;
 	DWORD color3d;
 
-	// Carga manual del recurso IDB_CRT
+	// Manual load of IDB_X68K resource
 	hResource = ::FindResource(AfxGetApp()->m_hInstance,
 								MAKEINTRESOURCE(IDB_X68K), RT_BITMAP);
 	ASSERT(hResource);
 	hGlobal = ::LoadResource(AfxGetApp()->m_hInstance, hResource);
 	ASSERT(hGlobal);
 
-	// Copie la seccion de cabecera del mapa de bits de carga.
+	// Copy bitmap header section.
 	pbmp = (BYTE*)::LockResource(hGlobal);
 	ASSERT(pbmp);
 	memcpy(Info, pbmp, sizeof(Info));
 
-	// Cambiar la paleta
+	// Change palette
 	pbmi = (BITMAPINFOHEADER*)Info;
 	prgb = (RGBQUAD*)&Info[pbmi->biSize];
 	color3d = ::GetSysColor(COLOR_3DFACE);
@@ -354,18 +354,18 @@ void FASTCALL CAboutDlg::DrawX68k(CDC *pDC)
 	prgb[207].rgbGreen = GetGValue(color3d);
 	prgb[207].rgbRed = GetRValue(color3d);
 
-	// Dibujo con SetDIBitsToDevice
+	// Draw with SetDIBitsToDevice
 	::SetDIBitsToDevice(pDC->m_hDC, 67, 2, 30, 64, 0, 0, 0, 64,
 						&pbmp[pbmi->biSize + sizeof(RGBQUAD) * 256],
 						(BITMAPINFO*)pbmi, DIB_RGB_COLORS);
 
-	// Release recursos (solo es necesario para los sistemas Win9x).
+	// Release resources (only needed for Win9x systems).
 	::FreeResource(hGlobal);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ÉqÉbÉgÉeÉXÉg
+//	Hit test
 //
 //---------------------------------------------------------------------------
 #if _MFC_VER >= 0x800
@@ -376,7 +376,7 @@ UINT CAboutDlg::OnNcHitTest(CPoint point)
 {
 	CPoint pt;
 
-	// ÉNÉâÉCÉAÉìÉgç¿ïWÇ…ïœä∑ÇµÇƒÅAãÈå`ì‡É`ÉFÉbÉN
+	// Convert to client coordinates and check rectangle
 	pt = point;
 	ScreenToClient(&pt);
 	if (m_URLRect.PtInRect(pt)) {
@@ -397,27 +397,27 @@ UINT CAboutDlg::OnNcHitTest(CPoint point)
 
 //---------------------------------------------------------------------------
 //
-//	ÉJÅ[É\ÉãÉZÉbÉg
+//	Set cursor
 //
 //---------------------------------------------------------------------------
 BOOL CAboutDlg::OnSetCursor(CWnd *pWnd, UINT nHitTest, UINT message)
 {
 	HCURSOR hCursor;
 
-	// ÉqÉbÉgÇµÇƒÇ¢Ç»ÇØÇÍÇŒí èÌèàóù
+	// If not hit, default cursor
 	if (!m_bURLHit) {
 		return CDialog::OnSetCursor(pWnd, nHitTest, message);
 	}
 
-	// ÉAÉCÉRÉìIDC_HANDÇÉçÅ[ÉhÇ∑ÇÈÅBWINVER >= 0x500à»è„Ç™ïKóv
+	// ÔøΩAÔøΩCÔøΩRÔøΩÔøΩIDC_HANDÔøΩÔøΩÔøΩÔøΩÔøΩ[ÔøΩhÔøΩÔøΩÔøΩÔøΩBWINVER >= 0x500ÔøΩ»è„Ç™ÔøΩKÔøΩv
 	hCursor = AfxGetApp()->LoadStandardCursor(MAKEINTRESOURCE(32649));
 	if (!hCursor) {
-		// é∏îsÇµÇΩèÍçáÇÕñ≥ìÔÇ»ÉAÉCÉRÉìÇ≈ÉäÉgÉâÉC
+		// ÔøΩÔøΩÔøΩsÔøΩÔøΩÔøΩÔøΩÔøΩÍçáÔøΩÕñÔøΩÔøΩÔøΩ»ÉAÔøΩCÔøΩRÔøΩÔøΩÔøΩ≈ÉÔøΩÔøΩgÔøΩÔøΩÔøΩC
 		hCursor = AfxGetApp()->LoadStandardCursor(IDC_IBEAM);
 	}
 	::SetCursor(hCursor);
 
-	// É}ÉEÉXÇ™âüÇ≥ÇÍÇƒÇ¢ÇÍÇŒURLé¿çs
+	// ÔøΩ}ÔøΩEÔøΩXÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩƒÇÔøΩÔøΩÔøΩÔøΩURLÔøΩÔøΩÔøΩs
 	if ((message == WM_LBUTTONDOWN) || (message == WM_LBUTTONDBLCLK)) {
 		::ShellExecute(m_hWnd, NULL, (LPCTSTR)m_URLString, NULL, NULL, SW_SHOWNORMAL);
 	}
@@ -427,7 +427,7 @@ BOOL CAboutDlg::OnSetCursor(CWnd *pWnd, UINT nHitTest, UINT message)
 
 //---------------------------------------------------------------------------
 //
-//	temporizador
+//	Timer
 //
 //---------------------------------------------------------------------------
 #if _MFC_VER >= 0x700
@@ -440,17 +440,17 @@ void CAboutDlg::OnTimer(UINT /*nID */)
 	CClientDC *pDC;
 	CInfo *pInfo;
 
-	// borrado del temporizador
+	// Timer clear
 	KillTimer(m_nTimerID);
 	m_nTimerID = NULL;
 
-	// LEDs y vistas actualizadas
+	// LEDs and views updated
 	pDC = new CClientDC(this);
 	DrawLED(m_IconRect.left, m_IconRect.top, pDC);
 	DrawView(m_IconRect.left, m_IconRect.top, pDC);
 	delete pDC;
 
-	// pantalla de information
+	// Information screen
 	pFrmWnd = (CFrmWnd*)GetParent();
 	ASSERT(pFrmWnd);
 	pInfo = pFrmWnd->GetInfo();
@@ -462,13 +462,13 @@ void CAboutDlg::OnTimer(UINT /*nID */)
 		}
 	}
 
-	// Ajuste del temporizador (al menos 100 ms despues del final del dibujo)
+	// Timer adjustment (at least 100 ms after end of drawing)
 	m_nTimerID = SetTimer(IDD_ABOUTDLG, 10, NULL);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Dibujo del LED
+//	LED drawing
 //
 //---------------------------------------------------------------------------
 void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
@@ -487,7 +487,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 	ASSERT(m_pSASI);
 	ASSERT(m_pFDD);
 
-	// alimentacion (boton del televisor, etc.)
+	// Power (TV button, etc.)
 	bPower = ::GetVM()->IsPower();
 
 	// HD BUSY
@@ -497,41 +497,41 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 	}
 	pDC->SetPixelV(x + 67 + 19, y + 2 + 12, color);
 
-	// temporizador
+	// Timer
 	color = RGB(0, 0, 0);
 	if (m_pRTC->GetTimerLED()) {
 		color = RGB(208, 31, 31);
 	}
 	pDC->SetPixelV(x + 67 + 23, y + 2 + 12, color);
 
-	// LED de alimentacion
+	// Power LED
 	if (m_bPowerLED) {
-		// à√ê¬
+		// ÔøΩ√êÔøΩ
 		color = RGB(12, 23, 129);
 	}
 	else {
-		// ê‘
+		// ÔøΩÔøΩ
 		color = RGB(208, 31, 31);
 	}
 	if (bPower) {
 		if (::GetVM()->IsPowerSW()) {
 			if (m_bPowerLED) {
-				// ê¬
+				// ÔøΩÔøΩ
 				color = RGB(50, 50, 255);
 			}
 			else {
-				// óŒ
+				// ÔøΩÔøΩ
 				color = RGB(31, 208, 31);
 			}
 		}
 		else {
 			if (m_pRTC->GetAlarmOut()) {
 				if (m_bPowerLED) {
-					// ê¬
+					// ÔøΩÔøΩ
 					color = RGB(50, 50, 255);
 				}
 				else {
-					// óŒ
+					// ÔøΩÔøΩ
 					color = RGB(31, 208, 31);
 				}
 			}
@@ -540,7 +540,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 					color = RGB(12, 23, 129);
 				}
 				else {
-					// çï
+					// ÔøΩÔøΩ
 					color = RGB(0, 0, 0);
 				}
 			}
@@ -550,7 +550,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 
 	// FDD
 	for (nDrive=0; nDrive<2; nDrive++) {
-		// Xç¿ïWåàíË
+		// X coordinate adjustment
 		if (nDrive == 0) {
 			x += 4;
 		}
@@ -558,10 +558,10 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 			x += 5;
 		}
 
-		// éÊìæ
+		// Get
 		nStatus = m_pFDD->GetStatus(nDrive);
 
-		// ÉÅÉfÉBÉAïîï™(ècí∑)
+		// Media inserted (vertical)
 		if (nStatus & FDST_INSERT) {
 			color = RGB(64, 63, 63);
 		}
@@ -572,7 +572,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 			pDC->SetPixelV(x + 67, y + nLength + 2, color);
 		}
 
-		// è„LEDÇÕçïÅEì_ñ≈ÅEë}ì¸ÅEÉAÉNÉZÉX(å„Ç…Ç»ÇÈÇŸÇ«óDêÊçÇÇ¢)
+		// LED: motor, current, select, access (so it's updated frequently)
 		color = 0;
 		if (nStatus & FDST_CURRENT) {
 			color = RGB(15, 159, 15);
@@ -595,7 +595,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 		}
 		pDC->SetPixelV(x + 67, y + 27 + 2, color);
 
-		// â∫ïîLEDÇÕñ¢ë}ì¸ÅEí èÌÅEÉCÉWÉFÉNÉgã÷é~(å„Ç…Ç»ÇÈÇŸÇ«óDêÊìxçÇÇ¢)
+		// LED: insert, eject, motor, switch off (so it's updated frequently)
 		color = RGB(38, 37, 37);
 		if (nStatus & FDST_INSERT) {
 			if (nStatus & FDST_EJECT) {
@@ -614,7 +614,7 @@ void FASTCALL CAboutDlg::DrawLED(int x, int y, CDC *pDC)
 
 //---------------------------------------------------------------------------
 //
-//	ver renderizado
+//	View rendering
 //
 //---------------------------------------------------------------------------
 void FASTCALL CAboutDlg::DrawView(int x, int y, CDC *pDC)
@@ -627,23 +627,23 @@ void FASTCALL CAboutDlg::DrawView(int x, int y, CDC *pDC)
 	ASSERT(y >= 0);
 	ASSERT(pDC);
 
-	// Ajuste del rectangulo
+	// Rectangle adjustment
 	rect.left = x + 10;
 	rect.top = y + 8;
 	rect.right = x + 55;
 	rect.bottom  = y + 43;
 
-	// Si esta apagado, negro.
+	// If off, black.
 	if (!::GetVM()->IsPower()) {
 		pDC->FillSolidRect(&rect, RGB(0, 0, 0));
 		return;
 	}
 
-	//Obtenga el trabajo de display
+	// Get display work
 	ASSERT(m_pDrawView);
 	m_pDrawView->GetDrawInfo(&info);
 
-	// Preparacion de BITMAPINFO.
+	// BITMAPINFO preparation.
 	memset(&bmi, 0, sizeof(bmi));
 	bmi.biSize = sizeof(bmi);
 	bmi.biWidth = info.nBMPWidth;
@@ -653,7 +653,7 @@ void FASTCALL CAboutDlg::DrawView(int x, int y, CDC *pDC)
 	bmi.biCompression = BI_RGB;
 	bmi.biSizeImage = info.nBMPWidth * info.nBMPHeight * (32 >> 3);
 
-	// Blt con reduccion
+	// Blt with reduction
 	::StretchDIBits(pDC->m_hDC, rect.left, rect.top + rect.Height() - 1,
 					rect.Width(), -rect.Height(),
 					0, 0, info.nWidth, info.nHeight,

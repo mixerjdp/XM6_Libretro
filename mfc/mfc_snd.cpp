@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ・ｽo・ｽh・ｽD(ytanaka@ipc-tokai.or.jp)
-//	[ MFC ・ｽT・ｽE・ｽ・ｽ・ｽh ]
+//	Copyright (C) 2001-2006 PI.(ytanaka@ipc-tokai.or.jp)
+//	[ MFC sound ]
 //
 //---------------------------------------------------------------------------
 
@@ -26,22 +26,21 @@
 
 //===========================================================================
 //
-//	・ｽT・ｽE・ｽ・ｽ・ｽh
+//	Sound
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	・ｽR・ｽ・ｽ・ｽX・ｽg・ｽ・ｽ・ｽN・ｽ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 {
-	// ・ｽR・ｽ・ｽ・ｽ|・ｽ[・ｽl・ｽ・ｽ・ｽg・ｽp・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ^
 	m_dwID = MAKEID('S', 'N', 'D', ' ');
 	m_strDesc = _T("Sound Renderer");
 
-	// ・ｽ・ｽ・ｽ[・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ(・ｽﾝ抵ｿｽp・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ^)
+	// Initialize (settings)
 	m_uRate = 0;
 	m_uTick = 90;
 	m_uPoll = 7;
@@ -53,7 +52,7 @@ CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 	m_nFMVol = 54;
 	m_nADPCMVol = 52;
 
-	// ・ｽ・ｽ・ｽ[・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ(DirectSound・ｽﾆオ・ｽu・ｽW・ｽF・ｽN・ｽg)
+	// Initialize (DirectSound and objects)
 	m_lpDS = NULL;
 	m_lpDSp = NULL;
 	m_lpDSb = NULL;
@@ -66,7 +65,7 @@ CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 	m_nDeviceNum = 0;
 	m_nSelectDevice = 0;
 
-	// ・ｽ・ｽ・ｽ[・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ(WAV・ｽ^・ｽ・ｽ)
+	// Initialize (WAV save)
 	m_pWav = NULL;
 	m_nWav = 0;
 	m_dwWav = 0;
@@ -74,42 +73,42 @@ CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CSound::Init()
 {
-	// ・ｽ・ｽ{・ｽN・ｽ・ｽ・ｽX
+	// Base class initialization
 	if (!CComponent::Init()) {
 		return FALSE;
 	}
 
-	// ・ｽX・ｽP・ｽW・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ謫ｾ
+	// Get scheduler
 	m_pScheduler = (Scheduler*)::GetVM()->SearchDevice(MAKEID('S', 'C', 'H', 'E'));
 	ASSERT(m_pScheduler);
 
-	// OPMIF・ｽ謫ｾ
+	// Get OPMIF
 	m_pOPMIF = (OPMIF*)::GetVM()->SearchDevice(MAKEID('O', 'P', 'M', ' '));
 	ASSERT(m_pOPMIF);
 
-	// ADPCM・ｽ謫ｾ
+	// Get ADPCM
 	m_pADPCM = (ADPCM*)::GetVM()->SearchDevice(MAKEID('A', 'P', 'C', 'M'));
 	ASSERT(m_pADPCM);
 
-	// SCSI・ｽ謫ｾ
+	// Get SCSI
 	m_pSCSI = (SCSI*)::GetVM()->SearchDevice(MAKEID('S', 'C', 'S', 'I'));
 	ASSERT(m_pSCSI);
 
-	// ・ｽf・ｽo・ｽC・ｽX・ｽ・ｽ
+	// Enumerate devices
 	EnumDevice();
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽﾅは擾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ(ApplyCfg・ｽﾉ任・ｽ・ｽ・ｽ・ｽ)
+	// Nothing to do here (ApplyCfg will be called later)
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽT・ｽu
+//	Initialization sub
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CSound::InitSub()
@@ -118,7 +117,7 @@ BOOL FASTCALL CSound::InitSub()
 	DSBUFFERDESC dsbd;
 	WAVEFORMATEX wfex;
 
-	// rate==0・ｽﾈゑｿｽA・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ
+	// If rate==0, do nothing
 	if (m_uRate == 0) {
 		return TRUE;
 	}
@@ -129,7 +128,7 @@ BOOL FASTCALL CSound::InitSub()
 	ASSERT(!m_lpBuf);
 	ASSERT(!m_pOPM);
 
-	// ・ｽf・ｽo・ｽC・ｽX・ｽ・ｽ・ｽﾈゑｿｽ・ｽ・ｽ・ｽ0・ｽﾅ趣ｿｽ・ｽ・ｽ・ｽA・ｽ・ｽ・ｽ・ｽﾅゑｿｽ・ｽﾈゑｿｽ・ｽ・ｽ・ｽreturn
+	// If no devices or selected device beyond range, use device 0
 	if (m_nDeviceNum <= m_nSelectDevice) {
 		if (m_nDeviceNum == 0) {
 			return TRUE;
@@ -137,18 +136,17 @@ BOOL FASTCALL CSound::InitSub()
 		m_nSelectDevice = 0;
 	}
 
-	// DiectSound・ｽI・ｽu・ｽW・ｽF・ｽN・ｽg・ｽ・ｬ
+	// DirectSound object creation
 	if (FAILED(DirectSoundCreate(m_lpGUID[m_nSelectDevice], &m_lpDS, NULL))) {
-		// ・ｽf・ｽo・ｽC・ｽX・ｽﾍ使・ｽp・ｽ・ｽ
 		return TRUE;
 	}
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ抵ｿｽ(・ｽD・ｽ諡ｦ・ｽ・ｽ)
+	// Set cooperative level
 	if (FAILED(m_lpDS->SetCooperativeLevel(m_pFrmWnd->m_hWnd, DSSCL_PRIORITY))) {
 		return FALSE;
 	}
 
-	// ・ｽv・ｽ・ｽ・ｽC・ｽ}・ｽ・ｽ・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽ・ｬ
+	// Create primary buffer
 	memset(&dsbd, 0, sizeof(dsbd));
 	dsbd.dwSize = sizeof(dsbd);
 	dsbd.dwFlags = DSBCAPS_PRIMARYBUFFER;
@@ -156,7 +154,7 @@ BOOL FASTCALL CSound::InitSub()
 		return FALSE;
 	}
 
-	// ・ｽv・ｽ・ｽ・ｽC・ｽ}・ｽ・ｽ・ｽo・ｽb・ｽt・ｽ@・ｽﾌフ・ｽH・ｽ[・ｽ}・ｽb・ｽg・ｽ・ｽ・ｽw・ｽ・ｽ
+	// Set primary buffer format
 	memset(&wfex, 0, sizeof(wfex));
 	wfex.wFormatTag = WAVE_FORMAT_PCM;
 	wfex.nChannels = 2;
@@ -168,7 +166,7 @@ BOOL FASTCALL CSound::InitSub()
 		return FALSE;
 	}
 
-	// ・ｽZ・ｽJ・ｽ・ｽ・ｽ_・ｽ・ｽ・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽ・ｬ
+	// Create secondary buffer
 	memset(&pcmwf, 0, sizeof(pcmwf));
 	pcmwf.wf.wFormatTag = WAVE_FORMAT_PCM;
 	pcmwf.wf.nChannels = 2;
@@ -180,14 +178,14 @@ BOOL FASTCALL CSound::InitSub()
 	dsbd.dwSize = sizeof(dsbd);
 	dsbd.dwFlags = DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLVOLUME;
 	dsbd.dwBufferBytes = (pcmwf.wf.nAvgBytesPerSec * m_uTick) / 1000;
-	dsbd.dwBufferBytes = ((dsbd.dwBufferBytes + 7) >> 3) << 3;	// 8・ｽo・ｽC・ｽg・ｽ・ｽ・ｽE
+	dsbd.dwBufferBytes = ((dsbd.dwBufferBytes + 7) >> 3) << 3;	// 8-byte aligned
 	m_uBufSize = dsbd.dwBufferBytes;
 	dsbd.lpwfxFormat = (LPWAVEFORMATEX)&pcmwf;
 	if (FAILED(m_lpDS->CreateSoundBuffer(&dsbd, &m_lpDSb, NULL))) {
 		return FALSE;
 	}
 
-	// ・ｽT・ｽE・ｽ・ｽ・ｽh・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽ・ｬ(・ｽZ・ｽJ・ｽ・ｽ・ｽ_・ｽ・ｽ・ｽo・ｽb・ｽt・ｽ@・ｽﾆ難ｿｽ・ｽ・ｽﾌ抵ｿｽ・ｽ・ｽ・ｽA1・ｽP・ｽ・ｽDWORD)
+	// Allocate sound buffer (secondary buffer and primary buffer share 1 extra DWORD)
 	try {
 		m_lpBuf = new DWORD [ m_uBufSize / 2 ];
 	}
@@ -199,17 +197,17 @@ BOOL FASTCALL CSound::InitSub()
 	}
 	memset(m_lpBuf, sizeof(DWORD) * (m_uBufSize / 2), m_uBufSize);
 
-	// OPM・ｽf・ｽo・ｽC・ｽX(・ｽW・ｽ・ｽ)・ｽ・ｽ・ｽ・ｬ
+	// OPM device (synthesizer) initialization
 	m_pOPM = new FM::OPM;
 	m_pOPM->Init(4000000, m_uRate, true);
 	m_pOPM->Reset();
 	m_pOPM->SetVolume(m_nFMVol);
 
-	// OPMIF・ｽﾖ通知
+	// Register with OPMIF
 	m_pOPMIF->InitBuf(m_uRate);
 	m_pOPMIF->SetEngine(m_pOPM);
 
-	// ・ｽC・ｽl・ｽ[・ｽu・ｽ・ｽ・ｽﾈら演・ｽt・ｽJ・ｽn
+	// Start playback if already enabled
 	if (m_bEnable) {
 		Play();
 	}
@@ -219,46 +217,46 @@ BOOL FASTCALL CSound::InitSub()
 
 //---------------------------------------------------------------------------
 //
-//	・ｽN・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽA・ｽb・ｽv
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Cleanup()
 {
-	// ・ｽN・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽA・ｽb・ｽv・ｽT・ｽu
+	// Cleanup sub
 	CleanupSub();
 
-	// ・ｽ・ｽ{・ｽN・ｽ・ｽ・ｽX
+	// Base class cleanup
 	CComponent::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽN・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽA・ｽb・ｽv・ｽT・ｽu
+//	Cleanup sub
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::CleanupSub()
 {
-	// ・ｽT・ｽE・ｽ・ｽ・ｽh・ｽ・ｽ~
+	// Stop playback
 	Stop();
 
-	// OPMIF・ｽﾖ通知
+	// Unregister from OPMIF
 	if (m_pOPMIF) {
 		m_pOPMIF->SetEngine(NULL);
 	}
 
-	// OPM・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Delete OPM
 	if (m_pOPM) {
 		delete m_pOPM;
 		m_pOPM = NULL;
 	}
 
-	// ・ｽT・ｽE・ｽ・ｽ・ｽh・ｽ・ｬ・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Free sound buffer
 	if (m_lpBuf) {
 		delete[] m_lpBuf;
 		m_lpBuf = NULL;
 	}
 
-	// DirectSoundBuffer・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Release DirectSoundBuffer
 	if (m_lpDSb) {
 		m_lpDSb->Release();
 		m_lpDSb = NULL;
@@ -268,19 +266,19 @@ void FASTCALL CSound::CleanupSub()
 		m_lpDSp = NULL;
 	}
 
-	// DirectSound・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Release DirectSound
 	if (m_lpDS) {
 		m_lpDS->Release();
 		m_lpDS = NULL;
 	}
 
-	// uRate・ｽ・ｽ・ｽN・ｽ・ｽ・ｽA
+	// Reset rate
 	m_uRate = 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽﾝ抵ｿｽK・ｽp
+//	Apply configuration
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::ApplyCfg(const Config *pConfig)
@@ -290,7 +288,7 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	ASSERT(this);
 	ASSERT(pConfig);
 
-	// ・ｽﾄ擾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ`・ｽF・ｽb・ｽN
+	// Check for changes
 	bFlag = FALSE;
 	if (m_nSelectDevice != pConfig->sound_device) {
 		bFlag = TRUE;
@@ -302,43 +300,40 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 		bFlag = TRUE;
 	}
 
-	// ・ｽﾄ擾ｿｽ・ｽ・ｽ・ｽ・ｽ
+	// Apply changes
 	if (bFlag) {
 		CleanupSub();
 		m_nSelectDevice = pConfig->sound_device;
 		m_uRate = RateTable[pConfig->sample_rate];
 		m_uTick = pConfig->primary_buffer * 10;
 
-		// 62.5kHz・ｽﾌ場合・ｽﾍ、・ｽ・ｽx96kHz・ｽﾉセ・ｽb・ｽg・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽ(Prodigy7.1・ｽﾎ搾ｿｽ)
+		// For 62.5kHz, temporarily switch to 96kHz (Prodigy7.1 workaround)
 		if (m_uRate == 62500) {
-			// 96kHz・ｽﾅ擾ｿｽ・ｽ・ｽ・ｽ・ｽ
+			// First try at 96kHz
 			m_uRate = 96000;
 			InitSub();
 
-			// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾅゑｿｽ・ｽ・ｽ・ｽ鼾・ｿｽﾍ、・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽt・ｽ・ｽ・ｽ・ｽ
+			// If buffer was successfully created, briefly start then stop
 			if (m_lpDSb) {
-				// ・ｽX・ｽ^・ｽ[・ｽg
 				if (!m_bEnable) {
 					m_lpDSb->Play(0, 0, DSBPLAY_LOOPING);
 				}
 
-				// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
 				::Sleep(20);
 
-				// ・ｽ~・ｽﾟゑｿｽ
 				if (!m_bEnable) {
 					m_lpDSb->Stop();
 				}
 			}
 
-			// 62.5kHz・ｽﾅ擾ｿｽ・ｽ・ｽ・ｽ・ｽ
+			// Then return to 62.5kHz
 			CleanupSub();
 			m_uRate = 62500;
 		}
 		InitSub();
 	}
 
-	// ・ｽ・ｽﾉ設抵ｿｽ
+	// Apply volume settings
 	if (m_pOPM) {
 		SetVolume(pConfig->master_volume);
 		m_pOPMIF->EnableFM(pConfig->fm_enable);
@@ -352,7 +347,7 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 
 //---------------------------------------------------------------------------
 //
-//	・ｽT・ｽ・ｽ・ｽv・ｽ・ｽ・ｽ・ｽ・ｽO・ｽ・ｽ・ｽ[・ｽg・ｽe・ｽ[・ｽu・ｽ・ｽ
+//	Sampling rate table
 //
 //---------------------------------------------------------------------------
 const UINT CSound::RateTable[] = {
@@ -366,20 +361,20 @@ const UINT CSound::RateTable[] = {
 
 //---------------------------------------------------------------------------
 //
-//	・ｽL・ｽ・ｽ・ｽt・ｽ・ｽ・ｽO・ｽﾝ抵ｿｽ
+//	Enable control
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Enable(BOOL bEnable)
 {
 	if (bEnable) {
-		// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽL・ｽ・ｽ ・ｽ・ｽ・ｽt・ｽJ・ｽn
+		// Enable component: start playback
 		if (!m_bEnable) {
 			m_bEnable = TRUE;
 			Play();
 		}
 	}
 	else {
-		// ・ｽL・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ ・ｽ・ｽ・ｽt・ｽ・ｽ~
+		// Disable component: stop playback
 		if (m_bEnable) {
 			m_bEnable = FALSE;
 			Stop();
@@ -389,19 +384,19 @@ void FASTCALL CSound::Enable(BOOL bEnable)
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽt・ｽJ・ｽn
+//	Start playback
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Play()
 {
 	ASSERT(m_bEnable);
 
-	// ・ｽ・ｽ・ｽﾉ会ｿｽ・ｽt・ｽJ・ｽn・ｽﾈゑｿｽK・ｽv・ｽﾈゑｿｽ
+	// If already playing, do nothing
 	if (m_bPlay) {
 		return;
 	}
 
-	// ・ｽ|・ｽC・ｽ・ｽ・ｽ^・ｽ・ｽ・ｽL・ｽ・ｽ・ｽﾈら演・ｽt・ｽJ・ｽn
+	// Start playback if component is enabled
 	if (m_pOPM) {
 		m_lpDSb->Play(0, 0, DSBPLAY_LOOPING);
 		m_bPlay = TRUE;
@@ -412,22 +407,22 @@ void FASTCALL CSound::Play()
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽt・ｽ・ｽ~
+//	Stop playback
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Stop()
 {
-	// ・ｽ・ｽ・ｽﾉ会ｿｽ・ｽt・ｽ・ｽ~・ｽﾈゑｿｽK・ｽv・ｽﾈゑｿｽ
+	// If not playing, do nothing
 	if (!m_bPlay) {
 		return;
 	}
 
-	// WAV・ｽZ・ｽ[・ｽu・ｽI・ｽ・ｽ
+	// End WAV save if active
 	if (m_pWav) {
 		EndSaveWav();
 	}
 
-	// ・ｽ|・ｽC・ｽ・ｽ・ｽ^・ｽ・ｽ・ｽL・ｽ・ｽ・ｽﾈら演・ｽt・ｽ・ｽ~
+	// Stop playback if component is enabled
 	if (m_pOPM) {
 		m_lpDSb->Stop();
 		m_bPlay = FALSE;
@@ -436,7 +431,7 @@ void FASTCALL CSound::Stop()
 
 //---------------------------------------------------------------------------
 //
-//	・ｽi・ｽs
+//	Process
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Process(BOOL bRun)
@@ -453,31 +448,31 @@ void FASTCALL CSound::Process(BOOL bRun)
 
 	ASSERT(this);
 
-	// ・ｽJ・ｽE・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ・ｽ(m_nPoll・ｽ・ｽﾉ１・ｽ・ｽA・ｽ・ｽ・ｽ・ｽ・ｽ・ｽVM・ｽ・ｽ~・ｽ・ｽ・ｽﾍ常時)
+	// Wait for poll (m_nPoll times before first call, but VM stop detection continues)
 	m_uCount++;
 	if ((m_uCount < m_uPoll) && bRun) {
 		return;
 	}
 	m_uCount = 0;
 
-	// ・ｽf・ｽB・ｽZ・ｽ[・ｽu・ｽ・ｽ・ｽﾈゑｿｽA・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ
+	// If disabled, do nothing
 	if (!m_bEnable) {
 		return;
 	}
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾈゑｿｽ・ｽ・ｽﾎ、・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ
+	// If not ready, do nothing
 	if (!m_pOPM) {
 		m_pScheduler->SetSoundTime(0);
 		return;
 	}
 
-	// ・ｽv・ｽ・ｽ・ｽC・ｽ・ｽﾔでなゑｿｽ・ｽ・ｽﾎ、・ｽﾖ係・ｽﾈゑｿｽ
+	// If not playing, do nothing
 	if (!m_bPlay) {
 		m_pScheduler->SetSoundTime(0);
 		return;
 	}
 
-	// ・ｽ・ｽ・ｽﾝのプ・ｽ・ｽ・ｽC・ｽﾊ置・ｽｾゑｿｽ(・ｽo・ｽC・ｽg・ｽP・ｽ・ｽ)
+	// Get current playback position (in bytes)
 	ASSERT(m_lpDSb);
 	ASSERT(m_lpBuf);
 	if (FAILED(m_lpDSb->GetCurrentPosition(&dwOffset, &dwWrite))) {
@@ -486,7 +481,7 @@ void FASTCALL CSound::Process(BOOL bRun)
 	ASSERT(m_lpDSb);
 	ASSERT(m_lpBuf);
 
-	// ・ｽO・ｽ曹・ｽ・ｽ・ｽ・ｽｾ位置・ｽ・ｽ・ｽ・ｽA・ｽｫサ・ｽC・ｽY・ｽ・ｽ・ｽv・ｽZ(・ｽo・ｽC・ｽg・ｽP・ｽ・ｽ)
+	// Calculate bytes from last write to current position, considering wraparound
 	if (m_dwWrite <= dwOffset) {
 		dwRequest = dwOffset - m_dwWrite;
 	}
@@ -495,32 +490,32 @@ void FASTCALL CSound::Process(BOOL bRun)
 		dwRequest += dwOffset;
 	}
 
-	// ・ｽｫサ・ｽC・ｽY・ｽ・ｽ・ｽS・ｽﾌゑｿｽ1/4・ｽｴゑｿｽ・ｽﾄゑｿｽ・ｽﾈゑｿｽ・ｽ・ｽﾎ、・ｽ・ｽ・ｽﾌ機・ｽ・ｽ・ｽ
+	// If available bytes less than 1/4 of buffer, do nothing
 	if (dwRequest < (m_uBufSize / 4)) {
 		return;
 	}
 
-	// ・ｽｫサ・ｽ・ｽ・ｽv・ｽ・ｽ・ｽﾉ奇ｿｽ・ｽZ(L,R・ｽ・ｽ1・ｽﾂと撰ｿｽ・ｽ・ｽ・ｽ・ｽ)
+	// Round to sample count (L,R pairs of 1 DWORD each)
 	ASSERT((dwRequest & 3) == 0);
 	dwRequest /= 4;
 
-	// m_lpBuf・ｽﾉバ・ｽb・ｽt・ｽ@・ｽf・ｽ[・ｽ^・ｽ・ｽ・ｽ・ｬ・ｽB・ｽﾜゑｿｽbRun・ｽ`・ｽF・ｽb・ｽN
+	// Fill buffer with audio data, or check bRun flag
 	if (!bRun) {
 		memset(m_lpBuf, 0, m_uBufSize * 2);
 		m_pOPMIF->InitBuf(m_uRate);
 	}
 	else {
-		// OPM・ｽﾉ対ゑｿｽ・ｽﾄ、・ｽ・ｽ・ｽ・ｽ・ｽv・ｽ・ｽ・ｽﾆ托ｿｽ・ｽx・ｽ・ｽ・ｽ・ｽ
+		// Process OPM and get ready sample count
 		dwReady = m_pOPMIF->ProcessBuf();
 		m_pOPMIF->GetBuf(m_lpBuf, (int)dwRequest);
 		if (dwReady < dwRequest) {
 			dwRequest = dwReady;
 		}
 
-		// ADPCM・ｽﾉ対ゑｿｽ・ｽﾄ、・ｽf・ｽ[・ｽ^・ｽ・ｽv・ｽ・ｽ(・ｽ・ｽ・ｽZ・ｽ・ｽ・ｽ驍ｱ・ｽ・ｽ)
+		// Process ADPCM data (wait for sync)
 		m_pADPCM->GetBuf(m_lpBuf, (int)dwRequest);
 
-		// ADPCM・ｽﾌ難ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+		// ADPCM sync processing
 		if (dwReady > dwRequest) {
 			m_pADPCM->Wait(dwReady - dwRequest);
 		}
@@ -528,40 +523,40 @@ void FASTCALL CSound::Process(BOOL bRun)
 			m_pADPCM->Wait(0);
 		}
 
-		// SCSI・ｽﾉ対ゑｿｽ・ｽﾄ、・ｽf・ｽ[・ｽ^・ｽ・ｽv・ｽ・ｽ(・ｽ・ｽ・ｽZ・ｽ・ｽ・ｽ驍ｱ・ｽ・ｽ)
+		// Process SCSI data (wait for sync)
 		m_pSCSI->GetBuf(m_lpBuf, (int)dwRequest, m_uRate);
 	}
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽﾅ・ｿｽ・ｽb・ｽN
+	// Lock
 	hr = m_lpDSb->Lock(m_dwWrite, (dwRequest * 4),
 						(void**)&pBuf1, &dwSize1,
 						(void**)&pBuf2, &dwSize2,
 						0);
-	// ・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽﾎ、・ｽ・ｽ・ｽX・ｽg・ｽA
+	// If buffer was lost, restore
 	if (hr == DSERR_BUFFERLOST) {
 		m_lpDSb->Restore();
 	}
-	// ・ｽ・ｽ・ｽb・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽ・ｽ・ｽﾎ、・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾓ厄ｿｽ・ｽ・ｽ・ｽﾈゑｿｽ
+	// If lock still failed, treat as meaning-less
 	if (FAILED(hr)) {
 		m_dwWrite = dwOffset;
 		return;
 	}
 
-	// ・ｽﾊ子・ｽ・ｽbit=16・ｽ・ｽO・ｽ・ｽﾆゑｿｽ・ｽ・ｽ
+	// Rounds to 16-bit = 2 bytes
 	ASSERT((dwSize1 & 1) == 0);
 	ASSERT((dwSize2 & 1) == 0);
 
-	// MMX・ｽ・ｽ・ｽﾟにゑｿｽ・ｽp・ｽb・ｽN(dwSize1+dwSize2・ｽﾅ、・ｽ・ｽ・ｽ・ｽ5000・ｽ`15000・ｽ・ｽ・ｽx・ｽﾍ擾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ)
+	// MMX conversion routine (dwSize1+dwSize2 bytes, typical 5000~15000 byte range with high frequency)
 	SoundMMXPortable(m_lpBuf, pBuf1, dwSize1);
 	if (dwSize2 > 0) {
 		SoundMMXPortable(&m_lpBuf[dwSize1 / 2], pBuf2, dwSize2);
 	}
 	SoundEMMSPortable();
 
-	// ・ｽA・ｽ・ｽ・ｽ・ｽ・ｽb・ｽN
+	// Unlock
 	m_lpDSb->Unlock(pBuf1, dwSize1, pBuf2, dwSize2);
 
-	// m_dwWrite・ｽX・ｽV
+	// Update m_dwWrite
 	m_dwWrite += dwSize1;
 	m_dwWrite += dwSize2;
 	if (m_dwWrite >= m_uBufSize) {
@@ -569,7 +564,7 @@ void FASTCALL CSound::Process(BOOL bRun)
 	}
 	ASSERT(m_dwWrite < m_uBufSize);
 
-	// ・ｽ・ｽ・ｽ・・ｿｽﾈゑｿｽWAV・ｽX・ｽV
+	// Update WAV if active
 	if (bRun && m_pWav) {
 		ProcessSaveWav((int*)m_lpBuf, (dwSize1 + dwSize2));
 	}
@@ -577,7 +572,7 @@ void FASTCALL CSound::Process(BOOL bRun)
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽﾊセ・ｽb・ｽg
+//	Volume setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::SetVolume(int nVolume)
@@ -587,23 +582,23 @@ void FASTCALL CSound::SetVolume(int nVolume)
 	ASSERT(this);
 	ASSERT((nVolume >= 0) && (nVolume <= 100));
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾈゑｿｽ・ｽ・ｽﾎ設定し・ｽﾈゑｿｽ
+	// If not ready, do nothing
 	if (!m_pOPM) {
 		return;
 	}
 
-	// ・ｽl・ｽ・ｽﾏ奇ｿｽ
+	// Convert volume
 	lVolume = 100 - nVolume;
 	lVolume *= (DSBVOLUME_MAX - DSBVOLUME_MIN);
 	lVolume /= -200;
 
-	// ・ｽﾝ抵ｿｽ
+	// Set
 	m_lpDSb->SetVolume(lVolume);
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ・ｽ・ｽﾊ取得
+//	Get volume
 //
 //---------------------------------------------------------------------------
 int FASTCALL CSound::GetVolume()
@@ -612,18 +607,18 @@ int FASTCALL CSound::GetVolume()
 
 	ASSERT(this);
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾈゑｿｽ・ｽ・ｽﾎ、・ｽ・ｽ・ｽ・ｽﾌ値・ｽ・ｽ・ｽｯ趣ｿｽ・ｽ
+	// If not ready, return saved value
 	if (!m_pOPM) {
 		return m_nMaster;
 	}
 
-	// ・ｽl・ｽ・ｽ・ｽ謫ｾ
+	// Get volume
 	ASSERT(m_lpDSb);
 	if (FAILED(m_lpDSb->GetVolume(&lVolume))) {
 		return 0;
 	}
 
-	// ・ｽl・ｽ・ｽ竦ｳ
+	// Convert volume
 	lVolume *= -200;
 	lVolume /= (DSBVOLUME_MAX - DSBVOLUME_MIN);
 	ASSERT((lVolume >= 0) && (lVolume <= 200));
@@ -639,7 +634,7 @@ int FASTCALL CSound::GetVolume()
 
 //---------------------------------------------------------------------------
 //
-//	FM・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾊセ・ｽb・ｽg
+//	FM volume setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::SetFMVol(int nVol)
@@ -647,10 +642,10 @@ void FASTCALL CSound::SetFMVol(int nVol)
 	ASSERT(this);
 	ASSERT((nVol >= 0) && (nVol <= 100));
 
-	// ・ｽR・ｽs・ｽ[
+	// Store
 	m_nFMVol = nVol;
 
-	// ・ｽﾝ抵ｿｽ
+	// Set
 	if (m_pOPM) {
 		m_pOPM->SetVolume(m_nFMVol);
 	}
@@ -658,7 +653,7 @@ void FASTCALL CSound::SetFMVol(int nVol)
 
 //---------------------------------------------------------------------------
 //
-//	ADPCM・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾊセ・ｽb・ｽg
+//	ADPCM volume setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::SetADPCMVol(int nVol)
@@ -666,31 +661,31 @@ void FASTCALL CSound::SetADPCMVol(int nVol)
 	ASSERT(this);
 	ASSERT((nVol >= 0) && (nVol <= 100));
 
-	// ・ｽR・ｽs・ｽ[
+	// Store
 	m_nADPCMVol = nVol;
 
-	// ・ｽﾝ抵ｿｽ
+	// Set
 	ASSERT(m_pADPCM);
 	m_pADPCM->SetVolume(m_nADPCMVol);
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽf・ｽo・ｽC・ｽX・ｽ・ｽ
+//	Device enumeration
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::EnumDevice()
 {
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Clear
 	m_nDeviceNum = 0;
 
-	// ・ｽ投J・ｽn
+	// Start enumeration
 	DirectSoundEnumerate(EnumCallback, this);
 }
 
 //---------------------------------------------------------------------------
 //
-//	・ｽf・ｽo・ｽC・ｽX・ｽ塔R・ｽ[・ｽ・ｽ・ｽo・ｽb・ｽN
+//	Device enum callback
 //
 //---------------------------------------------------------------------------
 BOOL CALLBACK CSound::EnumCallback(LPGUID lpGuid, LPCTSTR lpDescr, LPCTSTR /*lpModule*/, LPVOID lpContext)
@@ -698,15 +693,15 @@ BOOL CALLBACK CSound::EnumCallback(LPGUID lpGuid, LPCTSTR lpDescr, LPCTSTR /*lpM
 	CSound *pSound;
 	int index;
 
-	// this・ｽ|・ｽC・ｽ・ｽ・ｽ^・ｽｯ趣ｿｽ・ｽ
+	// Receive this pointer
 	pSound = (CSound*)lpContext;
 	ASSERT(pSound);
 
-	// ・ｽJ・ｽ・ｽ・ｽ・ｽ・ｽg・ｽ・ｽ16・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽL・ｽ・ｽ
+	// If device count less than 16, save
 	if (pSound->m_nDeviceNum < 16) {
 		index = pSound->m_nDeviceNum;
 
-		// ・ｽo・ｽ^
+		// Save
 		pSound->m_lpGUID[index] = lpGuid;
 		pSound->m_DeviceDescr[index] = lpDescr;
 		pSound->m_nDeviceNum++;
@@ -717,7 +712,7 @@ BOOL CALLBACK CSound::EnumCallback(LPGUID lpGuid, LPCTSTR lpDescr, LPCTSTR /*lpM
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ}・ｽX・ｽ^・ｽ・ｽ・ｽﾊ取得
+//	Get master volume
 //
 //---------------------------------------------------------------------------
 int FASTCALL CSound::GetMasterVol(int& nMaximum)
@@ -734,32 +729,32 @@ int FASTCALL CSound::GetMasterVol(int& nMaximum)
 
 	ASSERT(this);
 
-	// ・ｽg・ｽp・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽf・ｽo・ｽC・ｽX・ｽﾔ搾ｿｽ・ｽ・ｽ0・ｽﾅゑｿｽ・ｽ驍ｱ・ｽﾆゑｿｽ・ｽK・ｽv
+	// Only works when selected device is 0 and rate is set
 	if ((m_nSelectDevice != 0) || (m_uRate == 0)) {
 		return -1;
 	}
 
-	// ・ｽ~・ｽL・ｽT・ｽ・ｽ・ｽI・ｽ[・ｽv・ｽ・ｽ
+	// Open mixer device
 	mmResult = ::mixerOpen(&hMixer, 0, 0, 0,
 					MIXER_OBJECTF_MIXER);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽ~・ｽL・ｽT・ｽI・ｽ[・ｽv・ｽ・ｽ・ｽG・ｽ・ｽ・ｽ[
+		// Mixer open error
 		return -1;
 	}
 
-	// ・ｽ・ｽ・ｽC・ｽ・ｽ・ｽ・ｽ・ｽｾゑｿｽ
+	// Get destination line
 	memset(&mixLine, 0, sizeof(mixLine));
 	mixLine.cbStruct = sizeof(mixLine);
 	mixLine.dwComponentType = MIXERLINE_COMPONENTTYPE_DST_SPEAKERS;
 	mmResult = ::mixerGetLineInfo((HMIXEROBJ)hMixer, &mixLine,
 					MIXER_OBJECTF_HMIXER | MIXER_GETLINEINFOF_COMPONENTTYPE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
+		// Line not found
 		::mixerClose(hMixer);
 		return -1;
 	}
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽｾゑｿｽ
+	// Get control
 	memset(&mixLCs, 0, sizeof(mixLCs));
 	mixLCs.cbStruct = sizeof(mixLCs);
 	mixLCs.dwLineID = mixLine.dwLineID;
@@ -771,12 +766,12 @@ int FASTCALL CSound::GetMasterVol(int& nMaximum)
 	mmResult = ::mixerGetLineControls((HMIXEROBJ)hMixer, &mixLCs,
 					MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
+		// Line not found
 		::mixerClose(hMixer);
 		return -1;
 	}
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽﾌ個撰ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄ、・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽm・ｽ・ｽ
+	// Calculate number of controls and allocate
 	nNum = 1;
 	if (mixLine.cChannels > 0) {
 		nNum *= mixLine.cChannels;
@@ -786,7 +781,7 @@ int FASTCALL CSound::GetMasterVol(int& nMaximum)
 	}
 	pData = new MIXERCONTROLDETAILS_UNSIGNED[nNum];
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽﾌ値・ｽｾゑｿｽ
+	// Get control value
 	memset(&mixDetail, 0, sizeof(mixDetail));
 	mixDetail.cbStruct = sizeof(mixDetail);
 	mixDetail.dwControlID = mixCtrl.dwControlID;
@@ -797,25 +792,25 @@ int FASTCALL CSound::GetMasterVol(int& nMaximum)
 	mmResult = ::mixerGetControlDetails((HMIXEROBJ)hMixer, &mixDetail,
 					MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
+		// Line not found
 		delete[] pData;
 		::mixerClose(hMixer);
 		return -1;
 	}
 
-	// ・ｽﾅ擾ｿｽ・ｽl・ｽ・ｽ0・ｽﾌ場合・ｽﾌゑｿｽ
+	// If minimum value is not 0, bail out
 	if (mixCtrl.Bounds.lMinimum != 0) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
+		// Line not found
 		delete[] pData;
 		::mixerClose(hMixer);
 		return -1;
 	}
 
-	// ・ｽl・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Store value
 	nValue = pData[0].dwValue;
 	nMaximum = mixCtrl.Bounds.lMaximum;
 
-	// ・ｽ・ｽ・ｽ・ｽ
+	// Cleanup
 	delete[] pData;
 	::mixerClose(hMixer);
 
@@ -824,7 +819,7 @@ int FASTCALL CSound::GetMasterVol(int& nMaximum)
 
 //---------------------------------------------------------------------------
 //
-//	・ｽ}・ｽX・ｽ^・ｽ・ｽ・ｽﾊセ・ｽb・ｽg
+//	Master volume setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::SetMasterVol(int nVolume)
@@ -841,32 +836,30 @@ void FASTCALL CSound::SetMasterVol(int nVolume)
 
 	ASSERT(this);
 
-	// ・ｽg・ｽp・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽf・ｽo・ｽC・ｽX・ｽﾔ搾ｿｽ・ｽ・ｽ0・ｽﾅゑｿｽ・ｽ驍ｱ・ｽﾆゑｿｽ・ｽK・ｽv
+	// Only works when selected device is 0 and rate is set
 	if ((m_nSelectDevice != 0) || (m_uRate == 0)) {
 		return;
 	}
 
-	// ・ｽ~・ｽL・ｽT・ｽ・ｽ・ｽI・ｽ[・ｽv・ｽ・ｽ
+	// Open mixer device
 	mmResult = ::mixerOpen(&hMixer, 0, 0, 0,
 					MIXER_OBJECTF_MIXER);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽ~・ｽL・ｽT・ｽI・ｽ[・ｽv・ｽ・ｽ・ｽG・ｽ・ｽ・ｽ[
 		return;
 	}
 
-	// ・ｽ・ｽ・ｽC・ｽ・ｽ・ｽ・ｽ・ｽｾゑｿｽ
+	// Get destination line
 	memset(&mixLine, 0, sizeof(mixLine));
 	mixLine.cbStruct = sizeof(mixLine);
 	mixLine.dwComponentType = MIXERLINE_COMPONENTTYPE_DST_SPEAKERS;
 	mmResult = ::mixerGetLineInfo((HMIXEROBJ)hMixer, &mixLine,
 					MIXER_OBJECTF_HMIXER | MIXER_GETLINEINFOF_COMPONENTTYPE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
 		::mixerClose(hMixer);
 		return;
 	}
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽｾゑｿｽ
+	// Get control
 	memset(&mixLCs, 0, sizeof(mixLCs));
 	mixLCs.cbStruct = sizeof(mixLCs);
 	mixLCs.dwLineID = mixLine.dwLineID;
@@ -878,12 +871,11 @@ void FASTCALL CSound::SetMasterVol(int nVolume)
 	mmResult = ::mixerGetLineControls((HMIXEROBJ)hMixer, &mixLCs,
 					MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
 		::mixerClose(hMixer);
 		return;
 	}
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽﾌ個撰ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾄ、・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽm・ｽ・ｽ
+	// Calculate number of controls and allocate
 	nNum = 1;
 	if (mixLine.cChannels > 0) {
 		nNum *= mixLine.cChannels;
@@ -893,7 +885,7 @@ void FASTCALL CSound::SetMasterVol(int nVolume)
 	}
 	pData = new MIXERCONTROLDETAILS_UNSIGNED[nNum];
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽﾌ値・ｽｾゑｿｽ
+	// Get control value
 	memset(&mixDetail, 0, sizeof(mixDetail));
 	mixDetail.cbStruct = sizeof(mixDetail);
 	mixDetail.dwControlID = mixCtrl.dwControlID;
@@ -904,20 +896,19 @@ void FASTCALL CSound::SetMasterVol(int nVolume)
 	mmResult = ::mixerGetControlDetails((HMIXEROBJ)hMixer, &mixDetail,
 					MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
 	if (mmResult != MMSYSERR_NOERROR) {
-		// ・ｽN・ｽ・ｽ・ｽ[・ｽY・ｽ・ｽ・ｽﾄ終・ｽ・ｽ
 		delete[] pData;
 		::mixerClose(hMixer);
 		return;
 	}
 
-	// ・ｽl・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Verify range
 	ASSERT(mixCtrl.Bounds.lMinimum <= nVolume);
 	ASSERT(nVolume <= mixCtrl.Bounds.lMaximum);
 	for (nIndex=0; nIndex<nNum; nIndex++) {
 		pData[nIndex].dwValue = (DWORD)nVolume;
 	}
 
-	// ・ｽR・ｽ・ｽ・ｽg・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽﾌ値・ｽ・ｽﾝ抵ｿｽ
+	// Set control value
 	mmResult = mixerSetControlDetails((HMIXEROBJ)hMixer, &mixDetail,
 					MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
 	if (mmResult != MMSYSERR_NOERROR) {
@@ -926,14 +917,14 @@ void FASTCALL CSound::SetMasterVol(int nVolume)
 		return;
 	}
 
-	// ・ｽ・ｽ・ｽ・ｽ
+	// Cleanup
 	::mixerClose(hMixer);
 	delete[] pData;
 }
 
 //---------------------------------------------------------------------------
 //
-//	WAV・ｽZ・ｽ[・ｽu・ｽJ・ｽn
+//	WAV save start
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CSound::StartSaveWav(LPCTSTR lpszWavFile)
@@ -944,27 +935,27 @@ BOOL FASTCALL CSound::StartSaveWav(LPCTSTR lpszWavFile)
 	ASSERT(this);
 	ASSERT(lpszWavFile);
 
-	// ・ｽ・ｽ・ｽﾉ録・ｽ・ｽ・ｽ・ｽ・ｽﾈゑｿｽG・ｽ・ｽ・ｽ[
+	// If already saved, error
 	if (m_pWav) {
 		return FALSE;
 	}
-	// ・ｽﾄ撰ｿｽ・ｽ・ｽ・ｽﾅなゑｿｽ・ｽ・ｽﾎエ・ｽ・ｽ・ｽ[
+	// If not playing, error
 	if (!m_bEnable || !m_bPlay) {
 		return FALSE;
 	}
 
-	// ・ｽt・ｽ@・ｽC・ｽ・ｽ・ｽ・ｬ・ｽ・ｽ・ｽ・ｽ・ｽﾝゑｿｽ
+	// Open file
 	if (!m_WavFile.Open(lpszWavFile, Fileio::WriteOnly)) {
 		return FALSE;
 	}
 
-	// RIFF・ｽw・ｽb・ｽ_・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Write RIFF header placeholder
 	if (!m_WavFile.Write((BYTE*)"RIFF0123WAVEfmt ", 16)) {
 		m_WavFile.Close();
 		return FALSE;
 	}
 
-	// WAVEFORMATEX・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Write WAVEFORMATEX size
 	dwSize = sizeof(wfex);
 	if (!m_WavFile.Write((BYTE*)&dwSize, sizeof(dwSize))) {
 		m_WavFile.Close();
@@ -983,13 +974,13 @@ BOOL FASTCALL CSound::StartSaveWav(LPCTSTR lpszWavFile)
 		return FALSE;
 	}
 
-	// data・ｽT・ｽu・ｽw・ｽb・ｽ_・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Write data subchunk header
 	if (!m_WavFile.Write((BYTE*)"data0123", 8)) {
 		m_WavFile.Close();
 		return FALSE;
 	}
 
-	// ・ｽ^・ｽ・ｽ・ｽo・ｽb・ｽt・ｽ@・ｽ・ｽ・ｽm・ｽ・ｽ
+	// Allocate temp buffer
 	try {
 		m_pWav = new WORD[0x20000];
 	}
@@ -1000,11 +991,11 @@ BOOL FASTCALL CSound::StartSaveWav(LPCTSTR lpszWavFile)
 		return FALSE;
 	}
 
-	// ・ｽ・ｽ・ｽ[・ｽN・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Clear buffers
 	m_nWav = 0;
 	m_dwWav = 0;
 
-	// ・ｽR・ｽ・ｽ・ｽ|・ｽ[・ｽl・ｽ・ｽ・ｽg・ｽﾌフ・ｽ・ｽ・ｽO・ｽ・ｽ・ｽN・ｽ・ｽ・ｽA
+	// Clear started flags for OPMIF and ADPCM
 	m_pOPMIF->ClrStarted();
 	m_pADPCM->ClrStarted();
 
@@ -1013,14 +1004,14 @@ BOOL FASTCALL CSound::StartSaveWav(LPCTSTR lpszWavFile)
 
 //---------------------------------------------------------------------------
 //
-//	WAV・ｽZ・ｽ[・ｽu・ｽ・ｽ・ｽ・ｽ
+//	WAV save status
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CSound::IsSaveWav() const
 {
 	ASSERT(this);
 
-	// ・ｽo・ｽb・ｽt・ｽ@・ｽﾅチ・ｽF・ｽb・ｽN
+	// Check buffer
 	if (m_pWav) {
 		return TRUE;
 	}
@@ -1030,7 +1021,7 @@ BOOL FASTCALL CSound::IsSaveWav() const
 
 //---------------------------------------------------------------------------
 //
-//	WAV・ｽZ・ｽ[・ｽu
+//	WAV save process
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::ProcessSaveWav(int *pStream, DWORD dwLength)
@@ -1045,19 +1036,19 @@ void FASTCALL CSound::ProcessSaveWav(int *pStream, DWORD dwLength)
 	ASSERT(dwLength > 0);
 	ASSERT((dwLength & 3) == 0);
 
-	// Started・ｽt・ｽ・ｽ・ｽO・ｽｲべ、・ｽﾆゑｿｽ・ｽﾉク・ｽ・ｽ・ｽA・ｽﾈゑｿｽX・ｽL・ｽb・ｽv
+	// Check Started flags and skip if both not started
 	if (!m_pOPMIF->IsStarted() && !m_pADPCM->IsStarted()) {
 		return;
 	}
 
-	// ・ｽO・ｽ・ｽ・ｽE・ｽ續ｼ・ｽﾉ包ｿｽ・ｽ・ｽ・ｽ・ｽK・ｽv・ｽ・ｽ・ｽ・ｽ・ｽ驍ｩ・ｽ`・ｽF・ｽb・ｽN
+	// Check if need to flush previous data
 	dwPrev = 0;
 	if ((dwLength + m_nWav) >= 256 * 1024) {
 		dwPrev = 256 * 1024 - m_nWav;
 		dwLength -= dwPrev;
 	}
 
-	// ・ｽO・ｽ・ｽ
+	// First
 	if (dwPrev > 0) {
 		nLen = (int)(dwPrev >> 1);
 		for (i=0; i<nLen; i++) {
@@ -1075,7 +1066,7 @@ void FASTCALL CSound::ProcessSaveWav(int *pStream, DWORD dwLength)
 		m_nWav = 0;
 	}
 
-	// ・ｽ續ｼ
+	// Then
 	nLen = (int)(dwLength >> 1);
 	for (i=0; i<nLen; i++) {
 		rawData = *pStream++;
@@ -1094,30 +1085,30 @@ void FASTCALL CSound::ProcessSaveWav(int *pStream, DWORD dwLength)
 
 //---------------------------------------------------------------------------
 //
-//	WAV・ｽZ・ｽ[・ｽu・ｽI・ｽ・ｽ
+//	WAV save end
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSound::EndSaveWav()
 {
 	DWORD dwLength;
 
-	// ・ｽc・ｽ・ｽ・ｽ・ｽ・ｽf・ｽ[・ｽ^・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Write remaining data
 	if (m_nWav > 0) {
 		m_WavFile.Write(m_pWav, m_nWav);
 		m_nWav = 0;
 	}
 
-	// ・ｽw・ｽb・ｽ_・ｽC・ｽ・ｽ
+	// Update header
 	m_WavFile.Seek(4);
 	dwLength = m_dwWav + sizeof(WAVEFORMATEX) + 20;
 	m_WavFile.Write((BYTE*)&dwLength, sizeof(dwLength));
 	m_WavFile.Seek(sizeof(WAVEFORMATEX) + 24);
 	m_WavFile.Write((BYTE*)&m_dwWav, sizeof(m_dwWav));
 
-	// ・ｽt・ｽ@・ｽC・ｽ・ｽ・ｽN・ｽ・ｽ・ｽ[・ｽY
+	// Close file
 	m_WavFile.Close();
 
-	// ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ
+	// Free buffer
 	delete[] m_pWav;
 	m_pWav = NULL;
 }

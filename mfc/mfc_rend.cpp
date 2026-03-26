@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2004 ・ｰ・ｩ・・ytanaka@ipc-tokai.or.jp)
-//	[ Subventana MFC (renderizador) ]
+//	Copyright (C) 2001-2004 ﾅ｡ﾂｰﾃ･窶｢ﾂｽD(ytanaka@ipc-tokai.or.jp)
+//	[ MFC Subwindow (renderer) ]
 //
 //---------------------------------------------------------------------------
 
@@ -20,27 +20,27 @@
 
 //===========================================================================
 //
-//	Window ofl buffer de renderizacion
+//	Render buffer window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	constructor
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CRendBufWnd::CRendBufWnd(int nType)
 {
 	Render *render;
 
-	// Adquisicion de renderizador
+	// Get renderer
 	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(render);
 
-	// tipo de almacenamiento
+	// Storage type
 	m_nType = nType;
 
-	// Tamano de desplazamiento, parametros de la ventana, direccion del buffer
+	// Scroll size, window parameters, buffer address
 	switch (nType) {
 		// TEXT
 		case 0:
@@ -52,7 +52,7 @@ CRendBufWnd::CRendBufWnd(int nType)
 			break;
 		// GRP0
 		case 1:
-			// Los buffers grﾃ｡ficos usan layout 1024x512 (duplican X para wrap).
+			// Graphic buffers use 1024x512 layout (X doubled for wrap)
 			m_nScrlWidth = 1024;
 			m_nScrlHeight = 512;
 			m_dwID = MAKEID('G', 'P', '0', 'B');
@@ -100,7 +100,7 @@ CRendBufWnd::CRendBufWnd(int nType)
 
 //---------------------------------------------------------------------------
 //
-//	configuracion
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -110,15 +110,15 @@ void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	int next = 0;
 	const DWORD *p;
 
-	// calculo de punteros
+	// Calculate pointers
 	p = m_pRendBuf;
 	switch (m_nType) {
 		case 0:
-			// Texto.
+			// Text
 			p += (y << 10);
 			next = 1024;
 			break;
-		// grafico
+		// Graphic
 		case 1:
 		case 2:
 		case 3:
@@ -126,7 +126,7 @@ void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 			p += (y << 10);
 			next = 1024;
 			break;
-		// BG/Sprite.
+		// BG/Sprite
 		case 5:
 			p += (y << 9);
 			next = 512;
@@ -137,7 +137,7 @@ void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	}
 	p += x;
 
-	//medida contra la sobrecarga
+	// Check against overflow
 	if ((y + height) > m_nScrlHeight) {
 		height = m_nScrlHeight - y;
 	}
@@ -147,9 +147,9 @@ void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = m_nScrlWidth - x;
 	}
 
-	// bucle
+	// Loop
 	for (i=0; i<height; i++) {
-		// x, width繧貞鋸譯医＠縺ｦ繧ｳ繝斐・
+		// Copy considering x, width
 		memcpy(ptr, p, (width << 2));
 		p += next;
 		ptr += (width << 2);
@@ -159,7 +159,7 @@ void FASTCALL CRendBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	Actualizacion del hilo de mensajes
+//	Message thread update
 //
 //---------------------------------------------------------------------------
 void FASTCALL CRendBufWnd::Update()
@@ -169,18 +169,18 @@ void FASTCALL CRendBufWnd::Update()
 	DWORD rgb = 0;
 	CString string;
 
-	// Comprobacion de la ventana BMP
+	// Check BMP window
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// Comprobacion del cursor del mouse
+	// Check mouse cursor
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// Calculos de coordenadas, sobrecomprobacion
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -190,7 +190,7 @@ void FASTCALL CRendBufWnd::Update()
 		return;
 	}
 
-	//Creacion de datos en pantalla
+	// Create display data
 	switch (m_nType) {
 		case 0:
 			rgb = m_pRendBuf[(y << 10) + x];
@@ -215,37 +215,37 @@ void FASTCALL CRendBufWnd::Update()
 
 //===========================================================================
 //
-//	ventana del buffer compuesto
+//	Composite buffer window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	constructor
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CMixBufWnd::CMixBufWnd()
 {
 	Render *render;
 
-	// parametro basico
+	// Basic parameter
 	m_nScrlWidth = 1024;
 	m_nScrlHeight = 1024;
 	m_dwID = MAKEID('M', 'I', 'X', 'B');
 	::GetMsg(IDS_SWND_REND_MIX, m_strCaption);
 
-	// Adquisicion del renderizador
+	// Get renderer
 	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(render);
 
-	// adquisicion de direcciones
+	// Get addresses
 	m_pRendWork = render->GetWorkAddr();
 	ASSERT(m_pRendWork);
 }
 
 //---------------------------------------------------------------------------
 //
-//	configuracion
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -255,9 +255,9 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	int below;
 	const DWORD *p;
 
-	// x, y Check.
+	// x, y Check
 	if (x >= m_pRendWork->mixwidth) {
-		// No hay zona de display. Todo negro.
+		// No display area. All black
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -265,7 +265,7 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		return;
 	}
 	if (y >= m_pRendWork->mixheight) {
-		//No hay zona de display. Todo negro.
+		// No display area. All black
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -273,13 +273,13 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		return;
 	}
 
-	// calculo de punteros
+	// Calculate pointers
 	p = m_pRendWork->mixbuf;
 	ASSERT(p);
 	p += (y * m_pRendWork->mixwidth);
 	p += x;
 
-	//medida contra la sobrecarga
+	// Check against overflow
 	below = 0;
 	if ((y + height) > m_pRendWork->mixheight) {
 		below = height - m_pRendWork->mixheight + y;
@@ -291,9 +291,9 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = m_pRendWork->mixwidth - x;
 	}
 
-	// bucle
+	// Loop
 	for (i=0; i<height; i++) {
-		// x, width繧貞鋸譯医＠縺ｦ繧ｳ繝斐・
+		// Copy considering x, width
 		memcpy(ptr, p, (width << 2));
 		p += m_pRendWork->mixwidth;
 		ptr += (width << 2);
@@ -301,7 +301,7 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		ptr += (delta << 2);
 	}
 
-	// Borrar la direccion descendente extrana.
+	// Clear strange downward address
 	for (i=0; i<below; i++) {
 		memset(ptr, 0, (width << 2));
 		ptr += (width << 2);
@@ -312,7 +312,7 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	Actualizacion del hilo de mensajes
+//	Message thread update
 //
 //---------------------------------------------------------------------------
 void FASTCALL CMixBufWnd::Update()
@@ -322,18 +322,18 @@ void FASTCALL CMixBufWnd::Update()
 	DWORD rgb;
 	CString string;
 
-	// Comprobacion de la ventana BMP
+	// Check BMP window
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// Comprobacion del cursor del mouse
+	// Check mouse cursor
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// Calculos de coordenadas, sobrecomprobacion
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -343,7 +343,7 @@ void FASTCALL CMixBufWnd::Update()
 		return;
 	}
 
-	// Creacion de datos de display
+	// Create display data
 	if (x >= m_pRendWork->mixwidth) {
 		return;
 	}
@@ -352,7 +352,7 @@ void FASTCALL CMixBufWnd::Update()
 	}
 	rgb = m_pRendWork->mixbuf[(y * m_pRendWork->mixwidth) + x];
 
-	// mostrar
+	// Display
 	string.Format("( %d, %d) R%d G%d B%d  Width: %d Height: %d",
 				x, y, (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, (rgb & 0xff), m_pRendWork->mixwidth, m_pRendWork->mixheight);
 	m_StatusBar.SetPaneText(0, string);
@@ -360,13 +360,13 @@ void FASTCALL CMixBufWnd::Update()
 
 //===========================================================================
 //
-//	PCG繝舌ャ繝輔ぃ繧ｦ繧｣繝ｳ繝峨え
+//	PCG buffer window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	繧ｳ繝ｳ繧ｹ繝医Λ繧ｯ繧ｿ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CPCGBufWnd::CPCGBufWnd()
@@ -374,7 +374,7 @@ CPCGBufWnd::CPCGBufWnd()
 	Render *render;
 	const Render::render_t *p;
 
-	// 蝓ｺ譛ｬ繝代Λ繝｡繝ｼ繧ｿ
+	// Basic parameters
 	m_nWidth = 28;
 	m_nHeight = 16;
 	m_nScrlWidth = 256;
@@ -382,11 +382,11 @@ CPCGBufWnd::CPCGBufWnd()
 	m_dwID = MAKEID('P', 'C', 'G', 'B');
 	::GetMsg(IDS_SWND_REND_PCG, m_strCaption);
 
-	// 繝ｬ繝ｳ繝繝ｩ蜿門ｾ・
+	// Get renderer
 	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(render);
 
-	// 繧｢繝峨Ξ繧ｹ蜿門ｾ・
+	// Get address
 	m_pPCGBuf = render->GetPCGBuf();
 	ASSERT(m_pPCGBuf);
 	p = render->GetWorkAddr();
@@ -397,7 +397,7 @@ CPCGBufWnd::CPCGBufWnd()
 
 //---------------------------------------------------------------------------
 //
-//	繧ｻ繝・ヨ繧｢繝・・
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPCGBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -408,9 +408,9 @@ void FASTCALL CPCGBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	const DWORD *p;
 	DWORD buf[256];
 
-	// x繝√ぉ繝・け
+	// x check
 	if (x >= 256) {
-		// 陦ｨ遉ｺ鬆伜沺縺ｪ縺励ゅ☆縺ｹ縺ｦ鮟・
+		// No display area. All black
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -418,31 +418,31 @@ void FASTCALL CPCGBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		return;
 	}
 
-	// 繧ｪ繝ｼ繝舌・蟇ｾ遲・
+	// Overflow check
 	delta = 0;
 	if ((x + width) > 256) {
 		delta = width - 256 + x;
 		width = 256 - x;
 	}
 
-	// 繝ｫ繝ｼ繝・
+	// Loop
 	for (i=0; i<height; i++) {
-		// 繝舌ャ繝輔ぃ繝昴う繝ｳ繧ｿ邂怜・
+		// Calculate buffer pointer
 		p = m_pPCGBuf;
 		ASSERT((y >> 4) < 256);
 		p += ((y >> 4) << 8);
 		p += ((y & 0x0f) << 4);
 
-		// 繝・・繧ｿ菴懈・
+		// Create data
 		memset(buf, 0, sizeof(buf));
 		for (j=0; j<16; j++) {
 			memcpy(&buf[j << 4], p, sizeof(DWORD) * 16);
 
-			// 繝舌ャ繝輔ぃ繧・56x16x16縺縺代∝・縺ｸ騾ｲ繧√ｋ
+			// Buffer advances only 56x16x16, advance
 			p += 0x10000;
 		}
 
-		// x, width繧貞鋸譯医＠縺ｦ繧ｳ繝斐・
+		// Copy considering x, width
 		memcpy(ptr, buf, (width << 2));
 		ptr += (width << 2);
 		memset(ptr, 0, (delta << 2));
@@ -454,7 +454,7 @@ void FASTCALL CPCGBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	繝｡繝・そ繝ｼ繧ｸ繧ｹ繝ｬ繝・ラ縺九ｉ縺ｮ譖ｴ譁ｰ
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPCGBufWnd::Update()
@@ -464,18 +464,18 @@ void FASTCALL CPCGBufWnd::Update()
 	CString string;
 	int index;
 
-	// BMP繧ｦ繧｣繝ｳ繝峨え繝√ぉ繝・け
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// 繝槭え繧ｹ繧ｫ繝ｼ繧ｽ繝ｫ繝√ぉ繝・け
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// 蠎ｧ讓呵ｨ育ｮ励√が繝ｼ繝舌・繝√ぉ繝・け
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -485,10 +485,10 @@ void FASTCALL CPCGBufWnd::Update()
 		return;
 	}
 
-	// 繧､繝ｳ繝・ャ繧ｯ繧ｹ菴懈・
+	// Create index
 	index = y >> 4;
 
-	// 陦ｨ遉ｺ
+	// Display
 	string.Format("( %d, %d) Pal%1X [$%02X +%d +%d]",
 				x, y, (x >> 4), index, (x & 0x0f), (y & 0x0f));
 	m_StatusBar.SetPaneText(0, string);

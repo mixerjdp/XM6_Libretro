@@ -492,7 +492,7 @@ BOOL CApp::InitInstance()
 	pFrmWnd = new CFrmWnd();
 	m_pMainWnd = (CWnd*)pFrmWnd;
 
-	pFrmWnd->RutaCompletaArchivoXM6 = m_lpCmdLine;
+	pFrmWnd->m_strXM6FilePath = m_lpCmdLine;
 
 	// Initialization
 	if (!pFrmWnd->Init()) {

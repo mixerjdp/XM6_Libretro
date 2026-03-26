@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 ‚o‚hD(ytanaka@ipc-tokai.or.jp)
-//	[ MFC ƒTƒuƒEƒBƒ“ƒhƒE(ƒrƒfƒI) ]
+//	Copyright (C) 2001-2005 ï¼°ï¼©ï¼(ytanaka@ipc-tokai.or.jp)
+//	[ MFC ã‚µãƒ–ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦(ãƒ“ãƒ‡ã‚ª) ]
 //
 //---------------------------------------------------------------------------
 
@@ -25,34 +25,34 @@
 
 //===========================================================================
 //
-//	ƒTƒuƒrƒfƒIƒEƒBƒ“ƒhƒE
+//	Sub-video window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CSubVideoWnd::CSubVideoWnd()
 {
-	// ‰ŠúƒTƒCƒYİ’è
+	// Initial size setting
 	m_nWidth = 48;
 	m_nHeight = 16;
 
-	// ƒ`ƒƒƒCƒ‹ƒh
+	// Child
 	m_pBMPWnd = NULL;
 	m_nPane = 1;
 
-	// Å‘åƒTƒCƒY
+	// Maximum size
 	m_nScrlWidth = -1;
 	m_nScrlHeight = -1;
 
-	// ƒIƒuƒWƒFƒNƒg
+	// Object
 	m_pCRTC = NULL;
 	m_pVC = NULL;
 
-	// ƒtƒ‰ƒO
+	// Flag
 	m_bScroll = FALSE;
 	m_bPalette = FALSE;
 	m_bContrast = FALSE;
@@ -60,7 +60,7 @@ CSubVideoWnd::CSubVideoWnd()
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒW ƒ}ƒbƒv
+//	Message map
 //
 //---------------------------------------------------------------------------
 BEGIN_MESSAGE_MAP(CSubVideoWnd, CSubWnd)
@@ -71,19 +71,19 @@ END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------
 //
-//	ƒEƒBƒ“ƒhƒEì¬€”õ
+//	Window creation preparation
 //
 //---------------------------------------------------------------------------
 BOOL CSubVideoWnd::PreCreateWindow(CREATESTRUCT& cs)
 {
 	ASSERT(this);
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	if (!CSubWnd::PreCreateWindow(cs)) {
 		return FALSE;
 	}
 
-	// ƒTƒCƒY‰Â•Ï
+	// Resizable
 	cs.style |= WS_THICKFRAME;
 
 	return TRUE;
@@ -91,7 +91,7 @@ BOOL CSubVideoWnd::PreCreateWindow(CREATESTRUCT& cs)
 
 //---------------------------------------------------------------------------
 //
-//	ƒEƒBƒ“ƒhƒEì¬
+//	Window creation
 //
 //---------------------------------------------------------------------------
 int CSubVideoWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -106,28 +106,28 @@ int CSubVideoWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ASSERT(m_nScrlWidth > 0);
 	ASSERT(m_nScrlHeight > 0);
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	if (CSubWnd::OnCreate(lpCreateStruct) != 0) {
 		return -1;
 	}
 
-	// CRTCæ“¾
+	// Get CRTC
 	ASSERT(!m_pCRTC);
 	m_pCRTC = (CRTC*)::GetVM()->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
 	ASSERT(m_pCRTC);
 
-	// VCæ“¾
+	// Get VC
 	ASSERT(!m_pVC);
 	m_pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(m_pVC);
 
-	// ƒXƒe[ƒ^ƒXƒo[ì¬
+	// Create status bar
 	m_StatusBar.Create(this);
 	size = m_StatusBar.CalcFixedLayout(TRUE, TRUE);
 	GetClientRect(&rect);
 	m_StatusBar.MoveWindow(0, rect.bottom - size.cy, rect.Width(), size.cy);
 
-	// ƒXƒe[ƒ^ƒXƒo[İ’è
+	// Status bar setting
 	ASSERT((m_nPane >= 1) && (m_nPane <= 16));
 	for (i=0; i<m_nPane; i++) {
 		if (i == 0) {
@@ -139,7 +139,7 @@ int CSubVideoWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_StatusBar.SetIndicators(uID, m_nPane);
 	m_StatusBar.SetPaneInfo(0, 0, SBPS_NOBORDERS | SBPS_STRETCH, 0);
 
-	// BMPƒEƒBƒ“ƒhƒE
+	// BMPã‚¦ã‚£ãƒ³ãƒ‰ã‚¦
 	rect.bottom -= size.cy;
 	m_pBMPWnd = new CSubBMPWnd;
 	m_pBMPWnd->m_nScrlWidth = m_nScrlWidth;
@@ -152,7 +152,7 @@ int CSubVideoWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 //---------------------------------------------------------------------------
 //
-//	ƒTƒCƒY•ÏX’†
+//	Sizing
 //
 //---------------------------------------------------------------------------
 void CSubVideoWnd::OnSizing(UINT nSide, LPRECT lpRect)
@@ -161,25 +161,25 @@ void CSubVideoWnd::OnSizing(UINT nSide, LPRECT lpRect)
 	CSize sizeBar;
 	CRect rectSizing;
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	CSubWnd::OnSizing(nSide, lpRect);
 
-	// ƒXƒe[ƒ^ƒXƒo[‚ª‚È‚¯‚ê‚ÎAƒŠƒ^[ƒ“
+	// Return if no status bar
 	if (!::IsWindow(m_StatusBar.m_hWnd)) {
 		return;
 	}
 
-	// BMPƒEƒBƒ“ƒhƒE‚ÌÅ‘åƒTƒCƒY‚ğ“¾‚é(ƒXƒNƒ[ƒ‹ƒo[‚İ)
+	// Get maximum size of BMP window (including scroll bar)
 	m_pBMPWnd->GetMaximumRect(&rect, TRUE);
 
-	// ƒXƒe[ƒ^ƒXƒo[‚ÌƒTƒCƒY‚ğ“¾‚ÄA‡Œv
+	// Get status bar size and total
 	sizeBar = m_StatusBar.CalcFixedLayout(TRUE, TRUE);
 	rect.bottom += sizeBar.cy;
 
-	// ‚±‚ÌƒEƒBƒ“ƒhƒE‚ÌÅ‘å‚ÌƒTƒCƒY‚ğ“¾‚é
+	// Get maximum size for this window
 	CalcWindowRect(&rect);
 
-	// ƒI[ƒo[ƒ`ƒFƒbƒN
+	// Overflow check
 	rectSizing = *lpRect;
 	if (rectSizing.Width() >= rect.Width()) {
 		lpRect->right = lpRect->left + rect.Width();
@@ -191,7 +191,7 @@ void CSubVideoWnd::OnSizing(UINT nSide, LPRECT lpRect)
 
 //---------------------------------------------------------------------------
 //
-//	ƒTƒCƒY•ÏX
+//	Size change
 //
 //---------------------------------------------------------------------------
 void CSubVideoWnd::OnSize(UINT nType, int cx, int cy)
@@ -208,32 +208,32 @@ void CSubVideoWnd::OnSize(UINT nType, int cx, int cy)
 	ASSERT(cx >= 0);
 	ASSERT(cy >= 0);
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	CSubWnd::OnSize(nType, cx, cy);
 
-	// ƒXƒe[ƒ^ƒXƒo[Ä”z’u(ƒEƒBƒ“ƒhƒE—LŒø‚Ìê‡‚ÉŒÀ’è)
+	// Relocate status bar (only if window is valid)
 	if (::IsWindow(m_StatusBar.m_hWnd)) {
-		// ƒXƒe[ƒ^ƒXƒo[‚Ì‚‚³AƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ‚ÌL‚³‚ğ“¾‚é
+		// Get status bar height and client area size
 		sizeBar = m_StatusBar.CalcFixedLayout(TRUE, TRUE);
 		GetClientRect(&rectClient);
 
-		// ƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ‚ªAƒXƒe[ƒ^ƒXƒo[‚ğû‚ß‚é‚½‚ß‚É\•ª‚Å‚ ‚ê‚ÎˆÊ’u•ÏX
+		// Change position if client area is sufficient for status bar
 		if (rectClient.Height() > sizeBar.cy) {
 			m_StatusBar.MoveWindow(0,
 								rectClient.Height() - sizeBar.cy,
 								rectClient.Width(),
 								sizeBar.cy);
 
-			// BMPƒEƒBƒ“ƒhƒE‚ğ‚ ‚í‚¹‚ÄÄ”z’u
+			// BMPã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚’ã‚ã‚ã›ã¦å†é…ç½®
 			rectClient.bottom -= sizeBar.cy;
 			m_pBMPWnd->MoveWindow(0, 0, rectClient.Width(), rectClient.Height());
 		}
 
-		// BMPƒEƒBƒ“ƒhƒE‚ÌƒEƒBƒ“ƒhƒEƒTƒCƒYA‹–—eÅ‘åƒTƒCƒY‚ğ“¾‚é
+		// Get BMP window size and maximum allowable size
 		m_pBMPWnd->GetWindowRect(&rectBmp);
 		m_pBMPWnd->GetMaximumRect(&rectMax, FALSE);
 
-		// ‹–—eÅ‘åƒTƒCƒY‚ğ’´‚¦‚Ä‚¢‚ê‚ÎA‚»‚ê‚¾‚¯k¬(ƒXƒNƒ[ƒ‹ƒo[‚Ì©“®ON/OFF‚É‘Îˆ)
+		// Shrink if exceeding maximum allowable size (handles automatic scroll bar ON/OFF)
 		GetWindowRect(&rectWnd);
 		sizeWnd.cx = rectWnd.Width();
 		sizeWnd.cy = rectWnd.Height();
@@ -251,7 +251,7 @@ void CSubVideoWnd::OnSize(UINT nType, int cx, int cy)
 			return;
 		}
 
-		// ‚Ç‚¿‚ç‚©‚ÌƒTƒCƒY‚ğ’´‚¦‚Ä‚¢‚ê‚ÎAk¬(ƒ^ƒCƒ‹EƒJƒXƒP[ƒh‚È‚Ç‚Ö‚Ì‘Îô)
+		// Shrink if either size is exceeded (countermeasure for tiling/cascading)
 		m_pBMPWnd->GetMaximumRect(&rectMax, TRUE);
 		rectMax.bottom += sizeBar.cy;
 		CalcWindowRect(&rectMax);
@@ -273,7 +273,7 @@ void CSubVideoWnd::OnSize(UINT nType, int cx, int cy)
 
 //---------------------------------------------------------------------------
 //
-//	XV
+//	Update
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSubVideoWnd::Refresh()
@@ -283,28 +283,28 @@ void FASTCALL CSubVideoWnd::Refresh()
 	ASSERT(this);
 	ASSERT_VALID(this);
 
-	// —LŒøƒtƒ‰ƒOƒ`ƒFƒbƒN
+	// Check enable flag
 	if (!m_bEnable || !m_pBMPWnd) {
 		return;
 	}
 
-	// •`‰æ‹éŒ`æ“¾
+	// Get drawing rectangle
 	m_pBMPWnd->GetDrawRect(&rect);
 	if ((rect.Width() == 0) || (rect.Height() == 0)) {
 		return;
 	}
 
-	// ƒZƒbƒgƒAƒbƒv
+	// Setup
 	Setup(rect, m_pBMPWnd->GetBits());
 		
 
-	// •\¦
+	// Display
 	m_pBMPWnd->Refresh();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CSubVideoWnd::Update()
@@ -316,17 +316,17 @@ void FASTCALL CSubVideoWnd::Update()
 #if !defined(NDEBUG)
 //---------------------------------------------------------------------------
 //
-//	f’f
+//	Diagnostics
 //
 //---------------------------------------------------------------------------
 void CSubVideoWnd::AssertValid() const
 {
 	ASSERT(this);
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	CSubWnd::AssertValid();
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	ASSERT(m_nScrlWidth > 0);
 	ASSERT(m_nScrlHeight > 0);
 }
@@ -334,33 +334,33 @@ void CSubVideoWnd::AssertValid() const
 
 //===========================================================================
 //
-//	ƒeƒLƒXƒg‰æ–ÊƒEƒBƒ“ƒhƒE
+//	Text screen window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CTVRAMWnd::CTVRAMWnd()
 {
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('T', 'V', 'R', 'M');
 	::GetMsg(IDS_SWND_TVRAM, m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒYİ’è
+	// Virtual screen size setting
 	m_nScrlWidth = 0x400;
 	m_nScrlHeight = 0x400;
 
-	// TVRAMæ“¾
+	// Get TVRAM
 	m_pTVRAM = (TVRAM*)::GetVM()->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
 	ASSERT(m_pTVRAM);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
@@ -385,7 +385,7 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<16; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -393,9 +393,9 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 		}
 	}
 
-	// x, yƒ`ƒFƒbƒN
+	// x, y check
 	if (x >= 1024) {
-		// •\¦—Ìˆæ‚È‚µB‚·‚×‚Ä•
+		// No display area. All black
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -403,7 +403,7 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 		return;
 	}
 	if (y >= 1024) {
-		// •\¦—Ìˆæ‚È‚µB‚·‚×‚Ä•
+		// No display area. All black
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -411,18 +411,18 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 		return;
 	}
 
-	// ƒ|ƒCƒ“ƒ^‰Šú‰»
+	// Initialize pointer
 	p = m_pTVRAM;
 	i = (x >> 5);
 	p += (y << 7);
 	p += (i << 2);
 
-	// x•ûŒüƒIƒtƒZƒbƒgAƒŒƒ“ƒ_ƒŠƒ“ƒO’·
+	// X-direction offset, rendering length
 	x &= 0x1f;
 	len = x + width + 31;
 	len >>= 5;
 
-	// ƒI[ƒo[‘Îô
+	// Overflow countermeasure
 	below = 0;
 	if ((y + height) > 1024) {
 		below = height - 1024 + y;
@@ -435,19 +435,19 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 		width = (len << 5);
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	for (i=0; i<height; i++) {
 		::VideoText(p, buf, len, m_WndColor);
 		p += 128;
 
-		// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+		// Copy considering x, width
 		memcpy(ptr, &buf[x], (width << 2));
 		ptr += (width << 2);
 		memset(ptr, 0, (delta << 2));
 		ptr += (delta << 2);
 	}
 
-	// —]Œv‚È‰º•ûŒü‚ğÁ‚·
+	// Clear extra downward area
 	for (i=0; i<below; i++) {
 		memset(ptr, 0, (width << 2));
 		ptr += (width << 2);
@@ -459,7 +459,7 @@ void FASTCALL CTVRAMWnd::Setup(CRect& rect, BYTE *pBits)
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CTVRAMWnd::Update()
@@ -480,18 +480,18 @@ void FASTCALL CTVRAMWnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -501,7 +501,7 @@ void FASTCALL CTVRAMWnd::Update()
 		return;
 	}
 
-	// ƒf[ƒ^æ“¾
+	// Get data
 	addr = ((y << 7) + (x >> 3)) ^ 1;
 	p[0] = m_pTVRAM[addr + 0x00000];
 	p[1] = m_pTVRAM[addr + 0x20000];
@@ -509,7 +509,7 @@ void FASTCALL CTVRAMWnd::Update()
 	p[3] = m_pTVRAM[addr + 0x60000];
 	addr = (addr ^ 1) + 0xe00000;
 
-	// RGB’læ“¾
+	// Get RGB values
 	value = (x & 0x07);
 	bit = (0x80 >> value);
 	value = 0;
@@ -529,7 +529,7 @@ void FASTCALL CTVRAMWnd::Update()
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X [%02X %02X %02X %02X] Color%d R%d G%d B%d",
 				x, y, addr,
 				p[0], p[1], p[2], p[3],
@@ -540,13 +540,13 @@ void FASTCALL CTVRAMWnd::Update()
 
 //===========================================================================
 //
-//	ƒOƒ‰ƒtƒBƒbƒN‰æ–Ê(1024~1024)ƒEƒBƒ“ƒhƒE
+//	Graphic screen (1024x1024) window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CG1024Wnd::CG1024Wnd()
@@ -555,25 +555,25 @@ CG1024Wnd::CG1024Wnd()
 	GVRAM *pGVRAM;
 	int i;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('G', '1', '0', '2');
 	::GetMsg(IDS_SWND_G1024, m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	m_nScrlWidth = 1024;
 	m_nScrlHeight = 1024;
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 
-	// ƒOƒ‰ƒtƒBƒbƒNVRAMƒƒ‚ƒŠæ“¾
+	// Get Graphic VRAM memory
 	pGVRAM = (GVRAM*)::GetVM()->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(pGVRAM);
 	m_pGVRAM = pGVRAM->GetGVRAM();
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<16; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
@@ -582,7 +582,7 @@ CG1024Wnd::CG1024Wnd()
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG1024Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -596,7 +596,7 @@ void FASTCALL CG1024Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<16; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -619,7 +619,7 @@ void FASTCALL CG1024Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG1024Wnd::Update()
@@ -633,18 +633,18 @@ void FASTCALL CG1024Wnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -654,7 +654,7 @@ void FASTCALL CG1024Wnd::Update()
 		return;
 	}
 
-	// ƒf[ƒ^æ“¾
+	// Get data
 	addr = (y & 0x1ff);
 	addr <<= 10;
 	addr += ((x & 0x1ff) << 1);
@@ -679,12 +679,12 @@ void FASTCALL CG1024Wnd::Update()
 		}
 	}
 
-	// RGB’læ“¾
+	// Get RGB values
 	r = m_WndColor[value] >> 16;
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X [%02X] Color%d R%d G%d B%d",
 				x, y, addr,
 				value, value, r, g, b);
@@ -693,13 +693,13 @@ void FASTCALL CG1024Wnd::Update()
 
 //===========================================================================
 //
-//	ƒOƒ‰ƒtƒBƒbƒN‰æ–Ê(16F)ƒEƒBƒ“ƒhƒE
+//	Graphic screen (16 colors) window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CG16Wnd::CG16Wnd(int nPage)
@@ -708,29 +708,29 @@ CG16Wnd::CG16Wnd(int nPage)
 	GVRAM *pGVRAM;
 	int i;
 
-	// ƒy[ƒW‹L‰¯
+	// Page memory
 	ASSERT((nPage >= 0) || (nPage <= 3));
 	m_nPage = nPage;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('G', '1', '6', ('A' + nPage));
 	::GetMsg((IDS_SWND_G16P0 + nPage), m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	m_nScrlWidth = 512;
 	m_nScrlHeight = 512;
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 
-	// ƒOƒ‰ƒtƒBƒbƒNVRAMƒƒ‚ƒŠæ“¾
+	// Get Graphic VRAM memory
 	pGVRAM = (GVRAM*)::GetVM()->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(pGVRAM);
 	m_pGVRAM = pGVRAM->GetGVRAM();
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<16; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
@@ -739,7 +739,7 @@ CG16Wnd::CG16Wnd(int nPage)
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG16Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -755,7 +755,7 @@ void FASTCALL CG16Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<16; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -763,12 +763,12 @@ void FASTCALL CG16Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 	}
 
-	// ƒ|ƒCƒ“ƒ^‰Šú‰»
+	// Initialize pointer
 	p = m_pGVRAM;
 	p += (x << 1);
 	p += (y << 10);
 
-	// 512~512‚È‚Ì‚ÅAƒI[ƒo[‚·‚é‰Â”\«‚ª‚ ‚é
+	// 512x512, overflow is possible
 	if ((y + height) > m_nScrlHeight) {
 		height = m_nScrlHeight - y;
 	}
@@ -778,47 +778,47 @@ void FASTCALL CG16Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = m_nScrlWidth - x;
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	switch (m_nPage) {
-		// ƒy[ƒW0
+		// Page0
 		case 0:
 			for (i=0; i<height; i++) {
 				::VideoG16A(p, buf, width, m_WndColor);
 				p += 1024;
-				// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+				// Copy considering x, width
 				memcpy(ptr, buf, (width << 2));
 				ptr += (width << 2);
 				ptr += (delta << 2);
 			}
 			break;
-		// ƒy[ƒW1
+		// Page1
 		case 1:
 			for (i=0; i<height; i++) {
 				::VideoG16B(p, buf, width, m_WndColor);
 				p += 1024;
-				// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+				// Copy considering x, width
 				memcpy(ptr, buf, (width << 2));
 				ptr += (width << 2);
 				ptr += (delta << 2);
 			}
 			break;
-		// ƒy[ƒW2
+		// Page2
 		case 2:
 			for (i=0; i<height; i++) {
 				::VideoG16C(p, buf, width, m_WndColor);
 				p += 1024;
-				// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+				// Copy considering x, width
 				memcpy(ptr, buf, (width << 2));
 				ptr += (width << 2);
 				ptr += (delta << 2);
 			}
 			break;
-		// ƒy[ƒW3
+		// Page3
 		case 3:
 			for (i=0; i<height; i++) {
 				::VideoG16D(p, buf, width, m_WndColor);
 				p += 1024;
-				// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+				// Copy considering x, width
 				memcpy(ptr, buf, (width << 2));
 				ptr += (width << 2);
 				ptr += (delta << 2);
@@ -829,7 +829,7 @@ void FASTCALL CG16Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG16Wnd::Update()
@@ -843,18 +843,18 @@ void FASTCALL CG16Wnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -864,7 +864,7 @@ void FASTCALL CG16Wnd::Update()
 		return;
 	}
 
-	// ƒf[ƒ^æ“¾
+	// Get data
 	addr = ((y << 10) + (x << 1));
 	switch (m_nPage) {
 		case 0:
@@ -885,12 +885,12 @@ void FASTCALL CG16Wnd::Update()
 			break;
 	}
 
-	// RGB’læ“¾
+	// Get RGB values
 	r = m_WndColor[value] >> 16;
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X [%02X] Color%d R%d G%d B%d",
 				x, y, addr,
 				value, value, r, g, b);
@@ -899,13 +899,13 @@ void FASTCALL CG16Wnd::Update()
 
 //===========================================================================
 //
-//	ƒOƒ‰ƒtƒBƒbƒN‰æ–Ê(256F)ƒEƒBƒ“ƒhƒE
+//	Graphic screen (256 colors) window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CG256Wnd::CG256Wnd(int nPage)
@@ -914,29 +914,29 @@ CG256Wnd::CG256Wnd(int nPage)
 	GVRAM *pGVRAM;
 	int i;
 
-	// ƒy[ƒW‹L‰¯
+	// Page memory
 	ASSERT((nPage == 0) || (nPage == 1));
 	m_nPage = nPage;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('G', '2', '5', ('A' + nPage));
 	::GetMsg((IDS_SWND_G256P0 + nPage), m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	m_nScrlWidth = 512;
 	m_nScrlHeight = 512;
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 
-	// ƒOƒ‰ƒtƒBƒbƒNVRAMƒƒ‚ƒŠæ“¾
+	// Get Graphic VRAM memory
 	pGVRAM = (GVRAM*)::GetVM()->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(pGVRAM);
 	m_pGVRAM = pGVRAM->GetGVRAM();
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<256; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
@@ -945,7 +945,7 @@ CG256Wnd::CG256Wnd(int nPage)
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -962,7 +962,7 @@ void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<256; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -970,12 +970,12 @@ void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 	}
 
-	// ƒ|ƒCƒ“ƒ^‰Šú‰»
+	// Initialize pointer
 	p = m_pGVRAM;
 	p += (y << 10);
 	p += (x << 1);
 
-	// 512~512‚È‚Ì‚ÅAƒI[ƒo[‚·‚é‰Â”\«‚ª‚ ‚é
+	// 512x512, overflow is possible
 	if ((y + height) > 512) {
 		height = 512 - y;
 	}
@@ -985,13 +985,13 @@ void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = 512 - x;
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	if (m_nPage == 0) {
 		for (i=0; i<height; i++) {
 			::VideoG256A(p, buf, width, m_WndColor);
 			p += 1024;
 
-			// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+			// Copy considering x, width
 			memcpy(ptr, buf, (width << 2));
 			ptr += (width << 2);
 			ptr += (delta << 2);
@@ -1002,7 +1002,7 @@ void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 			::VideoG256B(p, buf, width, m_WndColor);
 			p += 1024;
 
-			// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+			// Copy considering x, width
 			memcpy(ptr, buf, (width << 2));
 			ptr += (width << 2);
 			ptr += (delta << 2);
@@ -1012,7 +1012,7 @@ void FASTCALL CG256Wnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG256Wnd::Update()
@@ -1026,18 +1026,18 @@ void FASTCALL CG256Wnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -1047,7 +1047,7 @@ void FASTCALL CG256Wnd::Update()
 		return;
 	}
 
-	// ƒf[ƒ^æ“¾(256F‚ÌGRAM”z’u‚ª‘O’ñ)
+	// Get data (assuming 256-color GRAM layout)
 	addr = (y << 9) + x;
 	addr <<= 1;
 	if (m_nPage > 0) {
@@ -1059,12 +1059,12 @@ void FASTCALL CG256Wnd::Update()
 		addr += 0xc00000;
 	}
 
-	// RGB’læ“¾
+	// Get RGB values
 	r = m_WndColor[value] >> 16;
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X [%02X] Color%d R%d G%d B%d",
 				x, y, addr,
 				value, value, r, g, b);
@@ -1073,13 +1073,13 @@ void FASTCALL CG256Wnd::Update()
 
 //===========================================================================
 //
-//	ƒOƒ‰ƒtƒBƒbƒN‰æ–Ê(65536F)ƒEƒBƒ“ƒhƒE
+//	Graphic screen (65536 colors) window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CG64KWnd::CG64KWnd()
@@ -1088,25 +1088,25 @@ CG64KWnd::CG64KWnd()
 	GVRAM *pGVRAM;
 	int i;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('G', '6', '4', 'K');
 	::GetMsg(IDS_SWND_G64K, m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	m_nScrlWidth = 512;
 	m_nScrlHeight = 512;
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 
-	// ƒOƒ‰ƒtƒBƒbƒNVRAMƒƒ‚ƒŠæ“¾
+	// Get Graphic VRAM memory
 	pGVRAM = (GVRAM*)::GetVM()->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(pGVRAM);
 	m_pGVRAM = pGVRAM->GetGVRAM();
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<256; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
@@ -1115,7 +1115,7 @@ CG64KWnd::CG64KWnd()
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG64KWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -1133,7 +1133,7 @@ void FASTCALL CG64KWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	flag = FALSE;
 	for (i=0; i<256; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
@@ -1142,17 +1142,17 @@ void FASTCALL CG64KWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 	}
 
-	// ƒpƒŒƒbƒgÄ\¬
+	// Palette reconstruction
 	if (flag) {
 		Palette();
 	}
 
-	// ƒ|ƒCƒ“ƒ^‰Šú‰»
+	// Initialize pointer
 	p = m_pGVRAM;
 	p += (y << 10);
 	p += (x << 1);
 
-	// 512~512‚È‚Ì‚ÅAƒI[ƒo[‚·‚é‰Â”\«‚ª‚ ‚é
+	// 512x512, overflow is possible
 	if ((y + height) > 512) {
 		height = 512 - y;
 	}
@@ -1162,13 +1162,13 @@ void FASTCALL CG64KWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = 512 - x;
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	for (i=0; i<height; i++) {
-		// ƒŒƒ“ƒ_ƒŠƒ“ƒO
+		// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
 		::VideoG64K(p, buf, width, m_WndColor);
 		p += 1024;
 
-		// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+		// Copy considering x, width
 		memcpy(ptr, buf, (width << 2));
 		ptr += (width << 2);
 		ptr += (delta << 2);
@@ -1177,7 +1177,7 @@ void FASTCALL CG64KWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	ƒpƒŒƒbƒgÄ\¬
+//	Palette reconstruction
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG64KWnd::Palette()
@@ -1190,13 +1190,13 @@ void FASTCALL CG64KWnd::Palette()
 	int i;
 	int j;
 
-	// ƒXƒgƒAæ‚ğ‰Šú‰»
+	// Initialize store destination
 	r = m_WndColor;
 
-	// ƒ‹[ƒv1
+	// Loop1
 	p = m_pPalette + 1;
 	for (i=0; i<256; i++) {
-		// hiƒf[ƒ^æ“¾
+		// hiGet data
 		hi = *p;
 		if (i & 1) {
 			hi <<= 8;
@@ -1206,10 +1206,10 @@ void FASTCALL CG64KWnd::Palette()
 			hi &= 0xff00;
 		}
 
-		// ƒ‹[ƒv2
+		// Loop2
 		q = m_pPalette;
 		for (j=0; j<256; j++) {
-			// loƒf[ƒ^æ“¾
+			// loGet data
 			lo = *q;
 			if (j & 1) {
 				lo &= 0x00ff;
@@ -1219,7 +1219,7 @@ void FASTCALL CG64KWnd::Palette()
 				lo >>= 8;
 			}
 
-			// •ÏŠ·•ƒXƒgƒA
+			// Convert & store
 			lo |= hi;
 			*r++ = ConvPalette(lo);
 		}
@@ -1228,7 +1228,7 @@ void FASTCALL CG64KWnd::Palette()
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CG64KWnd::Update()
@@ -1242,18 +1242,18 @@ void FASTCALL CG64KWnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -1263,19 +1263,19 @@ void FASTCALL CG64KWnd::Update()
 		return;
 	}
 
-	// ƒf[ƒ^æ“¾(64KF‚ÌGRAM”z’u‚ª‘O’ñ)
+	// Get data (assuming 64K-color GRAM layout)
 	addr = ((y << 10) + (x << 1));
 	value = m_pGVRAM[addr + 1];
 	value <<= 8;
 	value |= m_pGVRAM[addr];
 	addr += 0xc00000;
 
-	// RGB’læ“¾
+	// Get RGB values
 	r = m_WndColor[value] >> 16;
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X [%04X] Color%d R%d G%d B%d",
 				x, y, addr,
 				value, value, r, g, b);
@@ -1284,13 +1284,13 @@ void FASTCALL CG64KWnd::Update()
 
 //===========================================================================
 //
-//	PCGƒEƒBƒ“ƒhƒE
+//	PCG window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CPCGWnd::CPCGWnd()
@@ -1299,42 +1299,42 @@ CPCGWnd::CPCGWnd()
 	Sprite *pSprite;
     int i;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('P', 'C', 'G', ' ');
 	::GetMsg(IDS_SWND_PCG, m_strCaption);
 
-	// ƒEƒBƒ“ƒhƒE‰ŠúƒTƒCƒY
+	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦åˆæœŸã‚µã‚¤ã‚º
 	m_nWidth = 28;
 	m_nHeight = 16;
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	m_nScrlWidth = 256;
 	m_nScrlHeight = 256;
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 	m_pPalette += 256;
 
-	// PCGƒƒ‚ƒŠæ“¾
+	// PCGãƒ¡ãƒ¢ãƒªå–å¾—
 	pSprite = (Sprite*)::GetVM()->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(pSprite);
 	m_pPCG = pSprite->GetPCG();
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<256; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
 	}
 
-	// ƒJƒ‰[ƒuƒƒbƒN1
+	// Color block 1
 	m_nColor = 1;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒW ƒ}ƒbƒv
+//	Message map
 //
 //---------------------------------------------------------------------------
 BEGIN_MESSAGE_MAP(CPCGWnd, CSubBitmapWnd)
@@ -1345,7 +1345,7 @@ END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPCGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -1362,7 +1362,7 @@ void FASTCALL CPCGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<256; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -1370,7 +1370,7 @@ void FASTCALL CPCGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 	}
 
-	// 256~256‚È‚Ì‚ÅAƒI[ƒo[‚·‚é‰Â”\«‚ª‚ ‚é
+	// 256Ã—256ãªã®ã§ã€ã‚ªãƒ¼ãƒãƒ¼ã™ã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹
 	if ((y + height) > 256) {
 		height = 256 - y;
 	}
@@ -1380,9 +1380,9 @@ void FASTCALL CPCGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = 256 - x;
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	for (i=0; i<height; i++) {
-		// y‚©‚çAƒAƒhƒŒƒX‚ğŒˆ‚ß‚é
+		// yã‹ã‚‰ã€ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æ±ºã‚ã‚‹
 		addr = y >> 4;
 		addr <<= 11;
 		if (y & 8) {
@@ -1390,22 +1390,22 @@ void FASTCALL CPCGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 		addr += ((y & 7) << 2);
 
-		// ƒŒƒ“ƒ_ƒŠƒ“ƒO
+		// ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
 		::VideoPCG((BYTE*)&m_pPCG[addr], buf, &m_WndColor[m_nColor << 4]);
 
-		// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+		// Copy considering x, width
 		memcpy(ptr, &buf[x], (width << 2));
 		ptr += (width << 2);
 		ptr += (delta << 2);
 
-		// Ÿ‚Ìy‚Ö
+		// æ¬¡ã®yã¸
 		y++;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPCGWnd::Update()
@@ -1421,18 +1421,18 @@ void FASTCALL CPCGWnd::Update()
 	int g;
 	int b;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -1442,7 +1442,7 @@ void FASTCALL CPCGWnd::Update()
 		return;
 	}
 
-	// ƒAƒhƒŒƒXŒvZ
+	// ã‚¢ãƒ‰ãƒ¬ã‚¹è¨ˆç®—
 	addr = y >> 4;
 	addr <<= 11;
 	if (y & 8) {
@@ -1453,23 +1453,23 @@ void FASTCALL CPCGWnd::Update()
 	addr += ((x & 7) >> 1);
 	base = addr;
 
-	// ƒAƒhƒŒƒXŒvZ
+	// ã‚¢ãƒ‰ãƒ¬ã‚¹è¨ˆç®—
 	addr += 0xeb8000;
 
-	// ƒJƒ‰[æ“¾
+	// ã‚«ãƒ©ãƒ¼å–å¾—
 	color = m_pPCG[base ^ 1];
 	if ((x & 1) == 0) {
 		color >>= 4;
 	}
 	color &= 0x0f;
 
-	// RGBæ“¾
+	// Get RGB
 	value = (m_nColor << 4) + color;
 	r = m_WndColor[value] >> 16;
 	g = (m_WndColor[value] >> 8) & 0xff;
 	b = m_WndColor[value] & 0xff;
 
-	// ƒtƒH[ƒ}ƒbƒgAƒZƒbƒg
+	// Format and set
 	string.Format("( %d, %d) $%06X Pal%1X [$%02X +%d +%d] Color%d R%d G%d B%d",
 				x, y, addr, m_nColor,
 				(y & 0xf0) + (x >> 4), (x & 0x0f), (y & 0x0f),
@@ -1479,7 +1479,7 @@ void FASTCALL CPCGWnd::Update()
 
 //---------------------------------------------------------------------------
 //
-//	eƒEƒBƒ“ƒhƒE‚Ö’Ê’m
+//	è¦ªã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã¸é€šçŸ¥
 //
 //---------------------------------------------------------------------------
 void CPCGWnd::OnParentNotify(UINT message, LPARAM lParam)
@@ -1488,7 +1488,7 @@ void CPCGWnd::OnParentNotify(UINT message, LPARAM lParam)
 	CRect rect;
 
 	if (message == WM_LBUTTONDOWN) {
-		// ƒNƒ‰ƒCƒAƒ“ƒg“à‚È‚çAƒpƒŒƒbƒg•ÏX
+		// ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆå†…ãªã‚‰ã€Palette change
 		::GetCursorPos(&point);
 		m_pBMPWnd->GetClientRect(&rect);
 		m_pBMPWnd->ClientToScreen(&rect);
@@ -1497,13 +1497,13 @@ void CPCGWnd::OnParentNotify(UINT message, LPARAM lParam)
 		}
 	}
 
-	// Šî–{ƒNƒ‰ƒX
+	// Base class
 	CSubBitmapWnd::OnParentNotify(message, lParam);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒeƒLƒXƒgƒƒjƒ…[
+//	Context menu
 //
 //---------------------------------------------------------------------------
 void CPCGWnd::OnContextMenu(CWnd *pWnd, CPoint point)
@@ -1512,7 +1512,7 @@ void CPCGWnd::OnContextMenu(CWnd *pWnd, CPoint point)
 	CMenu menu;
 	CMenu *pMenu;
 
-	// ƒNƒ‰ƒCƒAƒ“ƒg—Ìˆæ“à‚Å‰Ÿ‚³‚ê‚½‚©”»’è‚·‚é
+	// ã‚¯ãƒ©ã‚¤ã‚¢ãƒ³ãƒˆé ˜åŸŸå†…ã§æŠ¼ã•ã‚ŒãŸã‹åˆ¤å®šã™ã‚‹
 	GetClientRect(&rect);
 	ClientToScreen(&rect);
 	if (!rect.PtInRect(point)) {
@@ -1520,7 +1520,7 @@ void CPCGWnd::OnContextMenu(CWnd *pWnd, CPoint point)
 		return;
 	}
 
-	// ƒƒjƒ…[Às
+	// ãƒ¡ãƒ‹ãƒ¥ãƒ¼å®Ÿè¡Œ
 	menu.LoadMenu(IDR_PCGMENU);
 	pMenu = menu.GetSubMenu(0);
 	pMenu->CheckMenuItem(m_nColor, MF_CHECKED | MF_BYPOSITION);
@@ -1530,7 +1530,7 @@ void CPCGWnd::OnContextMenu(CWnd *pWnd, CPoint point)
 
 //---------------------------------------------------------------------------
 //
-//	ƒpƒŒƒbƒg•ÏX
+//	Palette change
 //
 //---------------------------------------------------------------------------
 void CPCGWnd::OnPalette(UINT uID)
@@ -1543,13 +1543,13 @@ void CPCGWnd::OnPalette(UINT uID)
 
 //===========================================================================
 //
-//	BGƒEƒBƒ“ƒhƒE
+//	BG window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CBGWnd::CBGWnd(int nPage)
@@ -1559,14 +1559,14 @@ CBGWnd::CBGWnd(int nPage)
 
 	ASSERT((nPage == 0) || (nPage == 1));
 
-	// ƒy[ƒW‹L‰¯
+	// Page memory
 	m_nPage = nPage;
 
-	// ƒEƒBƒ“ƒhƒEƒpƒ‰ƒ[ƒ^’è‹`
+	// Window parameter definition
 	m_dwID = MAKEID('B', 'G', ('0' + nPage), ' ');
 	::GetMsg(IDS_SWND_BG0 + nPage, m_strCaption);
 
-	// ‰¼‘z‰æ–ÊƒTƒCƒY
+	// Virtual screen size
 	if (nPage == 0) {
 		m_nScrlWidth = 1024;
 		m_nScrlHeight = 1024;
@@ -1576,26 +1576,26 @@ CBGWnd::CBGWnd(int nPage)
 		m_nScrlHeight = 512;
 	}
 
-	// ƒpƒŒƒbƒgƒƒ‚ƒŠæ“¾
+	// Get palette memory
 	pVC = (VC*)::GetVM()->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(pVC);
 	m_pPalette = (WORD*)pVC->GetPalette();
 	m_pPalette += 256;
 
-	// ƒpƒŒƒbƒgƒf[ƒ^‰Šú‰»
+	// Palette data initialization
 	for (i=0; i<256; i++) {
 		m_WndPalette[i] = 0;
 		m_WndColor[i] = 0;
 	}
 
-	// ƒXƒvƒ‰ƒCƒgæ“¾
+	// Get sprite
 	m_pSprite = (Sprite*)::GetVM()->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(m_pSprite);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -1617,24 +1617,24 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	ASSERT(height > 0);
 	ASSERT(ptr);
 
-	// ƒXƒvƒ‰ƒCƒgƒf[ƒ^æ“¾APCGŒvZ
+	// Get sprite data, calculate PCG
 	m_pSprite->GetSprite(&spr);
 	pcg = &spr.mem[0x8000];
 
-	// BG1‚Ìê‡
+	// In case of BG1
 	if (m_nPage != 0) {
-		// BGƒTƒCƒY‚ª16~16‚È‚ç•\¦‚µ‚È‚¢
+		// Do not display if BG size is 16x16
 		if (spr.bg_size) {
 			memset(ptr, 0, (width * height) << 2);
 			return;
 		}
 	}
 
-	// Å‰‚ÉƒNƒŠƒA
+	// æœ€åˆã«ã‚¯ãƒªã‚¢
 	memset(buf, 0, sizeof(buf));
 	memset(ptr, 0, (width * height) << 2);
 
-	// ƒTƒCƒYŠm’è
+	// ã‚µã‚¤ã‚ºç¢ºå®š
 	if (spr.bg_size) {
 		ASSERT(m_nPage == 0);
 		size = 1024;
@@ -1643,7 +1643,7 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		size = 512;
 	}
 
-	// ƒpƒŒƒbƒgƒ`ƒFƒbƒN
+	// Palette check
 	for (i=0; i<256; i++) {
 		if (m_WndPalette[i] != m_pPalette[i]) {
 			m_WndPalette[i] = m_pPalette[i];
@@ -1651,7 +1651,7 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		}
 	}
 
-	// æsƒI[ƒo[ƒ`ƒFƒbƒN
+	// Advance overflow check
 	if (y > size) {
 		return;
 	}
@@ -1659,7 +1659,7 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		return;
 	}
 
-	// ƒI[ƒo[ƒ`ƒFƒbƒN
+	// Overflow check
 	if ((y + height) > size) {
 		height = size - y;
 	}
@@ -1669,9 +1669,9 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = size - x;
 	}
 
-	// ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ‹[ƒv
+	// Rendering loop
 	for (i=0; i<height; i++) {
-		// y‚©‚çBGƒf[ƒ^‚ÌƒIƒtƒZƒbƒg‚ğ“¾‚é
+		// Get BG data offset from y
 		if (spr.bg_size) {
 			// 16x16
 			offset = (y >> 4);
@@ -1680,16 +1680,16 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 			// 8x8
 			offset = (y >> 3);
 		}
-		// ‰¡•ûŒü‚É64BGA‚Â‚Ü‚è128ƒoƒCƒg
+		// æ¨ªæ–¹å‘ã«64BGã€ã¤ã¾ã‚Š128ãƒã‚¤ãƒˆ
 		offset <<= 7;
-		// BGƒf[ƒ^ƒGƒŠƒA0‚ª+C000ABGƒf[ƒ^ƒGƒŠƒA1‚ª+E000
+		// BG data area 0 is +C000, area 1 is +E000
 		offset += ((spr.bg_area[m_nPage] & 0x01) << 13);
 		offset += 0xc000;
 
-		// X•ûŒüƒ‹[ƒv
+		// Xæ–¹å‘Loop
 		q = buf;
 		for (j=0; j<64; j++) {
-			// ƒAƒZƒ“ƒuƒ‰ƒTƒu
+			// Assembler sub
 			if (spr.bg_size) {
 				::VideoBG16(pcg, q, *(WORD*)&spr.mem[offset],
 											y & 0x0f, m_WndColor);
@@ -1703,19 +1703,19 @@ void FASTCALL CBGWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 			offset += 2;
 		}
 
-		// x, width‚ğŠ¨ˆÄ‚µ‚ÄƒRƒs[
+		// Copy considering x, width
 		memcpy(ptr, &buf[x], (width << 2));
 		ptr += (width << 2);
 		ptr += (delta << 2);
 
-		// Ÿ‚Ìy‚Ö
+		// æ¬¡ã®yã¸
 		y++;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CBGWnd::Update()
@@ -1727,21 +1727,21 @@ void FASTCALL CBGWnd::Update()
 	int x;
 	int y;
 
-	// ƒXƒvƒ‰ƒCƒgƒf[ƒ^æ“¾APCGŒvZ
+	// Get sprite data, calculate PCG
 	m_pSprite->GetSprite(&spr);
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -1751,7 +1751,7 @@ void FASTCALL CBGWnd::Update()
 		return;
 	}
 
-	// ƒy[ƒW0‚Í1024~1024ƒEƒBƒ“ƒhƒE‚ÅA512~512‚µ‚©g‚í‚È‚¢ê‡‚ ‚è
+	// Page 0 is 1024x1024 window, sometimes only 512x512 is used
 	if ((m_nPage == 0) && (!spr.bg_size)) {
 		if (x >= 512) {
 			m_StatusBar.SetPaneText(0, "");
@@ -1763,9 +1763,9 @@ void FASTCALL CBGWnd::Update()
 		}
 	}
 
-	// ƒAƒhƒŒƒXZo
+	// Calculate address
 	if (spr.bg_size) {
-		// 16~16
+		// 16Ã—16
 		addr = y >> 4;
 		addr <<= 7;
 		addr += ((x >> 4) << 1);
@@ -1775,15 +1775,15 @@ void FASTCALL CBGWnd::Update()
 		addr <<= 7;
 		addr += ((x >> 3) << 1);
 	}
-	// BGƒf[ƒ^ƒGƒŠƒA0‚ª+C000ABGƒf[ƒ^ƒGƒŠƒA1‚ª+E000
+	// BG data area 0 is +C000, area 1 is +E000
 	addr += ((spr.bg_area[m_nPage] & 0x01) << 13);
 	addr += 0xc000;
 
-	// ƒf[ƒ^æ“¾
+	// Get data
 	data = *(WORD*)&spr.mem[addr];
 	addr += 0xeb0000;
 
-	// o—Í
+	// Output
 	string.Format("( %d, %d) $%06X [%04X] PCG%d Pal%1X",
 				x, y, addr, data, data & 0xff, ((data >> 8) & 0x0f));
 	if (data & 0x4000) {
@@ -1797,27 +1797,27 @@ void FASTCALL CBGWnd::Update()
 
 //===========================================================================
 //
-//	ƒpƒŒƒbƒgƒEƒBƒ“ƒhƒE
+//	Palette window
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CPaletteWnd::CPaletteWnd(BOOL bRend)
 {
 	VC *vc;
 
-	// ƒEƒBƒ“ƒhƒEƒTƒCƒYİ’è(32x16‚ÅA16x32)
+	// Window size setting (32x16 becomes 16x32)
 	m_nScrlWidth = 512;
 	m_nScrlHeight = 512;
 
-	// ƒ^ƒCƒvİ’è
+	// Type setting
 	m_bRend = bRend;
 
-	// ƒ^ƒCƒv‚É‰‚¶‚Äİ’è
+	// Set according to type
 	if (m_bRend) {
 		m_dwID = MAKEID('P', 'A', 'L', 'B');
 		::GetMsg(IDS_SWND_REND_PALET, m_strCaption);
@@ -1836,7 +1836,7 @@ CPaletteWnd::CPaletteWnd(BOOL bRend)
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv
+//	Setup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPaletteWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
@@ -1847,10 +1847,10 @@ void FASTCALL CPaletteWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	int delta;
 	DWORD buf[512];
 
-	// ƒf[ƒ^‚ğ‰Šú‰»
+	// Initialize data
 	m = -2;
 
-	// 512~512‚È‚Ì‚ÅAƒI[ƒo[‚·‚é‰Â”\«‚ª‚ ‚é
+	// 512x512, overflow is possible
 	if ((y + height) > 512) {
 		height = 512 - y;
 	}
@@ -1860,28 +1860,28 @@ void FASTCALL CPaletteWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		width = 512 - x;
 	}
 
-	// ƒ‹[ƒv
+	// Loop
 	for (i=0; i<height; i++) {
-		// •\¦‚·‚×‚«ƒf[ƒ^‚ğŒˆ‚ß‚é
+		// Determine data to display
 		n = y + i;
 		if ((n & 0x0f) == 0x0f) {
-			// y‚ª+15:ŠÔ‚Ì‹ó”’
+			// y is +15: gap space
 			n = -1;
 		}
 		else {
-			// y‚ª+0`+14:’Êíƒf[ƒ^
+			// y is +0~+14: normal data
 			n >>= 4;
 		}
 
-		// •\¦ƒf[ƒ^‚ğì¬
+		// Displayãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆ
 		if (m != n) {
 			m = n;
 			if (n < 0) {
-				// ŠÔ‚Ì‹ó”’
+				// é–“ã®ç©ºç™½
 				memset(buf, 0, sizeof(buf));
 			}
 			else {
-				// ’Êíƒf[ƒ^
+				// Normal data
 				if (m_bRend) {
 					SetupRend(buf, n);
 				}
@@ -1891,7 +1891,7 @@ void FASTCALL CPaletteWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 			}
 		}
 
-		// ƒRƒs[
+		// ã‚³ãƒ”ãƒ¼
 		memcpy(ptr, &buf[x], width << 2);
 		ptr += (width << 2);
 		ptr += (delta << 2);
@@ -1900,7 +1900,7 @@ void FASTCALL CPaletteWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv(ƒŒƒ“ƒ_ƒ‰)
+//	Setup (Renderer)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPaletteWnd::SetupRend(DWORD *buf, int n)
@@ -1913,28 +1913,28 @@ void FASTCALL CPaletteWnd::SetupRend(DWORD *buf, int n)
 	ASSERT(buf);
 	ASSERT((n >= 0) && (n <= 0x1f));
 
-	// ƒ|ƒCƒ“ƒ^Œˆ’è
+	// ãƒã‚¤ãƒ³ã‚¿Determine
 	p = m_pRender->GetPalette();
 	p += (n << 4);
 
-	// 16Fƒ‹[ƒv
+	// 16-color loop
 	for (i=0; i<16; i++) {
-		// ƒJƒ‰[æ“¾
+		// ã‚«ãƒ©ãƒ¼å–å¾—
 		rgb =*p++;
 
-		// 31ƒhƒbƒg‘±‚¯‚Ä•`‚­
+		// Draw 31 consecutive dots
 		for (j=0; j<31; j++) {
 			*buf++ = rgb;
 		}
 
-		// Ÿ‚Í‹ó”’
+		// Next is blank
 		*buf++ = 0;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒZƒbƒgƒAƒbƒv(VC)
+//	Setup (VC)
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPaletteWnd::SetupVC(DWORD *buf, int n)
@@ -1947,29 +1947,29 @@ void FASTCALL CPaletteWnd::SetupVC(DWORD *buf, int n)
 	ASSERT(buf);
 	ASSERT((n >= 0) && (n <= 0x1f));
 
-	// ƒ|ƒCƒ“ƒ^Œˆ’è
+	// ãƒã‚¤ãƒ³ã‚¿Determine
 	ASSERT(m_pVCPal);
 	p = m_pVCPal;
 	p += (n << 4);
 
-	// 16Fƒ‹[ƒv
+	// 16-color loop
 	for (i=0; i<16; i++) {
-		// ƒJƒ‰[æ“¾
+		// ã‚«ãƒ©ãƒ¼å–å¾—
 		rgb = ConvPalette(*p++);
 
-		// 31ƒhƒbƒg‘±‚¯‚Ä•`‚­
+		// Draw 31 consecutive dots
 		for (j=0; j<31; j++) {
 			*buf++ = rgb;
 		}
 
-		// Ÿ‚Í‹ó”’
+		// Next is blank
 		*buf++ = 0;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	ƒƒbƒZ[ƒWƒXƒŒƒbƒh‚©‚ç‚ÌXV
+//	Update from message thread
 //
 //---------------------------------------------------------------------------
 void FASTCALL CPaletteWnd::Update()
@@ -1981,18 +1981,18 @@ void FASTCALL CPaletteWnd::Update()
 	const DWORD *p;
 	CString string;
 
-	// BMPƒEƒBƒ“ƒhƒEƒ`ƒFƒbƒN
+	// BMP window check
 	if (!m_pBMPWnd) {
 		return;
 	}
 
-	// ƒ}ƒEƒXƒJ[ƒ\ƒ‹ƒ`ƒFƒbƒN
+	// Mouse cursor check
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
 	}
 
-	// À•WŒvZAƒI[ƒo[ƒ`ƒFƒbƒN
+	// Coordinate calculation, overflow check
 	x = m_pBMPWnd->m_nCursorX + m_pBMPWnd->m_nScrlX;
 	y = m_pBMPWnd->m_nCursorY + m_pBMPWnd->m_nScrlY;
 	if (x >= m_nScrlWidth) {
@@ -2002,7 +2002,7 @@ void FASTCALL CPaletteWnd::Update()
 		return;
 	}
 
-	// •\¦ƒf[ƒ^ì¬
+	// Produce display data
 	index = y & ~0xf;
 	index += (x >> 5);
 
