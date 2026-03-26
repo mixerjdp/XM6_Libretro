@@ -14,7 +14,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Espaï¿½ol (Espaï¿½a, alfabetizaciï¿½n internacional) resources
+// Japanese resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ESN)
 LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
@@ -27,181 +27,181 @@ LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
 
 IDR_MENU MENU
 BEGIN
-    POPUP "ï¿½tï¿½@ï¿½Cï¿½ï¿½(&F)"
+    POPUP "ƒtƒ@ƒCƒ‹(&F)"
     BEGIN
         MENUITEM "ŠJ‚­(&O)...",           IDM_OPEN
         MENUITEM "ƒNƒCƒbƒNƒ[ƒh\tF7",      ID_FILE_CARGAR40006
-        MENUITEM "ï¿½ã‘ï¿½ï¿½ï¿½Û‘ï¿½(&S)",    IDM_SAVE
-        MENUITEM "ï¿½ï¿½ï¿½Oï¿½ï¿½tï¿½ï¿½ï¿½Ä•Û‘ï¿½(&A)...", IDM_SAVEAS
+        MENUITEM "ã‘‚«•Û‘¶(&S)",    IDM_SAVE
+        MENUITEM "–¼‘O‚ð•t‚¯‚Ä•Û‘¶(&A)...", IDM_SAVEAS
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½Zï¿½bï¿½g(&R)",      IDM_RESET
+        MENUITEM "ƒŠƒZƒbƒg(&R)",      IDM_RESET
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½Cï¿½ï¿½ï¿½^ï¿½ï¿½ï¿½vï¿½g(&I)", IDM_INTERRUPT
-        MENUITEM "ï¿½dï¿½ï¿½ï¿½Xï¿½Cï¿½bï¿½`(&P)", IDM_POWER
+        MENUITEM "Š„‚èž‚Ý(&I)", IDM_INTERRUPT
+        MENUITEM "“dŒ¹ƒXƒCƒbƒ`(&P)", IDM_POWER
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½Iï¿½ï¿½(&X)\tAlt+F4",      IDM_EXIT
+        MENUITEM "I—¹(&X)	Alt+F4",      IDM_EXIT
     END
-    POPUP "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N&0"
+    POPUP "ƒtƒƒbƒs[ƒfƒBƒXƒN&0"
     BEGIN
-        MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_D0OPEN
-        MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_D0EJECT
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_D0WRITEP
+        MENUITEM "ŠJ‚­(&O)...",           IDM_D0OPEN
+        MENUITEM "ƒCƒWƒFƒNƒg(&E)",    IDM_D0EJECT
+        MENUITEM "‘‚«ž‚Ý•ÛŒì(&W)", IDM_D0WRITEP
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_D0FORCE
-        MENUITEM "ï¿½ï¿½}ï¿½ï¿½(&I)",           IDM_D0INVALID
+        MENUITEM "‹­§ƒCƒWƒFƒNƒg(&F)", IDM_D0FORCE
+        MENUITEM "–³Œø(&I)",           IDM_D0INVALID
     END
-    POPUP "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N&1"
+    POPUP "ƒtƒƒbƒs[ƒfƒBƒXƒN&1"
     BEGIN
-        MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_D1OPEN
-        MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_D1EJECT
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_D1WRITEP
+        MENUITEM "ŠJ‚­(&O)...",           IDM_D1OPEN
+        MENUITEM "ƒCƒWƒFƒNƒg(&E)",    IDM_D1EJECT
+        MENUITEM "‘‚«ž‚Ý•ÛŒì(&W)", IDM_D1WRITEP
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_D1FORCE
-        MENUITEM "ï¿½ï¿½}ï¿½ï¿½(&I)",           IDM_D1INVALID
+        MENUITEM "‹­§ƒCƒWƒFƒNƒg(&F)", IDM_D1FORCE
+        MENUITEM "–³Œø(&I)",           IDM_D1INVALID
     END
-    POPUP "&MOï¿½fï¿½Bï¿½Xï¿½N"
+    POPUP "&MOƒfƒBƒXƒN"
     BEGIN
-        MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_MOOPEN
-        MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_MOEJECT
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_MOWRITEP
+        MENUITEM "ŠJ‚­(&O)...",           IDM_MOOPEN
+        MENUITEM "ƒCƒWƒFƒNƒg(&E)",    IDM_MOEJECT
+        MENUITEM "‘‚«ž‚Ý•ÛŒì(&W)", IDM_MOWRITEP
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_MOFORCE
+        MENUITEM "‹­§ƒCƒWƒFƒNƒg(&F)", IDM_MOFORCE
     END
     POPUP "&CD-ROM"
     BEGIN
-        MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_CDOPEN
-        MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_CDEJECT
+        MENUITEM "ŠJ‚­(&O)...",           IDM_CDOPEN
+        MENUITEM "ƒCƒWƒFƒNƒg(&E)",    IDM_CDEJECT
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_CDFORCE
+        MENUITEM "‹­§ƒCƒWƒFƒNƒg(&F)", IDM_CDFORCE
     END
-    POPUP "ï¿½\\ï¿½ï¿½(&V)"
+    POPUP "•\Ž¦(&V)"
     BEGIN
-        POPUP "ï¿½Vï¿½Xï¿½eï¿½ï¿½(&S)"
+        POPUP "ƒVƒXƒeƒ€(&S)"
         BEGIN
-            MENUITEM "ï¿½ï¿½ï¿½O(&L)",              IDM_LOG
-            MENUITEM "ï¿½Xï¿½Pï¿½Wï¿½ï¿½ï¿½[ï¿½ï¿½(&S)", IDM_SCHEDULER
-            MENUITEM "ï¿½fï¿½oï¿½Cï¿½X(&D)",        IDM_DEVICE
+            MENUITEM "ƒƒO(&L)",              IDM_LOG
+            MENUITEM "ƒXƒPƒWƒ…[ƒ‰(&S)", IDM_SCHEDULER
+            MENUITEM "ƒfƒoƒCƒX(&D)",        IDM_DEVICE
         END
-        POPUP "ï¿½vï¿½ï¿½ï¿½Zï¿½bï¿½T(&P)"
+        POPUP "ƒvƒƒZƒbƒT(&P)"
         BEGIN
-            MENUITEM "MPUï¿½ï¿½ï¿½Wï¿½Xï¿½^(&R)",   IDM_CPUREG
-            MENUITEM "ï¿½ï¿½ï¿½èžï¿½ï¿½(&I)",      IDM_INT
-            MENUITEM "ï¿½tï¿½Aï¿½Zï¿½ï¿½ï¿½uï¿½ï¿½(&D)", IDM_DISASM
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(&M)",      IDM_MEMORY
-            MENUITEM "ï¿½uï¿½ï¿½ï¿½[ï¿½Nï¿½|ï¿½Cï¿½ï¿½ï¿½g(&B)", IDM_BREAKP
+            MENUITEM "MPUƒŒƒWƒXƒ^(&R)",   IDM_CPUREG
+            MENUITEM "Š„‚èž‚Ý(&I)",      IDM_INT
+            MENUITEM "ƒAƒZƒ“ƒuƒ‹(&D)", IDM_DISASM
+            MENUITEM "ƒƒ‚ƒŠ(&M)",      IDM_MEMORY
+            MENUITEM "ƒuƒŒ[ƒNƒ|ƒCƒ“ƒg(&B)", IDM_BREAKP
         END
-        POPUP "ï¿½fï¿½oï¿½Cï¿½X(&D)"
+        POPUP "ƒfƒoƒCƒX(&D)"
         BEGIN
-            MENUITEM "ï¿½}ï¿½ï¿½ï¿½`ï¿½tï¿½@ï¿½ï¿½ï¿½Nï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½yï¿½ï¿½ï¿½tï¿½Fï¿½ï¿½ï¿½ï¿½(&P)", IDM_MFP
-            MENUITEM "ï¿½_ï¿½Cï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Nï¿½Zï¿½X(&D)", IDM_DMAC
-            MENUITEM "CRTï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&R)", IDM_CRTC
-            MENUITEM "ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&V)", IDM_VC
-            MENUITEM "ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½^ï¿½Cï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½bï¿½N(&T)", IDM_RTC
-            MENUITEM "FMï¿½ï¿½ï¿½ï¿½(&O)",          IDM_OPM
-            MENUITEM "ï¿½Lï¿½[ï¿½{ï¿½[ï¿½h(&K)",    IDM_KEYBOARD
-            MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½hï¿½ï¿½ï¿½Cï¿½u(&I)", IDM_FDD
-            MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&F)", IDM_FDC
-            MENUITEM "ï¿½Vï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½Rï¿½~ï¿½ï¿½ï¿½jï¿½Pï¿½[ï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&C)", IDM_SCC
-            MENUITEM "BG/ï¿½Xï¿½vï¿½ï¿½ï¿½Cï¿½gï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&B)", IDM_CYNTHIA
-            MENUITEM "SASIï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½N(&H)", IDM_SASI
-            MENUITEM "MIDIï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&M)", IDM_MIDI
-            MENUITEM "SCSIï¿½vï¿½ï¿½ï¿½gï¿½Rï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&S)", IDM_SCSI
+            MENUITEM "ƒ}ƒ‹ƒ`ƒtƒ@ƒ“ƒNƒVƒ‡ƒ“ƒyƒŠƒtƒFƒ‰ƒ‹(&P)", IDM_MFP
+            MENUITEM "ƒ_ƒCƒŒƒNƒgƒƒ‚ƒŠƒAƒNƒZƒX(&D)", IDM_DMAC
+            MENUITEM "CRTƒRƒ“ƒgƒ[ƒ‰(&R)", IDM_CRTC
+            MENUITEM "ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰(&V)", IDM_VC
+            MENUITEM "ƒŠƒAƒ‹ƒ^ƒCƒ€ƒNƒƒbƒN(&T)", IDM_RTC
+            MENUITEM "FM‰¹Œ¹(&O)",          IDM_OPM
+            MENUITEM "ƒL[ƒ{[ƒh(&K)",    IDM_KEYBOARD
+            MENUITEM "ƒtƒƒbƒs[ƒfƒBƒXƒNƒhƒ‰ƒCƒu(&I)", IDM_FDD
+            MENUITEM "ƒtƒƒbƒs[ƒfƒBƒXƒNƒRƒ“ƒgƒ[ƒ‰(&F)", IDM_FDC
+            MENUITEM "ƒVƒŠƒAƒ‹ƒRƒ~ƒ…ƒjƒP[ƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‰(&C)", IDM_SCC
+            MENUITEM "BG/ƒXƒvƒ‰ƒCƒgƒRƒ“ƒgƒ[ƒ‰(&B)", IDM_CYNTHIA
+            MENUITEM "SASIƒn[ƒhƒfƒBƒXƒN(&H)", IDM_SASI
+            MENUITEM "MIDIƒRƒ“ƒgƒ[ƒ‰(&M)", IDM_MIDI
+            MENUITEM "SCSIƒvƒƒgƒRƒ‹ƒRƒ“ƒgƒ[ƒ‰(&S)", IDM_SCSI
         END
-        POPUP "ï¿½rï¿½fï¿½I(&V)"
+        POPUP "ƒrƒfƒI(&V)"
         BEGIN
-            MENUITEM "ï¿½eï¿½Lï¿½Xï¿½g(&T)",        IDM_TVRAM
+            MENUITEM "ƒeƒLƒXƒg(&T)",        IDM_TVRAM
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½E1024ï¿½~1024(&X)", IDM_G1024
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W0(&0)", IDM_G16P0
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W1(&1)", IDM_G16P1
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W2(&2)", IDM_G16P2
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W3(&3)", IDM_G16P3
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 256ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W0(&4)", IDM_G256P0
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 256ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W1(&5)", IDM_G256P1
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 65536ï¿½Fï¿½ï¿½ï¿½[ï¿½h(&6)", IDM_G64K
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 16Fƒ‚[ƒh 1024x1024(&X)", IDM_G1024
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 16Fƒ‚[ƒh ƒy[ƒW0(&0)", IDM_G16P0
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 16Fƒ‚[ƒh ƒy[ƒW1(&1)", IDM_G16P1
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 16Fƒ‚[ƒh ƒy[ƒW2(&2)", IDM_G16P2
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 16Fƒ‚[ƒh ƒy[ƒW2(&3)", IDM_G16P3
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 256Fƒ‚[ƒh ƒy[ƒW0(&4)", IDM_G256P0
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 256Fƒ‚[ƒh ƒy[ƒW1(&5)", IDM_G256P1
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒN 65536Fƒ‚[ƒh(&6)", IDM_G64K
             MENUITEM SEPARATOR
             MENUITEM "P&CG",                        IDM_PCG
-            MENUITEM "BG ï¿½yï¿½[ï¿½W0(&B)",        IDM_BG0
-            MENUITEM "BG ï¿½yï¿½[ï¿½W1(&G)",        IDM_BG1
+            MENUITEM "BG ƒy[ƒW0(&B)",        IDM_BG0
+            MENUITEM "BG ƒy[ƒW1(&G)",        IDM_BG1
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½pï¿½ï¿½ï¿½bï¿½g(&P)",      IDM_PALET
+            MENUITEM "ƒpƒŒƒbƒg(&P)",      IDM_PALET
         END
-        POPUP "ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½(&R)"
+        POPUP "ƒŒƒ“ƒ_ƒ‰[(&R)"
         BEGIN
-            MENUITEM "ï¿½eï¿½Lï¿½Xï¿½gï¿½oï¿½bï¿½tï¿½@(&T)", IDM_REND_TEXT
+            MENUITEM "ƒeƒLƒXƒgƒoƒbƒtƒ@(&T)", IDM_REND_TEXT
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&0", IDM_REND_GP0
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&1", IDM_REND_GP1
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&2", IDM_REND_GP2
-            MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&3", IDM_REND_GP3
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒNƒoƒbƒtƒ@&0", IDM_REND_GP0
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒNƒoƒbƒtƒ@&1", IDM_REND_GP1
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒNƒoƒbƒtƒ@&2", IDM_REND_GP2
+            MENUITEM "ƒOƒ‰ƒtƒBƒbƒNƒoƒbƒtƒ@&3", IDM_REND_GP3
             MENUITEM SEPARATOR
-            MENUITEM "PCGï¿½oï¿½bï¿½tï¿½@(&C)",     IDM_REND_PCG
-            MENUITEM "BG/ï¿½Xï¿½vï¿½ï¿½ï¿½Cï¿½gï¿½oï¿½bï¿½tï¿½@(&S)", IDM_REND_BGSPRITE
+            MENUITEM "PCGƒoƒbƒtƒ@(&C)",     IDM_REND_PCG
+            MENUITEM "BG/ƒXƒvƒ‰ƒCƒgƒoƒbƒtƒ@(&S)", IDM_REND_BGSPRITE
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½oï¿½bï¿½tï¿½@(&P)", IDM_REND_PALET
+            MENUITEM "ƒpƒŒƒbƒgƒoƒbƒtƒ@(&P)", IDM_REND_PALET
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½bï¿½tï¿½@(&M)", IDM_REND_MIX
+            MENUITEM "¬‡ƒoƒbƒtƒ@(&M)", IDM_REND_MIX
         END
         POPUP "&Win32"
         BEGIN
-            MENUITEM "ï¿½Rï¿½ï¿½ï¿½|ï¿½[ï¿½lï¿½ï¿½ï¿½g(&C)", IDM_COMPONENT
-            MENUITEM "OSï¿½ï¿½ï¿½(&O)",             IDM_OSINFO
-            MENUITEM "ï¿½Tï¿½Eï¿½ï¿½ï¿½h(&S)",      IDM_SOUND
-            MENUITEM "ï¿½Cï¿½ï¿½ï¿½vï¿½bï¿½g(&I)",  IDM_INPUT
-            MENUITEM "ï¿½|ï¿½[ï¿½g(&P)",            IDM_PORT
-            MENUITEM "ï¿½rï¿½bï¿½gï¿½}ï¿½bï¿½v(&B)", IDM_BITMAP
-            MENUITEM "MIDIï¿½hï¿½ï¿½ï¿½Cï¿½o(&M)",  IDM_MIDIDRV
+            MENUITEM "ƒRƒ“ƒ|[ƒlƒ“ƒg(&C)", IDM_COMPONENT
+            MENUITEM "OSî•ñ(&O)",             IDM_OSINFO
+            MENUITEM "ƒTƒEƒ“ƒh(&S)",      IDM_SOUND
+            MENUITEM "“ü—Í(&I)",  IDM_INPUT
+            MENUITEM "ƒ|[ƒg(&P)",            IDM_PORT
+            MENUITEM "ƒrƒbƒgƒ}ƒbƒv(&B)", IDM_BITMAP
+            MENUITEM "MIDIƒhƒ‰ƒCƒo(&M)",  IDM_MIDIDRV
         END
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½Lï¿½ï¿½ï¿½vï¿½Vï¿½ï¿½ï¿½ï¿½(&C)", IDM_CAPTION
-        MENUITEM "ï¿½ï¿½ï¿½jï¿½ï¿½ï¿½[ï¿½oï¿½[(&M)", IDM_MENU
-        MENUITEM "ï¿½Xï¿½eï¿½[ï¿½^ï¿½Xï¿½oï¿½[(&B)", IDM_STATUS
-        MENUITEM "ï¿½ÅVï¿½Ìï¿½ï¿½ÉXï¿½V(&F)", IDM_REFRESH
+        MENUITEM "ƒLƒƒƒvƒVƒ‡ƒ“(&C)", IDM_CAPTION
+        MENUITEM "ƒƒjƒ…[ƒo[(&M)", IDM_MENU
+        MENUITEM "ƒXƒe[ƒ^ƒXƒo[(&B)", IDM_STATUS
+        MENUITEM "ÅV‚ÌXV(&F)", IDM_REFRESH
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½Aï¿½Xï¿½yï¿½Nï¿½gï¿½ï¿½É‚ï¿½ï¿½í‚¹ï¿½ÄŠgï¿½ï¿½(&A)", IDM_STRETCH
+        MENUITEM "ƒAƒXƒyƒNƒg”ä‚É‡‚í‚¹‚ÄŠg‘å(&A)", IDM_STRETCH
         MENUITEM "ƒtƒ‹ƒXƒNƒŠ[ƒ“(&U)\tAlt+Enter", IDM_FULLSCREEN
         MENUITEM "‚‘¬•`‰æ",                    IDM_RENDER_FAST
         MENUITEM "CRTƒVƒF[ƒ_[\tF9",         IDM_TOGGLE_SHADER
     END
-    POPUP "ï¿½fï¿½oï¿½bï¿½O(&D)"
+    POPUP "ƒfƒoƒbƒO(&D)"
     BEGIN
-        MENUITEM "ï¿½ï¿½ï¿½s(&X)",              IDM_EXEC
-        MENUITEM "ï¿½ï¿½~(&B)\tAlt+F12",        IDM_BREAK
-        MENUITEM "ï¿½gï¿½ï¿½ï¿½[ï¿½X(&T)\tShift+F12", IDM_TRACE
+        MENUITEM "ŽÀs(&X)",              IDM_EXEC
+        MENUITEM "ƒuƒŒ[ƒN(&B)	Alt+F12",        IDM_BREAK
+        MENUITEM "ƒgƒŒ[ƒX(&T)	Shift+F12", IDM_TRACE
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½Zï¿½bï¿½g(&R)",      IDM_RESET
+        MENUITEM "ƒŠƒZƒbƒg(&R)",      IDM_RESET
     END
-    POPUP "ï¿½cï¿½[ï¿½ï¿½(&T)"
+    POPUP "ƒc[ƒ‹(&T)"
     BEGIN
-        MENUITEM "ï¿½}ï¿½Eï¿½Xï¿½ï¿½ï¿½[ï¿½h(&M)\tF12", IDM_MOUSEMODE
-        MENUITEM "ï¿½\\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½Lï¿½[ï¿½{ï¿½[ï¿½h(&K)", IDM_SOFTKEY
+        MENUITEM "ƒ}ƒEƒXƒ‚[ƒh(&M)	F12", IDM_MOUSEMODE
+        MENUITEM "ƒ\ƒtƒgƒEƒFƒAƒL[ƒ{[ƒh(&K)", IDM_SOFTKEY
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Wï¿½ï¿½ï¿½Xï¿½g(&T)", IDM_TIMEADJ
-        MENUITEM "trap #0ï¿½ï¿½ï¿½ï¿½(&I)...",  IDM_TRAP0
-        MENUITEM "WAVï¿½Lï¿½ï¿½ï¿½vï¿½`ï¿½ï¿½(&W)...", IDM_SAVEWAV
+        MENUITEM "Žž’²®(&T)", IDM_TIMEADJ
+        MENUITEM "trap #0 Š„‚èž‚Ý(&I)...",  IDM_TRAP0
+        MENUITEM "WAV˜^‰¹(&W)...", IDM_SAVEWAV
         MENUITEM SEPARATOR
-        MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&F)...", IDM_NEWFD
-        MENUITEM "SASI ï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&A)...", IDM_NEWSASI
-        MENUITEM "SCSI ï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&C)...", IDM_NEWSCSI
-        MENUITEM "SCSI MOï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&D)...", IDM_NEWMO
+        MENUITEM "ƒtƒƒbƒs[ƒfƒBƒXƒNƒCƒ[ƒWì¬(&F)...", IDM_NEWFD
+        MENUITEM "SASI ƒn[ƒhƒfƒBƒXƒNƒCƒ[ƒWì¬(&A)...", IDM_NEWSASI
+        MENUITEM "SCSI ƒn[ƒhƒfƒBƒXƒNƒCƒ[ƒWì¬(&C)...", IDM_NEWSCSI
+        MENUITEM "SCSI MOƒfƒBƒXƒNƒCƒ[ƒWì¬(&D)...", IDM_NEWMO
         MENUITEM SEPARATOR
         MENUITEM "ƒIƒvƒVƒ‡ƒ“(&O)...", IDM_OPTIONS
-        MENUITEM "ŒÂ•ÊÝ’èƒtƒ@ƒCƒ‹‚ð•Û‘¶",   IDM_SAVECUSTOMCONFIG
-        MENUITEM "‘S‘ÌÝ’èƒtƒ@ƒCƒ‹‚ð•Û‘¶",   IDM_SAVEGLOBALCONFIG
-        MENUITEM "‘S‘ÌÝ’è‚ð•Û‘¶‚µ‚ÄÄ‹N“®", IDM_SAVEGLOBALCONFIGANDRESET
+    MENUITEM "???????????",   IDM_SAVECUSTOMCONFIG
+    MENUITEM "???????????",   IDM_SAVEGLOBALCONFIG
+    MENUITEM "????????????", IDM_SAVEGLOBALCONFIGANDRESET
     END
-    POPUP "ï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½E(&W)"
+    POPUP "ƒEƒBƒ“ƒhƒE(&W)"
     BEGIN
-        MENUITEM "ï¿½dï¿½Ë‚Ä•\\ï¿½ï¿½(&C)",     IDM_CASCADE
-        MENUITEM "ï¿½ï¿½ï¿½×‚Ä•\\ï¿½ï¿½(&T)",   IDM_TILE
-        MENUITEM "ï¿½Sï¿½ÄƒAï¿½Cï¿½Rï¿½ï¿½ï¿½ï¿½(&I)", IDM_ICONIC
-        MENUITEM "ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½(&A)", IDM_ARRANGEICON
-        MENUITEM "ï¿½Sï¿½Ä‰Bï¿½ï¿½(&H)",        IDM_HIDE
-        MENUITEM "ï¿½Sï¿½Ä•ï¿½ï¿½ï¿½(&R)",      IDM_RESTORE
+        MENUITEM "d‚Ë‚Ä•\Ž¦(&C)",     IDM_CASCADE
+        MENUITEM "•À‚×‚Ä•\Ž¦(&T)",   IDM_TILE
+        MENUITEM "ƒAƒCƒRƒ“•\Ž¦(&I)", IDM_ICONIC
+        MENUITEM "ƒAƒCƒRƒ“‚ð•À‚×‚é(&A)", IDM_ARRANGEICON
+        MENUITEM "”ñ•\Ž¦(&H)",        IDM_HIDE
+        MENUITEM "Œ³‚É–ß‚·(&R)",      IDM_RESTORE
     END
-    POPUP "ï¿½wï¿½ï¿½ï¿½v(&H)"
+    POPUP "ƒwƒ‹ƒv(&H)"
     BEGIN
-        MENUITEM "ï¿½oï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(&A)...", IDM_ABOUT
+        MENUITEM "XM6‚É‚Â‚¢‚Ä(&A)...", IDM_ABOUT
     END
 END
 
@@ -209,181 +209,181 @@ IDR_MENUPOPUP MENU
 BEGIN
     POPUP "POPUP"
     BEGIN
-        POPUP "ï¿½tï¿½@ï¿½Cï¿½ï¿½(&F)"
+        POPUP "????(&F)"
         BEGIN
-            MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_OPEN
-            MENUITEM "ƒNƒCƒbƒNƒ[ƒh\tF7",      ID_FILE_CARGAR40006
-            MENUITEM "ï¿½ã‘ï¿½ï¿½ï¿½Û‘ï¿½(&S)",    IDM_SAVE
-            MENUITEM "ï¿½ï¿½ï¿½Oï¿½ï¿½tï¿½ï¿½ï¿½Ä•Û‘ï¿½(&A)...", IDM_SAVEAS
+            MENUITEM "??(&O)...",           IDM_OPEN
+            MENUITEM "???????	F7",      ID_FILE_CARGAR40006
+            MENUITEM "?????(&S)",    IDM_SAVE
+            MENUITEM "????????(&A)...", IDM_SAVEAS
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½Zï¿½bï¿½g(&R)",      IDM_RESET
+            MENUITEM "????(&R)",      IDM_RESET
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Cï¿½ï¿½ï¿½^ï¿½ï¿½ï¿½vï¿½g(&I)", IDM_INTERRUPT
-            MENUITEM "ï¿½dï¿½ï¿½ï¿½Xï¿½Cï¿½bï¿½`(&P)", IDM_POWER
+            MENUITEM "????(&I)", IDM_INTERRUPT
+            MENUITEM "??????(&P)", IDM_POWER
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Iï¿½ï¿½(&X)\tAlt+F4",      IDM_EXIT
+            MENUITEM "??(&X)	Alt+F4",      IDM_EXIT
         END
-        POPUP "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N&0"
+        POPUP "?????????&0"
         BEGIN
-            MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_D0OPEN
-            MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_D0EJECT
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_D0WRITEP
+            MENUITEM "??(&O)...",           IDM_D0OPEN
+            MENUITEM "?????(&E)",    IDM_D0EJECT
+            MENUITEM "??????(&W)", IDM_D0WRITEP
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_D0FORCE
-            MENUITEM "ï¿½ï¿½}ï¿½ï¿½(&I)",           IDM_D0INVALID
+            MENUITEM "???????(&F)", IDM_D0FORCE
+            MENUITEM "??(&I)",           IDM_D0INVALID
         END
-        POPUP "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N&1"
+        POPUP "?????????&1"
         BEGIN
-            MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_D1OPEN
-            MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_D1EJECT
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_D1WRITEP
+            MENUITEM "??(&O)...",           IDM_D1OPEN
+            MENUITEM "?????(&E)",    IDM_D1EJECT
+            MENUITEM "??????(&W)", IDM_D1WRITEP
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_D1FORCE
-            MENUITEM "ï¿½ï¿½}ï¿½ï¿½(&I)",           IDM_D1INVALID
+            MENUITEM "???????(&F)", IDM_D1FORCE
+            MENUITEM "??(&I)",           IDM_D1INVALID
         END
-        POPUP "&MOï¿½fï¿½Bï¿½Xï¿½N"
+        POPUP "&MO????"
         BEGIN
-            MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_MOOPEN
-            MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_MOEJECT
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý•ÛŒï¿½(&W)", IDM_MOWRITEP
+            MENUITEM "??(&O)...",           IDM_MOOPEN
+            MENUITEM "?????(&E)",    IDM_MOEJECT
+            MENUITEM "??????(&W)", IDM_MOWRITEP
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_MOFORCE
+            MENUITEM "???????(&F)", IDM_MOFORCE
         END
         POPUP "&CD-ROM"
         BEGIN
-            MENUITEM "ï¿½Jï¿½ï¿½(&O)...",           IDM_CDOPEN
-            MENUITEM "ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&E)",    IDM_CDEJECT
+            MENUITEM "??(&O)...",           IDM_CDOPEN
+            MENUITEM "?????(&E)",    IDM_CDEJECT
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½Wï¿½Fï¿½Nï¿½g(&F)", IDM_CDFORCE
+            MENUITEM "???????(&F)", IDM_CDFORCE
         END
-        POPUP "ï¿½\\ï¿½ï¿½(&V)"
+        POPUP "??(&V)"
         BEGIN
-            POPUP "ï¿½Vï¿½Xï¿½eï¿½ï¿½(&S)"
+            POPUP "????(&S)"
             BEGIN
-                MENUITEM "ï¿½ï¿½ï¿½O(&L)",              IDM_LOG
-                MENUITEM "ï¿½Xï¿½Pï¿½Wï¿½ï¿½ï¿½[ï¿½ï¿½(&S)", IDM_SCHEDULER
-                MENUITEM "ï¿½fï¿½oï¿½Cï¿½X(&D)",        IDM_DEVICE
+                MENUITEM "??(&L)",              IDM_LOG
+                MENUITEM "??????(&S)", IDM_SCHEDULER
+                MENUITEM "????(&D)",        IDM_DEVICE
             END
-            POPUP "ï¿½vï¿½ï¿½ï¿½Zï¿½bï¿½T(&P)"
+            POPUP "?????(&P)"
             BEGIN
-                MENUITEM "MPUï¿½ï¿½ï¿½Wï¿½Xï¿½^(&R)",   IDM_CPUREG
-                MENUITEM "ï¿½ï¿½ï¿½èžï¿½ï¿½(&I)",      IDM_INT
-                MENUITEM "ï¿½tï¿½Aï¿½Zï¿½ï¿½ï¿½uï¿½ï¿½(&D)", IDM_DISASM
-                MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(&M)",      IDM_MEMORY
-                MENUITEM "ï¿½uï¿½ï¿½ï¿½[ï¿½Nï¿½|ï¿½Cï¿½ï¿½ï¿½g(&B)", IDM_BREAKP
+                MENUITEM "MPU????(&R)",   IDM_CPUREG
+                MENUITEM "????(&I)",      IDM_INT
+                MENUITEM "?????(&D)", IDM_DISASM
+                MENUITEM "???(&M)",      IDM_MEMORY
+                MENUITEM "????????(&B)", IDM_BREAKP
             END
-            POPUP "ï¿½fï¿½oï¿½Cï¿½X(&D)"
+            POPUP "????(&D)"
             BEGIN
-                MENUITEM "ï¿½}ï¿½ï¿½ï¿½`ï¿½tï¿½@ï¿½ï¿½ï¿½Nï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½yï¿½ï¿½ï¿½tï¿½Fï¿½ï¿½ï¿½ï¿½(&P)", IDM_MFP
-                MENUITEM "ï¿½_ï¿½Cï¿½ï¿½ï¿½Nï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Nï¿½Zï¿½X(&D)", IDM_DMAC
-                MENUITEM "CRTï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&R)", IDM_CRTC
-                MENUITEM "ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&V)", IDM_VC
-                MENUITEM "ï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½^ï¿½Cï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½bï¿½N(&T)", IDM_RTC
-                MENUITEM "FMï¿½ï¿½ï¿½ï¿½(&O)",          IDM_OPM
-                MENUITEM "ï¿½Lï¿½[ï¿½{ï¿½[ï¿½h(&K)",    IDM_KEYBOARD
-                MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½hï¿½ï¿½ï¿½Cï¿½u(&I)", IDM_FDD
-                MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&F)", IDM_FDC
-                MENUITEM "ï¿½Vï¿½ï¿½ï¿½Aï¿½ï¿½ï¿½Rï¿½~ï¿½ï¿½ï¿½jï¿½Pï¿½[ï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&C)", IDM_SCC
-                MENUITEM "BG/ï¿½Xï¿½vï¿½ï¿½ï¿½Cï¿½gï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&B)", IDM_CYNTHIA
-                MENUITEM "SASIï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½N(&H)", IDM_SASI
-                MENUITEM "MIDIï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&M)", IDM_MIDI
-                MENUITEM "SCSIï¿½vï¿½ï¿½ï¿½gï¿½Rï¿½ï¿½ï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(&S)", IDM_SCSI
+                MENUITEM "????????????????(&P)", IDM_MFP
+                MENUITEM "????????????(&D)", IDM_DMAC
+                MENUITEM "CRT??????(&R)", IDM_CRTC
+                MENUITEM "?????????(&V)", IDM_VC
+                MENUITEM "??????????(&T)", IDM_RTC
+                MENUITEM "FM??(&O)",          IDM_OPM
+                MENUITEM "?????(&K)",    IDM_KEYBOARD
+                MENUITEM "?????????????(&I)", IDM_FDD
+                MENUITEM "???????????????(&F)", IDM_FDC
+                MENUITEM "???????????????????(&C)", IDM_SCC
+                MENUITEM "BG/???????????(&B)", IDM_CYNTHIA
+                MENUITEM "SASI???????(&H)", IDM_SASI
+                MENUITEM "MIDI??????(&M)", IDM_MIDI
+                MENUITEM "SCSI???????????(&S)", IDM_SCSI
             END
-            POPUP "ï¿½rï¿½fï¿½I(&V)"
+            POPUP "???(&V)"
             BEGIN
-                MENUITEM "ï¿½eï¿½Lï¿½Xï¿½g(&T)",        IDM_TVRAM
+                MENUITEM "????(&T)",        IDM_TVRAM
                 MENUITEM SEPARATOR
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½E1024ï¿½~1024(&X)", IDM_G1024
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W0(&0)", IDM_G16P0
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W1(&1)", IDM_G16P1
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W2(&2)", IDM_G16P2
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 16ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W3(&3)", IDM_G16P3
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 256ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W0(&4)", IDM_G256P0
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 256ï¿½Fï¿½ï¿½ï¿½[ï¿½hï¿½Eï¿½yï¿½[ï¿½W1(&5)", IDM_G256P1
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½N 65536ï¿½Fï¿½ï¿½ï¿½[ï¿½h(&6)", IDM_G64K
+                MENUITEM "?????? 16???? 1024x1024(&X)", IDM_G1024
+                MENUITEM "?????? 16???? ???0(&0)", IDM_G16P0
+                MENUITEM "?????? 16???? ???1(&1)", IDM_G16P1
+                MENUITEM "?????? 16???? ???2(&2)", IDM_G16P2
+                MENUITEM "?????? 16???? ???3(&3)", IDM_G16P3
+                MENUITEM "?????? 256???? ???0(&4)", IDM_G256P0
+                MENUITEM "?????? 256???? ???1(&5)", IDM_G256P1
+                MENUITEM "?????? 65536????(&6)", IDM_G64K
                 MENUITEM SEPARATOR
                 MENUITEM "P&CG",                        IDM_PCG
-                MENUITEM "BG ï¿½yï¿½[ï¿½W0(&B)",        IDM_BG0
-                MENUITEM "BG ï¿½yï¿½[ï¿½W1(&G)",        IDM_BG1
+                MENUITEM "BG ???0(&B)",        IDM_BG0
+                MENUITEM "BG ???1(&G)",        IDM_BG1
                 MENUITEM SEPARATOR
-                MENUITEM "ï¿½pï¿½ï¿½ï¿½bï¿½g(&P)",      IDM_PALET
+                MENUITEM "????(&P)",      IDM_PALET
             END
-            POPUP "ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½(&R)"
+            POPUP "?????(&R)"
             BEGIN
-                MENUITEM "ï¿½eï¿½Lï¿½Xï¿½gï¿½oï¿½bï¿½tï¿½@(&T)", IDM_REND_TEXT
+                MENUITEM "????????(&T)", IDM_REND_TEXT
                 MENUITEM SEPARATOR
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&0", IDM_REND_GP0
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&1", IDM_REND_GP1
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&2", IDM_REND_GP2
-                MENUITEM "ï¿½Oï¿½ï¿½ï¿½tï¿½Bï¿½bï¿½Nï¿½oï¿½bï¿½tï¿½@&3", IDM_REND_GP3
+                MENUITEM "??????????&0", IDM_REND_GP0
+                MENUITEM "??????????&1", IDM_REND_GP1
+                MENUITEM "??????????&2", IDM_REND_GP2
+                MENUITEM "??????????&3", IDM_REND_GP3
                 MENUITEM SEPARATOR
-                MENUITEM "PCGï¿½oï¿½bï¿½tï¿½@(&C)",     IDM_REND_PCG
-                MENUITEM "BG/ï¿½Xï¿½vï¿½ï¿½ï¿½Cï¿½gï¿½oï¿½bï¿½tï¿½@(&S)", IDM_REND_BGSPRITE
+                MENUITEM "PCG????(&C)",     IDM_REND_PCG
+                MENUITEM "BG/?????????(&S)", IDM_REND_BGSPRITE
                 MENUITEM SEPARATOR
-                MENUITEM "ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½oï¿½bï¿½tï¿½@(&P)", IDM_REND_PALET
+                MENUITEM "????????(&P)", IDM_REND_PALET
                 MENUITEM SEPARATOR
-                MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½bï¿½tï¿½@(&M)", IDM_REND_MIX
+                MENUITEM "??????(&M)", IDM_REND_MIX
             END
-            POPUP "&Win32"
+            POPUP "Win32"
             BEGIN
-                MENUITEM "ï¿½Rï¿½ï¿½ï¿½|ï¿½[ï¿½lï¿½ï¿½ï¿½g(&C)", IDM_COMPONENT
-                MENUITEM "OSï¿½ï¿½ï¿½(&O)",             IDM_OSINFO
-                MENUITEM "ï¿½Tï¿½Eï¿½ï¿½ï¿½h(&S)",      IDM_SOUND
-                MENUITEM "ï¿½Cï¿½ï¿½ï¿½vï¿½bï¿½g(&I)",  IDM_INPUT
-                MENUITEM "ï¿½|ï¿½[ï¿½g(&P)",            IDM_PORT
-                MENUITEM "ï¿½rï¿½bï¿½gï¿½}ï¿½bï¿½v(&B)", IDM_BITMAP
-                MENUITEM "MIDIï¿½hï¿½ï¿½ï¿½Cï¿½o(&M)",  IDM_MIDIDRV
+                MENUITEM "???????(&C)", IDM_COMPONENT
+                MENUITEM "OS??(&O)",             IDM_OSINFO
+                MENUITEM "????(&S)",      IDM_SOUND
+                MENUITEM "??(&I)",  IDM_INPUT
+                MENUITEM "???(&P)",            IDM_PORT
+                MENUITEM "??????(&B)", IDM_BITMAP
+                MENUITEM "MIDI????(&M)",  IDM_MIDIDRV
             END
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Lï¿½ï¿½ï¿½vï¿½Vï¿½ï¿½ï¿½ï¿½(&C)", IDM_CAPTION
-            MENUITEM "ï¿½ï¿½ï¿½jï¿½ï¿½ï¿½[ï¿½oï¿½[(&M)", IDM_MENU
-            MENUITEM "ï¿½Xï¿½eï¿½[ï¿½^ï¿½Xï¿½oï¿½[(&B)", IDM_STATUS
-            MENUITEM "ï¿½ÅVï¿½Ìï¿½ï¿½ÉXï¿½V(&F)", IDM_REFRESH
+            MENUITEM "??????(&C)", IDM_CAPTION
+            MENUITEM "??????(&M)", IDM_MENU
+            MENUITEM "???????(&B)", IDM_STATUS
+            MENUITEM "?????(&F)", IDM_REFRESH
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½Aï¿½Xï¿½yï¿½Nï¿½gï¿½ï¿½É‚ï¿½ï¿½í‚¹ï¿½ÄŠgï¿½ï¿½(&A)", IDM_STRETCH
-            MENUITEM "ƒtƒ‹ƒXƒNƒŠ[ƒ“(&U)\tAlt+Enter", IDM_FULLSCREEN
-            MENUITEM "‚‘¬•`‰æ",                    IDM_RENDER_FAST
-            MENUITEM "CRTƒVƒF[ƒ_[\tF9",         IDM_TOGGLE_SHADER
+            MENUITEM "?????????????(&A)", IDM_STRETCH
+            MENUITEM "???????(&U)	Alt+Enter", IDM_FULLSCREEN
+            MENUITEM "????",                    IDM_RENDER_FAST
+            MENUITEM "CRT?????	F9",         IDM_TOGGLE_SHADER
         END
-        POPUP "ï¿½fï¿½oï¿½bï¿½O(&D)"
+        POPUP "????(&D)"
         BEGIN
-            MENUITEM "ï¿½ï¿½ï¿½s(&X)",              IDM_EXEC
-            MENUITEM "ï¿½ï¿½~(&B)\tAlt+F12",        IDM_BREAK
-            MENUITEM "ï¿½gï¿½ï¿½ï¿½[ï¿½X(&T)\tShift+F12", IDM_TRACE
+            MENUITEM "??(&X)",              IDM_EXEC
+            MENUITEM "??(&B)	Alt+F12",        IDM_BREAK
+            MENUITEM "????(&T)	Shift+F12", IDM_TRACE
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½Zï¿½bï¿½g(&R)",      IDM_RESET
+            MENUITEM "????(&R)",      IDM_RESET
         END
-        POPUP "ï¿½cï¿½[ï¿½ï¿½(&T)"
+        POPUP "???(&T)"
         BEGIN
-            MENUITEM "ï¿½}ï¿½Eï¿½Xï¿½ï¿½ï¿½[ï¿½h(&M)\tF12", IDM_MOUSEMODE
-            MENUITEM "ï¿½\\ï¿½tï¿½gï¿½Eï¿½Fï¿½Aï¿½Lï¿½[ï¿½{ï¿½[ï¿½h(&K)", IDM_SOFTKEY
+            MENUITEM "??????(&M)	F12", IDM_MOUSEMODE
+            MENUITEM "???????????(&K)", IDM_SOFTKEY
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½Wï¿½ï¿½ï¿½Xï¿½g(&T)", IDM_TIMEADJ
-            MENUITEM "trap #0ï¿½ï¿½ï¿½ï¿½(&I)...",  IDM_TRAP0
-            MENUITEM "WAVï¿½Lï¿½ï¿½ï¿½vï¿½`ï¿½ï¿½(&W)...", IDM_SAVEWAV
+            MENUITEM "????(&T)", IDM_TIMEADJ
+            MENUITEM "trap #0 ????(&I)...",  IDM_TRAP0
+            MENUITEM "WAV??(&W)...", IDM_SAVEWAV
             MENUITEM SEPARATOR
-            MENUITEM "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&F)...", IDM_NEWFD
-            MENUITEM "SASI ï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&A)...", IDM_NEWSASI
-            MENUITEM "SCSI ï¿½nï¿½[ï¿½hï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&C)...", IDM_NEWSCSI
-            MENUITEM "SCSI MOï¿½fï¿½Bï¿½Xï¿½Nï¿½Cï¿½ï¿½ï¿½[ï¿½Wï¿½Ìì¬(&D)...", IDM_NEWMO
+            MENUITEM "???????????????(&F)...", IDM_NEWFD
+            MENUITEM "SASI ?????????????(&A)...", IDM_NEWSASI
+            MENUITEM "SCSI ?????????????(&C)...", IDM_NEWSCSI
+            MENUITEM "SCSI MO??????????(&D)...", IDM_NEWMO
             MENUITEM SEPARATOR
-            MENUITEM "ƒIƒvƒVƒ‡ƒ“(&O)...", IDM_OPTIONS
-            MENUITEM "ŒÂ•ÊÝ’èƒtƒ@ƒCƒ‹‚ð•Û‘¶",   IDM_SAVECUSTOMCONFIG
-            MENUITEM "‘S‘ÌÝ’èƒtƒ@ƒCƒ‹‚ð•Û‘¶",   IDM_SAVEGLOBALCONFIG
-            MENUITEM "‘S‘ÌÝ’è‚ð•Û‘¶‚µ‚ÄÄ‹N“®", IDM_SAVEGLOBALCONFIGANDRESET
+            MENUITEM "?????(&O)...", IDM_OPTIONS
+            MENUITEM "???????????",   IDM_SAVECUSTOMCONFIG
+            MENUITEM "???????????",   IDM_SAVEGLOBALCONFIG
+            MENUITEM "????????????", IDM_SAVEGLOBALCONFIGANDRESET
         END
-        POPUP "ï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½E(&W)"
+        POPUP "?????(&W)"
         BEGIN
-            MENUITEM "ï¿½dï¿½Ë‚Ä•\\ï¿½ï¿½(&C)",     IDM_CASCADE
-            MENUITEM "ï¿½ï¿½ï¿½×‚Ä•\\ï¿½ï¿½(&T)",   IDM_TILE
-            MENUITEM "ï¿½Sï¿½ÄƒAï¿½Cï¿½Rï¿½ï¿½ï¿½ï¿½(&I)", IDM_ICONIC
-            MENUITEM "ï¿½Aï¿½Cï¿½Rï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½(&A)", IDM_ARRANGEICON
-            MENUITEM "ï¿½Sï¿½Ä‰Bï¿½ï¿½(&H)",        IDM_HIDE
-            MENUITEM "ï¿½Sï¿½Ä•ï¿½ï¿½ï¿½(&R)",      IDM_RESTORE
+            MENUITEM "?????(&C)",     IDM_CASCADE
+            MENUITEM "?????(&T)",   IDM_TILE
+            MENUITEM "??????(&I)", IDM_ICONIC
+            MENUITEM "????????(&A)", IDM_ARRANGEICON
+            MENUITEM "???(&H)",        IDM_HIDE
+            MENUITEM "????(&R)",      IDM_RESTORE
         END
-        POPUP "ï¿½wï¿½ï¿½ï¿½v(&H)"
+        POPUP "???(&H)"
         BEGIN
-            MENUITEM "ï¿½oï¿½[ï¿½Wï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½(&A)...", IDM_ABOUT
+            MENUITEM "XM6????(&A)...", IDM_ABOUT
         END
     END
 END
@@ -1823,26 +1823,21 @@ END
 
 IDD_MISCPAGE DIALOG 0, 0, 212, 198
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "ï¿½ï¿½ï¿½Ì‘ï¿½"
-FONT 9, "ï¿½lï¿½r ï¿½oï¿½Sï¿½Vï¿½bï¿½N"
+CAPTION "‚»‚Ì‘¼"
+FONT 9, "MS Gothic"
 BEGIN
-    GROUPBOX        "ï¿½ï¿½ï¿½Ì‘ï¿½ï¿½ÌƒIï¿½vï¿½Vï¿½ï¿½ï¿½ï¿½",IDC_MISC_OPTG,7,7,196,122
-    CONTROL         "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½h(&S)",IDC_MISC_FDSPEED,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,20,111,10
-    CONTROL         "ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½N ï¿½ï¿½ï¿½[ï¿½^ï¿½ï¿½]LED(&L)",IDC_MISC_FDLED,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,36,123,10
-    CONTROL         "ï¿½Tï¿½uï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½Eï¿½ï¿½ï¿½|ï¿½bï¿½vï¿½Aï¿½bï¿½vï¿½É‚ï¿½ï¿½ï¿½(&P)",IDC_MISC_POPUP,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,52,125,10
-    CONTROL         "ï¿½ï¿½ï¿½ï¿½ï¿½}ï¿½Eï¿½Xï¿½ï¿½ï¿½[ï¿½h(&A)",IDC_MISC_AUTOMOUSE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,68,100,10
-    CONTROL         "ï¿½dï¿½ï¿½ï¿½Xï¿½Cï¿½bï¿½`OFFï¿½Å‹Nï¿½ï¿½(&B)",IDC_MISC_POWEROFF,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,84,110,10
+    GROUPBOX        "‚»‚Ì‘¼‚ÌƒIƒvƒVƒ‡ƒ“",IDC_MISC_OPTG,7,7,196,122
+    CONTROL         "ƒtƒƒbƒs[ƒfƒBƒXƒN‚‘¬‰»(&S)",IDC_MISC_FDSPEED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,20,111,10
+    CONTROL         "ƒtƒƒbƒs[ƒfƒBƒXƒNƒ‚[ƒ^[LED(&L)",IDC_MISC_FDLED,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,36,123,10
+    CONTROL         "ƒ|ƒbƒvƒAƒbƒvƒEƒBƒ“ƒhƒEƒXƒ^ƒCƒ‹(&P)",IDC_MISC_POPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,52,125,10
+    CONTROL         "Ž©“®ƒ}ƒEƒXƒ‚[ƒh(&A)",IDC_MISC_AUTOMOUSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,68,100,10
+    CONTROL         "POWER OFFó‘Ô‚Å‹N“®(&B)",IDC_MISC_POWEROFF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,84,110,10
     CONTROL         "VSync(&V)",IDC_MISC_VSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,100,80,10
-    LTEXT           "ï¿½ï¿½ï¿½ï¿½ï¿½xï¿½gï¿½ï¿½ï¿½[ï¿½W(&R):",IDC_MISC_RENDERERL,15,114,70,8
+    LTEXT           "Šù’è‚ÌƒŒƒ“ƒ_ƒ‰[(&R):",IDC_MISC_RENDERERL,15,114,70,8
     COMBOBOX        IDC_MISC_RENDERER,88,112,80,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "ï¿½ï¿½ï¿½ï¿½ï¿½Zï¿½[ï¿½uï¿½Ì•Û‘ï¿½ï¿½ï¿½ï¿½:",IDC_STATIC,16,136,125,8
+    LTEXT           "ƒNƒCƒbƒNƒZ[ƒu‚Ì•Û‘¶æ:",IDC_STATIC,16,136,125,8
     EDITTEXT        IDC_EDIT1,16,146,118,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "ï¿½Qï¿½ï¿½...",IDC_BUSCAR,137,145,55,14
+    PUSHBUTTON      "ŽQÆ...",IDC_BUSCAR,137,145,55,14
     LTEXT           "",IDC_MISC_HELP,8,179,196,18,SS_SUNKEN
 END
 
@@ -1863,7 +1858,7 @@ BEGIN
     LTEXT           "",IDC_MISC_HELP,8,179,196,18,SS_SUNKEN
     EDITTEXT        IDC_EDIT1,16,146,118,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Buscar...",IDC_BUSCAR,137,145,55,14
-    LTEXT           "Ruta para almacenar guardados rï¿½pidos:",IDC_STATIC,16,136,125,8
+    LTEXT           "Ruta para almacenar guardados r?pidos:",IDC_STATIC,16,136,125,8
 END
 
 IDD_KBDPAGE DIALOG 0, 0, 210, 154
@@ -3091,17 +3086,17 @@ END
 
 STRINGTABLE
 BEGIN
-    IDC_MISC_OPTG           "1ï¿½ï¿½ï¿½Ì‘ï¿½ï¿½ÌÝ’ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½Ü‚ï¿½"
-    IDC_MISC_FDSPEED        "2ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½ÌƒAï¿½Nï¿½Zï¿½Xï¿½ï¿½ï¿½xï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Iï¿½Éï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½fï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½OFFï¿½Å‚ï¿½"
-    IDC_MISC_FDLED          "3ï¿½tï¿½ï¿½ï¿½bï¿½sï¿½[ï¿½fï¿½Bï¿½Xï¿½Nï¿½Ìƒï¿½ï¿½[ï¿½^ï¿½ï¿½]ï¿½ó‹µ‚ï¿½ï¿½Aï¿½Nï¿½Zï¿½XLEDï¿½Æ‚ï¿½ï¿½Ä•\\ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½ï¿½ï¿½ï¿½ÍŽï¿½ï¿½@ï¿½Æ“ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å‚ï¿½ï¿½Bï¿½fï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½ONï¿½Å‚ï¿½"
-    IDC_MISC_POPUP          "4ï¿½Tï¿½uï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½Eï¿½ï¿½ï¿½|ï¿½bï¿½vï¿½Aï¿½bï¿½vï¿½Xï¿½^ï¿½Cï¿½ï¿½ï¿½É‚ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½|ï¿½bï¿½vï¿½Aï¿½bï¿½vï¿½Eï¿½Bï¿½ï¿½ï¿½hï¿½Eï¿½ï¿½ï¿½Aï¿½Nï¿½eï¿½Bï¿½uï¿½É‚ï¿½ï¿½ï¿½Æ‘ï¿½ï¿½xï¿½ï¿½ï¿½á‰ºï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½fï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½OFFï¿½Å‚ï¿½"
-    IDC_MISC_AUTOMOUSE      "5ï¿½Xï¿½Nï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½hï¿½ÏXï¿½É˜Aï¿½ï¿½ï¿½ï¿½ï¿½Äƒ}ï¿½Eï¿½Xï¿½ï¿½ï¿½[ï¿½hï¿½ÌŽï¿½ï¿½ï¿½ï¿½Ø‚ï¿½Ö‚ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½fï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½OFFï¿½Å‚ï¿½ï¿½B"
-    IDC_MISC_POWEROFF       "6ï¿½Oï¿½Ê“dï¿½ï¿½ï¿½Xï¿½Cï¿½bï¿½`ï¿½ï¿½OFFï¿½Ìï¿½Ô‚ï¿½XM6ï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Bï¿½fï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½ï¿½OFFï¿½Å‚ï¿½"
-    IDC_MISC_VSYNC          "Šù’è‚ÅVSync‚ð—LŒø‚É‚µ‚Ü‚·B"
-    IDC_MISC_RENDERERL      "Šù’è‚ÌƒŒƒ“ƒ_ƒ‰[‚ð‘I‘ð‚µ‚Ü‚·B"
-    IDC_MISC_RENDERER       "Šù’è‚ÌƒŒƒ“ƒ_ƒ‰[‚ð‘I‘ð‚µ‚Ü‚·B"
-    IDC_EDIT1               "ƒNƒCƒbƒNƒZ[ƒu‚ð•Û‘¶‚·‚éƒtƒHƒ‹ƒ_[‚ðŽw’è‚µ‚Ü‚·B"
-    IDC_BUSCAR              "ƒtƒHƒ‹ƒ_[‚ðŽQÆ‚µ‚Ü‚·B"
+    IDC_MISC_OPTG           "1‚»‚Ì‘¼‚ÌÝ’è‚ðs‚¢‚Ü‚·?"
+    IDC_MISC_FDSPEED        "2ƒtƒƒbƒs[ƒfƒBƒXƒN‚Ö‚ÌƒAƒNƒZƒX‚ð‚‘¬‰»‚µ‚Ü‚·?Šù’è‚ÍOFF‚Å‚·?"
+    IDC_MISC_FDLED          "3ƒtƒƒbƒs[ƒfƒBƒXƒN‚Ìƒ‚[ƒ^[“®ì‚ðƒAƒNƒZƒXLED‚Æ‚µ‚Ä•\Ž¦‚µ‚Ü‚·?“®ì‚ÍŽ©“®‚ÅØ‚è‘Ö‚í‚è‚Ü‚·?Šù’è‚ÍON‚Å‚·?"
+    IDC_MISC_POPUP          "4ƒTƒuƒEƒBƒ“ƒhƒE‚ðƒ|ƒbƒvƒAƒbƒvƒXƒ^ƒCƒ‹‚É‚µ‚Ü‚·?ƒ|ƒbƒvƒAƒbƒvƒEƒBƒ“ƒhƒE‚ð—LŒø‚É‚·‚é‚Æ•\Ž¦”{—¦‚ª‰º‚ª‚è‚Ü‚·?Šù’è‚ÍOFF‚Å‚·?"
+    IDC_MISC_AUTOMOUSE      "5ƒXƒNƒŠ[ƒ“ƒ‚[ƒh•ÏXŽž‚ÉŽ©“®‚Åƒ}ƒEƒXƒ‚[ƒh‚ðØ‚è‘Ö‚¦‚Ü‚·?Šù’è‚ÍOFF‚Å‚·?"
+    IDC_MISC_POWEROFF       "6POWERƒXƒCƒbƒ`OFFó‘Ô‚ÅXM6‚ð‹N“®‚µ‚Ü‚·?Šù’è‚ÍOFF‚Å‚·?"
+    IDC_MISC_VSYNC          "Šù’è‚ÅVSync‚ð—LŒø‚É‚µ‚Ü‚·?"
+    IDC_MISC_RENDERERL      "Šù’è‚ÌƒŒƒ“ƒ_ƒ‰[‚ð‘I‘ð‚µ‚Ü‚·?"
+    IDC_MISC_RENDERER       "Šù’è‚ÌƒŒƒ“ƒ_ƒ‰[‚ð‘I‘ð‚µ‚Ü‚·?"
+    IDC_EDIT1               "ƒNƒCƒbƒNƒZ[ƒu‚ð•Û‘¶‚·‚éƒtƒHƒ‹ƒ_[‚ðŽw’è‚µ‚Ü‚·?"
+    IDC_BUSCAR              "ƒtƒHƒ‹ƒ_[‚ðŽQÆ‚µ‚Ü‚·?"
 END
 
 STRINGTABLE

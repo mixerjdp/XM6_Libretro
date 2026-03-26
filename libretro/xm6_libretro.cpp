@@ -2018,8 +2018,6 @@ static void register_core_options()
       "ADPCM volume; 52|100|90|80|70|60|50|40|30|20|10|0" },
     { "xm6_audio_engine",
       "Audio engine; XM6|PX68k" },
-    { "xm6_legacy_dmac_cnt",
-      "Legacy DMAC CNT behavior; disabled|enabled" },
     { "xm6_midi_output",
       "MIDI output; disabled|enabled" },
     { "xm6_midi_output_type",
@@ -2032,8 +2030,6 @@ static void register_core_options()
       "Mouse speed; 205|256|128|384|512|64|0" },
     { "xm6_mouse_swap",
       "Swap mouse buttons; disabled|enabled" },
-    { "xm6_hdd_target",
-      "HDF mount target; auto|sasi0|sasi1|scsi0|scsi1" },
     { "xm6_mpu_nowait",
       "No Wait Operation with MPU; disabled|enabled" },
     { nullptr, nullptr }
