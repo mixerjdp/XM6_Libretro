@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 H. O. (ytanaka@ipc-tokai.or.jp)
-//	[ MFC frame window ]
+//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	[MFC application]
 //
 //---------------------------------------------------------------------------
 
@@ -142,7 +142,7 @@ CFrmWnd::CFrmWnd()
 	m_bSaved = FALSE;
 	m_nFDDStatus[0] = 0;
 	m_nFDDStatus[1] = 0;
-	m_dwExec = 0;	
+	m_dwExec = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -175,7 +175,7 @@ BEGIN_MESSAGE_MAP(CFrmWnd, CFrameWnd)
 #endif
 	ON_WM_ENDSESSION()
 	ON_MESSAGE(WM_SHELLNOTIFY, OnShellNotify)
-		
+
 	ON_COMMAND(ID_FILE_CARGAR40006, OnFastOpen)
 
 	ON_COMMAND(IDM_OPEN, OnOpen)
@@ -653,7 +653,7 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 	rect.top = 0;
 
 	/* In full-screen mode, use full monitor resolution */
-	if (m_bFullScreen) 
+	if (m_bFullScreen)
 	{
 		rect.right = cx;
 		rect.bottom = cy;
@@ -714,7 +714,7 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 		return;
 	}
 }
- 
+
 //---------------------------------------------------------------------------
 //
 //	Shell integration initialization
@@ -888,7 +888,7 @@ void FASTCALL CFrmWnd::ReadFile(LPCTSTR pszFileName, CString& str)
    CATCH_ALL(e)
    {
       str.Empty();
-      e->ReportError(); // see what's going wrong
+e->ReportError();// see what's going wrong
    }
    END_CATCH_ALL
 }
@@ -942,7 +942,7 @@ void FASTCALL CFrmWnd::InitCmd(LPCTSTR lpszCmd)
 	CString extensionArchivo = "";
 
 	int curPos = 0;
-	CString resToken = str.Tokenize(_T("."), curPos); // Tokenize full path by dot to get extension
+	CString resToken = str.Tokenize(_T("."), curPos);	// Tokenize full path by dot to get extension
 	while (!resToken.IsEmpty())
 	{
 		extensionArchivo = resToken;
@@ -1074,7 +1074,7 @@ BOOL FASTCALL CFrmWnd::InitCmdSub(int nDrive, LPCTSTR lpszPath)
 		}
 		else {
 			// Try to mount as floppy disk image
-			/* Initialize floppy image from command line */ 
+			/* Initialize floppy image from command line */
 
 			if (!m_pFDD->Open(nDrive, path)) {
 				// Floppy mount failed
@@ -1316,7 +1316,7 @@ void FASTCALL CFrmWnd::ApplyCfg()
 		m_bPopup = config.popup_swnd;
 	}
 
-	
+
 
 	// Frame window mouse options
 	m_bMouseMid = config.mouse_mid;
@@ -1332,11 +1332,11 @@ void FASTCALL CFrmWnd::ApplyCfg()
 	// Keep SaveState path initialized once
 	if (RutaSaveStates.GetLength() == 0)
 		RutaSaveStates = config.ruta_savestate;
-	//int msgboxID = MessageBox(RutaSaveStates,"rutasave",  2 );	
+	//int msgboxID = MessageBox(RutaSaveStates,"rutasave",  2 );
 	if (config.mouse_port == 0) {
 		// Disable mouse-capture mode when no mouse is connected.
 		if (GetInput()->GetMouseMode()) {
-			OnMouseMode(); 
+			OnMouseMode();
 		}
 	}
 }
@@ -1494,12 +1494,12 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 			// Update periodic timers
 			dwNow = ::GetTickCount();
 
-			
+
 			if ((dwNow - dwTick20) >= 20) {
 				dwTick20 = dwNow;
 				pInfo->UpdateStatus();
 				UpdateExec();
-				
+
 				// HACK: auto-reset to work around cold-boot bug
 				if (!bAutoResetDone && (dwNow - dwStartTick) >= 90) {
 					bAutoResetDone = TRUE;
@@ -1558,7 +1558,7 @@ void CFrmWnd::OnClose()
 {
 	CString strFormat;
 	CString strText;
-	Filepath path;	
+	Filepath path;
 
 	ASSERT(this);
 	ASSERT(!m_bSaved);
@@ -1625,14 +1625,14 @@ void CFrmWnd::OnClose()
 		}
 	}
 
-	OutputDebugString("\n\nSe ejecutó OnClose...\n\n");
+	OutputDebugString("\n\nOnClose executed...\n\n");
 	// Base class handling
 	CFrameWnd::OnClose();
 }
 
 //---------------------------------------------------------------------------
 //
-//	Window destroy
+//	Window ofstroy
 //
 //---------------------------------------------------------------------------
 void CFrmWnd::OnDestroy()
@@ -1640,7 +1640,7 @@ void CFrmWnd::OnDestroy()
 	ASSERT(this);
 
 	// If initialization already completed
-	if ((m_nStatus == 0) && !m_bSaved) 
+	if ((m_nStatus == 0) && !m_bSaved)
 	{
 		// Save frame and disk resume state
 		SaveFrameWnd();
@@ -1658,7 +1658,7 @@ void CFrmWnd::OnDestroy()
 	CleanSub();
 
 
-	OutputDebugString("\n\nSe ejecutó OnDestroy...\n\n");
+	OutputDebugString("\n\nOnDestroy executed...\n\n");
 
 	// Base class handling
 	CFrameWnd::OnDestroy();
@@ -1690,7 +1690,7 @@ void CFrmWnd::OnEndSession(BOOL bEnding)
 	}
 
 
-	OutputDebugString("\n\nSe ejecutó OnEndSession...\n\n");
+	OutputDebugString("\n\nOnEndSession executed...\n\n");
 
 	// Base class handling
 	CFrameWnd::OnEndSession(bEnding);
@@ -1952,7 +1952,7 @@ BOOL CFrmWnd::RestoreFrameWnd(BOOL bFullScreen)
 
 
 
-	/*char cadena[20],cadena2[20];	  
+	/*char cadena[20],cadena2[20];
     sprintf(cadena, "%d", nHeight);
 	sprintf(cadena2, "%d", nWidth);
 	 int msgboxID = MessageBox(
@@ -1972,7 +1972,7 @@ BOOL CFrmWnd::RestoreFrameWnd(BOOL bFullScreen)
 	}
 
 
-	
+
 
 
 	// Fullscreen restore behavior.
@@ -2120,7 +2120,7 @@ LRESULT CFrmWnd::OnDisplayChange(UINT uParam, LONG lParam)
 	uParam = 0;
 	lParam = 0;
 	// Base class behavior
-	lResult = 0; //CFrameWnd::OnDisplayChange(0, uParam, lParam);
+	lResult=0;//CFrameWnd::OnDisplayChange(0, uParam, lParam);
 
 	// Ignore while minimized
 	if (IsIconic()) {
@@ -2867,7 +2867,7 @@ void FASTCALL CFrmWnd::DestroyStatusView()
 void CFrmWnd::RecalcStatusView()
 {
 	CRect rectClient;
-	GetClientRect(&rectClient);  // Current client area
+	GetClientRect(&rectClient);// Current client area
 
 	const int clientWidth = rectClient.Width();
 	const int clientHeight = rectClient.Height();
@@ -3067,7 +3067,7 @@ void CFrmWnd::ShowCaption()
 	// 1) Skip if current style already matches target
 	DWORD dwCurrentStyle = GetStyle();
 	if (bShouldShowCaption == ((dwCurrentStyle & dwCaptionStyle) == dwCaptionStyle)) {
-		return; // No style update needed
+		return;// No style update needed
 	}
 
 	// 2) Lock VM only when needed
@@ -3078,14 +3078,14 @@ void CFrmWnd::ShowCaption()
 
 	// 3) Update window styles
 	ModifyStyle(
-		bShouldShowCaption ? 0 : dwCaptionStyle,  // Styles to remove
-		bShouldShowCaption ? dwCaptionStyle : 0,  // Styles to add
+		bShouldShowCaption?0:dwCaptionStyle,// Styles to remove
+		bShouldShowCaption?dwCaptionStyle:0,// Styles to add
 		SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED
 	);
 
 	// 4) Redraw menu bar when needed
 	if (bShouldShowCaption && m_bMenuBar) {
-		DrawMenuBar(); // Redraw menu bar if visible
+		DrawMenuBar();// Redraw menu bar if visible
 	}
 
 	// 5) Unlock VM if it was locked
@@ -3400,7 +3400,7 @@ void CFrmWnd::ExitBorderlessFullscreen()
 	// Restore saved styles and placement
 	SetWindowLong(m_hWnd, GWL_STYLE, m_dwPrevStyle);
 	SetWindowLong(m_hWnd, GWL_EXSTYLE, m_dwPrevExStyle);
-	
+
 	SetWindowPlacement(&m_wpPrev);
 	SetWindowPos(NULL, 0, 0, 0, 0,
 		SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED);

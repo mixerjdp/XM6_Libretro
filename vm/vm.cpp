@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ ���z�}�V�� ]
+//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	[ Virtual Machine ]
 //
 //---------------------------------------------------------------------------
 
@@ -52,23 +52,23 @@
 
 //===========================================================================
 //
-//	���z�}�V��
+//	Virtual machine
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 VM::VM()
 {
-	// ���[�N������
+	// Initialize the runtime state
 	status = FALSE;
 	first_device = NULL;
 	scheduler = NULL;
 
-	// �f�o�C�XNULL
+	// Device pointers
 	scheduler = NULL;
 	cpu = NULL;
 	mfp = NULL;
@@ -77,17 +77,17 @@ VM::VM()
 	host_message_callback = NULL;
 	host_message_user = NULL;
 
-	// �o�[�W����(���ۂ̓v���b�g�t�H�[������Đݒ肳���)
+	// Version number (preinitialized to the platform default)
 	major_ver = 0x01;
 	minor_ver = 0x00;
 
-	// �J�����g�p�X��N���A
+	// Clear the current state
 	Clear();
 }
 
 //---------------------------------------------------------------------------
 //
-//	������
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VM::Init()
@@ -98,11 +98,11 @@ BOOL FASTCALL VM::Init()
 	ASSERT(!first_device);
 	ASSERT(!status);
 
-	// �d���A�d���X�C�b�`on
+	// Power switch on
 	power = TRUE;
 	power_sw = TRUE;
 
-	// �f�o�C�X��쐬(�����ɒ���)
+	// Create devices in dependency order
 	scheduler = new Scheduler(this);
 	cpu = new CPU(this);
 	new Keyboard(this);
@@ -135,15 +135,15 @@ BOOL FASTCALL VM::Init()
 	new Neptune(this);
 	sram = new SRAM(this);
 
-	// ���O�������
+	// Initialize logging
 	if (!log.Init(this)) {
 		return FALSE;
 	}
 
-	// �f�o�C�X�|�C���^������
+	// Get the device pointer list head
 	device = first_device;
 
-	// ������(���Ԃɉ��)
+	// Initialize each device in sequence
 	status = TRUE;
 	while (device) {
 		if (!device->Init()) {
@@ -157,34 +157,34 @@ BOOL FASTCALL VM::Init()
 
 //---------------------------------------------------------------------------
 //
-//	�N���[���A�b�v
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL VM::Cleanup()
 {
 	ASSERT(this);
 
-	// �d����ON�̏�Ԃŋ����I�������ꍇ�ASRAM�̋N���J�E���^��X�V����
+	// If shutdown happens while power is on, update the SRAM boot state
 	if (status) {
 		if (power) {
-			// SRAM�X�V
+			// Save SRAM
 			ASSERT(sram);
 			sram->UpdateBoot();
 		}
 	}
 
-	// �|�C���^�͕ύX�����̂ŁA�擪��������
+	// Device pointers change as objects are destroyed, so restart from the head
 	while (first_device) {
 		first_device->Cleanup();
 	}
 
-	// ���O��N���[���A�b�v
+	// Cleanup logging
 	log.Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL VM::Reset()
@@ -193,19 +193,19 @@ void FASTCALL VM::Reset()
 
 	ASSERT(this);
 
-	// ���O����Z�b�g
+	// Reset logging
 	log.Reset();
 
-	// �f�o�C�X�|�C���^������
+	// Get the device pointer list head
 	device = first_device;
 
-	// ���Z�b�g(���Ԃɉ��)
+	// Reset each device in sequence
 	while (device) {
 		device->Reset();
 		device = device->GetNextDevice();
 	}
 
-	// �J�����g�p�X��N���A
+	// Clear the current state
 	Clear();
 }
 

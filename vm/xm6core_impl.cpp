@@ -50,7 +50,7 @@
 
 //---------------------------------------------------------------------------
 //
-//	バ�Eジョン斁E���E
+//	Version information
 //
 //---------------------------------------------------------------------------
 static const char XM6CORE_VERSION[] = "XM6 Core 2.06";
@@ -62,8 +62,8 @@ static const unsigned int k_video_probe_frames_after_mode_change = 12u;
 
 //---------------------------------------------------------------------------
 //
-//	冁E��コンチE��スチE
-//	Handle opaco que mantiene el estado de una instancia del emulador.
+//	Opaque emulator context handle
+//	Tracks the state for a single emulator instance.
 //
 //---------------------------------------------------------------------------
 struct XM6Context {
@@ -117,7 +117,7 @@ struct XM6Context {
 
 //---------------------------------------------------------------------------
 //
-//	ヘルパ�E: コンチE��スト検証
+//	Helper: validate a context
 //
 //---------------------------------------------------------------------------
 static inline XM6Context* ctx_from_handle(XM6Handle handle)
@@ -579,7 +579,7 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	}
 	memset(ctx, 0, sizeof(XM6Context));
 
-	// Crear e inicializar la VM
+	// Create e inicializar la VM
 	ctx->vm = new(std::nothrow) VM();
 	if (!ctx->vm) {
 		delete ctx;
@@ -595,7 +595,7 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	// Mantener el formato de savestate alineado con la version moderna del core.
 	ctx->vm->SetVersion(0x02, 0x06);
 
-	// Cachear punteros a dispositivos vía SearchDevice
+    // Cache device pointers via SearchDevice
 	ctx->scheduler = (Scheduler*)ctx->vm->SearchDevice(MAKEID('S', 'C', 'H', 'E'));
 	ctx->render    = (Render*)ctx->vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ctx->keyboard  = (Keyboard*)ctx->vm->SearchDevice(MAKEID('K', 'E', 'Y', 'B'));
@@ -675,7 +675,7 @@ XM6CORE_API void XM6CORE_CALL xm6_destroy(XM6Handle handle)
 //===========================================================================
 
 //---------------------------------------------------------------------------
-//	Trampoline: adapta la convención FASTCALL del callback interno de la
+//	Trampoline: adapts the FASTCALL convention of the internal callback of the
 //	VM a la convención __cdecl del API público.
 //	TCHAR == char en MultiByte, por lo que no se necesita conversión.
 //---------------------------------------------------------------------------
@@ -747,7 +747,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_message_callback(
 }
 
 //---------------------------------------------------------------------------
-//	xm6_set_system_dir - Configura el directorio base para BIOS/ROM.
+//	xm6_set_system_dir - Set the base directory for BIOS/ROM.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_set_system_dir(const char* system_dir)
 {
@@ -780,11 +780,11 @@ XM6CORE_API int XM6CORE_CALL xm6_exec(XM6Handle handle, unsigned int hus)
 //---------------------------------------------------------------------------
 //	xm6_exec_to_frame  EEjecuta la VM hasta que haya un frame de video listo.
 //
-//	Avanza el tiempo (hus) en chunks pequeños hasta que Render::IsReady()
+//	Advance time (hus) in small chunks until Render::IsReady()
 //	sea true. Sirve como base para el retro_run() de libretro.
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-//	xm6_exec_events_only  EAvanza eventos/scheduler sin ejecutar CPU.
+//	xm6_exec_events_only - Advance events/scheduler without executing the CPU.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_exec_events_only(XM6Handle handle, unsigned int hus)
 {
@@ -842,7 +842,7 @@ XM6CORE_API int XM6CORE_CALL xm6_exec_to_frame(XM6Handle handle)
 		return XM6CORE_ERR_NOT_READY;
 	}
 
-	// Un frame a 55Hz son ~36000 hus. Ejecutar en pasos de 1000 hus.
+	// Un frame a 55Hz son ~36000 hus. Execute en pasos de 1000 hus.
 	// Poner un límite de seguridad (e.g. 10 frames ≁E360000 hus) para
 	// evitar loops infinitos si el VBlank está deshabilitado.
 	const DWORD CHUNK = 1000;
@@ -863,7 +863,7 @@ XM6CORE_API int XM6CORE_CALL xm6_exec_to_frame(XM6Handle handle)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_reset  EResetea la VM (equivalente a pulsar el botón de reset).
+//	xm6_reset - Reset the VM (equivalent to pressing the reset button).
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_reset(XM6Handle handle)
 {
@@ -897,7 +897,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_power(XM6Handle handle, int enabled)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_power  EConsulta el estado de alimentación de la VM.
+//	xm6_get_power - Check the VM power state.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_get_power(XM6Handle handle)
 {
@@ -924,7 +924,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_power_switch(XM6Handle handle, int enabled)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_power_switch  EConsulta el estado del interruptor de encendido.
+//	xm6_get_power_switch - Check the power switch state.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_get_power_switch(XM6Handle handle)
 {
@@ -937,7 +937,7 @@ XM6CORE_API int XM6CORE_CALL xm6_get_power_switch(XM6Handle handle)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_vm_version  EObtiene la versión interna de la VM (major.minor).
+//	xm6_get_vm_version - Get the internal VM version (major.minor).
 //---------------------------------------------------------------------------
 XM6CORE_API void XM6CORE_CALL xm6_get_vm_version(
 	XM6Handle handle, unsigned int* out_major, unsigned int* out_minor)
@@ -1032,7 +1032,7 @@ XM6CORE_API int XM6CORE_CALL xm6_fdd_is_inserted(XM6Handle handle, int drive)
 {
 	XM6Context *ctx = ctx_from_handle(handle);
 	if (!ctx_valid(ctx)) {
-		return 0; // Invalid = false
+		return 0;// Invalid = false
 	}
 
 	if (!ctx->fdd || drive < 0 || drive > 3) {
@@ -1045,7 +1045,7 @@ XM6CORE_API int XM6CORE_CALL xm6_fdd_is_inserted(XM6Handle handle, int drive)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_fdd_get_name  EObtiene la ruta del archivo del disco montado.
+//	xm6_fdd_get_name - Get the path of the mounted disk image.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_fdd_get_name(
 	XM6Handle handle, int drive, char* out_name, unsigned int max_len)
@@ -1068,7 +1068,7 @@ XM6CORE_API int XM6CORE_CALL xm6_fdd_get_name(
 	Filepath path;
 	ctx->fdd->GetPath(drive, path);
 
-	const char* path_str = path.GetPath(); // assuming TCHAR == char, validated before
+	const char * path_str = path.GetPath(); // assuming TCHAR == char, validated before
 	if (path_str) {
 		strncpy(out_name, path_str, max_len - 1);
 		out_name[max_len - 1] = '\0';
@@ -1158,7 +1158,7 @@ XM6CORE_API int XM6CORE_CALL xm6_mount_scsi_hdd(
 //===========================================================================
 
 //---------------------------------------------------------------------------
-//	xm6_input_key  EEnvía un evento de tecla al emulador.
+//	xm6_input_key - Send a key event to the emulator.
 //
 //	xm6_keycode: código de tecla del X68000 (0x00-0x7F).
 //	pressed: 1 = key down, 0 = key up.
@@ -1185,7 +1185,7 @@ XM6CORE_API int XM6CORE_CALL xm6_input_key(
 }
 
 //---------------------------------------------------------------------------
-//	xm6_input_mouse  EEstablece el estado del ratón.
+//	xm6_input_mouse - Set the mouse state.
 //
 //	x, y: posición absoluta o relativa (según la convención del emulador).
 //	left, right: 1 = botón pulsado, 0 = suelto.
@@ -1207,7 +1207,7 @@ XM6CORE_API int XM6CORE_CALL xm6_input_mouse(
 }
 
 //---------------------------------------------------------------------------
-//	xm6_input_mouse_reset  EReinicia los datos acumulados del ratón.
+//	xm6_input_mouse_reset - Reset the accumulated mouse data.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_input_mouse_reset(XM6Handle handle)
 {
@@ -1225,7 +1225,7 @@ XM6CORE_API int XM6CORE_CALL xm6_input_mouse_reset(XM6Handle handle)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_input_joy  EEstablece el estado de un joystick/gamepad.
+//	xm6_input_joy - Set the state of a joystick/gamepad.
 //
 //	port: puerto del joystick (0 o 1).
 //	axes[4]: estado de cada eje (0=centro, 1=positivo, 2=negativo).
@@ -1265,7 +1265,7 @@ XM6CORE_API int XM6CORE_CALL xm6_input_joy(
 //===========================================================================
 
 //---------------------------------------------------------------------------
-//	xm6_video_poll  EConsulta si hay un frame de video disponible.
+//	xm6_video_poll  ECheck whether a video frame is available.
 //
 //	Si hay un frame listo, rellena out_frame con el puntero al buffer
 //	ARGB32 interno (no copia), las dimensiones y el stride.
@@ -1289,7 +1289,7 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 		return XM6CORE_ERR_NOT_READY;
 	}
 
-	// Obtener el workspace del Render
+	// Get el workspace del Render
 	Render::render_t *r = ctx->render->GetWorkAddr();
 	if (!r || !r->mixbuf) {
 		return XM6CORE_ERR_NOT_READY;
@@ -1346,7 +1346,7 @@ XM6CORE_API int XM6CORE_CALL xm6_video_consume(XM6Handle handle)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_video_refresh_hz - Obtiene la frecuencia vertical actual.
+//	xm6_get_video_refresh_hz - Get the current vertical frequency.
 //
 //	Devuelve la tasa real calculada por CRTC::GetHVHz() en Hz.
 //	Permite al frontend adaptar audio/video cuando el modo cambia entre
@@ -1380,7 +1380,7 @@ XM6CORE_API int XM6CORE_CALL xm6_get_video_refresh_hz(XM6Handle handle, double *
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_video_layout - Obtiene layout de video activo del render.
+//	xm6_get_video_layout - Get the active render video layout.
 //
 //	Expone ancho/alto de buffer visible y multiplicadores de presentación
 //	(h_mul/v_mul) para que el frontend ajuste geometría/aspecto.
@@ -1433,7 +1433,7 @@ XM6CORE_API int XM6CORE_CALL xm6_get_video_layout(
 //===========================================================================
 
 //---------------------------------------------------------------------------
-//	Helper: saturación int32 ↁEint16 (replica SoundMMXPortable)
+//	Helper: int32 to int16 saturation (replicates SoundMMXPortable)
 //---------------------------------------------------------------------------
 static inline short saturate_s16(int value)
 {
@@ -1670,7 +1670,7 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 }
 
 //---------------------------------------------------------------------------
-//	xm6_audio_configure  EConfigura el sistema de audio.
+//	xm6_audio_configure - Configure the audio system.
 //
 //	sample_rate: frecuencia en Hz (ej: 44100, 48000).
 //	Inicializa los buffers internos de OPM y ADPCM.
@@ -1945,7 +1945,7 @@ XM6CORE_API int XM6CORE_CALL xm6_load_state(
 }
 
 //---------------------------------------------------------------------------
-//	xm6_state_size - Calcula el tamano necesario para guardar el estado.
+//	xm6_state_size - Calcula el size necesario para guardar el estado.
 //---------------------------------------------------------------------------
 XM6CORE_API int XM6CORE_CALL xm6_state_size(XM6Handle handle, unsigned int *out_size)
 {
@@ -2034,7 +2034,7 @@ XM6CORE_API int XM6CORE_CALL xm6_load_state_mem(XM6Handle handle, const void *bu
 }
 
 //---------------------------------------------------------------------------
-//	xm6_get_main_ram - Expone la RAM principal para cheats/achievements.
+//	xm6_get_main_ram - Exposes main RAM for cheats/achievements.
 //---------------------------------------------------------------------------
 XM6CORE_API void* XM6CORE_CALL xm6_get_main_ram(XM6Handle handle, unsigned int* out_size)
 {

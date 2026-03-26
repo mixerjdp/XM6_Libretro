@@ -64,7 +64,7 @@ CInput::CInput(CFrmWnd *pWnd) : CComponent(pWnd)
 	for (i=0; i<0x100; i++) {
 		m_KeyBuf[i] = FALSE;
 		m_KeyMap[i] = 0;
-	}	
+	}
 
 	// マウスワーク初期化
 	m_pMouse = NULL;
@@ -183,7 +183,7 @@ BOOL FASTCALL CInput::Init()
 	EnumJoy();
 	InitJoy();
 
-	// Obtener Joytypes actuales 
+	// Get Joytypes actuales
 	Config config;
 	xWnd->GetConfig()->GetConfig(&config);
 	CString sz;
@@ -1919,7 +1919,7 @@ void FASTCALL CInput::InitJoy()
 
 		// 値モード設定(絶対値)
 		memset(&dpd, 0, sizeof(dpd));
-		dpd.diph.dwSize = sizeof(DIPROPDWORD); 
+		dpd.diph.dwSize = sizeof(DIPROPDWORD);
 		dpd.diph.dwHeaderSize = sizeof(DIPROPHEADER);
 		dpd.diph.dwHow = DIPH_DEVICE;
 		dpd.dwData = DIPROPAXISMODE_ABS;
@@ -2098,16 +2098,16 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 		dmy = -1;
 
 		// eje
-		for (nAxis = 0; nAxis < JoyAxes; nAxis++) 
-		{						
-			dmy++; // dmy = naxis 
-			
-		    // Obtener punteros
+		for (nAxis = 0; nAxis < JoyAxes; nAxis++)
+		{
+			dmy++;// dmy = naxis
+
+		// Get punteros
 			pOffset = (BYTE*)&m_JoyState[i];
 			pOffset += JoyAxisOffsetTable[nAxis];
 			pAxis = (LONG*)pOffset;
 			// adquisicion de datos
-			lAxis = *pAxis;			
+			lAxis = *pAxis;
 
 			//  El cero se ignora  ya que se repite, excepcion es el Pad direccion (POV).
 			//  Se hace comparacion con el primer Axis para comprobar que sea entrada nula para el continue
@@ -2115,7 +2115,7 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 			{
 				continue;
 			}
-			
+
 				// inversi
 			if (m_JoyCfg[i].bAxis[nAxis]) {
 				// 7FF→-800 -800→7FF
@@ -2125,10 +2125,10 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 			{
 				ji[HIWORD(m_JoyCfg[i].dwAxis[nAxis])].axis[dmy] = (DWORD)lAxis;
 			}
-			
+
 		 	/*
 			PAD a Axis
-			
+
 			Arriba = 0
 			Arriba-Derecha = 4500
 			Derecha = 9000
@@ -2144,40 +2144,40 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 			Abajo-Derecha = 1 2047 / 0 2047
 			Axis 1 Abajo = 2047
 			Axis 0 Izq = -2048
-			
+
 			*/
-	    				 
-			
-			if (nAxis == 8) // Si num Axis = 8 POV  Movimientos de PAD direccional se mapean a Axis 0 y 1 *-*
+
+
+			if(nAxis==8)// Si num Axis = 8 POV  Movimientos de PAD direccional se mapean a Axis 0 y 1 *-*
 			{
 				//CString sz;
 				//sz.Format(_T("\nAxis: %d  lAxis: %d \n"), nAxis, lAxis);
-				//OutputDebugStringW(CT2W(sz));               
-			   
-				if (lAxis == 0) // Arriba
+				//OutputDebugStringW(CT2W(sz));
+
+				if(lAxis==0)// Arriba
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)-2048;
-				if (lAxis == 4500) // Arriba-Derecha
+				if(lAxis==4500)// Arriba-Derecha
 				{
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)-2048;
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)2047;
 				}
-				if (lAxis == 9000) // Derecha
+				if(lAxis==9000)// Derecha
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)2047;
-				if (lAxis == 13500) // Abajo-Derecha
+				if(lAxis==13500)// Abajo-Derecha
 				{
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)2047;
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)2047;
 				}
-				if (lAxis == 18000) // Abajo
+				if(lAxis==18000)// Abajo
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)2047;
-				if (lAxis == 22500) // Abajo-Izquierda
+				if(lAxis==22500)// Abajo-Izquierda
 				{
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)2047;
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)-2048;
 				}
-				if (lAxis == 27000) // Izquierda
+				if(lAxis==27000)// Izquierda
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)-2048;
-				if (lAxis == 31500) // Arriba-Izquierda
+				if(lAxis==31500)// Arriba-Izquierda
 				{
 					ji[HIWORD(m_JoyCfg[i].dwAxis[0])].axis[0] = (DWORD)-2048;
 					ji[HIWORD(m_JoyCfg[i].dwAxis[1])].axis[1] = (DWORD)-2048;
@@ -2186,32 +2186,32 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 				if (jtk)
 				{
 					// Desactiva teclas especiales de juego mapeadas de joystick a teclado *-*
-					if (m_pKeyboard->keyboard.status[0x55] == TRUE) // XF1
+					if(m_pKeyboard->keyboard.status[0x55]==TRUE)// XF1
 					{
 						m_pKeyboard->BreakKey(0x55);
 						jtk = FALSE;
 					}
-					if (m_pKeyboard->keyboard.status[0x57] == TRUE) // XF3
+					if(m_pKeyboard->keyboard.status[0x57]==TRUE)// XF3
 					{
 						m_pKeyboard->BreakKey(0x57);
 						jtk = FALSE;
 					}
-					if (m_pKeyboard->keyboard.status[0x63] == TRUE) // F1
+					if(m_pKeyboard->keyboard.status[0x63]==TRUE)// F1
 					{
 						m_pKeyboard->BreakKey(0x63);
 						jtk = FALSE;
 					}
-					if (m_pKeyboard->keyboard.status[0x65] == TRUE) // F3
+					if(m_pKeyboard->keyboard.status[0x65]==TRUE)// F3
 					{
 						m_pKeyboard->BreakKey(0x65);
 						jtk = FALSE;
 					}
-					if (m_pKeyboard->keyboard.status[0x72] == TRUE) // OPT1
+					if(m_pKeyboard->keyboard.status[0x72]==TRUE)// OPT1
 					{
 						m_pKeyboard->BreakKey(0x72);
 						jtk = FALSE;
 					}
-					if (m_pKeyboard->keyboard.status[0x73] == TRUE) // OPT2
+					if(m_pKeyboard->keyboard.status[0x73]==TRUE)// OPT2
 					{
 						m_pKeyboard->BreakKey(0x73);
 						jtk = FALSE;
@@ -2225,36 +2225,36 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 		// Pulsaci de bot de Joystick
 		for (nButton = 0; nButton < JoyButtons; nButton++) {
 
-			if (m_JoyState[i].rgbButtons[nButton] == 0x80) // Mapeo de Joystick a teclado
+			if(m_JoyState[i].rgbButtons[nButton]==0x80)// Mapeo de Joystick a teclado
 			{
-				switch (nButton) // Se asignan Botones 6 y 7 a OPT, OPT2, boton 9 a START *-* 
+				switch(nButton)// Se asignan Buttons 6 y 7 a OPT, OPT2, boton 9 a START *-*
 				{
-					case 6: 
-						m_pKeyboard->MakeKey(0x72); //OPT1
-						m_pKeyboard->MakeKey(0x57); //XF3	
+					case 6:
+						m_pKeyboard->MakeKey(0x72);//OPT1
+						m_pKeyboard->MakeKey(0x57);//XF3
 						jtk = TRUE;
 						break;
 					case 7:
-						m_pKeyboard->MakeKey(0x73); //OPT2
-						m_pKeyboard->MakeKey(0x55); //XF1
+						m_pKeyboard->MakeKey(0x73);//OPT2
+						m_pKeyboard->MakeKey(0x55);//XF1
 						jtk = TRUE;
 						break;
 					case 8:
-						m_pKeyboard->MakeKey(0x65); // 8 = Select o Credit (F3)
+						m_pKeyboard->MakeKey(0x65);// 8 = Select o Credit (F3)
 						jtk = TRUE;
 						break;
-					case 9:                        
-						m_pKeyboard->MakeKey(0x63); // 9 = Bot Start (F1)
+					case 9:
+						m_pKeyboard->MakeKey(0x63);// 9 = Bot Start (F1)
 						jtk = TRUE;
 						break;
 				}
-			}									
+			}
 
 			/*
 			if (m_JoyState[i].rgbButtons[nButton] == 0x80)
 			{
 				CString sz;
-				sz.Format(_T("\nNo. Boton: %d  Status:%d \n"), nButton, m_JoyState[i].rgbButtons[nButton]);
+				sz.Format(_T("\nButton: %d  Status:%d \n"), nButton, m_JoyState[i].rgbButtons[nButton]);
 				OutputDebugStringW(CT2W(sz));
 			}
 			*/
@@ -2263,12 +2263,12 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 			if (LOWORD(m_JoyCfg[i].dwButton[nButton]) == 0) {
 				continue;
 			}
-					
+
 			// apagado
-			if ((m_JoyState[i].rgbButtons[nButton] & 0x80) == 0) 
+			if ((m_JoyState[i].rgbButtons[nButton] & 0x80) == 0)
 			{
-				// Solo se borra el contador de disparo continuo (la informacion de la pulsacion del boton se borra al principio).
-							
+				// Solo se borra el contador de disparo continuo (la information de la pulsacion del boton se borra al principio).
+
 				m_JoyCfg[i].dwCount[nButton] = 0;
 				continue;
 			}
@@ -2278,7 +2278,7 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 			ASSERT(LOWORD(m_JoyCfg[i].dwButton[nButton]) > 0);
 			ASSERT(LOWORD(m_JoyCfg[i].dwButton[nButton]) <= PPI::ButtonMax);
 
-			// Disparo cero.
+			// Fire cero.
 			if (m_JoyCfg[i].dwRapid[nButton] == 0) {
 				// Almacenado en la posicion de destino
 				ji[HIWORD(m_JoyCfg[i].dwButton[nButton])].button[LOWORD(m_JoyCfg[i].dwButton[nButton]) - 1]
@@ -2319,7 +2319,7 @@ void FASTCALL CInput::MakeJoy(BOOL bEnable)
 	// Compuesto con teclado
 
 
-	// Transmision a PPI
+	// Transmission a PPI
 	for (i=0; i<PPI::PortMax; i++) {
 		m_pPPI->SetJoyInfo(i, &ji[i]);
 	}

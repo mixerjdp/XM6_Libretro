@@ -18,7 +18,7 @@
 
 //===========================================================================
 //
-//	Ventana de Componentes
+//	Window of Componentes
 //
 //===========================================================================
 class CComponentWnd : public CSubTextWnd
@@ -27,7 +27,7 @@ public:
 	CComponentWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	CComponent *m_pComponent;
@@ -36,7 +36,7 @@ private:
 
 //===========================================================================
 //
-//	Ventana de información del SO
+//	Window of información del SO
 //
 //===========================================================================
 class COSInfoWnd : public CSubTextWnd
@@ -45,12 +45,12 @@ public:
 	COSInfoWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 };
 
 //===========================================================================
 //
-//	Ventana de sonido
+//	Window of sonido
 //
 //===========================================================================
 class CSoundWnd : public CSubTextWnd
@@ -59,7 +59,7 @@ public:
 	CSoundWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	Scheduler *m_pScheduler;
@@ -74,7 +74,7 @@ private:
 
 //===========================================================================
 //
-//	Ventana de entrada
+//	Window of entrada
 //
 //===========================================================================
 class CInputWnd : public CSubTextWnd
@@ -83,24 +83,24 @@ public:
 	CInputWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	void FASTCALL SetupInput(int x, int y);
-										// Configuración (sistema de entrada completo)
+                                        // Configuration (full input system)
 	void FASTCALL SetupMouse(int x, int y);
-										// Configuración (ratón)
+                                        // Configuration (mouse)
 	void FASTCALL SetupKey(int x, int y);
-										// Configuración (teclado)
+                                        // Configuration (keyboard)
 	void FASTCALL SetupJoy(int x, int y, int nJoy);
-										// Configuración (joystick)
+                                        // Configuration (joystick)
 	CInput *m_pInput;
 										// Componente de entrada
 };
 
 //===========================================================================
 //
-//	Ventana de puertos
+//	Window of puertos
 //
 //===========================================================================
 class CPortWnd : public CSubTextWnd
@@ -109,7 +109,7 @@ public:
 	CPortWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	CPort *m_pPort;
@@ -118,7 +118,7 @@ private:
 
 //===========================================================================
 //
-//	Ventana de mapa de bits
+//	Window of mapa de bits
 //
 //===========================================================================
 class CBitmapWnd : public CSubTextWnd
@@ -127,16 +127,16 @@ public:
 	CBitmapWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	CDrawView *m_pView;
-										// Ventana de dibujo
+										// Window of dibujo
 };
 
 //===========================================================================
 //
-//	Ventana del controlador MIDI
+//	Window ofl controlador MIDI
 //
 //===========================================================================
 class CMIDIDrvWnd : public CSubTextWnd
@@ -145,24 +145,24 @@ public:
 	CMIDIDrvWnd();
 										// Constructor
 	void FASTCALL Setup();
-										// Configuración
+                                        // Configuration
 
 private:
 	void FASTCALL SetupInfo(int x, int y, CMIDI::LPMIDIINFO pInfo);
-										// Configuración (sub)
+                                        // Configuration (sub)
 	void FASTCALL SetupExCnt(int x, int y, DWORD dwStart, DWORD dwEnd);
-										// Configuración (contador exclusivo)
+                                        // Configuration (exclusive counter)
 	static LPCTSTR DescTable[];
 										// Tabla de cadenas
 	MIDI *m_pMIDI;
 										// MIDI
 	CMIDI *m_pMIDIDrv;
-										// Controlador MIDI
+										// Controller MIDI
 };
 
 //===========================================================================
 //
-//	Ventana de visualización de teclado
+//  Keyboard display window
 //
 //===========================================================================
 class CKeyDispWnd : public CWnd
@@ -171,25 +171,25 @@ public:
 	CKeyDispWnd();
 										// Constructor
 	void PostNcDestroy();
-										// Eliminación de ventana completada
+                                        // Window destruction completed
 	void FASTCALL SetShiftMode(UINT nMode);
-										// Configuración del modo shift
+                                        // Shift mode configuration
 	void FASTCALL Refresh(const BOOL *m_pKeyBuf);
-										// Actualización de teclas
+                                        // Key update
 	void FASTCALL SetKey(const BOOL *m_pKeyBuf);
-										// Configuración de teclas por lotes
+                                        // Batch key configuration
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-										// Creación de ventana
+                                        // Window creation
 	afx_msg void OnDestroy(void);
-										// Eliminación de ventana
+                                        // Window destruction
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-										// Cambio de tamaño de ventana
+                                        // Window resize
 	afx_msg BOOL OnEraseBkgnd(CDC *pDC);
 										// Dibujo de fondo
 	afx_msg void OnPaint();
-										// Redibujado de ventana
+                                        // Redraw window
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 										// Botón izquierdo presionado
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
@@ -199,7 +199,7 @@ protected:
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 										// Botón derecho soltado
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-										// Movimiento del ratón
+                                        // Mouse movement
 	afx_msg UINT OnGetDlgCode();
 										// Obtención de código de diálogo
 
@@ -207,17 +207,17 @@ private:
 	void FASTCALL SetupBitmap();
 										// Preparación de mapa de bits
 	void FASTCALL OnDraw(CDC *pDC);
-										// Dibujo de ventana
+                                        // Window drawing
 	LPCTSTR FASTCALL GetKeyString(int nKey);
-										// Obtención de cadena de tecla
+                                        // Get key string
 	int FASTCALL PtInKey(CPoint& point);
-										// Obtención de código de tecla en rectángulo
+                                        // Get key code in rectangle
 	void FASTCALL DrawKey(int nKey, BOOL bDown);
-										// Visualización de tecla
+                                        // Key display
 	void FASTCALL DrawBox(int nColorOut, int nColorIn, RECT& rect);
-										// Dibujo de caja de tecla
+                                        // Key box drawing
 	void FASTCALL DrawCRBox(int nColorOut, int nColorIn, RECT& rect);
-										// Dibujo de caja de tecla CR
+                                        // Key box drawing CR
 	void FASTCALL DrawChar(int x, int y, int nColor, DWORD dwChar);
 										// Dibujo de carácter
 	void FASTCALL DrawCRChar(int x, int y, int nColor);
@@ -227,11 +227,11 @@ private:
 	UINT m_nMode;
 										// Modo SHIFT
 	UINT m_nKey[0x80];
-										// Estado de tecla (visualización)
+                                        // Key state (display)
 	BOOL m_bKey[0x80];
-										// Estado de tecla (final)
+                                        // Key state (final)
 	int m_nPoint;
-										// Punto de movimiento del ratón
+                                        // Mouse cursor point
 	const BYTE* m_pCG;
 										// CGROM
 	HBITMAP m_hBitmap;
@@ -265,7 +265,7 @@ private:
 
 //===========================================================================
 //
-//	Ventana de teclado de software
+//  Software keyboard window
 //
 //===========================================================================
 class CSoftKeyWnd : public CSubWnd
@@ -274,31 +274,31 @@ public:
 	CSoftKeyWnd();
 										// Constructor
 	void FASTCALL Refresh();
-										// Actualizar
+										// Update
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-										// Creación de ventana
+                                        // Window creation
 	afx_msg void OnDestroy();
-										// Eliminación de ventana
+                                        // Window destruction
 	afx_msg void OnActivate(UINT nState, CWnd *pWnd, BOOL bMinimized);
 										// Activar
 	afx_msg LONG OnApp(UINT uParam, LONG lParam);
-										// Usuario (notificación de ventana inferior)
+                                        // User (lower window notification)
 
 private:
 	void FASTCALL Analyze(Keyboard::keyboard_t *pKbd);
-										// Análisis de datos de teclado
+                                        // Keyboard data analysis
 	Keyboard *m_pKeyboard;
-										// Teclado
+										// Keyboard
 	CInput *m_pInput;
 										// Entrada
 	CStatusBar m_StatusBar;
-										// Barra de estado
+                                        // Status bar
 	CKeyDispWnd *m_pDispWnd;
-										// Ventana de visualización de teclas
+//  Key display window
 	UINT m_nSoftKey;
-										// Tecla de software presionada
+										// Key de software presionada
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes

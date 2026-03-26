@@ -20,7 +20,7 @@
 
 //===========================================================================
 //
-//	Ventana del buffer de renderizacion
+//	Window ofl buffer de renderizacion
 //
 //===========================================================================
 
@@ -174,7 +174,7 @@ void FASTCALL CRendBufWnd::Update()
 		return;
 	}
 
-	// Comprobacion del cursor del raton
+	// Comprobacion del cursor del mouse
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
@@ -255,9 +255,9 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 	int below;
 	const DWORD *p;
 
-	// x, y Comprobar.
+	// x, y Check.
 	if (x >= m_pRendWork->mixwidth) {
-		// No hay zona de visualizacion. Todo negro.
+		// No hay zona de display. Todo negro.
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -265,7 +265,7 @@ void FASTCALL CMixBufWnd::Setup(int x, int y, int width, int height, BYTE *ptr)
 		return;
 	}
 	if (y >= m_pRendWork->mixheight) {
-		//No hay zona de visualizacion. Todo negro.
+		//No hay zona de display. Todo negro.
 		for (i=0; i<height; i++) {
 			memset(ptr, 0, (width << 2));
 			ptr += (width << 2);
@@ -327,7 +327,7 @@ void FASTCALL CMixBufWnd::Update()
 		return;
 	}
 
-	// Comprobacion del cursor del raton
+	// Comprobacion del cursor del mouse
 	if ((m_pBMPWnd->m_nCursorX < 0) || (m_pBMPWnd->m_nCursorY < 0)) {
 		m_StatusBar.SetPaneText(0, "");
 		return;
@@ -343,7 +343,7 @@ void FASTCALL CMixBufWnd::Update()
 		return;
 	}
 
-	// Creacion de datos de visualizacion
+	// Creacion de datos de display
 	if (x >= m_pRendWork->mixwidth) {
 		return;
 	}
@@ -391,7 +391,7 @@ CPCGBufWnd::CPCGBufWnd()
 	ASSERT(m_pPCGBuf);
 	p = render->GetWorkAddr();
 	ASSERT(p);
-	m_dwPCGBuf = p->pcguse; 
+	m_dwPCGBuf = p->pcguse;
 	ASSERT(m_dwPCGBuf);
 }
 

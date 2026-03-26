@@ -44,7 +44,7 @@ CSubWnd::CSubWnd()
 	m_dwID = 0;
 	m_bPopup = FALSE;
 
-	// tamano de la ventana
+	// size de la ventana
 	m_nWidth = -1;
 	m_nHeight = -1;
 
@@ -112,7 +112,7 @@ BOOL FASTCALL CSubWnd::Init(CDrawView *pDrawView)
 	else {
 		// ventana hija
 		m_bPopup = FALSE;
-		bRet = Create(NULL, 
+		bRet = Create(NULL,
 					m_strCaption,
 					WS_CHILD | WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION |
 					WS_VISIBLE | WS_MINIMIZEBOX | WS_CLIPSIBLINGS,
@@ -123,7 +123,7 @@ BOOL FASTCALL CSubWnd::Init(CDrawView *pDrawView)
 
 	// Si tiene exito.
 	if (bRet) {
-		// Registro en la ventana principal
+		// Register en la ventana principal
 		m_pDrawView->AddSWnd(this);
 	}
 
@@ -152,24 +152,24 @@ int CSubWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 	}
 
-	//  Configuracion de los iconos
+	//  Configuration de los iconos
 	SetIcon(AfxGetApp()->LoadIcon(IDI_XICON), TRUE);
 
 	// IME Off
 	::ImmAssociateContext(m_hWnd, (HIMC)NULL);
 
-	// Configuracion de la fuente del texto
+	// Configuration de la fuente del texto
 	m_pTextFont = m_pDrawView->GetTextFont();
 	SetupTextFont();
 
-	// Calcular el tamano de ajuste de la ventana
+	// Calcular el size de ajuste de la ventana
 	rectWnd.left = 0;
 	rectWnd.top = 0;
 	rectWnd.right = m_nWidth * m_tmWidth;
 	rectWnd.bottom = m_nHeight* m_tmHeight;
 	CalcWindowRect(&rectWnd);
 
-	// Obtener indice (previsto)
+	// Get indice (previsto)
 	nSWnd = m_pDrawView->GetNewSWnd();
 
 	// Posicion de la ventana determinada a partir del indice.
@@ -183,11 +183,11 @@ int CSubWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		point.y += rectParent.top;
 	}
 
-	// Fijar la posicion y el tamano de la ventana 
+	// Fijar la posicion y el size de la ventana
 	SetWindowPos(&wndTop, point.x, point.y,
 		rectWnd.right, rectWnd.bottom, 0);
 
-		
+
 
 	return 0;
 }
@@ -1389,7 +1389,7 @@ void CSubListWnd::OnDrawItem(int /*nID*/, LPDRAWITEMSTRUCT /*lpDIS*/)
 
 //===========================================================================
 //
-//	Ventana Sub BMP
+//	Window Sub BMP
 //
 //===========================================================================
 
@@ -1417,7 +1417,7 @@ CSubBMPWnd::CSubBMPWnd()
 	m_nScrlX = 0;
 	m_nScrlY = 0;
 
-	// cursor del raton
+	// cursor del mouse
 	m_nCursorX = -1;
 	m_nCursorY = -1;
 }
@@ -1495,13 +1495,13 @@ void CSubBMPWnd::PostNcDestroy()
 	ASSERT(!m_hBitmap);
 	ASSERT(!m_pBits);
 
-	// Eliminar elementos de la interfaz.
+	// Delete elementos de la interfaz.
 	delete this;
 }
 
 //---------------------------------------------------------------------------
 //
-//	Cambio de tamano de las ventanas
+//	Cambio de size de las ventanas
 //
 //---------------------------------------------------------------------------
 void CSubBMPWnd::OnSize(UINT nType, int cx, int cy)
@@ -1513,7 +1513,7 @@ void CSubBMPWnd::OnSize(UINT nType, int cx, int cy)
 	// clase basica
 	CWnd::OnSize(nType, cx, cy);
 
-	// inicializacion del raton
+	// inicializacion del mouse
 	m_nCursorX = -1;
 	m_nCursorY = -1;
 
@@ -1544,7 +1544,7 @@ void CSubBMPWnd::OnSize(UINT nType, int cx, int cy)
 		cy = m_nScrlHeight;
 	}
 
-	// Creacion de mapas de bits (32 bits, igual tamano)
+	// Creacion de mapas de bits (32 bits, igual size)
 	m_bmi.biWidth = cx;
 	m_bmi.biHeight = -cy;
 	m_bmi.biPlanes = 1;
@@ -1630,7 +1630,7 @@ void FASTCALL CSubBMPWnd::SetupScrlH()
 		return;
 	}
 
-	// Establecer la informacion de desplazamiento.
+	// Set la information de desplazamiento.
 	memset(&si, 0, sizeof(si));
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
@@ -1665,7 +1665,7 @@ void CSubBMPWnd::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 	ASSERT(this);
 	ASSERT_VALID(this);
 
-	// Obtenga informacion sobre el desplazamiento.
+	// Obtenga information sobre el desplazamiento.
 	memset(&si, 0, sizeof(si));
 	si.cbSize = sizeof(si);
 	GetScrollInfo(SB_HORZ, &si, SIF_ALL);
@@ -1696,7 +1696,7 @@ void CSubBMPWnd::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 			}
 			break;
 
-		// Pagina 1, izquierda.
+		// Page 1, izquierda.
 		case SB_PAGELEFT:
 			if (m_nScrlX >= (int)si.nPage) {
 				m_nScrlX -= (int)si.nPage;
@@ -1706,7 +1706,7 @@ void CSubBMPWnd::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 			}
 			break;
 
-		// Pagina 1 derecha.
+		// Page 1 derecha.
 		case SB_PAGERIGHT:
 			if ((m_nScrlX + (int)si.nPage) <= si.nMax) {
 				m_nScrlX += (int)si.nPage;
@@ -1745,7 +1745,7 @@ void FASTCALL CSubBMPWnd::SetupScrlV()
 		return;
 	}
 
-	// Establecer la informacion de desplazamiento.
+	// Set la information de desplazamiento.
 	memset(&si, 0, sizeof(si));
 	si.cbSize = sizeof(si);
 	si.fMask = SIF_ALL;
@@ -1779,7 +1779,7 @@ void CSubBMPWnd::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 	ASSERT(this);
 	ASSERT_VALID(this);
 
-	// Obtenga informacion sobre el desplazamiento.
+	// Obtenga information sobre el desplazamiento.
 	memset(&si, 0, sizeof(si));
 	si.cbSize = sizeof(si);
 	GetScrollInfo(SB_VERT, &si, SIF_ALL);
@@ -1810,7 +1810,7 @@ void CSubBMPWnd::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 			}
 			break;
 
-		// Pagina 1 DE 1
+		// Page 1 DE 1
 		case SB_PAGEUP:
 			if (m_nScrlY >= (int)si.nPage) {
 				m_nScrlY -= (int)si.nPage;
@@ -1820,7 +1820,7 @@ void CSubBMPWnd::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 			}
 			break;
 
-		// Pagina 1 abajo.
+		// Page 1 abajo.
 		case SB_PAGEDOWN:
 			if ((m_nScrlY + (int)si.nPage) <= si.nMax) {
 				m_nScrlY += (int)si.nPage;
@@ -1847,7 +1847,7 @@ void CSubBMPWnd::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* /*pBar*/)
 
 //---------------------------------------------------------------------------
 //
-//	moviendo el raton
+//	moviendo el mouse
 //
 //---------------------------------------------------------------------------
 void CSubBMPWnd::OnMouseMove(UINT nFlags, CPoint point)
@@ -1855,7 +1855,7 @@ void CSubBMPWnd::OnMouseMove(UINT nFlags, CPoint point)
 	ASSERT(this);
 	ASSERT_VALID(this);
 
-	// Memoria de la posicion del movimiento del raton
+	// Memoria de la posicion del movimiento del mouse
 	m_nCursorX = point.x;
 	m_nCursorY = point.y;
 
@@ -1876,7 +1876,7 @@ void FASTCALL CSubBMPWnd::Refresh(int nWidth, int nHeight)
 {
 	CClientDC dc(this);
 	CDC mDC;
-	HBITMAP hBitmap;	
+	HBITMAP hBitmap;
 	CRect Rect;
 
 
@@ -1887,21 +1887,21 @@ void FASTCALL CSubBMPWnd::Refresh(int nWidth, int nHeight)
 	if (m_hBitmap) {
 		// Creacion de la memoria DC
 		mDC.CreateCompatibleDC(&dc);
-		
+
 		// seleccion de objetos
 		hBitmap = (HBITMAP)::SelectObject(mDC.m_hDC, m_hBitmap);
-		
+
 		// BitBlt or StretchBlt
 		if (hBitmap) {
 			if (m_nMul == 2) {
-				// igual tamano
-			    //	dc.BitBlt(0, 0, m_bmi.biWidth, -m_bmi.biHeight,
+				// igual size
+			//	dc.BitBlt(0, 0, m_bmi.biWidth, -m_bmi.biHeight,
 				//					&mDC, 0, 0, SRCCOPY);
-				
+
 				int bmibiwidth =  m_bmi.biWidth;
 				int bmibiheight = -m_bmi.biHeight;
-							
-				
+
+
 				// Stretchblt: nHeight y nWidth son par疥etros del tama exacto del bitmap origen en la resolucion origen
 
 				dc.StretchBlt(0, 0,
@@ -1912,7 +1912,7 @@ void FASTCALL CSubBMPWnd::Refresh(int nWidth, int nHeight)
 					nHeight, nWidth,
 					SRCCOPY);
 
-							
+
 
 				/*CString sz;
 				sz.Format(_T("info.nWidth:%d   info.nHeight:%d\r\n"), nWidth, nHeight);
@@ -1997,7 +1997,7 @@ void FASTCALL CSubBMPWnd::GetMaximumRect(LPRECT lpRect, BOOL bScroll)
 	ASSERT(lpRect);
 	ASSERT_VALID(this);
 
-	// Obtiene el tamano de la ventana BMP al maximo.
+	// Obtiene el size de la ventana BMP al maximo.
 	lpRect->left = 0;
 	lpRect->top = 0;
 	lpRect->right = (m_nScrlWidth * m_nMul) >> 1;
@@ -2015,7 +2015,7 @@ void FASTCALL CSubBMPWnd::GetMaximumRect(LPRECT lpRect, BOOL bScroll)
 
 
 BOOL FASTCALL CSubBMPWnd::Init(CDrawView* pDrawView)
-{	
+{
 	pDrawView = NULL;
 	return 0;
 }
@@ -2031,7 +2031,7 @@ void FASTCALL CSubBMPWnd::GetFitRect(LPRECT lpRect)
 	ASSERT(lpRect);
 	ASSERT_VALID(this);
 
-	// Obtener el rectangulo actual del cliente
+	// Get el rectangulo actual del cliente
 	GetClientRect(lpRect);
 
 	// Convertido en rectangulo de ventana
@@ -2318,7 +2318,7 @@ void FASTCALL CSubBitmapWnd::Refresh()
 	if ((rect.Width() == 0) && (rect.Height() == 0)) {
 		return;
 	}
-	
+
 	// セットアップ
 	Setup(rect.left, rect.top, rect.Width(), rect.Height(), m_pBMPWnd->GetBits());
 	//m_pBMPWnd->m_nScrlWidth;

@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ ADPCM(MSM6258V) ]
+//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	[ ADPCM (MSM6258V) ]
 //
 //---------------------------------------------------------------------------
 
@@ -26,20 +26,20 @@
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 ADPCM::ADPCM(VM *p) : MemDevice(p)
 {
-	// �f�o�C�XID��������
+	// Device ID
 	dev.id = MAKEID('A', 'P', 'C', 'M');
 	dev.desc = "ADPCM (MSM6258V)";
 
-	// �J�n�A�h���X�A�I���A�h���X
+	// Memory map
 	memdev.first = 0xe92000;
 	memdev.last = 0xe93fff;
 
-	// ���̑��A�R���X�g���N�^�ŏ��������ׂ����[�N
+	// Reset any extra state the constructor does not cover
 	memset(&adpcm, 0, sizeof(adpcm));
 	adpcm.sync_rate = 882;
 	adpcm.sync_step = 0x9c4000 / 882;
@@ -54,7 +54,7 @@ ADPCM::ADPCM(VM *p) : MemDevice(p)
 	memset(&diag, 0, sizeof(diag));
 }
 
-//---------------------------------------------------------------------------
+//	Initialization
 //
 //	������
 //
@@ -63,17 +63,17 @@ BOOL FASTCALL ADPCM::Init()
 {
 	ASSERT(this);
 
-	// ��{�N���X
+	// Base class initialization
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// DMAC�擾
+	// Locate the DMAC
 	ASSERT(!dmac);
 	dmac = (DMAC*)vm->SearchDevice(MAKEID('D', 'M', 'A', 'C'));
 	ASSERT(dmac);
 
-	// �o�b�t�@�m��
+	// Allocate the buffer
 	try {
 		adpcmbuf = new DWORD[ BufMax * 2 ];
 	}
@@ -85,35 +85,35 @@ BOOL FASTCALL ADPCM::Init()
 	}
 	memset(adpcmbuf, 0, sizeof(DWORD) * (BufMax * 2));
 
-	// �C�x���g�쐬
+	// Create the sampling event
 	event.SetDevice(this);
 	event.SetDesc("Sampling");
 	event.SetUser(0);
 	event.SetTime(0);
 	scheduler->AddEvent(&event);
 
-	// ���`��ԃp�����[�^������
+	// Reset interpolation parameters
 	adpcm.interp = FALSE;
 
-	// ���Z�b�g��OPMIF����CT������������邽�߁A�����ŏ��������Ă���
+	// Reset the default table and runtime state
 	adpcm.ratio = 0;
 	adpcm.speed = 0x400;
 	adpcm.clock = 8;
 
-	// �e�[�u���쐬�A���ʐݒ�
+	// Build the lookup table and apply the default settings
 	MakeTable();
 	SetVolume(52);
 
-	// �o�b�t�@������
+	// Initialize the audio buffer
 	InitBuf(adpcm.sync_rate * 50);
 
-	// ���x������
+	// Recalculate speed parameters
 	CalcSpeed();
 
 	return TRUE;
 }
 
-//---------------------------------------------------------------------------
+//	Cleanup
 //
 //	�N���[���A�b�v
 //
@@ -122,7 +122,7 @@ void FASTCALL ADPCM::Cleanup()
 {
 	ASSERT(this);
 
-	// �o�b�t�@�폜
+	// Free the audio buffer
 	if (adpcmbuf) {
 		delete[] adpcmbuf;
 		adpcmbuf = NULL;

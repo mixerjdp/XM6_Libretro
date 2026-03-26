@@ -6,8 +6,9 @@ BEGIN
     POPUP "&File"
     BEGIN
         MENUITEM "&Open...",                    IDM_OPEN
+        MENUITEM "Quick Load\tF7",              ID_FILE_CARGAR40006
         MENUITEM "&Save",                       IDM_SAVE
-        MENUITEM "Save &As...",                 IDM_SAVEAS
+        MENUITEM "Quick Save\tF5",              IDM_SAVEAS
         MENUITEM SEPARATOR
         MENUITEM "&Reset",                      IDM_RESET
         MENUITEM SEPARATOR
@@ -133,6 +134,8 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "Stretch with &Aspect Ratio",  IDM_STRETCH
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
+        MENUITEM "Render Fast",                 IDM_RENDER_FAST
+        MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
     END
     POPUP "&Debug"
     BEGIN
@@ -157,6 +160,9 @@ BEGIN
         MENUITEM "Make a new SCSI MO &Disk...", IDM_NEWMO
         MENUITEM SEPARATOR
         MENUITEM "&Options...",                 IDM_OPTIONS
+        MENUITEM "Save custom config file",     IDM_SAVECUSTOMCONFIG
+        MENUITEM "Save global config file",     IDM_SAVEGLOBALCONFIG
+        MENUITEM "Save global config file and &reset", IDM_SAVEGLOBALCONFIGANDRESET
     END
     POPUP "&Window"
     BEGIN
@@ -179,8 +185,9 @@ BEGIN
         POPUP "&File"
         BEGIN
             MENUITEM "&Open...",                    IDM_OPEN
+            MENUITEM "Quick Load\tF7",              ID_FILE_CARGAR40006
             MENUITEM "&Save",                       IDM_SAVE
-            MENUITEM "Save &As...",                 IDM_SAVEAS
+            MENUITEM "Quick Save\tF5",              IDM_SAVEAS
             MENUITEM SEPARATOR
             MENUITEM "&Reset",                      IDM_RESET
             MENUITEM SEPARATOR
@@ -307,6 +314,8 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "Stretch with &Aspect Ratio",  IDM_STRETCH
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
+            MENUITEM "Render Fast",                 IDM_RENDER_FAST
+            MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
         END
         POPUP "&Debug"
         BEGIN
@@ -331,6 +340,9 @@ BEGIN
             MENUITEM "Make a new SCSI MO &Disk...", IDM_NEWMO
             MENUITEM SEPARATOR
             MENUITEM "&Options...",                 IDM_OPTIONS
+            MENUITEM "Save custom config file",     IDM_SAVECUSTOMCONFIG
+            MENUITEM "Save global config file",     IDM_SAVEGLOBALCONFIG
+            MENUITEM "Save global config file and &reset", IDM_SAVEGLOBALCONFIGANDRESET
         END
         POPUP "&Window"
         BEGIN
@@ -846,6 +858,12 @@ BEGIN
     CONTROL         "&Popup Window Style",IDC_MISC_POPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,52,125,10
     CONTROL         "&Auto Mouse Mode",IDC_MISC_AUTOMOUSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,68,100,10
     CONTROL         "&Boot with POWER OFF State",IDC_MISC_POWEROFF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,84,110,10
+    CONTROL         "Default V&Sync",IDC_US_MISC_VSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,100,80,10
+    LTEXT           "Default &Renderer:",IDC_US_MISC_RENDERERL,14,117,70,8
+    COMBOBOX        IDC_US_MISC_RENDERER,76,116,80,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Path to store quick saves:",IDC_STATIC,16,136,125,8
+    EDITTEXT        IDC_EDIT1,16,146,118,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browse...",IDC_BUSCAR,137,145,55,14
     LTEXT           "",IDC_MISC_HELP,7,129,196,18,SS_SUNKEN
 END
 IDD_US_KBDPAGE DIALOG  0, 0, 210, 154
@@ -1136,7 +1154,8 @@ STRINGTABLE
 BEGIN
     IDM_US_OPEN             "Open a state file"
     IDM_US_SAVE             "Save the active state file"
-    IDM_US_SAVEAS           "Save the active state file with a new name"
+    IDM_US_SAVEAS           "Quick-save the active state file"
+    ID_FILE_CARGAR40006     "Quick-load a state file"
     IDM_US_RESET            "Press 'RESET' button"
     IDM_US_INTERRUPT        "Press 'INTERRUPT' button"
     IDM_US_POWER            "Turn on or off 'POWER' switch"
@@ -1422,6 +1441,11 @@ BEGIN
     IDC_US_MISC_POPUP       "Create all windows with WS_POPUP style. Default setting is OFF."
     IDC_US_MISC_AUTOMOUSE   "Set the mouse mode on changing the screen mode. Defaut setting is OFF."
     IDC_US_MISC_POWEROFF    "Start XM6 without turning on POWER SW. Default setting is OFF."
+    IDC_US_MISC_VSYNC       "Enable VSync. Default setting is OFF."
+    IDC_US_MISC_RENDERERL   "Select the default renderer."
+    IDC_US_MISC_RENDERER     "Select the default renderer."
+    IDC_EDIT1               "Path to store quick saves."
+    IDC_BUSCAR              "Browse for a folder."
 END
 STRINGTABLE 
 BEGIN

@@ -329,7 +329,7 @@ void FASTCALL CScheduler::Run()
 	pRender = (Render*)pVM->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(pRender);
 
-	// Contador de tiempo
+	// Counter de tiempo
 	m_dwExecTime = GetTime();
 	dwExecCount = 0;
 	m_dwDrawTime = m_dwExecTime;
@@ -349,7 +349,7 @@ void FASTCALL CScheduler::Run()
 		// Sleep
 		::Sleep(0);
 
-		// Asegurar
+		// Ensure
 		Lock();
 
 		// Si no se levanta ninguna bandera valida, la maquina se detiene
@@ -384,12 +384,12 @@ void FASTCALL CScheduler::Run()
 		unsigned __int64 frameTime = newTime - currentTime;
 		currentTime = newTime;
 
-		// Limitar la espiral de la muerte (ej: si hay lag en el OS de mas de 250ms)
+        // Cap the death spiral (for example, if the OS lags by more than 250 ms)
 		if (frameTime > 250000) {
 			frameTime = 250000;
 		}
 
-		// Procesamiento en modo rapido (ignora acumulador)
+        // Fast mode processing (ignores the accumulator)
 		if (m_bVMFull) {
 			if (!pVM->Exec(2000)) {
 				SyncDisasm();
@@ -431,7 +431,7 @@ void FASTCALL CScheduler::Run()
 		accumulator += frameTime;
 
 		// Active wait (spin-lock) para micro-resolución si falta muy poco para 1000us
-		// y no estamos en modo menu
+        // and we are not in menu mode
 		if (accumulator < 1000 && accumulator > 800 && (!m_bActivate || m_bMenu) == FALSE) {
 			Unlock();
 			continue;
@@ -491,7 +491,7 @@ void FASTCALL CScheduler::Run()
 			dwExecCount = 0;
 		}
 
-		// Dormir una vez cada 8ms si esta inactivo o el menu ON
+        // Sleep once every 8 ms if idle or the menu is open
 		if (!m_bActivate || m_bMenu) {
 			if ((m_dwExecTime & 0x07) == 0) {
 				Unlock();
@@ -524,10 +524,10 @@ void FASTCALL CScheduler::Refresh()
 	pView = m_pFrmWnd->GetView();
 	ASSERT(pView);
 
-	//  Obtiene el numero de subventanas.
+    // Get the number of subwindows.
 	num = pView->GetSubWndNum();
 
-	// Reinicia si el numero de piezas es diferente al valor de la memoria.
+    // Reset if the number of pieces differs from the saved value.
 	if (m_nSubWndNum != num) {
 		m_nSubWndNum = num;
 		m_nSubWndDisp = -1;

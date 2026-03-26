@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ ADPCM(MSM6258V) ]
+//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	[ ADPCM (MSM6258V) ]
 //
 //---------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@
 class ADPCM : public MemDevice
 {
 public:
-	// �����f�[�^��`
+	// Sample data definition
 	typedef struct {
 		DWORD panpot;					// �p���|�b�g
 		BOOL play;						// �Đ����[�h
@@ -127,7 +127,7 @@ public:
 	void FASTCALL GetDiag(adpcm_diag_t *buffer) const;
 										// Telemetria interna ADPCM
 	BOOL FASTCALL IsArianshuuLoopFixEnabled() const { return quirk_arianshuu_loop_fix; }
-										// Estado del quirk Arianshuu
+										// State del quirk Arianshuu
 	void FASTCALL ClrStarted()			{ adpcm.started = FALSE; }
 										// �X�^�[�g�t���O�N���A
 	BOOL FASTCALL IsStarted() const		{ return adpcm.started; }

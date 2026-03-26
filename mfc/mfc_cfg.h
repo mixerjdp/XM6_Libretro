@@ -2,8 +2,8 @@
 //
 //	EMULADOR X68000 "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ MFC Configuracion ]
+//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	[MFC configuration]
 //
 //---------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@
 
 //===========================================================================
 //
-//	Configuracion
+//	Configuration
 //
 //===========================================================================
 class CConfig : public CComponent
@@ -27,65 +27,65 @@ public:
 	CConfig(CFrmWnd *pWnd);
 										// Constructor
 	BOOL FASTCALL Init();
-	BOOL FASTCALL CustomInit(BOOL ArchivoDefault);   // mi personalizacion
-										// Inicializacion
+	BOOL FASTCALL CustomInit(BOOL ArchivoDefault); // Custom configuration setup
+										// Initialization
 	void FASTCALL Cleanup();
 	void FASTCALL Cleanup2();
 										// Limpieza (Cleanup)
 
-	// Datos de configuracion (global)
+	// Data de configuracion (global)
 	void FASTCALL GetConfig(Config *pConfigBuf) const;
-										// Obtener datos de configuracion
+										// Get datos de configuracion
 	void FASTCALL SetConfig(Config *pConfigBuf);
-										// Establecer datos de configuracion
+										// Set datos de configuracion
 
-	// Datos de configuracion (individuales)
+	// Data de configuracion (individuales)
 	void FASTCALL SetStretch(BOOL bStretch);
-										// Configuracion de expansion de pantalla
+										// Screen scaling configuration
 	void FASTCALL SetMIDIDevice(int nDevice, BOOL bIn);
-										// Configuracion de dispositivo MIDI
+										// MIDI device configuration
 
 	// MRU
 	void FASTCALL SetMRUFile(int nType, LPCTSTR pszFile);
-										// Configuracion de archivo MRU (mas reciente)
+										// MRU file configuration (most recent)
 	void FASTCALL GetMRUFile(int nType, int nIndex, LPTSTR pszFile) const;
-										// Obtener archivo MRU
+										// Get archivo MRU
 	int FASTCALL GetMRUNum(int nType) const;
-										// Obtener numero de archivos MRU
+										// Get numero de archivos MRU
 
-	// Guardar / Cargar
+	// Save / Load
 	BOOL FASTCALL Save(Fileio *pFio, int nVer);
-										// Guardar
+										// Save
 	BOOL FASTCALL Load(Fileio *pFio, int nVer);
-										// Cargar
+										// Load
 	BOOL FASTCALL IsApply();
 										// ?Aplicar?
 
 private:
-	// Datos de configuracion
+	// Data de configuracion
 	typedef struct _INIKEY {
-		void *pBuf;						// �|�C���^
-		LPCTSTR pszSection;				// Nombre de seccion
-		LPCTSTR pszKey;					// Nombre de clave
-		int nType;						// �^
-		int nDef;						// Valor por defecto
-		int nMin;						// Valor minimo (solo algunos tipos)
-		int nMax;						// Valor maximo (solo algunos)
+		void *pBuf;						// Pointer to the INI value buffer
+		LPCTSTR pszSection;				// Section name
+		LPCTSTR pszKey;					// Key name
+		int nType;						// Type
+		int nDef;						// Default value
+		int nMin;						// Minimum value (for some types only)
+		int nMax;						// Maximum value (for some types only)
 	} INIKEY, *PINIKEY;
 
-	// Archivo INI
+	// File INI
 	TCHAR m_IniFile[FILEPATH_MAX];
 										// Nombre del archivo INI
 
-	// Datos de configuracion
+	// Data de configuracion
 	void FASTCALL LoadConfig();
-										// Cargar datos de configuracion
+										// Load datos de configuracion
 	void FASTCALL SaveConfig() const;
-										// Guardar datos de configuracion
+										// Save datos de configuracion
 	static const INIKEY IniTable[];
 										// Tabla INI de datos de configuracion
 	static Config m_Config;
-										// Datos de configuracion
+										// Data de configuracion
 
 	// �o�[�W�����݊�
 	void FASTCALL ResetSASI();
@@ -97,30 +97,30 @@ private:
 
 	// MRU
 	enum {
-		MruTypes = 5					// Numero de tipos MRU
+		MruTypes=5					// Number de tipos MRU
 	};
 	void FASTCALL ClearMRU(int nType);
 										// Limpiar MRU
 	void FASTCALL LoadMRU(int nType);
-										// Cargar MRU
+										// Load MRU
 	void FASTCALL SaveMRU(int nType) const;
-										// Guardar MRU
+										// Save MRU
 	TCHAR m_MRUFile[MruTypes][9][FILEPATH_MAX];
-										// Archivos MRU
+										// Files MRU
 	int m_MRUNum[MruTypes];
-										// Numero de MRU
+										// Number de MRU
 
 	// �L�[
 	void FASTCALL LoadKey() const;
-										// Cargar clave
+										// Load clave
 	void FASTCALL SaveKey() const;
-										// Guardar clave
+										// Save clave
 
 	// TrueKey
 	void FASTCALL LoadTKey() const;
-										// Cargar TrueKey
+										// Load TrueKey
 	void FASTCALL SaveTKey() const;
-										// Guardar TrueKey
+										// Save TrueKey
 
 	// �o�[�W�����݊�
 	BOOL FASTCALL Load200(Fileio *pFio);
@@ -128,9 +128,9 @@ private:
 	BOOL FASTCALL Load202(Fileio *pFio);
 										// version 2.02 o version 2.03
 
-	// Cargar�EGuardar
+	// Load�ESave
 	BOOL m_bApply;
-										// Cargar��ApplyCfg��v��
+										// Load��ApplyCfg��v��
 };
 
 //---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ class CConfigSheet;
 
 //===========================================================================
 //
-//	ConfiguracionPagina de propiedades
+//	ConfigurationPage de propiedades
 //
 //===========================================================================
 class CConfigPage : public CPropertyPage
@@ -151,19 +151,19 @@ public:
 	CConfigPage();
 										// Constructor
 	void FASTCALL Init(CConfigSheet *pSheet);
-										// Inicializacion
+										// Initialization
 	virtual BOOL OnInitDialog();
-										// Inicializacion del dialogo
+										// Initialization del dialogo
 	virtual BOOL OnSetActive();
-										// Pagina activa
+										// Page activa
 	DWORD FASTCALL GetID() const		{ return m_dwID; }
-										// Obtener ID
+										// Get ID
 
 protected:
 	afx_msg BOOL OnSetCursor(CWnd *pWnd, UINT nHitTest, UINT nMsg);
-										// Configuracion del cursor del raton
+										// Mouse cursor configuration
 	Config *m_pConfig;
-										// Datos de configuracion
+										// Data de configuracion
 	DWORD m_dwID;
 										// ID de la pagina
 	int m_nTemplate;
@@ -173,7 +173,7 @@ protected:
 	UINT m_uMsgID;
 										// ID de mensaje de ayuda
 	CConfigSheet *m_pSheet;
-										// Hoja de propiedades
+										// Property sheet
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes
@@ -181,7 +181,7 @@ protected:
 
 //===========================================================================
 //
-//	Pagina basica
+//	Page basica
 //
 //===========================================================================
 class CBasicPage : public CConfigPage
@@ -190,7 +190,7 @@ public:
 	CBasicPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 
@@ -204,7 +204,7 @@ protected:
 
 //===========================================================================
 //
-//	Pagina de sonido
+//	Page de sonido
 //
 //===========================================================================
 class CSoundPage : public CConfigPage
@@ -213,7 +213,7 @@ public:
 	CSoundPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 
@@ -227,7 +227,7 @@ private:
 	void FASTCALL EnableControls(BOOL bEnable);
 										// Cambio de estado de los controles
 	BOOL m_bEnableCtrl;
-										// Estado de los controles
+										// State de los controles
 	static const UINT ControlTable[];
 										// Tabla de controles
 
@@ -237,7 +237,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina de volumen
+//	Page de volumen
 //
 //===========================================================================
 class CVolPage : public CConfigPage
@@ -246,7 +246,7 @@ public:
 	CVolPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	void OnCancel();
@@ -256,15 +256,15 @@ protected:
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pBar);
 										// Desplazamiento horizontal
 	afx_msg void OnFMCheck();
-										// Sintetizador FMVerificacion
+										// Sintetizador FMCheck
 	afx_msg void OnADPCMCheck();
-										// Sintetizador ADPCMVerificacion
+										// Sintetizador ADPCMCheck
 #if _MFC_VER >= 0x700
 	afx_msg void OnTimer(UINT_PTR nTimerID);
 #else
 	afx_msg void OnTimer(UINT nTimerID);
 #endif
-										// Temporizador
+										// Timer
 
 private:
 	CSound *m_pSound;
@@ -296,7 +296,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina del teclado
+//	Page del teclado
 //
 //===========================================================================
 class CKbdPage : public CConfigPage
@@ -305,7 +305,7 @@ public:
 	CKbdPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	void OnCancel();
@@ -335,7 +335,7 @@ private:
 	CInput *m_pInput;
 										// CInput
 	BOOL m_bEnableCtrl;
-										// Estado de los controles
+										// State de los controles
 	static const UINT ControlTable[];
 										// Tabla de controles
 
@@ -354,7 +354,7 @@ public:
 	CKbdMapDlg(CWnd *pParent, DWORD *pMap);
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// OK
 	void OnCancel();
@@ -399,11 +399,11 @@ public:
 	CKeyinDlg(CWnd *pParent);
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// OK
 	UINT m_nTarget;
-										// Tecla objetivo
+										// Key objetivo
 	UINT m_nKey;
 										// Asignacion�L�[
 
@@ -411,7 +411,7 @@ protected:
 	afx_msg void OnPaint();
 										// Dibujar
 	afx_msg UINT OnGetDlgCode();
-										// �_�C�A���O�R�[�hObtener
+										// �_�C�A���O�R�[�hGet
 	afx_msg LONG OnKickIdle(UINT uParam, LONG lParam);
 										// Proceso idle
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
@@ -427,7 +427,7 @@ private:
 	CRect m_GuideRect;
 										// Rectangulo guia
 	CString m_GuideString;
-										// Cadena guia
+										// String guia
 	CRect m_AssignRect;
 										// �L�[Asignacion��`
 	CString m_AssignString;
@@ -435,7 +435,7 @@ private:
 	CRect m_KeyRect;
 										// Rectangulo de tecla
 	CString m_KeyString;
-										// Cadena de tecla
+										// String de tecla
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes
@@ -443,7 +443,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina del raton
+//	Page del mouse
 //
 //===========================================================================
 class CMousePage : public CConfigPage
@@ -452,7 +452,7 @@ public:
 	CMousePage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 
@@ -466,7 +466,7 @@ private:
 	void FASTCALL EnableControls(BOOL bEnable);
 										// Cambio de estado de los controles
 	BOOL m_bEnableCtrl;
-										// Estado de los controles
+										// State de los controles
 	static const UINT ControlTable[];
 										// Tabla de controles
 
@@ -476,7 +476,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina del joystick
+//	Page del joystick
 //
 //===========================================================================
 class CJoyPage : public CConfigPage
@@ -485,7 +485,7 @@ public:
 	CJoyPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	void OnCancel();
@@ -501,11 +501,11 @@ private:
 	void FASTCALL OnDetail(UINT nButton);
 										// Detalles
 	void FASTCALL OnSetting(UINT nButton);
-										// Configuracion
+										// Configuration
 	CButton* GetCorButton(UINT nComboBox);
-										// �Ή�BotonesObtener
+										// �Ή�ButtonsGet
 	CComboBox* GetCorCombo(UINT nButton);
-										// �Ή�Cuadro combinadoObtener
+										// �Ή�Cuadro combinadoGet
 	CInput *m_pInput;
 										// CInput
 	static UINT ControlTable[];
@@ -523,19 +523,19 @@ public:
 	CJoyDetDlg(CWnd *pParent);
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 
 	CString m_strDesc;
 										// �f�o�C�XNombre
 	int m_nPort;
-										// Numero de puerto (0 o 1)
+										// Number de puerto (0 o 1)
 	int m_nType;
 										// Tipo (0-12)
 };
 
 //===========================================================================
 //
-//	BotonesConfiguracion�y�[�W
+//	ButtonsConfiguration�y�[�W
 //
 //===========================================================================
 class CBtnSetPage : public CPropertyPage
@@ -544,15 +544,15 @@ public:
 	CBtnSetPage();
 										// Constructor
 	void FASTCALL Init(CPropertySheet *pSheet);
-										// Crear
+										// Create
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	void OnCancel();
 										// Cancelar
 	int m_nJoy;
-										// Numero de joystick (0 o 1)
+										// Number de joystick (0 o 1)
 	int m_nType[PPI::PortMax];
 										// �W���C�X�e�B�b�NTipo (0-12)
 
@@ -564,7 +564,7 @@ protected:
 #else
 	afx_msg void OnTimer(UINT nTimerID);
 #endif
-										// Temporizador
+										// Timer
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pBar);
 										// Desplazamiento horizontal
 	BOOL OnCommand(WPARAM wParam, LPARAM lParam);
@@ -572,10 +572,10 @@ protected:
 
 private:
 	enum CtrlType {
-		BtnLabel,						// Etiqueta(Botonesn)
+		BtnLabel,						// Etiqueta(Buttonsn)
 		BtnCombo,						// Cuadro combinado
-		BtnRapid,						// Disparo rapido�X���C�_
-		BtnValue						// Disparo rapidoEtiqueta
+		BtnRapid,						// Rapid-fire�X���C�_
+		BtnValue						// Rapid-fireEtiqueta
 	};
 	void FASTCALL OnDraw(CDC *pDC, BOOL *pButton, BOOL bForce);
 										// Dibujo principal
@@ -584,9 +584,9 @@ private:
 	void FASTCALL OnSelChg(int nButton);
 										// Cambio en el cuadro combinado
 	void FASTCALL GetButtonDesc(const char *pszDesc, CString &strDesc);
-										// BotonesMostrarObtener
+										// ButtonsMostrarGet
 	UINT FASTCALL GetControl(int nButton, CtrlType ctlType) const;
-										// �R���g���[��Obtener ID
+										// �R���g���[��Get ID
 	CPropertySheet *m_pSheet;
 										// Hoja padre
 	CInput *m_pInput;
@@ -594,7 +594,7 @@ private:
 	CRect m_rectLabel[12];
 										// Etiqueta�ʒu
 	BOOL m_bButton[12];
-										// Botones�����L��
+										// Buttons�����L��
 #if _MFC_VER >= 0x700
 	UINT_PTR m_nTimerID;
 #else
@@ -604,7 +604,7 @@ private:
 	static const UINT ControlTable[];
 										// Tabla de controles
 	static const int RapidTable[];
-										// Disparo rapido�e�[�u��
+										// Rapid-fire�e�[�u��
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes
@@ -612,7 +612,7 @@ private:
 
 //===========================================================================
 //
-//	�W���C�X�e�B�b�NHoja de propiedades
+//	�W���C�X�e�B�b�NProperty sheet
 //
 //===========================================================================
 class CJoySheet : public CPropertySheet
@@ -621,21 +621,21 @@ public:
 	CJoySheet(CWnd *pParent);
 										// Constructor
 	void FASTCALL SetParam(int nJoy, int nCombo, int nType[]);
-										// �p�����[�^Configuracion
+										// �p�����[�^Configuration
 	void FASTCALL InitSheet();
-										// �V�[�gInicializacion
+										// �V�[�gInitialization
 	int FASTCALL GetAxes() const;
-										// Numero de ejesObtener
+										// Number de ejesGet
 	int FASTCALL GetButtons() const;
-										// Botones��Obtener
+										// Buttons��Get
 
 private:
 	CBtnSetPage m_BtnSet;
-										// BotonesConfiguracion�y�[�W
+										// ButtonsConfiguration�y�[�W
 	CInput *m_pInput;
 										// CInput
 	int m_nJoy;
-										// Numero de joystick (0 o 1)
+										// Number de joystick (0 o 1)
 	int m_nCombo;
 										// Cuadro combinado�I��
 	int m_nType[PPI::PortMax];
@@ -646,7 +646,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina SASI
+//	Page SASI
 //
 //===========================================================================
 class CSASIPage : public CConfigPage
@@ -655,13 +655,13 @@ public:
 	CSASIPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	BOOL OnSetActive();
-										// Pagina activa
+										// Page activa
 	int FASTCALL GetDrives(const Config *pConfig) const;
-										// SASINumero de unidadesObtener
+										// SASINumber of drivesGet
 
 protected:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pBar);
@@ -671,9 +671,9 @@ protected:
 
 private:
 	void FASTCALL UpdateList();
-										// Actualizar control de lista
+										// Update control de lista
 	void FASTCALL CheckSASI(DWORD *pDisk);
-										// SASI�t�@�C��Verificacion
+										// SASI�t�@�C��Check
 	void FASTCALL EnableControls(BOOL bEnable, BOOL bDrive = TRUE);
 										// Cambio de estado de los controles
 	SASI *m_pSASI;
@@ -681,11 +681,11 @@ private:
 	BOOL m_bInit;
 										// Flag de inicializacion
 	int m_nDrives;
-										// Numero de unidades
+										// Number of drives
 	TCHAR m_szFile[16][FILEPATH_MAX];
 										// Nombre del archivo de disco duro SASI
 	CString m_strError;
-										// Cadena de error
+										// String de error
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes
@@ -693,7 +693,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina SxSI
+//	Page SxSI
 //
 //===========================================================================
 class CSxSIPage : public CConfigPage
@@ -702,13 +702,13 @@ public:
 	CSxSIPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	BOOL OnSetActive();
-										// Pagina activa
+										// Page activa
 	void OnOK();
 										// Aceptar
 	int FASTCALL GetDrives(const Config *pConfig) const;
-										// SxSINumero de unidadesObtener
+										// SxSINumber of drivesGet
 
 protected:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pBar);
@@ -716,42 +716,42 @@ protected:
 	afx_msg void OnClick(NMHDR *pNMHDR, LRESULT *pResult);
 										// Clic en columna
 	afx_msg void OnCheck();
-										// Verificacion�{�b�N�X�N���b�N
+										// Check�{�b�N�X�N���b�N
 
 private:
 	enum DevType {
 		DevSASI,						// Disco duro SASI�h���C�u
 		DevSCSI,						// Disco duro SCSI�h���C�u
-		DevMO,							// Unidad MO SCSI
+		DevMO,							// Unit MO SCSI
 		DevInit,						// SCSI Iniciador (Host)
 		DevNone							// Sin dispositivo
 	};
 	void FASTCALL UpdateList();
-										// Actualizar control de lista
+										// Update control de lista
 	void FASTCALL BuildMap();
-										// Mapa de dispositivosCrear
+										// Mapa de dispositivosCreate
 	int FASTCALL CheckSCSI(int nDrive);
-										// Dispositivo SCSIVerificacion
+										// Dispositivo SCSICheck
 	void FASTCALL EnableControls(BOOL bEnable, BOOL bDrive = TRUE);
 										// Cambio de estado de los controles
 	BOOL m_bInit;
 										// Flag de inicializacion
 	int m_nSASIDrives;
-										// SASINumero de unidades
+										// SASINumber of drives
 	DevType m_DevMap[8];
 										// Mapa de dispositivos
 	TCHAR m_szFile[6][FILEPATH_MAX];
 										// Nombre del archivo de disco duro SCSI
 	CString m_strSASI;
-										// Cadena HD SASI
+										// String HD SASI
 	CString m_strMO;
-										// Cadena MO SCSI
+										// String MO SCSI
 	CString m_strInit;
-										// Cadena del iniciador
+										// String del iniciador
 	CString m_strNone;
-										// Cadena que indica n/a
+										// String que indica n/a
 	CString m_strError;
-										// �f�o�C�XCadena de error
+										// �f�o�C�XString de error
 	static const UINT ControlTable[];
 										// Tabla de controles
 
@@ -761,7 +761,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina SCSI
+//	Page SCSI
 //
 //===========================================================================
 class CSCSIPage : public CConfigPage
@@ -770,11 +770,11 @@ public:
 	CSCSIPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	int FASTCALL GetInterface(const Config *pConfig) const;
-										// Tipo de interfazObtener
+										// Tipo de interfazGet
 
 protected:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pBar);
@@ -782,28 +782,28 @@ protected:
 	afx_msg void OnClick(NMHDR *pNMHDR, LRESULT *pResult);
 										// Clic en columna
 	afx_msg void OnButton();
-										// ���W�IBotones�I��
+										// ���W�IButtons�I��
 	afx_msg void OnCheck();
-										// Verificacion�{�b�N�X�N���b�N
+										// Check�{�b�N�X�N���b�N
 
 private:
 	enum DevType {
 		DevSCSI,						// Disco duro SCSI�h���C�u
-		DevMO,							// Unidad MO SCSI
+		DevMO,							// Unit MO SCSI
 		DevCD,							// CD-ROM SCSI�h���C�u
 		DevInit,						// SCSI Iniciador (Host)
 		DevNone							// Sin dispositivo
 	};
 	int FASTCALL GetIfCtrl() const;
-										// Tipo de interfazObtener(�R���g���[�����)
+										// Tipo de interfazGet(�R���g���[�����)
 	BOOL FASTCALL CheckROM(int nType) const;
-										// ROMVerificacion
+										// ROMCheck
 	void FASTCALL UpdateList();
-										// Actualizar control de lista
+										// Update control de lista
 	void FASTCALL BuildMap();
-										// Mapa de dispositivosCrear
+										// Mapa de dispositivosCreate
 	int FASTCALL CheckSCSI(int nDrive);
-										// Dispositivo SCSIVerificacion
+										// Dispositivo SCSICheck
 	void FASTCALL EnableControls(BOOL bEnable, BOOL bDrive = TRUE);
 										// Cambio de estado de los controles
 	SCSI *m_pSCSI;
@@ -811,7 +811,7 @@ private:
 	BOOL m_bInit;
 										// Flag de inicializacion
 	int m_nDrives;
-										// Numero de unidades
+										// Number of drives
 	BOOL m_bMOFirst;
 										// Flag de primero MO
 	DevType m_DevMap[8];
@@ -819,15 +819,15 @@ private:
 	TCHAR m_szFile[5][FILEPATH_MAX];
 										// Nombre del archivo de disco duro SCSI
 	CString m_strMO;
-										// Cadena MO SCSI
+										// String MO SCSI
 	CString m_strCD;
-										// Cadena CD SCSI
+										// String CD SCSI
 	CString m_strInit;
-										// Cadena del iniciador
+										// String del iniciador
 	CString m_strNone;
-										// Cadena que indica n/a
+										// String que indica n/a
 	CString m_strError;
-										// �f�o�C�XCadena de error
+										// �f�o�C�XString de error
 	static const UINT ControlTable[];
 										// Tabla de controles
 
@@ -837,7 +837,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina de puertos
+//	Page de puertos
 //
 //===========================================================================
 class CPortPage : public CConfigPage
@@ -846,14 +846,14 @@ public:
 	CPortPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 };
 
 //===========================================================================
 //
-//	Pagina MIDI
+//	Page MIDI
 //
 //===========================================================================
 class CMIDIPage : public CConfigPage
@@ -862,7 +862,7 @@ public:
 	CMIDIPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 	void OnCancel();
@@ -880,7 +880,7 @@ private:
 	CMIDI *m_pMIDI;
 										// Componente MIDI
 	BOOL m_bEnableCtrl;
-										// Estado de los controles
+										// State de los controles
 	int m_nInDelay;
 										// Retraso de entrada (ms)
 	int m_nOutDelay;
@@ -894,7 +894,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina de modificaciones
+//	Page de modificaciones
 //
 //===========================================================================
 class CAlterPage : public CConfigPage
@@ -903,11 +903,11 @@ public:
 	CAlterPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	BOOL OnKillActive();
 										// Moverse de pagina
 	BOOL FASTCALL HasParity(const Config *pConfig) const;
-										// SASI�p���e�B�@�\Verificacion
+										// SASI�p���e�B�@�\Check
 
 protected:
 	void DoDataExchange(CDataExchange *pDX);
@@ -915,14 +915,14 @@ protected:
 
 private:
 	BOOL m_bInit;
-										// Inicializacion
+										// Initialization
 	BOOL m_bParity;
 										// Con paridad
 };
 
 //===========================================================================
 //
-//	Pagina de reanudacion (Resume)
+//	Page de reanudacion (Resume)
 //
 //===========================================================================
 class CResumePage : public CConfigPage
@@ -931,7 +931,7 @@ public:
 	CResumePage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 
 protected:
 	void DoDataExchange(CDataExchange *pDX);
@@ -949,13 +949,13 @@ public:
 	CTKeyDlg(CWnd *pParent);
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// OK
 	void OnCancel();
 										// Cancelar
 	int m_nTarget;
-										// Tecla objetivo
+										// Key objetivo
 	int m_nKey;
 										// Asignacion�L�[
 
@@ -963,13 +963,13 @@ protected:
 	afx_msg void OnPaint();
 										// Dibujar
 	afx_msg UINT OnGetDlgCode();
-										// �_�C�A���O�R�[�hObtener
+										// �_�C�A���O�R�[�hGet
 #if _MFC_VER >= 0x700
 	afx_msg void OnTimer(UINT_PTR nTimerID);
-										// Temporizador
+										// Timer
 #else
 	afx_msg void OnTimer(UINT nTimerID);
-										// Temporizador
+										// Timer
 #endif
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 										// Clic derecho
@@ -985,13 +985,13 @@ private:
 										// ID del temporizador
 #endif
 	BYTE m_KeyState[0x100];
-										// Estado de teclas VK
+										// State de teclas VK
 	CTKey *m_pTKey;
 										// TrueKey
 	CRect m_rectGuide;
 										// Rectangulo guia
 	CString m_strGuide;
-										// Cadena guia
+										// String guia
 	CRect m_rectAssign;
 										// �L�[Asignacion��`
 	CString m_strAssign;
@@ -999,7 +999,7 @@ private:
 	CRect m_rectKey;
 										// Rectangulo de tecla
 	CString m_strKey;
-										// Cadena de tecla
+										// String de tecla
 
 	DECLARE_MESSAGE_MAP()
 										// Con mapa de mensajes
@@ -1007,7 +1007,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina TrueKey
+//	Page TrueKey
 //
 //===========================================================================
 class CTKeyPage : public CConfigPage
@@ -1016,7 +1016,7 @@ public:
 	CTKeyPage();
 										// Constructor
 	BOOL OnInitDialog();
-										// Inicializacion
+										// Initialization
 	void OnOK();
 										// Aceptar
 
@@ -1050,7 +1050,7 @@ private:
 
 //===========================================================================
 //
-//	Pagina de miscelanea
+//	Page de miscelanea
 //
 //===========================================================================
 class CMiscPage : public CConfigPage
@@ -1059,18 +1059,18 @@ public:
 	CMiscPage();
 	BOOL OnInitDialog();
 	void OnBuscarFolder();
-	void OnOK();	
+	void OnOK();
 	void DoDataExchange(CDataExchange *pDX);
 										// Intercambio de datos
 
 	int m_nRendererDefault;
-										
+
 DECLARE_MESSAGE_MAP()
 };
 
 //===========================================================================
 //
-//	ConfiguracionHoja de propiedades
+//	ConfigurationProperty sheet
 //
 //===========================================================================
 class CConfigSheet : public CPropertySheet
@@ -1079,25 +1079,25 @@ public:
 	CConfigSheet(CWnd *pParent);
 										// Constructor
 	Config *m_pConfig;
-										// Datos de configuracion
+										// Data de configuracion
 	CConfigPage* FASTCALL SearchPage(DWORD dwID) const;
 										// �y�[�WBusqueda
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-										// �E�B���h�ECrear
+										// �E�B���h�ECreate
 	afx_msg void OnDestroy();
-										// �E�B���h�EEliminar
+										// �E�B���h�EDelete
 #if _MFC_VER >= 0x700
 	afx_msg void OnTimer(UINT_PTR nTimerID);
 #else
 	afx_msg void OnTimer(UINT nTimerID);
 #endif
-										// Temporizador
+										// Timer
 
 private:
 	CFrmWnd *m_pFrmWnd;
-										// Ventana de marco (Frame window)
+										// Window of marco (Frame window)
 #if _MFC_VER >= 0x700
 	UINT_PTR m_nTimerID;
 #else
@@ -1112,7 +1112,7 @@ private:
 	CVolPage m_Vol;
 										// Volumen
 	CKbdPage m_Kbd;
-										// Teclado
+										// Keyboard
 	CMousePage m_Mouse;
 										// Mouse
 	CJoyPage m_Joy;

@@ -189,7 +189,7 @@ void CAboutDlg::OnPaint()
 	// Representacion de la URL
 	DrawURL(&dc);
 
-	//  Crear DCs de memoria, mapas de bits compatibles y copiar mapas de bits.
+	//  Create DCs de memoria, mapas de bits compatibles y copiar mapas de bits.
 	VERIFY(mDC.CreateCompatibleDC(&dc));
 	VERIFY(Bitmap.CreateCompatibleBitmap(&dc,
 						m_IconRect.Width(), m_IconRect.Height()));
@@ -231,7 +231,7 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 
 	ASSERT(pDC);
 
-	// Obtener las metricas de las fuentes de la interfaz de usuario
+	// Get las metricas de las fuentes de la interfaz de usuario
 	hFont = (HFONT)::GetStockObject(DEFAULT_GUI_FONT);
 	ASSERT(hFont);
 	hDefFont = (HFONT)::SelectObject(pDC->m_hDC, hFont);
@@ -240,7 +240,7 @@ void FASTCALL CAboutDlg::DrawURL(CDC *pDC)
 	::GetTextFace(pDC->m_hDC, LF_FACESIZE, lf.lfFaceName);
 	::SelectObject(pDC->m_hDC, hDefFont);
 
-	// Crear fuentes con subrayados anadidos.
+	// Create fuentes con subrayados anadidos.
 	lf.lfHeight = tm.tmHeight;
 	lf.lfWidth = 0;
 	lf.lfEscapement = 0;
@@ -315,7 +315,7 @@ void FASTCALL CAboutDlg::DrawCRT(CDC *pDC)
 						&pbmp[pbmi->biSize + sizeof(RGBQUAD) * 256],
 						(BITMAPINFO*)pbmi, DIB_RGB_COLORS);
 
-	// Liberar recursos (solo es necesario para los sistemas Win9x).
+	// Release recursos (solo es necesario para los sistemas Win9x).
 	::FreeResource(hGlobal);
 }
 
@@ -359,7 +359,7 @@ void FASTCALL CAboutDlg::DrawX68k(CDC *pDC)
 						&pbmp[pbmi->biSize + sizeof(RGBQUAD) * 256],
 						(BITMAPINFO*)pbmi, DIB_RGB_COLORS);
 
-	// Liberar recursos (solo es necesario para los sistemas Win9x).
+	// Release recursos (solo es necesario para los sistemas Win9x).
 	::FreeResource(hGlobal);
 }
 
@@ -450,7 +450,7 @@ void CAboutDlg::OnTimer(UINT /*nID */)
 	DrawView(m_IconRect.left, m_IconRect.top, pDC);
 	delete pDC;
 
-	// pantalla de informacion
+	// pantalla de information
 	pFrmWnd = (CFrmWnd*)GetParent();
 	ASSERT(pFrmWnd);
 	pInfo = pFrmWnd->GetInfo();
@@ -639,7 +639,7 @@ void FASTCALL CAboutDlg::DrawView(int x, int y, CDC *pDC)
 		return;
 	}
 
-	//Obtenga el trabajo de visualizacion
+	//Obtenga el trabajo de display
 	ASSERT(m_pDrawView);
 	m_pDrawView->GetDrawInfo(&info);
 
