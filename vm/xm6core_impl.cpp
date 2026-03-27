@@ -89,11 +89,33 @@ struct XM6Context {
 	unsigned int audio_rate;
 	unsigned int audio_buf_frames;
 	BOOL surround_enabled;
+	BOOL hq_adpcm_enabled;
+	int reverb_level;
+	int eq_bass_level;
+	int eq_mid_level;
+	int eq_treble_level;
 
 	// Runtime config applied to the VM devices
 	Config runtime_config;
 	int surround_prev_l;
 	int surround_prev_r;
+	int hq_adpcm_prev_in_l;
+	int hq_adpcm_prev_in_r;
+	int hq_adpcm_prev2_in_l;
+	int hq_adpcm_prev2_in_r;
+	int hq_adpcm_prev_out_l;
+	int hq_adpcm_prev_out_r;
+	int *reverb_buf;
+	unsigned int reverb_buf_frames;
+	unsigned int reverb_buf_pos;
+	int reverb_lp_l;
+	int reverb_lp_r;
+	int eq_low_l;
+	int eq_low_r;
+	int eq_mid_l;
+	int eq_mid_r;
+	int eq_low_coeff_q14;
+	int eq_mid_coeff_q14;
 
 	// Message callback (client-side)
 	xm6_message_callback_t msg_callback;
@@ -135,9 +157,16 @@ static inline bool ctx_valid(XM6Context *ctx)
 }
 
 static void reset_px68k_audio_state(XM6Context *ctx);
+static void reset_hq_adpcm_state(XM6Context *ctx);
+static void reset_reverb_state(XM6Context *ctx);
+static void reset_eq_state(XM6Context *ctx);
+static void apply_reverb_fx(XM6Context *ctx, short *buffer, unsigned int frames);
+static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate);
+static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames);
 static bool ensure_px68k_audio_ring(XM6Context *ctx);
 static void produce_px68k_audio(XM6Context *ctx, DWORD hus);
 static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate);
+static inline short saturate_s16(int value);
 
 static const unsigned int k_opm_clock_hz = 4000000u;
 
@@ -228,6 +257,351 @@ static void apply_surround_fx(XM6Context *ctx, DWORD *buffer, unsigned int frame
 
 	ctx->surround_prev_l = prev_l;
 	ctx->surround_prev_r = prev_r;
+}
+
+static bool ensure_reverb_buffer(XM6Context *ctx, unsigned int sample_rate)
+{
+	if (!ctx || sample_rate == 0) {
+		return false;
+	}
+
+	const unsigned int wanted_frames = ((sample_rate * 90u) / 1000u) + 1u;
+	if (wanted_frames == 0u) {
+		return false;
+	}
+
+	if (ctx->reverb_buf && ctx->reverb_buf_frames == wanted_frames) {
+		memset(ctx->reverb_buf, 0, ctx->reverb_buf_frames * 2u * sizeof(int));
+		ctx->reverb_buf_pos = 0;
+		ctx->reverb_lp_l = 0;
+		ctx->reverb_lp_r = 0;
+		return true;
+	}
+
+	delete[] ctx->reverb_buf;
+	ctx->reverb_buf = new(std::nothrow) int[wanted_frames * 2u];
+	if (!ctx->reverb_buf) {
+		ctx->reverb_buf_frames = 0;
+		ctx->reverb_buf_pos = 0;
+		ctx->reverb_lp_l = 0;
+		ctx->reverb_lp_r = 0;
+		return false;
+	}
+
+	ctx->reverb_buf_frames = wanted_frames;
+	ctx->reverb_buf_pos = 0;
+	ctx->reverb_lp_l = 0;
+	ctx->reverb_lp_r = 0;
+	memset(ctx->reverb_buf, 0, ctx->reverb_buf_frames * 2u * sizeof(int));
+	return true;
+}
+
+static void reset_reverb_state(XM6Context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->reverb_buf_pos = 0;
+	ctx->reverb_lp_l = 0;
+	ctx->reverb_lp_r = 0;
+	if (ctx->reverb_buf && ctx->reverb_buf_frames > 0) {
+		memset(ctx->reverb_buf, 0, ctx->reverb_buf_frames * 2u * sizeof(int));
+	}
+}
+
+static void apply_reverb_fx(XM6Context *ctx, short *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0) {
+		return;
+	}
+
+	const int level = (ctx->reverb_level < 0) ? 0 : (ctx->reverb_level > 100 ? 100 : ctx->reverb_level);
+	if (level <= 0) {
+		return;
+	}
+
+	const int dry_gain = 224 - ((level * 64) / 100);
+	const int wet_gain = (level * 96) / 100;
+
+	if (!ctx->reverb_buf || ctx->reverb_buf_frames == 0) {
+		return;
+	}
+
+	const unsigned int delay_a_ms = 18u + (((unsigned int)level * 8u) / 100u);
+	const unsigned int delay_b_ms = 37u + (((unsigned int)level * 18u) / 100u);
+	unsigned int delay_a = (ctx->audio_rate * delay_a_ms) / 1000u;
+	unsigned int delay_b = (ctx->audio_rate * delay_b_ms) / 1000u;
+	if (delay_a == 0u) {
+		delay_a = 1u;
+	}
+	if (delay_b <= delay_a) {
+		delay_b = delay_a + 1u;
+	}
+	if (delay_b >= ctx->reverb_buf_frames) {
+		delay_b = ctx->reverb_buf_frames - 1u;
+	}
+
+	const int feedback_gain = 64 + ((level * 96) / 100);
+	const int damp = 208 - ((level * 72) / 100);
+	const int cross_gain = 16 + ((level * 32) / 100);
+
+	unsigned int pos = ctx->reverb_buf_pos;
+	short *samples = buffer;
+	int *ring = ctx->reverb_buf;
+
+	for (unsigned int i = 0; i < frames; i++) {
+		const int dry_l = samples[0];
+		const int dry_r = samples[1];
+
+		const unsigned int tap_a_pos = (pos + ctx->reverb_buf_frames - delay_a) % ctx->reverb_buf_frames;
+		const unsigned int tap_b_pos = (pos + ctx->reverb_buf_frames - delay_b) % ctx->reverb_buf_frames;
+		const int tap_a_l = ring[(tap_a_pos * 2u) + 0];
+		const int tap_a_r = ring[(tap_a_pos * 2u) + 1];
+		const int tap_b_l = ring[(tap_b_pos * 2u) + 0];
+		const int tap_b_r = ring[(tap_b_pos * 2u) + 1];
+
+		long long wet_l = (tap_a_l * 5LL + tap_b_l * 3LL + tap_a_r + tap_b_r) / 10LL;
+		long long wet_r = (tap_a_r * 5LL + tap_b_r * 3LL + tap_a_l + tap_b_l) / 10LL;
+
+		ctx->reverb_lp_l = (int)(((long long)ctx->reverb_lp_l * damp + wet_l * (256 - damp)) >> 8);
+		ctx->reverb_lp_r = (int)(((long long)ctx->reverb_lp_r * damp + wet_r * (256 - damp)) >> 8);
+
+		const long long filtered_l = ctx->reverb_lp_l;
+		const long long filtered_r = ctx->reverb_lp_r;
+		const long long room_l = filtered_l + ((filtered_r * cross_gain) >> 8);
+		const long long room_r = filtered_r + ((filtered_l * cross_gain) >> 8);
+
+		const long long feed_l = dry_l + ((room_l * feedback_gain) >> 8);
+		const long long feed_r = dry_r + ((room_r * feedback_gain) >> 8);
+		ring[(pos * 2u) + 0] = clamp_sample_32(feed_l);
+		ring[(pos * 2u) + 1] = clamp_sample_32(feed_r);
+
+		samples[0] = saturate_s16((int)(((long long)dry_l * dry_gain + room_l * wet_gain) >> 8));
+		samples[1] = saturate_s16((int)(((long long)dry_r * dry_gain + room_r * wet_gain) >> 8));
+
+		pos++;
+		if (pos >= ctx->reverb_buf_frames) {
+			pos = 0;
+		}
+		samples += 2;
+	}
+
+	ctx->reverb_buf_pos = pos;
+}
+
+static void reset_eq_state(XM6Context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->eq_low_l = 0;
+	ctx->eq_low_r = 0;
+	ctx->eq_mid_l = 0;
+	ctx->eq_mid_r = 0;
+}
+
+static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate)
+{
+	if (!ctx || sample_rate == 0) {
+		return;
+	}
+
+	const double pi = 3.14159265358979323846;
+	const double low_fc = 160.0;
+	const double mid_fc = 4200.0;
+	const double low_alpha = 1.0 - exp((-2.0 * pi * low_fc) / (double)sample_rate);
+	const double mid_alpha = 1.0 - exp((-2.0 * pi * mid_fc) / (double)sample_rate);
+	int low_coeff = (int)(low_alpha * 16384.0 + 0.5);
+	int mid_coeff = (int)(mid_alpha * 16384.0 + 0.5);
+	if (low_coeff < 1) {
+		low_coeff = 1;
+	} else if (low_coeff > 16384) {
+		low_coeff = 16384;
+	}
+	if (mid_coeff < 1) {
+		mid_coeff = 1;
+	} else if (mid_coeff > 16384) {
+		mid_coeff = 16384;
+	}
+	ctx->eq_low_coeff_q14 = low_coeff;
+	ctx->eq_mid_coeff_q14 = mid_coeff;
+	reset_eq_state(ctx);
+}
+
+static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0) {
+		return;
+	}
+
+	const int bass_level = (ctx->eq_bass_level < 0) ? 0 : (ctx->eq_bass_level > 100 ? 100 : ctx->eq_bass_level);
+	const int mid_level = (ctx->eq_mid_level < 0) ? 0 : (ctx->eq_mid_level > 100 ? 100 : ctx->eq_mid_level);
+	const int treble_level = (ctx->eq_treble_level < 0) ? 0 : (ctx->eq_treble_level > 100 ? 100 : ctx->eq_treble_level);
+
+	if (bass_level == 50 && mid_level == 50 && treble_level == 50) {
+		return;
+	}
+
+	const int bass_gain_q14 = 16384 + (((long long)(bass_level - 50) * 16384LL) / 100LL);
+	const int mid_gain_q14 = 16384 + (((long long)(mid_level - 50) * 16384LL) / 100LL);
+	const int treble_gain_q14 = 16384 + (((long long)(treble_level - 50) * 16384LL) / 100LL);
+	const int low_coeff = ctx->eq_low_coeff_q14;
+	const int mid_coeff = ctx->eq_mid_coeff_q14;
+
+	int low_l = ctx->eq_low_l;
+	int low_r = ctx->eq_low_r;
+	int mid_l = ctx->eq_mid_l;
+	int mid_r = ctx->eq_mid_r;
+	short *samples = buffer;
+
+	for (unsigned int i = 0; i < frames; i++) {
+		const int in_l = samples[0];
+		const int in_r = samples[1];
+
+		low_l += (int)(((long long)(in_l - low_l) * low_coeff) >> 14);
+		low_r += (int)(((long long)(in_r - low_r) * low_coeff) >> 14);
+		mid_l += (int)(((long long)(in_l - mid_l) * mid_coeff) >> 14);
+		mid_r += (int)(((long long)(in_r - mid_r) * mid_coeff) >> 14);
+
+		const long long bass_band_l = low_l;
+		const long long bass_band_r = low_r;
+		const long long mid_band_l = (long long)mid_l - low_l;
+		const long long mid_band_r = (long long)mid_r - low_r;
+		const long long treble_band_l = (long long)in_l - mid_l;
+		const long long treble_band_r = (long long)in_r - mid_r;
+
+		const long long out_l =
+			((bass_band_l * bass_gain_q14) +
+			 (mid_band_l * mid_gain_q14) +
+			 (treble_band_l * treble_gain_q14)) >> 14;
+		const long long out_r =
+			((bass_band_r * bass_gain_q14) +
+			 (mid_band_r * mid_gain_q14) +
+			 (treble_band_r * treble_gain_q14)) >> 14;
+
+		samples[0] = saturate_s16((int)out_l);
+		samples[1] = saturate_s16((int)out_r);
+		samples += 2;
+	}
+
+	ctx->eq_low_l = low_l;
+	ctx->eq_low_r = low_r;
+	ctx->eq_mid_l = mid_l;
+	ctx->eq_mid_r = mid_r;
+}
+
+static inline long long hq_adpcm_soft_clip(long long sample)
+{
+	const long long abs_sample = (sample < 0) ? -sample : sample;
+	const long long knee = 8192LL;
+	if (abs_sample <= knee) {
+		return sample;
+	}
+
+	const long long excess = abs_sample - knee;
+	const long long compressed = knee + ((excess * 5LL) >> 3);
+	return (sample < 0) ? -compressed : compressed;
+}
+
+static void reset_hq_adpcm_state(XM6Context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->hq_adpcm_prev_in_l = 0;
+	ctx->hq_adpcm_prev_in_r = 0;
+	ctx->hq_adpcm_prev2_in_l = 0;
+	ctx->hq_adpcm_prev2_in_r = 0;
+	ctx->hq_adpcm_prev_out_l = 0;
+	ctx->hq_adpcm_prev_out_r = 0;
+}
+
+static void apply_hq_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0 || !ctx->hq_adpcm_enabled) {
+		return;
+	}
+
+	int prev_in_l = ctx->hq_adpcm_prev_in_l;
+	int prev_in_r = ctx->hq_adpcm_prev_in_r;
+	int prev2_in_l = ctx->hq_adpcm_prev2_in_l;
+	int prev2_in_r = ctx->hq_adpcm_prev2_in_r;
+	int prev_out_l = ctx->hq_adpcm_prev_out_l;
+	int prev_out_r = ctx->hq_adpcm_prev_out_r;
+	int *samples = (int*)buffer;
+
+	// Push the ADPCM a little closer to the Type G-style "analog" feel:
+	// Keep the low-end lift, but leave the treble close to normal and preserve
+	// only a gentle stereo spread / room feel.
+	enum {
+		kLowNum = 1,
+		kLowDen = 32,
+		kPresenceNum = 0,
+		kPresenceDen = 16,
+		kAirNum = 0,
+		kAirDen = 64,
+		kWidthNum = 9,
+		kWidthDen = 4,
+		kWetNum = 3,
+		kWetDen = 16
+	};
+
+	for (unsigned int i = 0; i < frames; i++) {
+		const int old_prev_in_l = prev_in_l;
+		const int old_prev_in_r = prev_in_r;
+		long long input_l = samples[0];
+		long long input_r = samples[1];
+		input_l = hq_adpcm_soft_clip(input_l);
+		input_r = hq_adpcm_soft_clip(input_r);
+
+		const long long low_l = (input_l + prev_in_l) >> 1;
+		const long long low_r = (input_r + prev_in_r) >> 1;
+		const long long presence_l = input_l - prev_in_l;
+		const long long presence_r = input_r - prev_in_r;
+		const long long air_l = input_l - ((prev_in_l << 1) - prev2_in_l);
+		const long long air_r = input_r - ((prev_in_r << 1) - prev2_in_r);
+
+		long long shaped_l = input_l
+			+ ((low_l * kLowNum) / kLowDen)
+			+ ((presence_l * kPresenceNum) / kPresenceDen)
+			+ ((air_l * kAirNum) / kAirDen);
+		long long shaped_r = input_r
+			+ ((low_r * kLowNum) / kLowDen)
+			+ ((presence_r * kPresenceNum) / kPresenceDen)
+			+ ((air_r * kAirNum) / kAirDen);
+
+		// Gentle shared tail to give the ADPCM a little room.
+		const long long tail_l = (prev_out_l * 5LL + prev_out_r * 3LL) >> 3;
+		const long long tail_r = (prev_out_r * 5LL + prev_out_l * 3LL) >> 3;
+		shaped_l += (tail_l * kWetNum) / kWetDen;
+		shaped_r += (tail_r * kWetNum) / kWetDen;
+
+		long long mid = (shaped_l + shaped_r) / 2;
+		long long side = (shaped_l - shaped_r) / 2;
+		side = (side * kWidthNum) / kWidthDen;
+
+		mid = (mid * 14LL) >> 4;
+		samples[0] = clamp_sample_32(mid + side);
+		samples[1] = clamp_sample_32(mid - side);
+
+		prev2_in_l = old_prev_in_l;
+		prev2_in_r = old_prev_in_r;
+		prev_in_l = (int)input_l;
+		prev_in_r = (int)input_r;
+		prev_out_l = samples[0];
+		prev_out_r = samples[1];
+		samples += 2;
+	}
+
+	ctx->hq_adpcm_prev_in_l = prev_in_l;
+	ctx->hq_adpcm_prev_in_r = prev_in_r;
+	ctx->hq_adpcm_prev2_in_l = prev2_in_l;
+	ctx->hq_adpcm_prev2_in_r = prev2_in_r;
+	ctx->hq_adpcm_prev_out_l = prev_out_l;
+	ctx->hq_adpcm_prev_out_r = prev_out_r;
 }
 
 static void emit_messagef(XM6Context *ctx, const char *format, ...)
@@ -663,6 +1037,9 @@ static void post_state_load_sync(XM6Context *ctx)
 	}
 
 	reset_px68k_audio_state(ctx);
+	reset_hq_adpcm_state(ctx);
+	reset_reverb_state(ctx);
+	reset_eq_state(ctx);
 
 	reset_video_probe_state(ctx);
 }
@@ -780,6 +1157,10 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	ctx->scsi      = (SCSI*)ctx->vm->SearchDevice(MAKEID('S', 'C', 'S', 'I'));
 	ctx->ppi       = (PPI*)ctx->vm->SearchDevice(MAKEID('P', 'P', 'I', ' '));
 	ctx->audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
+	ctx->reverb_level = 0;
+	ctx->eq_bass_level = 50;
+	ctx->eq_mid_level = 50;
+	ctx->eq_treble_level = 50;
 
 	apply_default_runtime_config(ctx);
 	reset_video_probe_state(ctx);
@@ -830,6 +1211,11 @@ XM6CORE_API void XM6CORE_CALL xm6_destroy(XM6Handle handle)
 	ctx->opm_buf = NULL;
 	delete[] ctx->adpcm_buf;
 	ctx->adpcm_buf = NULL;
+
+	delete[] ctx->reverb_buf;
+	ctx->reverb_buf = NULL;
+	ctx->reverb_buf_frames = 0;
+	ctx->reverb_buf_pos = 0;
 
 	delete[] ctx->px68k_ring;
 	ctx->px68k_ring = NULL;
@@ -1047,6 +1433,9 @@ XM6CORE_API int XM6CORE_CALL xm6_reset(XM6Handle handle)
 
 	ctx->vm->Reset();
 	reset_px68k_audio_state(ctx);
+	reset_hq_adpcm_state(ctx);
+	reset_reverb_state(ctx);
+	reset_eq_state(ctx);
 	reset_video_probe_state(ctx);
 	return XM6CORE_OK;
 }
@@ -1064,6 +1453,9 @@ XM6CORE_API int XM6CORE_CALL xm6_set_power(XM6Handle handle, int enabled)
 	ctx->vm->SetPower(enabled ? TRUE : FALSE);
 	if (!enabled) {
 		reset_px68k_audio_state(ctx);
+		reset_hq_adpcm_state(ctx);
+		reset_reverb_state(ctx);
+		reset_eq_state(ctx);
 		reset_video_probe_state(ctx);
 	}
 	return XM6CORE_OK;
@@ -1807,8 +2199,9 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 		}
 
 		if (mix_frames > 0) {
-			if (ctx->runtime_config.adpcm_volume <= 0) {
+			if (ctx->runtime_config.adpcm_volume <= 0 || !ctx->runtime_config.adpcm_enable) {
 				memset(ctx->adpcm_buf, 0, mix_frames * 2 * sizeof(DWORD));
+				reset_hq_adpcm_state(ctx);
 			} else {
 				ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)mix_frames);
 			}
@@ -1822,7 +2215,11 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 
 		if (ctx->surround_enabled) {
 			apply_surround_fx(ctx, ctx->opm_buf, mix_frames);
+			apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, mix_frames);
 			apply_surround_fx(ctx, ctx->adpcm_buf, mix_frames);
+		}
+		else {
+			apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, mix_frames);
 		}
 
 		int *fm_src = (int*)ctx->opm_buf;
@@ -1896,6 +2293,8 @@ static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 	ctx->audio_buf_frames = sample_rate;
 	ctx->surround_prev_l = 0;
 	ctx->surround_prev_r = 0;
+	reset_hq_adpcm_state(ctx);
+	reset_reverb_state(ctx);
 
 	delete[] ctx->adpcm_buf;
 	ctx->adpcm_buf = new(std::nothrow) DWORD[sample_rate * 2];
@@ -1908,6 +2307,17 @@ static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 			return XM6CORE_ERR_INIT_FAILED;
 		}
 	}
+	if (ctx->reverb_level > 0) {
+		if (!ensure_reverb_buffer(ctx, sample_rate)) {
+			return XM6CORE_ERR_INIT_FAILED;
+		}
+	} else {
+		delete[] ctx->reverb_buf;
+		ctx->reverb_buf = NULL;
+		ctx->reverb_buf_frames = 0;
+		ctx->reverb_buf_pos = 0;
+	}
+	configure_eq_filters(ctx, sample_rate);
 	reset_px68k_audio_state(ctx);
 
 	if (using_ymfm) {
@@ -1973,6 +2383,10 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	const int master = (ctx->runtime_config.master_volume < 0) ? 0 :
 		(ctx->runtime_config.master_volume > 100 ? 100 : ctx->runtime_config.master_volume);
+	const bool use_reverb = (ctx->reverb_level > 0);
+	const bool use_eq = !(ctx->eq_bass_level == 50 &&
+	                      ctx->eq_mid_level == 50 &&
+	                      ctx->eq_treble_level == 50);
 
 	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) {
 		if (!ctx->px68k_ring && !ensure_px68k_audio_ring(ctx)) {
@@ -2005,6 +2419,13 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 			out_interleaved_stereo[(i * 2) + 1] = saturate_s16(ctx->px68k_last_out_r);
 		}
 
+		if (use_reverb) {
+			apply_reverb_fx(ctx, out_interleaved_stereo, frames);
+		}
+		if (use_eq) {
+			apply_eq_fx(ctx, out_interleaved_stereo, frames);
+		}
+
 		*out_frames = frames;
 		return XM6CORE_OK;
 	}
@@ -2028,8 +2449,9 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	// ADPCM: buffer separado para poder aplicar surround sin alterar FM o CD-DA
 	if (frames > 0) {
-		if (ctx->runtime_config.adpcm_volume <= 0) {
+		if (ctx->runtime_config.adpcm_volume <= 0 || !ctx->runtime_config.adpcm_enable) {
 			memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
+			reset_hq_adpcm_state(ctx);
 		} else {
 			ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)frames);
 		}
@@ -2044,7 +2466,11 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	if (ctx->surround_enabled) {
 		apply_surround_fx(ctx, ctx->opm_buf, frames);
+		apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, frames);
 		apply_surround_fx(ctx, ctx->adpcm_buf, frames);
+	}
+	else {
+		apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, frames);
 	}
 
 	// SCSI CD-DA: sumar al mismo buffer
@@ -2064,6 +2490,13 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		const int out_r = (master != 100) ? ((mixed_r * master) / 100) : mixed_r;
 		out_interleaved_stereo[(i * 2) + 0] = saturate_s16(out_l);
 		out_interleaved_stereo[(i * 2) + 1] = saturate_s16(out_r);
+	}
+
+	if (use_reverb) {
+		apply_reverb_fx(ctx, out_interleaved_stereo, frames);
+	}
+	if (use_eq) {
+		apply_eq_fx(ctx, out_interleaved_stereo, frames);
 	}
 
 	*out_frames = frames;
