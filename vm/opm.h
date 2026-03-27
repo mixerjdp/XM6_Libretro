@@ -81,7 +81,8 @@ namespace FM
 
 		virtual bool	Init(uint c, uint r, bool=false);
 		virtual bool	SetRate(uint c, uint r, bool);
-		void	SetLPFCutoff(uint freq);
+		virtual bool	UseRawModeReg() const { return false; }
+void	SetLPFCutoff(uint freq);
 		virtual void	Reset();
 		
 		virtual void 	SetReg(uint addr, uint data);

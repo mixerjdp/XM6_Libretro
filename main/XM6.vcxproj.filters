@@ -96,6 +96,9 @@
     <ClCompile Include="..\vm\opmif.cpp">
       <Filter>VM</Filter>
     </ClCompile>
+    <ClCompile Include="..\vm\ymfm_opm_engine.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
     <ClCompile Include="..\vm\ppi.cpp">
       <Filter>VM</Filter>
     </ClCompile>
@@ -151,6 +154,9 @@
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\windrv.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ymfm-main\src\ymfm_opm.cpp">
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\musashi_adapter.cpp">
@@ -348,6 +354,9 @@
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\opmif.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\ymfm_opm_engine.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\os.h">

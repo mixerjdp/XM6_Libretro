@@ -1,4 +1,4 @@
-#include "ymfm_opm_engine.h"
+﻿#include "ymfm_opm_engine.h"
 
 #if defined(XM6CORE_ENABLE_YMFM)
 
@@ -58,11 +58,22 @@ public:
 	};
 
 	YmfmOpmEngine() :
+		direct_mode_(FALSE),
 		clock_(0),
 		rate_(0),
 		volume_scale_(16384),
 		chip_(bridge_)
 	{
+	}
+
+	void SetDirectMode(BOOL direct_mode)
+	{
+		direct_mode_ = direct_mode ? TRUE : FALSE;
+	}
+
+	virtual bool UseRawModeReg() const
+	{
+		return true;
 	}
 
 	virtual bool Init(uint c, uint r, bool)
@@ -103,7 +114,12 @@ public:
 	{
 		for (int i = 0; i < nsamples; i++) {
 			ymfm::ym2151::output_data output;
-			chip_.generate(&output, 1);
+			chip_.Engine().clock(ymfm::ym2151::fm_engine::ALL_CHANNELS);
+			output.clear();
+			chip_.Engine().output(output, 0, 32767, ymfm::ym2151::fm_engine::ALL_CHANNELS);
+			if (!direct_mode_) {
+				output.roundtrip_fp();
+			}
 			buffer[0] += (output.data[0] * volume_scale_) >> 14;
 			buffer[1] += (output.data[1] * volume_scale_) >> 14;
 			buffer += 2;
@@ -124,6 +140,7 @@ public:
 	}
 
 private:
+	BOOL direct_mode_;
 	uint clock_;
 	uint rate_;
 	int volume_scale_;
@@ -140,9 +157,13 @@ BOOL YmfmOpmEngineSupportsRate(uint clock, uint rate)
 	return (rate == native_rate) ? TRUE : FALSE;
 }
 
-FM::OPM *CreateYmfmOpmEngine(void)
+FM::OPM *CreateYmfmOpmEngine(BOOL direct_mode)
 {
-	return new(std::nothrow) YmfmOpmEngine;
+	YmfmOpmEngine *engine = new(std::nothrow) YmfmOpmEngine;
+	if (engine) {
+		engine->SetDirectMode(direct_mode);
+	}
+	return engine;
 }
 
 #endif	// XM6CORE_ENABLE_YMFM

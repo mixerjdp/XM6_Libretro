@@ -15,6 +15,7 @@
 #include "vm.h"
 #include "opmif.h"
 #include "opm.h"
+#include "ymfm_opm_engine.h"
 #include "adpcm.h"
 #include "scsi.h"
 #include "schedule.h"
@@ -51,6 +52,9 @@ CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 	m_nMaster = 90;
 	m_nFMVol = 54;
 	m_nADPCMVol = 52;
+	m_bYmfm = FALSE;
+	m_bYmfmActive = FALSE;
+	m_uConfiguredRate = 0;
 
 	// Initialize (DirectSound and objects)
 	m_lpDS = NULL;
@@ -198,10 +202,20 @@ BOOL FASTCALL CSound::InitSub()
 	memset(m_lpBuf, sizeof(DWORD) * (m_uBufSize / 2), m_uBufSize);
 
 	// OPM device (synthesizer) initialization
-	m_pOPM = new FM::OPM;
-	m_pOPM->Init(4000000, m_uRate, true);
+	m_pOPM = m_bYmfm ? CreateYmfmOpmEngine(FALSE) : new FM::OPM;
+	if (!m_pOPM) {
+		CleanupSub();
+		return FALSE;
+	}
+	if (!m_pOPM->Init(4000000, m_uRate, true)) {
+		delete m_pOPM;
+		m_pOPM = NULL;
+		CleanupSub();
+		return FALSE;
+	}
 	m_pOPM->Reset();
 	m_pOPM->SetVolume(m_nFMVol);
+	m_bYmfmActive = m_bYmfm;
 
 	// Register with OPMIF
 	m_pOPMIF->InitBuf(m_uRate);
@@ -249,6 +263,7 @@ void FASTCALL CSound::CleanupSub()
 		delete m_pOPM;
 		m_pOPM = NULL;
 	}
+	m_bYmfmActive = FALSE;
 
 	// Free sound buffer
 	if (m_lpBuf) {
@@ -284,19 +299,27 @@ void FASTCALL CSound::CleanupSub()
 void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 {
 	BOOL bFlag;
+	UINT uConfiguredRate;
+	UINT uRate;
 
 	ASSERT(this);
 	ASSERT(pConfig);
+
+	uConfiguredRate = RateTable[pConfig->sample_rate];
+	uRate = m_bYmfm ? 62500 : uConfiguredRate;
 
 	// Check for changes
 	bFlag = FALSE;
 	if (m_nSelectDevice != pConfig->sound_device) {
 		bFlag = TRUE;
 	}
-	if (m_uRate != RateTable[pConfig->sample_rate]) {
+	if (m_uRate != uRate) {
 		bFlag = TRUE;
 	}
 	if (m_uTick != (UINT)(pConfig->primary_buffer * 10)) {
+		bFlag = TRUE;
+	}
+	if (m_bYmfmActive != m_bYmfm) {
 		bFlag = TRUE;
 	}
 
@@ -304,7 +327,8 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	if (bFlag) {
 		CleanupSub();
 		m_nSelectDevice = pConfig->sound_device;
-		m_uRate = RateTable[pConfig->sample_rate];
+		m_uConfiguredRate = uConfiguredRate;
+		m_uRate = uRate;
 		m_uTick = pConfig->primary_buffer * 10;
 
 		// For 62.5kHz, temporarily switch to 96kHz (Prodigy7.1 workaround)
@@ -331,6 +355,9 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 			m_uRate = 62500;
 		}
 		InitSub();
+	}
+	else {
+		m_uConfiguredRate = uConfiguredRate;
 	}
 
 	// Apply volume settings
@@ -667,6 +694,18 @@ void FASTCALL CSound::SetADPCMVol(int nVol)
 	// Set
 	ASSERT(m_pADPCM);
 	m_pADPCM->SetVolume(m_nADPCMVol);
+}
+
+//---------------------------------------------------------------------------
+//
+// YMFM runtime toggle
+//
+//---------------------------------------------------------------------------
+void FASTCALL CSound::SetYmfm(BOOL bEnable)
+{
+	ASSERT(this);
+
+	m_bYmfm = bEnable ? TRUE : FALSE;
 }
 
 //---------------------------------------------------------------------------

@@ -1282,7 +1282,12 @@ void FASTCALL ADPCM::SetVolume(int volume)
 	double vol;
 
 	ASSERT(this);
-	ASSERT((volume >= 0) && (volume < 100));
+	ASSERT((volume >= 0) && (volume <= 100));
+
+	if (volume <= 0) {
+		adpcm.vol = 0;
+		return;
+	}
 
 	// Calculate and set 16384 * 10^((volume-140) / 200)
 	offset = (double)(volume - 140);

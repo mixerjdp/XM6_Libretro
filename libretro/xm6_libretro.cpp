@@ -306,13 +306,15 @@ static void reset_video_mode_log_state();
 static void fill_av_info(struct retro_system_av_info *info);
 static unsigned desired_audio_sample_rate_for_engine(int engine)
 {
-  return (engine == XM6CORE_AUDIO_ENGINE_YMFM) ? k_ymfm_sample_rate : k_default_sample_rate;
+  return (engine == XM6CORE_AUDIO_ENGINE_YMFM ||
+          engine == XM6CORE_AUDIO_ENGINE_YMFM_DIRECT) ? k_ymfm_sample_rate : k_default_sample_rate;
 }
 static const char* audio_engine_label(int engine)
 {
   switch (engine) {
     case XM6CORE_AUDIO_ENGINE_PX68K: return "PX68k";
     case XM6CORE_AUDIO_ENGINE_YMFM: return "YMFM";
+    case XM6CORE_AUDIO_ENGINE_YMFM_DIRECT: return "YMFM";
     default: return "XM6";
   }
 }
@@ -1924,6 +1926,8 @@ static void apply_core_option_values()
       g_audio_engine = XM6CORE_AUDIO_ENGINE_PX68K;
     } else if (std::strcmp(var.value, "YMFM") == 0) {
       g_audio_engine = XM6CORE_AUDIO_ENGINE_YMFM;
+    } else if (std::strcmp(var.value, "YMFM direct") == 0 || std::strcmp(var.value, "YMFM raw") == 0) {
+      g_audio_engine = XM6CORE_AUDIO_ENGINE_YMFM_DIRECT;
     } else {
       g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
     }

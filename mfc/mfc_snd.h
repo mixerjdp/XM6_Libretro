@@ -47,6 +47,10 @@ public:
 										// FM volume setting
 	void FASTCALL SetADPCMVol(int nVolume);
 										// ADPCM volume setting
+	void FASTCALL SetYmfm(BOOL bEnable);
+										// YMFM runtime toggle
+	BOOL FASTCALL IsYmfm() const		{ return m_bYmfm; }
+										// YMFM runtime status
 	int FASTCALL GetMasterVol(int& nMaximum);
 										// Get master volume
 	void FASTCALL SetMasterVol(int nVolume);
@@ -116,6 +120,12 @@ private:
 										// FM volume (0~100)
 	int m_nADPCMVol;
 										// ADPCM volume (0~100)
+	BOOL m_bYmfm;
+										// YMFM runtime flag
+	BOOL m_bYmfmActive;
+										// Active YMFM engine flag
+	UINT m_uConfiguredRate;
+										// Configured sampling rate
 	LPDIRECTSOUND m_lpDS;
 										// DirectSound
 	LPDIRECTSOUNDBUFFER m_lpDSp;

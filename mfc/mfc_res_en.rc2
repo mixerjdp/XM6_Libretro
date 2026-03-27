@@ -135,6 +135,7 @@ BEGIN
         MENUITEM "Stretch with &Aspect Ratio",  IDM_STRETCH
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
         MENUITEM "Render Fast",                 IDM_RENDER_FAST
+        MENUITEM "YMFM",                        IDM_YMFM
         MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
     END
     POPUP "&Debug"
@@ -315,6 +316,7 @@ BEGIN
             MENUITEM "Stretch with &Aspect Ratio",  IDM_STRETCH
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
             MENUITEM "Render Fast",                 IDM_RENDER_FAST
+        MENUITEM "YMFM",                        IDM_YMFM
             MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
         END
         POPUP "&Debug"

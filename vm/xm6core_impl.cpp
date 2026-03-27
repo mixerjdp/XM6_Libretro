@@ -519,6 +519,8 @@ static const char* audio_engine_name(int audio_engine)
 		return "PX68k";
 	case XM6CORE_AUDIO_ENGINE_YMFM:
 		return "YMFM";
+	case XM6CORE_AUDIO_ENGINE_YMFM_DIRECT:
+		return "YMFM";
 	default:
 		return "XM6";
 	}
@@ -527,15 +529,20 @@ static const char* audio_engine_name(int audio_engine)
 static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_rate, bool *out_using_ymfm)
 {
 	FM::OPM *engine = NULL;
+	const bool use_ymfm = (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM ||
+		ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM_DIRECT ||
+		ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM_RAW);
+	const bool direct_mode = (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM_DIRECT ||
+		ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM_RAW);
 
 	if (out_using_ymfm) {
 		*out_using_ymfm = false;
 	}
 
 #if defined(XM6CORE_ENABLE_YMFM)
-	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM) {
+	if (use_ymfm) {
 		if (YmfmOpmEngineSupportsRate(k_opm_clock_hz, sample_rate)) {
-			engine = CreateYmfmOpmEngine();
+			engine = CreateYmfmOpmEngine(direct_mode ? TRUE : FALSE);
 			if (engine) {
 				if (!engine->Init(k_opm_clock_hz, sample_rate, true)) {
 					delete engine;
@@ -546,20 +553,23 @@ static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_
 			}
 			if (!engine) {
 				emit_messagef(ctx,
-					"[xm6-core] YMFM init failed at %u Hz; falling back to FMGEN/XM6 backend",
+					"[xm6-core] %s init failed at %u Hz; falling back to FMGEN/XM6 backend",
+					"YMFM",
 					sample_rate);
 			}
 		} else {
 			emit_messagef(ctx,
-				"[xm6-core] YMFM requires native OPM rate (%u Hz requested, %u Hz required); falling back to FMGEN/XM6 backend",
+				"[xm6-core] %s requires native OPM rate (%u Hz requested, %u Hz required); falling back to FMGEN/XM6 backend",
+				"YMFM",
 				sample_rate,
 				k_opm_clock_hz / 64u);
 		}
 	}
 #else
-	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_YMFM) {
+	if (use_ymfm) {
 		emit_messagef(ctx,
-			"[xm6-core] YMFM requested but this build was compiled without XM6CORE_ENABLE_YMFM; falling back to FMGEN/XM6 backend");
+			"[xm6-core] %s requested but this build was compiled without XM6CORE_ENABLE_YMFM; falling back to FMGEN/XM6 backend",
+			"YMFM");
 	}
 #endif
 
@@ -1726,6 +1736,9 @@ static int px68k_runtime_to_fm16(int volume)
 
 static int px68k_runtime_to_adpcm16(int volume)
 {
+	if (volume <= 0) {
+		return 0;
+	}
 	int mapped = 15 + ((volume - 50) * 15) / 100;
 	return px68k_clamp_volume16(mapped);
 }
@@ -1794,7 +1807,11 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 		}
 
 		if (mix_frames > 0) {
-			ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)mix_frames);
+			if (ctx->runtime_config.adpcm_volume <= 0) {
+				memset(ctx->adpcm_buf, 0, mix_frames * 2 * sizeof(DWORD));
+			} else {
+				ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)mix_frames);
+			}
 		}
 
 		if (ready > mix_frames) {
@@ -1894,7 +1911,9 @@ static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 	reset_px68k_audio_state(ctx);
 
 	if (using_ymfm) {
-		emit_messagef(ctx, "[xm6-core] OPM backend configured: YMFM at %u Hz", sample_rate);
+		emit_messagef(ctx, "[xm6-core] OPM backend configured: %s at %u Hz",
+			"YMFM",
+			sample_rate);
 	}
 
 	return XM6CORE_OK;
@@ -2007,9 +2026,13 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 			memset(ctx->opm_buf, 0, frames * 2 * sizeof(DWORD));
 		}
 
-		// ADPCM: buffer separado para poder aplicar surround sin alterar FM o CD-DA
-		if (frames > 0) {
+	// ADPCM: buffer separado para poder aplicar surround sin alterar FM o CD-DA
+	if (frames > 0) {
+		if (ctx->runtime_config.adpcm_volume <= 0) {
+			memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
+		} else {
 			ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)frames);
+		}
 	}
 
 	// ADPCM: sincronizacion
@@ -2056,7 +2079,8 @@ XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_en
 
 	if (audio_engine != XM6CORE_AUDIO_ENGINE_XM6 &&
 		audio_engine != XM6CORE_AUDIO_ENGINE_PX68K &&
-		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM) {
+		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM &&
+		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM_DIRECT) {
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 

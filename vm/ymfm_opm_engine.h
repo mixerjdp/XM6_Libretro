@@ -7,7 +7,7 @@
 #if defined(XM6CORE_ENABLE_YMFM)
 
 BOOL YmfmOpmEngineSupportsRate(uint clock, uint rate);
-FM::OPM *CreateYmfmOpmEngine(void);
+FM::OPM *CreateYmfmOpmEngine(BOOL direct_mode = FALSE);
 
 #endif
 

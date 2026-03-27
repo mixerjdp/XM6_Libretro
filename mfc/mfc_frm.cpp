@@ -335,6 +335,8 @@ BEGIN_MESSAGE_MAP(CFrmWnd, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(IDM_FULLSCREEN, OnFullScreenUI)
 	ON_COMMAND(IDM_RENDER_FAST, OnRenderFast)
 	ON_UPDATE_COMMAND_UI(IDM_RENDER_FAST, OnRenderFastUI)
+	ON_COMMAND(IDM_YMFM, OnYmfm)
+	ON_UPDATE_COMMAND_UI(IDM_YMFM, OnYmfmUI)
 	ON_COMMAND(IDM_TOGGLE_RENDERER, OnToggleRenderer)
 	ON_COMMAND(IDM_TOGGLE_OSD, OnToggleOSD)
 	ON_COMMAND(IDM_TOGGLE_VSYNC, OnToggleVSync)
@@ -2609,6 +2611,12 @@ void CFrmWnd::GetMessageString(UINT nID, CString& rMessage) const
 		}
 	}
 
+	// YMFM runtime toggle
+	if (nID == IDM_YMFM) {
+		rMessage = _T("YMFM runtime audio backend");
+		bValid = TRUE;
+	}
+
 	// MRU0
 	if ((nID >= IDM_D0_MRU0) && (nID <= IDM_D0_MRU8)) {
 		nMRU = nID - IDM_D0_MRU0;
@@ -3325,6 +3333,45 @@ void CFrmWnd::OnRenderFastUI(CCmdUI *pCmdUI)
 
 	pCmdUI->Enable(TRUE);
 	pCmdUI->SetCheck((pRender->GetCompositorMode() == Render::compositor_fast) ? 1 : 0);
+}
+
+void CFrmWnd::OnYmfm()
+{
+	CSound *pSound;
+
+	pSound = GetSound();
+	if (!pSound) {
+		return;
+	}
+
+	pSound->SetYmfm(!pSound->IsYmfm());
+
+	::LockVM();
+	ApplyCfg();
+	::UnlockVM();
+
+	CString info;
+	info.Format(_T("YMFM: %s"), pSound->IsYmfm() ? _T("ON") : _T("OFF"));
+	SetInfo(info);
+}
+
+void CFrmWnd::OnYmfmUI(CCmdUI *pCmdUI)
+{
+	CSound *pSound;
+
+	if (!pCmdUI) {
+		return;
+	}
+
+	pSound = GetSound();
+	if (!pSound) {
+		pCmdUI->Enable(FALSE);
+		pCmdUI->SetCheck(0);
+		return;
+	}
+
+	pCmdUI->Enable(TRUE);
+	pCmdUI->SetCheck(pSound->IsYmfm() ? 1 : 0);
 }
 
 void CFrmWnd::OnToggleRenderer()

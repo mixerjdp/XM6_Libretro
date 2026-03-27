@@ -17,8 +17,8 @@
 //	#include
 //
 //---------------------------------------------------------------------------
-#define WINVER					0x500	// Windows98,Me,2000,XP and later
-#define _WIN32_WINNT			0x410	// Windows98,Me,2000,XP and later
+#define WINVER					0x0A00	// Windows 10 and later
+#define _WIN32_WINNT			0x0A00	// Windows 10 and later
 #define VC_EXTRALEAN
 
 // MFC

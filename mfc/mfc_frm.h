@@ -82,6 +82,8 @@ public:
 	void ExitBorderlessFullscreen();
 	void OnRenderFast();
 	void OnRenderFastUI(CCmdUI *pCmdUI);
+	void OnYmfm();
+	void OnYmfmUI(CCmdUI *pCmdUI);
 	void OnToggleRenderer();
 	void OnToggleVSync();
 	void OnToggleOSD();
