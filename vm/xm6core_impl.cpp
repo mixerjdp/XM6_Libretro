@@ -32,6 +32,7 @@
 #include "opmif.h"
 #include "opm.h"
 #include "ymfm_opm_engine.h"
+#include "x68sound_bridge.h"
 #include "adpcm.h"
 #include "dmac.h"
 #include "sasi.h"
@@ -160,6 +161,7 @@ static void reset_px68k_audio_state(XM6Context *ctx);
 static void reset_hq_adpcm_state(XM6Context *ctx);
 static void reset_reverb_state(XM6Context *ctx);
 static void reset_eq_state(XM6Context *ctx);
+static void sync_x68sound_state(XM6Context *ctx);
 static void apply_reverb_fx(XM6Context *ctx, short *buffer, unsigned int frames);
 static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate);
 static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames);
@@ -400,6 +402,154 @@ static void reset_eq_state(XM6Context *ctx)
 	ctx->eq_low_r = 0;
 	ctx->eq_mid_l = 0;
 	ctx->eq_mid_r = 0;
+}
+
+static inline unsigned char x68sound_compose_dcr(const DMAC::dma_t &dma)
+{
+	unsigned char data = static_cast<unsigned char>((dma.xrm & 0x03u) << 6);
+	data |= static_cast<unsigned char>((dma.dtyp & 0x03u) << 4);
+	if (dma.dps) {
+		data |= 0x08;
+	}
+	data |= static_cast<unsigned char>(dma.pcl & 0x03u);
+	return data;
+}
+
+static inline unsigned char x68sound_compose_ocr(const DMAC::dma_t &dma)
+{
+	unsigned char data = 0;
+	if (dma.dir) {
+		data |= 0x80;
+	}
+	if (dma.btd) {
+		data |= 0x40;
+	}
+	data |= static_cast<unsigned char>((dma.size & 0x03u) << 4);
+	data |= static_cast<unsigned char>((dma.chain & 0x03u) << 2);
+	data |= static_cast<unsigned char>(dma.reqg & 0x03u);
+	return data;
+}
+
+static inline unsigned char x68sound_compose_scr(const DMAC::dma_t &dma)
+{
+	unsigned char data = static_cast<unsigned char>((dma.mac & 0x03u) << 2);
+	data |= static_cast<unsigned char>(dma.dac & 0x03u);
+	return data;
+}
+
+static inline unsigned char x68sound_compose_ccr(const DMAC::dma_t &dma)
+{
+	unsigned char data = 0;
+	if (dma.intr) {
+		data |= 0x08;
+	}
+	if (dma.hlt) {
+		data |= 0x20;
+	}
+	if (dma.str) {
+		data |= 0x80;
+	}
+	if (dma.cnt) {
+		data |= 0x40;
+	}
+	if (dma.sab) {
+		data |= 0x10;
+	}
+	return data;
+}
+
+static inline unsigned char x68sound_compose_gcr(const DMAC::dma_t &dma)
+{
+	return static_cast<unsigned char>(((dma.bt & 0x03u) << 2) | (dma.br & 0x03u));
+}
+
+static void sync_x68sound_state(XM6Context *ctx)
+{
+#if defined(XM6CORE_ENABLE_X68SOUND)
+	if (!ctx_valid(ctx) || ctx->audio_engine != XM6CORE_AUDIO_ENGINE_X68SOUND) {
+		return;
+	}
+
+	Memory *memory = (Memory*)ctx->vm->SearchDevice(MAKEID('M', 'E', 'M', ' '));
+	if (!memory) {
+		return;
+	}
+
+	Xm6X68Sound::SetMemory(memory);
+	Xm6X68Sound::Start(ctx->audio_rate != 0 ? ctx->audio_rate : 44100u);
+	Xm6X68Sound::Reset();
+
+	if (ctx->ppi) {
+		PPI::ppi_t ppi_state;
+		ctx->ppi->GetPPI(&ppi_state);
+		Xm6X68Sound::WritePpi(static_cast<unsigned char>(ppi_state.portc));
+	}
+
+	if (ctx->opmif) {
+		OPMIF::opm_t opm_state;
+		ctx->opmif->GetOPM(&opm_state);
+		Xm6X68Sound::WriteOpm(0x0f, static_cast<unsigned char>(opm_state.reg[0x0f]));
+		Xm6X68Sound::WriteOpm(0x14, static_cast<unsigned char>(opm_state.reg[0x14]));
+		Xm6X68Sound::WriteOpm(0x18, static_cast<unsigned char>(opm_state.reg[0x18]));
+		Xm6X68Sound::WriteOpm(0x19, static_cast<unsigned char>(opm_state.reg[0x19]));
+		Xm6X68Sound::WriteOpm(0x1b, static_cast<unsigned char>(opm_state.reg[0x1b]));
+		for (int i = 0x20; i < 0x100; ++i) {
+			Xm6X68Sound::WriteOpm(static_cast<unsigned char>(i), static_cast<unsigned char>(opm_state.reg[i]));
+		}
+		for (int i = 0; i < 8; ++i) {
+			Xm6X68Sound::WriteOpm(8, static_cast<unsigned char>(opm_state.key[i]));
+		}
+		Xm6X68Sound::WriteOpm(1, 2);
+		Xm6X68Sound::WriteOpm(1, 0);
+		if (opm_state.reg[0x14] & 0x80) {
+			Xm6X68Sound::TimerA();
+		}
+	}
+
+	DMAC *dmac = (DMAC*)ctx->vm->SearchDevice(MAKEID('D', 'M', 'A', 'C'));
+	if (dmac) {
+		DMAC::dma_t dma_state;
+		dmac->GetDMA(3, &dma_state);
+		Xm6X68Sound::WriteDma(0x04, x68sound_compose_dcr(dma_state));
+		Xm6X68Sound::WriteDma(0x05, x68sound_compose_ocr(dma_state));
+		Xm6X68Sound::WriteDma(0x06, x68sound_compose_scr(dma_state));
+		Xm6X68Sound::WriteDma(0x0a, static_cast<unsigned char>((dma_state.mtc >> 8) & 0xffu));
+		Xm6X68Sound::WriteDma(0x0b, static_cast<unsigned char>(dma_state.mtc & 0xffu));
+		Xm6X68Sound::WriteDma(0x0d, static_cast<unsigned char>((dma_state.mar >> 16) & 0xffu));
+		Xm6X68Sound::WriteDma(0x0e, static_cast<unsigned char>((dma_state.mar >> 8) & 0xffu));
+		Xm6X68Sound::WriteDma(0x0f, static_cast<unsigned char>(dma_state.mar & 0xffu));
+		Xm6X68Sound::WriteDma(0x15, static_cast<unsigned char>((dma_state.dar >> 16) & 0xffu));
+		Xm6X68Sound::WriteDma(0x16, static_cast<unsigned char>((dma_state.dar >> 8) & 0xffu));
+		Xm6X68Sound::WriteDma(0x17, static_cast<unsigned char>(dma_state.dar & 0xffu));
+		Xm6X68Sound::WriteDma(0x1a, static_cast<unsigned char>((dma_state.btc >> 8) & 0xffu));
+		Xm6X68Sound::WriteDma(0x1b, static_cast<unsigned char>(dma_state.btc & 0xffu));
+		Xm6X68Sound::WriteDma(0x1d, static_cast<unsigned char>((dma_state.bar >> 16) & 0xffu));
+		Xm6X68Sound::WriteDma(0x1e, static_cast<unsigned char>((dma_state.bar >> 8) & 0xffu));
+		Xm6X68Sound::WriteDma(0x1f, static_cast<unsigned char>(dma_state.bar & 0xffu));
+		Xm6X68Sound::WriteDma(0x25, static_cast<unsigned char>(dma_state.niv & 0xffu));
+		Xm6X68Sound::WriteDma(0x27, static_cast<unsigned char>(dma_state.eiv & 0xffu));
+		Xm6X68Sound::WriteDma(0x29, static_cast<unsigned char>(dma_state.mfc & 0xffu));
+		Xm6X68Sound::WriteDma(0x2d, static_cast<unsigned char>(dma_state.cp & 0x03u));
+		Xm6X68Sound::WriteDma(0x31, static_cast<unsigned char>(dma_state.dfc & 0xffu));
+		Xm6X68Sound::WriteDma(0x39, static_cast<unsigned char>(dma_state.bfc & 0xffu));
+		Xm6X68Sound::WriteDma(0x3f, x68sound_compose_gcr(dma_state));
+		Xm6X68Sound::WriteDma(0x07, x68sound_compose_ccr(dma_state));
+	}
+
+	ADPCM::adpcm_t adpcm_state;
+	ctx->adpcm->GetADPCM(&adpcm_state);
+	if (adpcm_state.started) {
+		if (adpcm_state.play) {
+			Xm6X68Sound::WriteAdpcm(0x02);
+		} else if (adpcm_state.rec) {
+			Xm6X68Sound::WriteAdpcm(0x04);
+		} else {
+			Xm6X68Sound::WriteAdpcm(0x01);
+		}
+	}
+#else
+	(void)ctx;
+#endif
 }
 
 static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate)
@@ -895,8 +1045,25 @@ static const char* audio_engine_name(int audio_engine)
 		return "YMFM";
 	case XM6CORE_AUDIO_ENGINE_YMFM_DIRECT:
 		return "YMFM";
+	case XM6CORE_AUDIO_ENGINE_X68SOUND:
+		return "X68Sound";
 	default:
 		return "XM6";
+	}
+}
+
+static const char* audio_backend_name(int audio_engine, bool using_ymfm)
+{
+	switch (audio_engine) {
+	case XM6CORE_AUDIO_ENGINE_PX68K:
+		return "PX68k";
+	case XM6CORE_AUDIO_ENGINE_X68SOUND:
+		return "X68Sound";
+	case XM6CORE_AUDIO_ENGINE_YMFM:
+	case XM6CORE_AUDIO_ENGINE_YMFM_DIRECT:
+		return using_ymfm ? "YMFM" : "FMGEN/XM6";
+	default:
+		return "FMGEN/XM6";
 	}
 }
 
@@ -960,6 +1127,11 @@ static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_
 
 	engine->Reset();
 	engine->SetVolume(ctx->runtime_config.fm_volume);
+	emit_messagef(ctx,
+		"[xm6-core] OPM backend ready: requested=%s effective=%s at %u Hz",
+		audio_engine_name(ctx->audio_engine),
+		audio_backend_name(ctx->audio_engine, out_using_ymfm ? *out_using_ymfm : false),
+		sample_rate);
 	return engine;
 }
 
@@ -1040,6 +1212,7 @@ static void post_state_load_sync(XM6Context *ctx)
 	reset_hq_adpcm_state(ctx);
 	reset_reverb_state(ctx);
 	reset_eq_state(ctx);
+	sync_x68sound_state(ctx);
 
 	reset_video_probe_state(ctx);
 }
@@ -1186,6 +1359,9 @@ XM6CORE_API void XM6CORE_CALL xm6_destroy(XM6Handle handle)
 	if (ctx->opmif) {
 		ctx->opmif->SetEngine(NULL);
 	}
+#if defined(XM6CORE_ENABLE_X68SOUND)
+	Xm6X68Sound::Shutdown();
+#endif
 
 	if (ctx->vm) {
 		ctx->vm->Cleanup();
@@ -1436,6 +1612,7 @@ XM6CORE_API int XM6CORE_CALL xm6_reset(XM6Handle handle)
 	reset_hq_adpcm_state(ctx);
 	reset_reverb_state(ctx);
 	reset_eq_state(ctx);
+	sync_x68sound_state(ctx);
 	reset_video_probe_state(ctx);
 	return XM6CORE_OK;
 }
@@ -1457,6 +1634,9 @@ XM6CORE_API int XM6CORE_CALL xm6_set_power(XM6Handle handle, int enabled)
 		reset_reverb_state(ctx);
 		reset_eq_state(ctx);
 		reset_video_probe_state(ctx);
+		Xm6X68Sound::Reset();
+	} else {
+		sync_x68sound_state(ctx);
 	}
 	return XM6CORE_OK;
 }
@@ -2266,6 +2446,10 @@ static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
+#if defined(XM6CORE_ENABLE_X68SOUND)
+	Xm6X68Sound::Shutdown();
+#endif
+
 	if (ctx->opmif) {
 		ctx->opmif->SetEngine(NULL);
 	}
@@ -2320,11 +2504,16 @@ static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate)
 	configure_eq_filters(ctx, sample_rate);
 	reset_px68k_audio_state(ctx);
 
-	if (using_ymfm) {
-		emit_messagef(ctx, "[xm6-core] OPM backend configured: %s at %u Hz",
-			"YMFM",
+#if defined(XM6CORE_ENABLE_X68SOUND)
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_X68SOUND) {
+		sync_x68sound_state(ctx);
+		emit_messagef(ctx,
+			"[xm6-core] Audio backend ready: requested=%s effective=%s at %u Hz",
+			audio_engine_name(ctx->audio_engine),
+			audio_backend_name(ctx->audio_engine, false),
 			sample_rate);
 	}
+#endif
 
 	return XM6CORE_OK;
 }
@@ -2430,6 +2619,47 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		return XM6CORE_OK;
 	}
 
+#if defined(XM6CORE_ENABLE_X68SOUND)
+	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_X68SOUND) {
+		short *x68sound_src = reinterpret_cast<short*>(ctx->opm_buf);
+		const int *cdda_src = reinterpret_cast<const int*>(ctx->adpcm_buf);
+
+		memset(ctx->opm_buf, 0, frames * 2 * sizeof(DWORD));
+		memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
+
+		if (Xm6X68Sound::GetPcm(x68sound_src, (int)frames) != 0) {
+			for (unsigned int i = 0; i < (frames * 2); i++) {
+				out_interleaved_stereo[i] = 0;
+			}
+			*out_frames = frames;
+			return XM6CORE_OK;
+		}
+
+		if (ctx->scsi) {
+			ctx->scsi->GetBuf(ctx->adpcm_buf, (int)frames, (DWORD)ctx->audio_rate);
+		}
+
+		for (unsigned int i = 0; i < frames; i++) {
+			const int mixed_l = static_cast<int>(x68sound_src[(i * 2) + 0]) + cdda_src[(i * 2) + 0];
+			const int mixed_r = static_cast<int>(x68sound_src[(i * 2) + 1]) + cdda_src[(i * 2) + 1];
+			const int out_l = (master != 100) ? ((mixed_l * master) / 100) : mixed_l;
+			const int out_r = (master != 100) ? ((mixed_r * master) / 100) : mixed_r;
+			out_interleaved_stereo[(i * 2) + 0] = saturate_s16(out_l);
+			out_interleaved_stereo[(i * 2) + 1] = saturate_s16(out_r);
+		}
+
+		if (use_reverb) {
+			apply_reverb_fx(ctx, out_interleaved_stereo, frames);
+		}
+		if (use_eq) {
+			apply_eq_fx(ctx, out_interleaved_stereo, frames);
+		}
+
+		*out_frames = frames;
+		return XM6CORE_OK;
+	}
+#endif
+
 	// OPM: procesar y obtener samples disponibles
 	DWORD ready = ctx->opmif->ProcessBuf();
 
@@ -2513,7 +2743,8 @@ XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_en
 	if (audio_engine != XM6CORE_AUDIO_ENGINE_XM6 &&
 		audio_engine != XM6CORE_AUDIO_ENGINE_PX68K &&
 		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM &&
-		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM_DIRECT) {
+		audio_engine != XM6CORE_AUDIO_ENGINE_YMFM_DIRECT &&
+		audio_engine != XM6CORE_AUDIO_ENGINE_X68SOUND) {
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
@@ -2527,6 +2758,10 @@ XM6CORE_API int XM6CORE_CALL xm6_set_audio_engine(XM6Handle handle, int audio_en
 	if (ctx->audio_rate > 0) {
 		const int rc = configure_audio_backend(ctx, ctx->audio_rate);
 		if (rc != XM6CORE_OK) {
+			emit_messagef(ctx,
+				"[xm6-core] Audio engine change failed: requested=%s, reverting to %s",
+				audio_engine_name(audio_engine),
+				audio_engine_name(previous_audio_engine));
 			ctx->audio_engine = previous_audio_engine;
 			configure_audio_backend(ctx, ctx->audio_rate);
 			return rc;

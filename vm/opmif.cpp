@@ -19,6 +19,7 @@
 #include "config.h"
 #include "opm.h"
 #include "opmif.h"
+#include "x68sound_bridge.h"
 
 //===========================================================================
 //
@@ -584,6 +585,7 @@ BOOL FASTCALL OPMIF::Callback(Event *ev)
 		if (opm.reg[0x14] & 0x80) {
 			ProcessBuf();
 			engine->TimerA();
+			Xm6X68Sound::TimerA();
 		}
 	}
 
@@ -703,6 +705,8 @@ void FASTCALL OPMIF::Output(DWORD addr, DWORD data)
 		}
 		engine->SetReg(addr, data);
 	}
+
+	Xm6X68Sound::WriteOpm(static_cast<unsigned char>(addr), static_cast<unsigned char>(data));
 }
 
 //---------------------------------------------------------------------------

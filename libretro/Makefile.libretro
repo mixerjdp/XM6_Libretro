@@ -135,6 +135,7 @@ VM_SOURCES := \
 	../vm/xm6core_impl.cpp \
 	../vm/xm6core_runtime.cpp \
 	../vm/xm6core_stubs.cpp \
+	../vm/x68sound_bridge.cpp \
 	../vm/musashi_adapter.cpp \
 	../vm/musashi_mem.cpp
 
@@ -147,6 +148,15 @@ CPU_SOURCES := \
 SOURCES := xm6_libretro.cpp $(VM_SOURCES) $(YMFM_SOURCES) $(CPU_SOURCES)
 OBJECTS := $(SOURCES:.cpp=.o)
 OBJECTS := $(OBJECTS:.c=.o)
+
+X68SOUND_SRC ?= ../../X68Sound-master/X68Sound
+ifneq ($(wildcard $(X68SOUND_SRC)/X68Sound.cpp),)
+DEFINES += -DXM6CORE_ENABLE_X68SOUND -DXM6CORE_X68SOUND_RENDER_ONLY
+INCLUDES += -I$(X68SOUND_SRC)
+SOURCES += $(X68SOUND_SRC)/X68Sound.cpp
+OBJECTS := $(SOURCES:.cpp=.o)
+OBJECTS := $(OBJECTS:.c=.o)
+endif
 
 all: $(TARGET)
 

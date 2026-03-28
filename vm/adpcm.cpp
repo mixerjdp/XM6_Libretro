@@ -16,6 +16,7 @@
 #include "fileio.h"
 #include "config.h"
 #include "adpcm.h"
+#include "x68sound_bridge.h"
 
 //===========================================================================
 //
@@ -397,6 +398,7 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 			// PCM8A/MCDRV compatible: STOP bit takes priority (treats 0x03 as STOP)
 			if (data & 1) {
 				Stop();
+				Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 				return;
 			}
 			if (data & 2) {
@@ -419,6 +421,7 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 					adpcm.play = TRUE;
 					Start(0);
 				}
+				Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 				return;
 			}
 			if (data & 4) {
@@ -428,8 +431,10 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 					adpcm.rec = TRUE;
 					Start(1);
 				}
+				Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 				return;
 			}
+			Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 			return;
 		}
 
@@ -441,14 +446,17 @@ void FASTCALL ADPCM::WriteByte(DWORD addr, DWORD data)
 			// Play start
 			adpcm.play = TRUE;
 			Start(0);
+			Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 			return;
 		}
 		if (data & 4) {
 			// Talk start
 			adpcm.rec = TRUE;
 			Start(1);
+			Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 			return;
 		}
+		Xm6X68Sound::WriteAdpcm(static_cast<unsigned char>(data));
 		return;
 	}
 

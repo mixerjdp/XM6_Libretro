@@ -326,6 +326,7 @@ static const char* audio_engine_label(int engine)
     case XM6CORE_AUDIO_ENGINE_PX68K: return "PX68k";
     case XM6CORE_AUDIO_ENGINE_YMFM: return "YMFM";
     case XM6CORE_AUDIO_ENGINE_YMFM_DIRECT: return "YMFM";
+    case XM6CORE_AUDIO_ENGINE_X68SOUND: return "X68Sound";
     default: return "XM6";
   }
 }
@@ -2014,6 +2015,8 @@ static void apply_core_option_values()
       g_audio_engine = XM6CORE_AUDIO_ENGINE_YMFM;
     } else if (std::strcmp(var.value, "YMFM direct") == 0 || std::strcmp(var.value, "YMFM raw") == 0) {
       g_audio_engine = XM6CORE_AUDIO_ENGINE_YMFM_DIRECT;
+    } else if (std::strcmp(var.value, "X68Sound") == 0) {
+      g_audio_engine = XM6CORE_AUDIO_ENGINE_X68SOUND;
     } else {
       g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
     }
@@ -2506,6 +2509,7 @@ static void register_core_options()
           { "XM6", nullptr },
           { "PX68k", nullptr },
           { "YMFM", nullptr },
+          { "X68Sound", nullptr },
           { nullptr, nullptr }
         },
         "XM6"
@@ -2693,62 +2697,8 @@ static void register_core_options()
   }
 
   static const retro_variable vars[] = {
-    { "xm6_disk_drive",
-      "Disk drive for content swap; FDD0|FDD1" },
-    { "xm6_exec_mode",
-      "Frame execution mode; exec_to_frame|legacy_exec" },
-    { "xm6_pad_start_select",
-      "Map Start/Select to keys; xf_keys|f_keys|opt_keys|disabled" },
-    { "xm6_cpu_clock",
-      "System clock; 10mhz|12mhz|16mhz|22mhz" },
-    { "xm6_joy1_type",
-      "Joystick Port 1 Type; atari|atari_ss|cpsf_sfc|cpsf_md|disabled" },
-    { "xm6_joy2_type",
-      "Joystick Port 2 Type; disabled|atari|atari_ss|cpsf_sfc|cpsf_md" },
-    { "xm6_ram_size",
-      "Main RAM size (Reset); 12mb|10mb|8mb|6mb|4mb|2mb" },
-    { "xm6_fast_floppy",
-      "Fast floppy; disabled|enabled" },
-    { "xm6_render_mode",
-      "Video compositor; original|fast" },
-    { "xm6_alt_raster",
-      "Alternative raster timing; enabled|disabled" },
-    { "xm6_transparency",
-      "Transparency (TR/half-fill); enabled|disabled" },
-    { "xm6_master_volume",
-      "Master volume; 100|90|80|70|60|50|40|30|20|10|0" },
-    { "xm6_fm_volume",
-      "FM volume; 50|60|70|80|90|100|40|30|20|10|0" },
-    { "xm6_adpcm_volume",
-      "ADPCM volume; 0|10|20|30|40|50|60|70|80|90|100" },
-    { "xm6_hq_adpcm",
-      "HQ ADPCM; disabled|enabled" },
-    { "xm6_reverb",
-      "Reverb; 0|10|20|30|40|50|60|70|80|90|100" },
-    { "xm6_eq_bass",
-      "Bass EQ; 0|10|20|30|40|50|60|70|80|90|100" },
-    { "xm6_eq_mid",
-      "Mid EQ; 0|10|20|30|40|50|60|70|80|90|100" },
-    { "xm6_eq_treble",
-      "Treble EQ; 0|10|20|30|40|50|60|70|80|90|100" },
-    { "xm6_surround",
-      "Surround; disabled|enabled" },
     { "xm6_audio_engine",
-      "Audio engine; XM6|PX68k|YMFM" },
-    { "xm6_midi_output",
-      "MIDI output; disabled|enabled" },
-    { "xm6_midi_output_type",
-      "MIDI output type; GM|LA|GS|XG" },
-    { "xm6_pointer_device",
-      "Pointer device; disabled|mouse" },
-    { "xm6_mouse_port",
-      "Mouse port; off|scc|keyboard" },
-    { "xm6_mouse_speed",
-      "Mouse speed; 205|256|128|384|512|64|0" },
-    { "xm6_mouse_swap",
-      "Swap mouse buttons; disabled|enabled" },
-    { "xm6_mpu_nowait",
-      "No Wait Operation with MPU; disabled|enabled" },
+      "Audio engine (legacy); XM6|PX68k|YMFM|X68Sound" },
     { nullptr, nullptr }
   };
   g_environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, const_cast<retro_variable *>(vars));
@@ -4276,13 +4226,22 @@ bool retro_unserialize(const void *data, size_t size)
   if (!g_xm6_handle || !data) {
     return false;
   }
-  bool ok = g_xm6.load_state_mem(g_xm6_handle, data, static_cast<unsigned int>(size)) == XM6CORE_OK;
+
+  bool ok = false;
+#if defined(_WIN32)
+  __try {
+#endif
+    ok = g_xm6.load_state_mem(g_xm6_handle, data, static_cast<unsigned int>(size)) == XM6CORE_OK;
+#if defined(_WIN32)
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
+    ok = false;
+  }
+#endif
   if (ok) {
     apply_runtime_core_options();
     apply_joy_type_options();
     g_video_not_ready_count = 0;
     arm_savestate_guard_frames("post state load", k_savestate_guard_frames_post_load);
-    core_log(RETRO_LOG_INFO, "[xm6-libretro] Savestate loaded");
   }
   return ok;
 }

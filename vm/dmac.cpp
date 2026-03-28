@@ -17,6 +17,7 @@
 #include "fdc.h"
 #include "fileio.h"
 #include "dmac.h"
+#include "x68sound_bridge.h"
 
 //===========================================================================
 //
@@ -283,6 +284,9 @@ void FASTCALL DMAC::WriteByte(DWORD addr, DWORD data)
 
 	// �`���l���P�ʂōs��
 	WriteDMA(ch, addr, data);
+	if (ch == 3) {
+		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr), static_cast<unsigned char>(data));
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -309,7 +313,13 @@ void FASTCALL DMAC::WriteWord(DWORD addr, DWORD data)
 
 	// �`���l���P�ʂōs��
 	WriteDMA(ch, addr, (BYTE)(data >> 8));
+	if (ch == 3) {
+		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr), static_cast<unsigned char>(data >> 8));
+	}
 	WriteDMA(ch, addr + 1, (BYTE)data);
+	if (ch == 3) {
+		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr + 1), static_cast<unsigned char>(data));
+	}
 }
 
 //---------------------------------------------------------------------------

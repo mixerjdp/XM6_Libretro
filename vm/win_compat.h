@@ -22,8 +22,8 @@ typedef char* LPSTR;
 typedef void* LPVOID;
 typedef long LONG;
 
-struct _CRITICAL_SECTION;
-typedef struct _CRITICAL_SECTION CRITICAL_SECTION;
+struct _RTL_CRITICAL_SECTION;
+typedef struct _RTL_CRITICAL_SECTION CRITICAL_SECTION;
 #endif
 
 #if !defined(TRUE)
