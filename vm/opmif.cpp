@@ -646,6 +646,7 @@ void FASTCALL OPMIF::SetEngine(FM::OPM *p)
 void FASTCALL OPMIF::Output(DWORD addr, DWORD data)
 {
 	const bool raw_mode = engine ? engine->UseRawModeReg() : false;
+	const DWORD x68sound_data = data;
 
 	ASSERT(this);
 	ASSERT(addr < 0x100);
@@ -706,7 +707,11 @@ void FASTCALL OPMIF::Output(DWORD addr, DWORD data)
 		engine->SetReg(addr, data);
 	}
 
-	Xm6X68Sound::WriteOpm(static_cast<unsigned char>(addr), static_cast<unsigned char>(data));
+	if (addr == 0x1b) {
+		Xm6X68Sound::WriteOpm(static_cast<unsigned char>(addr), static_cast<unsigned char>(x68sound_data));
+	} else {
+		Xm6X68Sound::WriteOpm(static_cast<unsigned char>(addr), static_cast<unsigned char>(data));
+	}
 }
 
 //---------------------------------------------------------------------------
