@@ -4078,6 +4078,18 @@ void retro_run(void)
       }
       if (old_reverb_level != g_reverb_level) {
         apply_runtime_core_options();
+        g_audio_fraction = 0.0;
+        if (g_xm6.audio_configure && g_xm6_handle && g_sample_rate > 0) {
+          if (g_xm6.audio_configure(g_xm6_handle, g_sample_rate) == XM6CORE_OK) {
+            core_log(RETRO_LOG_INFO,
+                     "[xm6-libretro] Reverb audio state refreshed at %u Hz",
+                     g_sample_rate);
+          } else {
+            core_log(RETRO_LOG_WARN,
+                     "[xm6-libretro] Reverb refresh failed at %u Hz",
+                     g_sample_rate);
+          }
+        }
         core_log(RETRO_LOG_INFO,
                  "[xm6-libretro] Reverb level changed to %d",
                  g_reverb_level);
