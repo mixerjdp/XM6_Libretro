@@ -92,9 +92,12 @@ struct XM6Context {
 	BOOL surround_enabled;
 	BOOL hq_adpcm_enabled;
 	int reverb_level;
+	int eq_sub_bass_level;
 	int eq_bass_level;
 	int eq_mid_level;
+	int eq_presence_level;
 	int eq_treble_level;
+	int eq_air_level;
 
 	// Runtime config applied to the VM devices
 	Config runtime_config;
@@ -111,12 +114,21 @@ struct XM6Context {
 	unsigned int reverb_buf_pos;
 	int reverb_lp_l;
 	int reverb_lp_r;
-	int eq_low_l;
-	int eq_low_r;
+	int eq_sub_bass_l;
+	int eq_sub_bass_r;
+	int eq_bass_l;
+	int eq_bass_r;
 	int eq_mid_l;
 	int eq_mid_r;
-	int eq_low_coeff_q14;
+	int eq_presence_l;
+	int eq_presence_r;
+	int eq_air_l;
+	int eq_air_r;
+	int eq_sub_bass_coeff_q14;
+	int eq_bass_coeff_q14;
 	int eq_mid_coeff_q14;
+	int eq_presence_coeff_q14;
+	int eq_air_coeff_q14;
 
 	// Message callback (client-side)
 	xm6_message_callback_t msg_callback;
@@ -214,51 +226,25 @@ static void apply_surround_fx(XM6Context *ctx, DWORD *buffer, unsigned int frame
 		return;
 	}
 
-	// Create a more obvious "smile" EQ: lift lows and highs a bit more than
-	// the mids, then widen the image.
+	// Surround is now a pure stereo widening pass.
 	enum {
-		kLowNum = 3,
-		kLowDen = 16,
-		kHighNum = 9,
-		kHighDen = 16,
-		kWidthNum = 3,
-		kWidthDen = 2
+		kWidthNum = 15,
+		kWidthDen = 8
 	};
 
-	int prev_l = ctx->surround_prev_l;
-	int prev_r = ctx->surround_prev_r;
 	int *samples = (int*)buffer;
 
 	for (unsigned int i = 0; i < frames; i++) {
-		const long long input_l = samples[0];
-		const long long input_r = samples[1];
-
-		const long long low_l = (input_l + prev_l) >> 1;
-		const long long low_r = (input_r + prev_r) >> 1;
-		const long long high_l = input_l - prev_l;
-		const long long high_r = input_r - prev_r;
-
-		const long long shaped_l = input_l
-			+ ((low_l * kLowNum) / kLowDen)
-			+ ((high_l * kHighNum) / kHighDen);
-		const long long shaped_r = input_r
-			+ ((low_r * kLowNum) / kLowDen)
-			+ ((high_r * kHighNum) / kHighDen);
-
-		long long mid = (shaped_l + shaped_r) / 2;
-		long long side = (shaped_l - shaped_r) / 2;
+		const long long left = samples[0];
+		const long long right = samples[1];
+		long long mid = (left + right) / 2;
+		long long side = (left - right) / 2;
 		side = (side * kWidthNum) / kWidthDen;
 
 		samples[0] = clamp_sample_32(mid + side);
 		samples[1] = clamp_sample_32(mid - side);
-
-		prev_l = (int)input_l;
-		prev_r = (int)input_r;
 		samples += 2;
 	}
-
-	ctx->surround_prev_l = prev_l;
-	ctx->surround_prev_r = prev_r;
 }
 
 static void apply_surround_fx_s16(XM6Context *ctx, short *buffer, unsigned int frames)
@@ -267,51 +253,26 @@ static void apply_surround_fx_s16(XM6Context *ctx, short *buffer, unsigned int f
 		return;
 	}
 
-	// Same tone-shaping as the 32-bit path, but applied after the X68Sound
+	// Same pure widening as the 32-bit path, but applied after the X68Sound
 	// backend has already produced the final mixed stereo PCM.
 	enum {
-		kLowNum = 3,
-		kLowDen = 16,
-		kHighNum = 9,
-		kHighDen = 16,
-		kWidthNum = 3,
-		kWidthDen = 2
+		kWidthNum = 15,
+		kWidthDen = 8
 	};
 
-	int prev_l = ctx->surround_prev_l;
-	int prev_r = ctx->surround_prev_r;
 	short *samples = buffer;
 
 	for (unsigned int i = 0; i < frames; i++) {
-		const long long input_l = samples[0];
-		const long long input_r = samples[1];
-
-		const long long low_l = (input_l + prev_l) >> 1;
-		const long long low_r = (input_r + prev_r) >> 1;
-		const long long high_l = input_l - prev_l;
-		const long long high_r = input_r - prev_r;
-
-		const long long shaped_l = input_l
-			+ ((low_l * kLowNum) / kLowDen)
-			+ ((high_l * kHighNum) / kHighDen);
-		const long long shaped_r = input_r
-			+ ((low_r * kLowNum) / kLowDen)
-			+ ((high_r * kHighNum) / kHighDen);
-
-		long long mid = (shaped_l + shaped_r) / 2;
-		long long side = (shaped_l - shaped_r) / 2;
+		const long long left = samples[0];
+		const long long right = samples[1];
+		long long mid = (left + right) / 2;
+		long long side = (left - right) / 2;
 		side = (side * kWidthNum) / kWidthDen;
 
 		samples[0] = saturate_s16((int)(mid + side));
 		samples[1] = saturate_s16((int)(mid - side));
-
-		prev_l = (int)input_l;
-		prev_r = (int)input_r;
 		samples += 2;
 	}
-
-	ctx->surround_prev_l = prev_l;
-	ctx->surround_prev_r = prev_r;
 }
 
 static bool ensure_reverb_buffer(XM6Context *ctx, unsigned int sample_rate)
@@ -451,10 +412,16 @@ static void reset_eq_state(XM6Context *ctx)
 		return;
 	}
 
-	ctx->eq_low_l = 0;
-	ctx->eq_low_r = 0;
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
 	ctx->eq_mid_l = 0;
 	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
 }
 
 static inline unsigned char x68sound_compose_dcr(const DMAC::dma_t &dma)
@@ -612,24 +579,51 @@ static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate)
 	}
 
 	const double pi = 3.14159265358979323846;
-	const double low_fc = 160.0;
-	const double mid_fc = 4200.0;
-	const double low_alpha = 1.0 - exp((-2.0 * pi * low_fc) / (double)sample_rate);
+	const double sub_bass_fc = 60.0;
+	const double bass_fc = 200.0;
+	const double mid_fc = 800.0;
+	const double presence_fc = 3000.0;
+	const double air_fc = 8000.0;
+	const double sub_bass_alpha = 1.0 - exp((-2.0 * pi * sub_bass_fc) / (double)sample_rate);
+	const double bass_alpha = 1.0 - exp((-2.0 * pi * bass_fc) / (double)sample_rate);
 	const double mid_alpha = 1.0 - exp((-2.0 * pi * mid_fc) / (double)sample_rate);
-	int low_coeff = (int)(low_alpha * 16384.0 + 0.5);
+	const double presence_alpha = 1.0 - exp((-2.0 * pi * presence_fc) / (double)sample_rate);
+	const double air_alpha = 1.0 - exp((-2.0 * pi * air_fc) / (double)sample_rate);
+	int sub_bass_coeff = (int)(sub_bass_alpha * 16384.0 + 0.5);
+	int bass_coeff = (int)(bass_alpha * 16384.0 + 0.5);
 	int mid_coeff = (int)(mid_alpha * 16384.0 + 0.5);
-	if (low_coeff < 1) {
-		low_coeff = 1;
-	} else if (low_coeff > 16384) {
-		low_coeff = 16384;
+	int presence_coeff = (int)(presence_alpha * 16384.0 + 0.5);
+	int air_coeff = (int)(air_alpha * 16384.0 + 0.5);
+	if (sub_bass_coeff < 1) {
+		sub_bass_coeff = 1;
+	} else if (sub_bass_coeff > 16384) {
+		sub_bass_coeff = 16384;
+	}
+	if (bass_coeff < 1) {
+		bass_coeff = 1;
+	} else if (bass_coeff > 16384) {
+		bass_coeff = 16384;
 	}
 	if (mid_coeff < 1) {
 		mid_coeff = 1;
 	} else if (mid_coeff > 16384) {
 		mid_coeff = 16384;
 	}
-	ctx->eq_low_coeff_q14 = low_coeff;
+	if (presence_coeff < 1) {
+		presence_coeff = 1;
+	} else if (presence_coeff > 16384) {
+		presence_coeff = 16384;
+	}
+	if (air_coeff < 1) {
+		air_coeff = 1;
+	} else if (air_coeff > 16384) {
+		air_coeff = 16384;
+	}
+	ctx->eq_sub_bass_coeff_q14 = sub_bass_coeff;
+	ctx->eq_bass_coeff_q14 = bass_coeff;
 	ctx->eq_mid_coeff_q14 = mid_coeff;
+	ctx->eq_presence_coeff_q14 = presence_coeff;
+	ctx->eq_air_coeff_q14 = air_coeff;
 	reset_eq_state(ctx);
 }
 
@@ -639,60 +633,101 @@ static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames)
 		return;
 	}
 
+	const int sub_bass_level = (ctx->eq_sub_bass_level < 0) ? 0 : (ctx->eq_sub_bass_level > 100 ? 100 : ctx->eq_sub_bass_level);
 	const int bass_level = (ctx->eq_bass_level < 0) ? 0 : (ctx->eq_bass_level > 100 ? 100 : ctx->eq_bass_level);
 	const int mid_level = (ctx->eq_mid_level < 0) ? 0 : (ctx->eq_mid_level > 100 ? 100 : ctx->eq_mid_level);
+	const int presence_level = (ctx->eq_presence_level < 0) ? 0 : (ctx->eq_presence_level > 100 ? 100 : ctx->eq_presence_level);
 	const int treble_level = (ctx->eq_treble_level < 0) ? 0 : (ctx->eq_treble_level > 100 ? 100 : ctx->eq_treble_level);
+	const int air_level = (ctx->eq_air_level < 0) ? 0 : (ctx->eq_air_level > 100 ? 100 : ctx->eq_air_level);
 
-	if (bass_level == 50 && mid_level == 50 && treble_level == 50) {
+	if (sub_bass_level == 50 && bass_level == 50 && mid_level == 50 &&
+	    presence_level == 50 && treble_level == 50 && air_level == 50) {
 		return;
 	}
 
-	const int bass_gain_q14 = 16384 + (((long long)(bass_level - 50) * 16384LL) / 100LL);
-	const int mid_gain_q14 = 16384 + (((long long)(mid_level - 50) * 16384LL) / 100LL);
-	const int treble_gain_q14 = 16384 + (((long long)(treble_level - 50) * 16384LL) / 100LL);
-	const int low_coeff = ctx->eq_low_coeff_q14;
+	const long long kEqGainSpanQ14 = 24576LL;
+	const int sub_bass_gain_q14 = 16384 + (((long long)(sub_bass_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int bass_gain_q14 = 16384 + (((long long)(bass_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int mid_gain_q14 = 16384 + (((long long)(mid_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int presence_gain_q14 = 16384 + (((long long)(presence_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int treble_gain_q14 = 16384 + (((long long)(treble_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int air_gain_q14 = 16384 + (((long long)(air_level - 50) * kEqGainSpanQ14) / 100LL);
+	const int sub_bass_coeff = ctx->eq_sub_bass_coeff_q14;
+	const int bass_coeff = ctx->eq_bass_coeff_q14;
 	const int mid_coeff = ctx->eq_mid_coeff_q14;
+	const int presence_coeff = ctx->eq_presence_coeff_q14;
+	const int air_coeff = ctx->eq_air_coeff_q14;
 
-	int low_l = ctx->eq_low_l;
-	int low_r = ctx->eq_low_r;
+	int sub_bass_l = ctx->eq_sub_bass_l;
+	int sub_bass_r = ctx->eq_sub_bass_r;
+	int bass_l = ctx->eq_bass_l;
+	int bass_r = ctx->eq_bass_r;
 	int mid_l = ctx->eq_mid_l;
 	int mid_r = ctx->eq_mid_r;
+	int presence_l = ctx->eq_presence_l;
+	int presence_r = ctx->eq_presence_r;
+	int air_l = ctx->eq_air_l;
+	int air_r = ctx->eq_air_r;
 	short *samples = buffer;
 
 	for (unsigned int i = 0; i < frames; i++) {
 		const int in_l = samples[0];
 		const int in_r = samples[1];
 
-		low_l += (int)(((long long)(in_l - low_l) * low_coeff) >> 14);
-		low_r += (int)(((long long)(in_r - low_r) * low_coeff) >> 14);
+		sub_bass_l += (int)(((long long)(in_l - sub_bass_l) * sub_bass_coeff) >> 14);
+		sub_bass_r += (int)(((long long)(in_r - sub_bass_r) * sub_bass_coeff) >> 14);
+		bass_l += (int)(((long long)(in_l - bass_l) * bass_coeff) >> 14);
+		bass_r += (int)(((long long)(in_r - bass_r) * bass_coeff) >> 14);
 		mid_l += (int)(((long long)(in_l - mid_l) * mid_coeff) >> 14);
 		mid_r += (int)(((long long)(in_r - mid_r) * mid_coeff) >> 14);
+		presence_l += (int)(((long long)(in_l - presence_l) * presence_coeff) >> 14);
+		presence_r += (int)(((long long)(in_r - presence_r) * presence_coeff) >> 14);
+		air_l += (int)(((long long)(in_l - air_l) * air_coeff) >> 14);
+		air_r += (int)(((long long)(in_r - air_r) * air_coeff) >> 14);
 
-		const long long bass_band_l = low_l;
-		const long long bass_band_r = low_r;
-		const long long mid_band_l = (long long)mid_l - low_l;
-		const long long mid_band_r = (long long)mid_r - low_r;
-		const long long treble_band_l = (long long)in_l - mid_l;
-		const long long treble_band_r = (long long)in_r - mid_r;
+		const long long sub_bass_band_l = sub_bass_l;
+		const long long sub_bass_band_r = sub_bass_r;
+		const long long bass_band_l = (long long)bass_l - sub_bass_l;
+		const long long bass_band_r = (long long)bass_r - sub_bass_r;
+		const long long mid_band_l = (long long)mid_l - bass_l;
+		const long long mid_band_r = (long long)mid_r - bass_r;
+		const long long presence_band_l = (long long)presence_l - mid_l;
+		const long long presence_band_r = (long long)presence_r - mid_r;
+		const long long treble_band_l = (long long)air_l - presence_l;
+		const long long treble_band_r = (long long)air_r - presence_r;
+		const long long air_band_l = (long long)in_l - air_l;
+		const long long air_band_r = (long long)in_r - air_r;
 
 		const long long out_l =
-			((bass_band_l * bass_gain_q14) +
+			((sub_bass_band_l * sub_bass_gain_q14) +
+			 (bass_band_l * bass_gain_q14) +
 			 (mid_band_l * mid_gain_q14) +
-			 (treble_band_l * treble_gain_q14)) >> 14;
+			 (presence_band_l * presence_gain_q14) +
+			 (treble_band_l * treble_gain_q14) +
+			 (air_band_l * air_gain_q14)) >> 14;
 		const long long out_r =
-			((bass_band_r * bass_gain_q14) +
+			((sub_bass_band_r * sub_bass_gain_q14) +
+			 (bass_band_r * bass_gain_q14) +
 			 (mid_band_r * mid_gain_q14) +
-			 (treble_band_r * treble_gain_q14)) >> 14;
+			 (presence_band_r * presence_gain_q14) +
+			 (treble_band_r * treble_gain_q14) +
+			 (air_band_r * air_gain_q14)) >> 14;
 
 		samples[0] = saturate_s16((int)out_l);
 		samples[1] = saturate_s16((int)out_r);
 		samples += 2;
 	}
 
-	ctx->eq_low_l = low_l;
-	ctx->eq_low_r = low_r;
+	ctx->eq_sub_bass_l = sub_bass_l;
+	ctx->eq_sub_bass_r = sub_bass_r;
+	ctx->eq_bass_l = bass_l;
+	ctx->eq_bass_r = bass_r;
 	ctx->eq_mid_l = mid_l;
 	ctx->eq_mid_r = mid_r;
+	ctx->eq_presence_l = presence_l;
+	ctx->eq_presence_r = presence_r;
+	ctx->eq_air_l = air_l;
+	ctx->eq_air_r = air_r;
 }
 
 static inline long long hq_adpcm_soft_clip(long long sample)
@@ -1384,9 +1419,12 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	ctx->ppi       = (PPI*)ctx->vm->SearchDevice(MAKEID('P', 'P', 'I', ' '));
 	ctx->audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
 	ctx->reverb_level = 0;
+	ctx->eq_sub_bass_level = 50;
 	ctx->eq_bass_level = 50;
 	ctx->eq_mid_level = 50;
+	ctx->eq_presence_level = 50;
 	ctx->eq_treble_level = 50;
+	ctx->eq_air_level = 50;
 
 	apply_default_runtime_config(ctx);
 	reset_video_probe_state(ctx);
@@ -2624,9 +2662,12 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 	}
 
 	const bool use_reverb = (ctx->reverb_level > 0);
-	const bool use_eq = !(ctx->eq_bass_level == 50 &&
+	const bool use_eq = !(ctx->eq_sub_bass_level == 50 &&
+	                      ctx->eq_bass_level == 50 &&
 	                      ctx->eq_mid_level == 50 &&
-	                      ctx->eq_treble_level == 50);
+	                      ctx->eq_presence_level == 50 &&
+	                      ctx->eq_treble_level == 50 &&
+	                      ctx->eq_air_level == 50);
 
 	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_PX68K) {
 		if (!ctx->px68k_ring && !ensure_px68k_audio_ring(ctx)) {

@@ -32,29 +32,35 @@ struct XM6ContextRuntimeShim {
 	BOOL surround_enabled;
 	BOOL hq_adpcm_enabled;
 	int reverb_level;
+	int eq_sub_bass_level;
 	int eq_bass_level;
 	int eq_mid_level;
+	int eq_presence_level;
 	int eq_treble_level;
+	int eq_air_level;
 	Config runtime_config;
 	int surround_prev_l;
 	int surround_prev_r;
-	int hq_adpcm_prev_in_l;
-	int hq_adpcm_prev_in_r;
-	int hq_adpcm_prev2_in_l;
-	int hq_adpcm_prev2_in_r;
-	int hq_adpcm_prev_out_l;
-	int hq_adpcm_prev_out_r;
 	int *reverb_buf;
 	unsigned int reverb_buf_frames;
 	unsigned int reverb_buf_pos;
 	int reverb_lp_l;
 	int reverb_lp_r;
-	int eq_low_l;
-	int eq_low_r;
+	int eq_sub_bass_l;
+	int eq_sub_bass_r;
+	int eq_bass_l;
+	int eq_bass_r;
 	int eq_mid_l;
 	int eq_mid_r;
-	int eq_low_coeff_q14;
+	int eq_presence_l;
+	int eq_presence_r;
+	int eq_air_l;
+	int eq_air_r;
+	int eq_sub_bass_coeff_q14;
+	int eq_bass_coeff_q14;
 	int eq_mid_coeff_q14;
+	int eq_presence_coeff_q14;
+	int eq_air_coeff_q14;
 };
 
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_joy_type(XM6Handle handle, int port, int type)
@@ -281,14 +287,6 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_enabled(XM6Handle handl
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
 
-	if (!ctx->hq_adpcm_enabled && enabled) {
-		ctx->hq_adpcm_prev_in_l = 0;
-		ctx->hq_adpcm_prev_in_r = 0;
-		ctx->hq_adpcm_prev2_in_l = 0;
-		ctx->hq_adpcm_prev2_in_r = 0;
-		ctx->hq_adpcm_prev_out_l = 0;
-		ctx->hq_adpcm_prev_out_r = 0;
-	}
 	ctx->hq_adpcm_enabled = enabled ? TRUE : FALSE;
 	return XM6CORE_OK;
 }
@@ -338,11 +336,42 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_bass_level(XM6Handle handle, 
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
 
-	ctx->eq_bass_level = clamp_volume(level);
-	ctx->eq_low_l = 0;
-	ctx->eq_low_r = 0;
+	ctx->eq_sub_bass_level = clamp_volume(level);
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
 	ctx->eq_mid_l = 0;
 	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_bass2_level(XM6Handle handle, int level)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	ctx->eq_bass_level = clamp_volume(level);
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
+	ctx->eq_mid_l = 0;
+	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
 	return XM6CORE_OK;
 }
 
@@ -358,10 +387,66 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_mid_level(XM6Handle handle, i
 	}
 
 	ctx->eq_mid_level = clamp_volume(level);
-	ctx->eq_low_l = 0;
-	ctx->eq_low_r = 0;
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
 	ctx->eq_mid_l = 0;
 	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_presence_level(XM6Handle handle, int level)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	ctx->eq_presence_level = clamp_volume(level);
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
+	ctx->eq_mid_l = 0;
+	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_air_level(XM6Handle handle, int level)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	ctx->eq_air_level = clamp_volume(level);
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
+	ctx->eq_mid_l = 0;
+	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
 	return XM6CORE_OK;
 }
 
@@ -377,10 +462,16 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_eq_treble_level(XM6Handle handle
 	}
 
 	ctx->eq_treble_level = clamp_volume(level);
-	ctx->eq_low_l = 0;
-	ctx->eq_low_r = 0;
+	ctx->eq_sub_bass_l = 0;
+	ctx->eq_sub_bass_r = 0;
+	ctx->eq_bass_l = 0;
+	ctx->eq_bass_r = 0;
 	ctx->eq_mid_l = 0;
 	ctx->eq_mid_r = 0;
+	ctx->eq_presence_l = 0;
+	ctx->eq_presence_r = 0;
+	ctx->eq_air_l = 0;
+	ctx->eq_air_r = 0;
 	return XM6CORE_OK;
 }
 

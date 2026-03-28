@@ -110,9 +110,12 @@ static int g_fm_volume = 50;
 static int g_adpcm_volume = 50;
 static bool g_hq_adpcm_enabled = false;
 static int g_reverb_level = 0;
+static int g_eq_sub_bass_level = 50;
 static int g_eq_bass_level = 50;
 static int g_eq_mid_level = 50;
+static int g_eq_presence_level = 50;
 static int g_eq_treble_level = 50;
+static int g_eq_air_level = 50;
 static bool g_surround_enabled = false;
 static int g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
 static bool g_legacy_dmac_cnt = false;
@@ -276,9 +279,12 @@ struct xm6_api_t {
   int (XM6CORE_CALL *set_adpcm_interp)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_hq_adpcm_enabled)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_reverb_level)(XM6Handle handle, int level) = nullptr;
+  int (XM6CORE_CALL *set_eq_bass2_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_eq_bass_level)(XM6Handle handle, int level) = nullptr;
+  int (XM6CORE_CALL *set_eq_presence_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_eq_mid_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_eq_treble_level)(XM6Handle handle, int level) = nullptr;
+  int (XM6CORE_CALL *set_eq_air_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_surround_enabled)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_audio_engine)(XM6Handle handle, int audio_engine) = nullptr;
   int (XM6CORE_CALL *set_legacy_dmac_cnt)(XM6Handle handle, int enabled) = nullptr;
@@ -590,9 +596,12 @@ static bool load_xm6_api()
   g_xm6.set_adpcm_interp = xm6_set_adpcm_interp;
   g_xm6.set_hq_adpcm_enabled = xm6_set_hq_adpcm_enabled;
   g_xm6.set_reverb_level = xm6_set_reverb_level;
+  g_xm6.set_eq_bass2_level = xm6_set_eq_bass2_level;
   g_xm6.set_eq_bass_level = xm6_set_eq_bass_level;
+  g_xm6.set_eq_presence_level = xm6_set_eq_presence_level;
   g_xm6.set_eq_mid_level = xm6_set_eq_mid_level;
   g_xm6.set_eq_treble_level = xm6_set_eq_treble_level;
+  g_xm6.set_eq_air_level = xm6_set_eq_air_level;
   g_xm6.set_surround_enabled = xm6_set_surround_enabled;
   g_xm6.set_audio_engine = xm6_set_audio_engine;
   g_xm6.set_legacy_dmac_cnt = xm6_set_legacy_dmac_cnt;
@@ -724,9 +733,12 @@ static bool load_xm6_api()
   load_optional_symbol(&g_xm6.set_adpcm_interp, "xm6_set_adpcm_interp");
   load_optional_symbol(&g_xm6.set_hq_adpcm_enabled, "xm6_set_hq_adpcm_enabled");
   load_optional_symbol(&g_xm6.set_reverb_level, "xm6_set_reverb_level");
+  load_optional_symbol(&g_xm6.set_eq_bass2_level, "xm6_set_eq_bass2_level");
   load_optional_symbol(&g_xm6.set_eq_bass_level, "xm6_set_eq_bass_level");
+  load_optional_symbol(&g_xm6.set_eq_presence_level, "xm6_set_eq_presence_level");
   load_optional_symbol(&g_xm6.set_eq_mid_level, "xm6_set_eq_mid_level");
   load_optional_symbol(&g_xm6.set_eq_treble_level, "xm6_set_eq_treble_level");
+  load_optional_symbol(&g_xm6.set_eq_air_level, "xm6_set_eq_air_level");
   load_optional_symbol(&g_xm6.set_surround_enabled, "xm6_set_surround_enabled");
   load_optional_symbol(&g_xm6.set_audio_engine, "xm6_set_audio_engine");
   load_optional_symbol(&g_xm6.set_legacy_dmac_cnt, "xm6_set_legacy_dmac_cnt");
@@ -1754,14 +1766,23 @@ static void apply_runtime_core_options()
   if (g_xm6.set_reverb_level) {
     g_xm6.set_reverb_level(g_xm6_handle, g_reverb_level);
   }
+  if (g_xm6.set_eq_bass2_level) {
+    g_xm6.set_eq_bass2_level(g_xm6_handle, g_eq_bass_level);
+  }
   if (g_xm6.set_eq_bass_level) {
-    g_xm6.set_eq_bass_level(g_xm6_handle, g_eq_bass_level);
+    g_xm6.set_eq_bass_level(g_xm6_handle, g_eq_sub_bass_level);
+  }
+  if (g_xm6.set_eq_presence_level) {
+    g_xm6.set_eq_presence_level(g_xm6_handle, g_eq_presence_level);
   }
   if (g_xm6.set_eq_mid_level) {
     g_xm6.set_eq_mid_level(g_xm6_handle, g_eq_mid_level);
   }
   if (g_xm6.set_eq_treble_level) {
     g_xm6.set_eq_treble_level(g_xm6_handle, g_eq_treble_level);
+  }
+  if (g_xm6.set_eq_air_level) {
+    g_xm6.set_eq_air_level(g_xm6_handle, g_eq_air_level);
   }
   if (g_xm6.set_surround_enabled) {
     g_xm6.set_surround_enabled(g_xm6_handle, g_surround_enabled ? 1 : 0);
@@ -1972,6 +1993,16 @@ static void apply_core_option_values()
     }
   }
 
+  var.key = "xm6_eq_sub_bass";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_eq_sub_bass_level = std::atoi(var.value);
+    if (g_eq_sub_bass_level < 0) {
+      g_eq_sub_bass_level = 0;
+    } else if (g_eq_sub_bass_level > 100) {
+      g_eq_sub_bass_level = 100;
+    }
+  }
+
   var.key = "xm6_eq_bass";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_eq_bass_level = std::atoi(var.value);
@@ -1992,6 +2023,16 @@ static void apply_core_option_values()
     }
   }
 
+  var.key = "xm6_eq_presence";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_eq_presence_level = std::atoi(var.value);
+    if (g_eq_presence_level < 0) {
+      g_eq_presence_level = 0;
+    } else if (g_eq_presence_level > 100) {
+      g_eq_presence_level = 100;
+    }
+  }
+
   var.key = "xm6_eq_treble";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_eq_treble_level = std::atoi(var.value);
@@ -1999,6 +2040,16 @@ static void apply_core_option_values()
       g_eq_treble_level = 0;
     } else if (g_eq_treble_level > 100) {
       g_eq_treble_level = 100;
+    }
+  }
+
+  var.key = "xm6_eq_air";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_eq_air_level = std::atoi(var.value);
+    if (g_eq_air_level < 0) {
+      g_eq_air_level = 0;
+    } else if (g_eq_air_level > 100) {
+      g_eq_air_level = 100;
     }
   }
 
@@ -2107,7 +2158,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(x68sound=%d fm=%d adpcm=%d hq_adpcm=%s reverb=%d eq(bass=%d mid=%d treble=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(x68sound=%d fm=%d adpcm=%d hq_adpcm=%s reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2124,7 +2175,7 @@ static void apply_core_option_values()
            g_x68sound_volume, g_fm_volume, g_adpcm_volume,
            g_hq_adpcm_enabled ? "enabled" : "disabled",
            g_reverb_level,
-           g_eq_bass_level, g_eq_mid_level, g_eq_treble_level,
+           g_eq_sub_bass_level, g_eq_bass_level, g_eq_mid_level, g_eq_presence_level, g_eq_treble_level, g_eq_air_level,
            g_surround_enabled ? "enabled" : "disabled",
            audio_engine_label(g_audio_engine),
            g_legacy_dmac_cnt ? "legacy" : "fixed",
@@ -2432,10 +2483,33 @@ static void register_core_options()
         "0"
       },
       {
+        "xm6_eq_sub_bass",
+        "Sub-bass EQ",
+        nullptr,
+        "Adjust the 60 Hz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        nullptr,
+        "sound",
+        {
+          { "0", nullptr },
+          { "10", nullptr },
+          { "20", nullptr },
+          { "30", nullptr },
+          { "40", nullptr },
+          { "50", nullptr },
+          { "60", nullptr },
+          { "70", nullptr },
+          { "80", nullptr },
+          { "90", nullptr },
+          { "100", nullptr },
+          { nullptr, nullptr }
+        },
+        "50"
+      },
+      {
         "xm6_eq_bass",
         "Bass EQ",
         nullptr,
-        "Adjust the low-frequency band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        "Adjust the 200 Hz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
         nullptr,
         "sound",
         {
@@ -2458,7 +2532,30 @@ static void register_core_options()
         "xm6_eq_mid",
         "Mid EQ",
         nullptr,
-        "Adjust the midrange band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        "Adjust the 800 Hz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        nullptr,
+        "sound",
+        {
+          { "0", nullptr },
+          { "10", nullptr },
+          { "20", nullptr },
+          { "30", nullptr },
+          { "40", nullptr },
+          { "50", nullptr },
+          { "60", nullptr },
+          { "70", nullptr },
+          { "80", nullptr },
+          { "90", nullptr },
+          { "100", nullptr },
+          { nullptr, nullptr }
+        },
+        "50"
+      },
+      {
+        "xm6_eq_presence",
+        "Presence EQ",
+        nullptr,
+        "Adjust the 3 kHz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
         nullptr,
         "sound",
         {
@@ -2481,7 +2578,30 @@ static void register_core_options()
         "xm6_eq_treble",
         "Treble EQ",
         nullptr,
-        "Adjust the high-frequency band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        "Adjust the 8 kHz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
+        nullptr,
+        "sound",
+        {
+          { "0", nullptr },
+          { "10", nullptr },
+          { "20", nullptr },
+          { "30", nullptr },
+          { "40", nullptr },
+          { "50", nullptr },
+          { "60", nullptr },
+          { "70", nullptr },
+          { "80", nullptr },
+          { "90", nullptr },
+          { "100", nullptr },
+          { nullptr, nullptr }
+        },
+        "50"
+      },
+      {
+        "xm6_eq_air",
+        "Air EQ",
+        nullptr,
+        "Adjust the 16 kHz band of the global EQ. 50 is flat; 0 cuts and 100 boosts.",
         nullptr,
         "sound",
         {
@@ -2504,7 +2624,7 @@ static void register_core_options()
         "xm6_surround",
         "Surround",
         nullptr,
-        "Apply widening and EQ to FM and ADPCM.",
+        "Apply stereo widening to FM and ADPCM.",
         nullptr,
         "sound",
         {
@@ -3643,9 +3763,12 @@ void retro_init(void)
   g_adpcm_volume = 50;
   g_hq_adpcm_enabled = false;
   g_reverb_level = 0;
+  g_eq_sub_bass_level = 50;
   g_eq_bass_level = 50;
   g_eq_mid_level = 50;
+  g_eq_presence_level = 50;
   g_eq_treble_level = 50;
+  g_eq_air_level = 50;
   g_surround_enabled = false;
   g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
   g_legacy_dmac_cnt = false;
@@ -3879,8 +4002,10 @@ void retro_run(void)
 	      const int old_adpcm_volume = g_adpcm_volume;
 	      const bool old_hq_adpcm_enabled = g_hq_adpcm_enabled;
 	      const int old_reverb_level = g_reverb_level;
+	      const int old_eq_sub_bass_level = g_eq_sub_bass_level;
 	      const int old_eq_bass_level = g_eq_bass_level;
 	      const int old_eq_mid_level = g_eq_mid_level;
+	      const int old_eq_presence_level = g_eq_presence_level;
 	      const int old_eq_treble_level = g_eq_treble_level;
 	      const bool old_surround_enabled = g_surround_enabled;
 	      const int old_audio_engine = g_audio_engine;
@@ -3957,13 +4082,15 @@ void retro_run(void)
                  "[xm6-libretro] Reverb level changed to %d",
                  g_reverb_level);
       }
-      if (old_eq_bass_level != g_eq_bass_level ||
+      if (old_eq_sub_bass_level != g_eq_sub_bass_level ||
+          old_eq_bass_level != g_eq_bass_level ||
           old_eq_mid_level != g_eq_mid_level ||
+          old_eq_presence_level != g_eq_presence_level ||
           old_eq_treble_level != g_eq_treble_level) {
         apply_runtime_core_options();
-        core_log(RETRO_LOG_INFO,
-                 "[xm6-libretro] EQ changed (bass=%d mid=%d treble=%d)",
-                 g_eq_bass_level, g_eq_mid_level, g_eq_treble_level);
+                core_log(RETRO_LOG_INFO,
+                         "[xm6-libretro] EQ changed (sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d)",
+                         g_eq_sub_bass_level, g_eq_bass_level, g_eq_mid_level, g_eq_presence_level, g_eq_treble_level, g_eq_air_level);
       }
       if (old_surround_enabled != g_surround_enabled) {
         apply_runtime_core_options();
