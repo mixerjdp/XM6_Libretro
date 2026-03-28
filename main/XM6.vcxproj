@@ -58,8 +58,8 @@
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\..\ymfm-main\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_ENABLE_YMFM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -100,8 +100,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\..\ymfm-main\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_ENABLE_YMFM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -173,7 +173,9 @@
     <ClCompile Include="..\vm\neptune.cpp" />
     <ClCompile Include="..\vm\opm.cpp" />
     <ClCompile Include="..\vm\opmif.cpp" />
+    <ClCompile Include="..\vm\x68sound_bridge.cpp" />
     <ClCompile Include="..\vm\ymfm_opm_engine.cpp" />
+    <ClCompile Include="..\vm\x68sound\X68Sound.cpp" />
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
     <ClCompile Include="..\vm\render.cpp" />
@@ -193,7 +195,7 @@
     <ClCompile Include="..\vm\vc.cpp" />
     <ClCompile Include="..\vm\vm.cpp" />
     <ClCompile Include="..\vm\windrv.cpp" />
-    <ClCompile Include="..\..\ymfm-main\src\ymfm_opm.cpp" />
+    <ClCompile Include="..\vm\ymfm\ymfm_opm.cpp" />
     <ClCompile Include="..\vm\musashi_adapter.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>

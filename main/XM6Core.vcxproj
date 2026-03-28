@@ -86,7 +86,7 @@
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\..\ymfm-main\src;..\..\X68Sound-master\X68Sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_EXPORTS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -112,7 +112,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\..\ymfm-main\src;..\..\X68Sound-master\X68Sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_EXPORTS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -139,7 +139,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\..\ymfm-main\src;..\..\X68Sound-master\X68Sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_EXPORTS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -171,7 +171,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\..\ymfm-main\src;..\..\X68Sound-master\X68Sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\vm;..\mfc;..\cpu;..\cpu\musashi;..\cpu\musashi\softfloat;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN64;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_EXPORTS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -233,7 +233,7 @@
     <ClCompile Include="..\vm\opmif.cpp" />
     <ClCompile Include="..\vm\x68sound_bridge.cpp" />
     <ClCompile Include="..\vm\ymfm_opm_engine.cpp" />
-    <ClCompile Include="..\..\X68Sound-master\X68Sound\X68Sound.cpp" />
+    <ClCompile Include="..\vm\x68sound\X68Sound.cpp" />
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
     <ClCompile Include="..\vm\render.cpp" />
@@ -253,7 +253,7 @@
     <ClCompile Include="..\vm\vc.cpp" />
     <ClCompile Include="..\vm\vm.cpp" />
     <ClCompile Include="..\vm\windrv.cpp" />
-    <ClCompile Include="..\..\ymfm-main\src\ymfm_opm.cpp" />
+    <ClCompile Include="..\vm\ymfm\ymfm_opm.cpp" />
     <ClCompile Include="..\vm\core_soft.cpp" />
     <ClCompile Include="..\vm\xm6core_diag.cpp" />
     <ClCompile Include="..\vm\xm6core_impl.cpp" />

@@ -156,7 +156,7 @@
     <ClCompile Include="..\vm\windrv.cpp">
       <Filter>VM</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ymfm-main\src\ymfm_opm.cpp">
+    <ClCompile Include="..\vm\ymfm\ymfm_opm.cpp">
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\musashi_adapter.cpp">

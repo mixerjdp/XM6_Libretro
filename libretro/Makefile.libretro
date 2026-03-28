@@ -66,7 +66,7 @@ endif
 
 INCLUDES := -I. -I../vm -I../cpu -I../cpu/Musashi -I../cpu/Musashi/softfloat
 
-YMFM_SRC ?= ../../ymfm-main/src
+YMFM_SRC ?= ../vm/ymfm
 YMFM_SOURCES :=
 ifneq ($(wildcard $(YMFM_SRC)/ymfm_opm.cpp),)
 DEFINES += -DXM6CORE_ENABLE_YMFM
@@ -149,7 +149,7 @@ SOURCES := xm6_libretro.cpp $(VM_SOURCES) $(YMFM_SOURCES) $(CPU_SOURCES)
 OBJECTS := $(SOURCES:.cpp=.o)
 OBJECTS := $(OBJECTS:.c=.o)
 
-X68SOUND_SRC ?= ../../X68Sound-master/X68Sound
+X68SOUND_SRC ?= ../vm/x68sound
 ifneq ($(wildcard $(X68SOUND_SRC)/X68Sound.cpp),)
 DEFINES += -DXM6CORE_ENABLE_X68SOUND -DXM6CORE_X68SOUND_RENDER_ONLY
 INCLUDES += -I$(X68SOUND_SRC)

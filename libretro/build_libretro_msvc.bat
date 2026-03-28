@@ -33,8 +33,8 @@ if errorlevel 1 (
   exit /b 1
 )
 
-set YMFM_SRC=..\..\ymfm-main\src
-set X68SOUND_SRC=..\..\X68Sound-master\X68Sound
+set YMFM_SRC=..\vm\ymfm
+set X68SOUND_SRC=..\vm\x68sound
 set DEFINES=/D__LIBRETRO__ /DXM6CORE_MONOLITHIC /DXM6CORE_STATIC /DXM6_FORCE_DEFAULT_SRAM /DNDEBUG /D_NDEBUG /DMUSASHI_CNF=\"m68kconf_xm6.h\"
 set INCLUDES=/I. /I..\vm /I..\cpu /I..\cpu\Musashi /I..\cpu\Musashi\softfloat
 set YMFM_SOURCES=

@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ �f�B�X�N ]
+//	Copyright (C) 2001-2006 PI(ytanaka@ipc-tokai.or.jp)
+//	[ Disk Control ]
 //
 //---------------------------------------------------------------------------
 
@@ -16,13 +16,13 @@
 
 //===========================================================================
 //
-//	�f�B�X�N�g���b�N
+//	Disk track
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 DiskTrack::DiskTrack(int track, int size, int sectors, BOOL raw)
@@ -31,31 +31,31 @@ DiskTrack::DiskTrack(int track, int size, int sectors, BOOL raw)
 	ASSERT((size == 8) || (size == 9) || (size == 11));
 	ASSERT((sectors > 0) && (sectors <= 0x100));
 
-	// �p�����[�^��ݒ�
+	// Set parameters
 	dt.track = track;
 	dt.size = size;
 	dt.sectors = sectors;
 	dt.raw = raw;
 
-	// ����������Ă��Ȃ�(���[�h����K�v����)
+	// Not loaded (need to load)
 	dt.init = FALSE;
 
-	// �ύX����Ă��Ȃ�
+	// Not changed
 	dt.changed = FALSE;
 
-	// ���I���[�N�͑��݂��Ȃ�
+	// Buffer is not allocated yet
 	dt.buffer = NULL;
 	dt.changemap = NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 DiskTrack::~DiskTrack()
 {
-	// ����������͍s�����A�����Z�[�u�͂��Ȃ�
+	// Deallocate buffer, do not save
 	if (dt.buffer) {
 		delete[] dt.buffer;
 		dt.buffer = NULL;
@@ -68,7 +68,7 @@ DiskTrack::~DiskTrack()
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskTrack::Load(const Filepath& path)
@@ -80,7 +80,7 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 
 	ASSERT(this);
 
-	// ���Ƀ��[�h����Ă���Εs�v
+	// If already loaded, skip
 	if (dt.init) {
 		ASSERT(dt.buffer);
 		ASSERT(dt.changemap);
@@ -90,7 +90,7 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 	ASSERT(!dt.buffer);
 	ASSERT(!dt.changemap);
 
-	// �I�t�Z�b�g���v�Z(����ȑO�̃g���b�N��256�Z�N�^�ێ��Ƃ݂Ȃ�)
+	// Calculate offset (previous track stores 256 sectors)
 	offset = (dt.track << 8);
 	if (dt.raw) {
 		ASSERT(dt.size == 11);
@@ -101,10 +101,10 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 		offset <<= dt.size;
 	}
 
-	// �����O�X���v�Z(���̃g���b�N�̃f�[�^�T�C�Y)
+	// Calculate length (next track's data size)
 	length = dt.sectors << dt.size;
 
-	// �o�b�t�@�̃��������m��
+	// Ensure buffer allocation size
 	ASSERT((dt.size == 8) || (dt.size == 9) || (dt.size == 11));
 	ASSERT((dt.sectors > 0) && (dt.sectors <= 0x100));
 	try {
@@ -118,7 +118,7 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 		return FALSE;
 	}
 
-	// �ύX�}�b�v�̃��������m��
+	// Ensure changemap allocation
 	try {
 		dt.changemap = new BOOL[dt.sectors];
 	}
@@ -130,36 +130,36 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 		return FALSE;
 	}
 
-	// �ύX�}�b�v���N���A
+	// Clear changemap
 	for (i=0; i<dt.sectors; i++) {
 		dt.changemap[i] = FALSE;
 	}
 
-	// �t�@�C������ǂݍ���
+	// Open file and read
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 	if (dt.raw) {
-		// �����ǂ�
+		// RAW mode
 		for (i=0; i<dt.sectors; i++) {
-			// �V�[�N
+			// Seek
 			if (!fio.Seek(offset)) {
 				fio.Close();
 				return FALSE;
 			}
 
-			// �ǂݍ���
+			// Read
 			if (!fio.Read(&dt.buffer[i << dt.size], 1 << dt.size)) {
 				fio.Close();
 				return FALSE;
 			}
 
-			// ���̃I�t�Z�b�g
+			// Next offset
 			offset += 0x930;
 		}
 	}
 	else {
-		// �A���ǂ�
+		// Normal mode
 		if (!fio.Seek(offset)) {
 			fio.Close();
 			return FALSE;
@@ -171,7 +171,7 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 	}
 	fio.Close();
 
-	// �t���O�𗧂āA����I��
+	// Set flag, clear change
 	dt.init = TRUE;
 	dt.changed = FALSE;
 	return TRUE;
@@ -179,7 +179,7 @@ BOOL FASTCALL DiskTrack::Load(const Filepath& path)
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskTrack::Save(const Filepath& path)
@@ -191,42 +191,42 @@ BOOL FASTCALL DiskTrack::Save(const Filepath& path)
 
 	ASSERT(this);
 
-	// ����������Ă��Ȃ���Εs�v
+	// If not loaded, skip
 	if (!dt.init) {
 		return TRUE;
 	}
 
-	// �ύX����Ă��Ȃ���Εs�v
+	// If not changed, skip
 	if (!dt.changed) {
 		return TRUE;
 	}
 
-	// �������ޕK�v������
+	// Need to save
 	ASSERT(dt.buffer);
 	ASSERT(dt.changemap);
 	ASSERT((dt.size == 8) || (dt.size == 9) || (dt.size == 11));
 	ASSERT((dt.sectors > 0) && (dt.sectors <= 0x100));
 
-	// RAW���[�h�ł͏������݂͂��肦�Ȃ�
+	// Write is not supported in RAW mode
 	ASSERT(!dt.raw);
 
-	// �I�t�Z�b�g���v�Z(����ȑO�̃g���b�N��256�Z�N�^�ێ��Ƃ݂Ȃ�)
+	// Calculate offset (previous track stores 256 sectors)
 	offset = (dt.track << 8);
 	offset <<= dt.size;
 
-	// �Z�N�^������̃����O�X���v�Z
+	// Calculate sector data length
 	length = 1 << dt.size;
 
-	// �t�@�C���I�[�v��
+	// Open file
 	if (!fio.Open(path, Fileio::ReadWrite)) {
 		return FALSE;
 	}
 
-	// �������݃��[�v
+	// Write loop
 	for (i=0; i<dt.sectors; i++) {
-		// �ύX����Ă����
+		// If changed
 		if (dt.changemap[i]) {
-			// �V�[�N�A��������
+			// Seek, write
 			if (!fio.Seek(offset + (i << dt.size))) {
 				fio.Close();
 				return FALSE;
@@ -236,22 +236,22 @@ BOOL FASTCALL DiskTrack::Save(const Filepath& path)
 				return FALSE;
 			}
 
-			// �ύX�t���O�𗎂Ƃ�
+			// Clear change flag
 			dt.changemap[i] = FALSE;
 		}
 	}
 
-	// �N���[�Y
+	// Close
 	fio.Close();
 
-	// �ύX�t���O�𗎂Ƃ��A�I��
+	// Clear change flag and exit
 	dt.changed = FALSE;
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h�Z�N�^
+//	Read sector
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskTrack::Read(BYTE *buf, int sec) const
@@ -260,29 +260,29 @@ BOOL FASTCALL DiskTrack::Read(BYTE *buf, int sec) const
 	ASSERT(buf);
 	ASSERT((sec >= 0) & (sec < 0x100));
 
-	// ����������Ă��Ȃ���΃G���[
+	// Error if not loaded
 	if (!dt.init) {
 		return FALSE;
 	}
 
-	// �Z�N�^���L�����𒴂��Ă���΃G���[
+	// Error if sector exceeds number
 	if (sec >= dt.sectors) {
 		return FALSE;
 	}
 
-	// �R�s�[
+	// Copy
 	ASSERT(dt.buffer);
 	ASSERT((dt.size == 8) || (dt.size == 9) || (dt.size == 11));
 	ASSERT((dt.sectors > 0) && (dt.sectors <= 0x100));
 	memcpy(buf, &dt.buffer[sec << dt.size], 1 << dt.size);
 
-	// ����
+	// Success
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	���C�g�Z�N�^
+//	Write sector
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskTrack::Write(const BYTE *buf, int sec)
@@ -295,47 +295,47 @@ BOOL FASTCALL DiskTrack::Write(const BYTE *buf, int sec)
 	ASSERT((sec >= 0) & (sec < 0x100));
 	ASSERT(!dt.raw);
 
-	// ����������Ă��Ȃ���΃G���[
+	// Error if not loaded
 	if (!dt.init) {
 		return FALSE;
 	}
 
-	// �Z�N�^���L�����𒴂��Ă���΃G���[
+	// Error if sector exceeds number
 	if (sec >= dt.sectors) {
 		return FALSE;
 	}
 
-	// �I�t�Z�b�g�A�����O�X���v�Z
+	// Calculate offset and length
 	offset = sec << dt.size;
 	length = 1 << dt.size;
 
-	// ��r
+	// Compare
 	ASSERT(dt.buffer);
 	ASSERT((dt.size == 8) || (dt.size == 9) || (dt.size == 11));
 	ASSERT((dt.sectors > 0) && (dt.sectors <= 0x100));
 	if (memcmp(buf, &dt.buffer[offset], length) == 0) {
-		// �������̂������������Ƃ��Ă���̂ŁA����I��
+		// Same data, so skip
 		return TRUE;
 	}
 
-	// �R�s�[�A�ύX����
+	// Copy and change
 	memcpy(&dt.buffer[offset], buf, length);
 	dt.changemap[sec] = TRUE;
 	dt.changed = TRUE;
 
-	// ����
+	// Success
 	return TRUE;
 }
 
 //===========================================================================
 //
-//	�f�B�X�N�L���b�V��
+//	Disk cache
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 DiskCache::DiskCache(const Filepath& path, int size, int blocks)
@@ -345,13 +345,13 @@ DiskCache::DiskCache(const Filepath& path, int size, int blocks)
 	ASSERT((size == 8) || (size == 9) || (size == 11));
 	ASSERT(blocks > 0);
 
-	// �L���b�V�����[�N
+	// Initialize cache
 	for (i=0; i<CacheMax; i++) {
 		cache[i].disktrk = NULL;
 		cache[i].serial = 0;
 	}
 
-	// ���̑�
+	// Others
 	serial = 0;
 	sec_path = path;
 	sec_size = size;
@@ -361,18 +361,18 @@ DiskCache::DiskCache(const Filepath& path, int size, int blocks)
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 DiskCache::~DiskCache()
 {
-	// �g���b�N���N���A
+	// Clear tracks
 	Clear();
 }
 
 //---------------------------------------------------------------------------
 //
-//	RAW���[�h�ݒ�
+//	RAW mode setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL DiskCache::SetRawMode(BOOL raw)
@@ -380,13 +380,13 @@ void FASTCALL DiskCache::SetRawMode(BOOL raw)
 	ASSERT(this);
 	ASSERT(sec_size == 11);
 
-	// �ݒ�
+	// Set
 	cd_raw = raw;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskCache::Save()
@@ -395,11 +395,11 @@ BOOL FASTCALL DiskCache::Save()
 
 	ASSERT(this);
 
-	// �g���b�N��ۑ�
+	// Save tracks
 	for (i=0; i<CacheMax; i++) {
-		// �L���ȃg���b�N��
+		// Valid track
 		if (cache[i].disktrk) {
-			// �ۑ�
+			// Save
 			if (!cache[i].disktrk->Save(sec_path)) {
 				return FALSE;
 			}
@@ -411,7 +411,7 @@ BOOL FASTCALL DiskCache::Save()
 
 //---------------------------------------------------------------------------
 //
-//	�f�B�X�N�L���b�V�����擾
+//	Get disk cache
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskCache::GetCache(int index, int& track, DWORD& serial) const
@@ -419,12 +419,12 @@ BOOL FASTCALL DiskCache::GetCache(int index, int& track, DWORD& serial) const
 	ASSERT(this);
 	ASSERT((index >= 0) && (index < CacheMax));
 
-	// ���g�p�Ȃ�FALSE
+	// If not used, return FALSE
 	if (!cache[index].disktrk) {
 		return FALSE;
 	}
 
-	// �g���b�N�ƃV���A����ݒ�
+	// Set track and serial
 	track = cache[index].disktrk->GetTrack();
 	serial = cache[index].serial;
 
@@ -433,7 +433,7 @@ BOOL FASTCALL DiskCache::GetCache(int index, int& track, DWORD& serial) const
 
 //---------------------------------------------------------------------------
 //
-//	�N���A
+//	Clear
 //
 //---------------------------------------------------------------------------
 void FASTCALL DiskCache::Clear()
@@ -442,7 +442,7 @@ void FASTCALL DiskCache::Clear()
 
 	ASSERT(this);
 
-	// �L���b�V�����[�N�����
+	// Clear cache entries
 	for (i=0; i<CacheMax; i++) {
 		if (cache[i].disktrk) {
 			delete cache[i].disktrk;
@@ -453,7 +453,7 @@ void FASTCALL DiskCache::Clear()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�N�^���[�h
+//	Read sector
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskCache::Read(BYTE *buf, int block)
@@ -464,25 +464,25 @@ BOOL FASTCALL DiskCache::Read(BYTE *buf, int block)
 	ASSERT(this);
 	ASSERT(sec_size != 0);
 
-	// ��ɍX�V
+	// Update first
 	Update();
 
-	// �g���b�N���Z�o(256�Z�N�^/�g���b�N�ɌŒ�)
+	// Calculate track (fixed to 256 sectors per track)
 	track = block >> 8;
 
-	// ���̃g���b�N�f�[�^�𓾂�
+	// Get track data
 	disktrk = Assign(track);
 	if (!disktrk) {
 		return FALSE;
 	}
 
-	// �g���b�N�ɔC����
+	// Read from track
 	return disktrk->Read(buf, (BYTE)block);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�Z�N�^���C�g
+//	Write sector
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskCache::Write(const BYTE *buf, int block)
@@ -493,25 +493,25 @@ BOOL FASTCALL DiskCache::Write(const BYTE *buf, int block)
 	ASSERT(this);
 	ASSERT(sec_size != 0);
 
-	// ��ɍX�V
+	// Update first
 	Update();
 
-	// �g���b�N���Z�o(256�Z�N�^/�g���b�N�ɌŒ�)
+	// Calculate track (fixed to 256 sectors per track)
 	track = block >> 8;
 
-	// ���̃g���b�N�f�[�^�𓾂�
+	// Get track data
 	disktrk = Assign(track);
 	if (!disktrk) {
 		return FALSE;
 	}
 
-	// �g���b�N�ɔC����
+	// Write to track
 	return disktrk->Write(buf, (BYTE)block);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�g���b�N�̊��蓖��
+//	Assign track
 //
 //---------------------------------------------------------------------------
 DiskTrack* FASTCALL DiskCache::Assign(int track)
@@ -524,72 +524,72 @@ DiskTrack* FASTCALL DiskCache::Assign(int track)
 	ASSERT(sec_size != 0);
 	ASSERT(track >= 0);
 
-	// �܂��A���Ɋ��蓖�Ă���Ă��Ȃ������ׂ�
+	// First, check if already assigned
 	for (i=0; i<CacheMax; i++) {
 		if (cache[i].disktrk) {
 			if (cache[i].disktrk->GetTrack() == track) {
-				// �g���b�N����v
+				// Track found
 				cache[i].serial = serial;
 				return cache[i].disktrk;
 			}
 		}
 	}
 
-	// ���ɁA�󂢂Ă�����̂��Ȃ������ׂ�
+	// Next, check for empty slot
 	for (i=0; i<CacheMax; i++) {
 		if (!cache[i].disktrk) {
-			// ���[�h�����݂�
+			// Try to load
 			if (Load(i, track)) {
-				// ���[�h����
+				// Load success
 				cache[i].serial = serial;
 				return cache[i].disktrk;
 			}
 
-			// ���[�h���s
+			// Load failed
 			return NULL;
 		}
 	}
 
-	// �Ō�ɁA�V���A���ԍ��̈�ԎႢ���̂�T���A�폜����
+	// Finally, find the least recently used and remove it
 
-	// �C���f�b�N�X0�����c�Ƃ���
+	// Start with index 0
 	s = cache[0].serial;
 	c = 0;
 
-	// ���ƃV���A�����r���A��菬�������̂֍X�V����
+	// Compare serial numbers and find oldest
 	for (i=0; i<CacheMax; i++) {
 		ASSERT(cache[i].disktrk);
 
-		// ���ɑ��݂���V���A���Ɣ�r�A�X�V
+		// Compare with existing serial and update
 		if (cache[i].serial < s) {
 			s = cache[i].serial;
 			c = i;
 		}
 	}
 
-	// ���̃g���b�N��ۑ�
+	// Save this track
 	if (!cache[c].disktrk->Save(sec_path)) {
 		return NULL;
 	}
 
-	// ���̃g���b�N���폜
+	// Delete this track
 	delete cache[c].disktrk;
 	cache[c].disktrk = NULL;
 
-	// ���[�h
+	// Load
 	if (Load(c, track)) {
-		// ���[�h����
+		// Load success
 		cache[c].serial = serial;
 		return cache[c].disktrk;
 	}
 
-	// ���[�h���s
+	// Load failed
 	return NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�g���b�N�̃��[�h
+//	Load track
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DiskCache::Load(int index, int track)
@@ -602,24 +602,24 @@ BOOL FASTCALL DiskCache::Load(int index, int track)
 	ASSERT(track >= 0);
 	ASSERT(!cache[index].disktrk);
 
-	// ���̃g���b�N�̃Z�N�^�����擾
+	// Get this track's sector count
 	sectors = sec_blocks - (track << 8);
 	ASSERT(sectors > 0);
 	if (sectors > 0x100) {
 		sectors = 0x100;
 	}
 
-	// �f�B�X�N�g���b�N���쐬
+	// Create disk track
 	disktrk = new DiskTrack(track, sec_size, sectors, cd_raw);
 
-	// ���[�h�����݂�
+	// Try loading
 	if (!disktrk->Load(sec_path)) {
-		// ���s
+		// Failed
 		delete disktrk;
 		return FALSE;
 	}
 
-	// ���蓖�Đ����A���[�N��ݒ�
+	// Assign and set
 	cache[index].disktrk = disktrk;
 
 	return TRUE;
@@ -627,7 +627,7 @@ BOOL FASTCALL DiskCache::Load(int index, int track)
 
 //---------------------------------------------------------------------------
 //
-//	�V���A���ԍ��̍X�V
+//	Update serial number
 //
 //---------------------------------------------------------------------------
 void FASTCALL DiskCache::Update()
@@ -636,13 +636,13 @@ void FASTCALL DiskCache::Update()
 
 	ASSERT(this);
 
-	// �X�V���āA0�ȊO�͉������Ȃ�
+	// Update, ignore if not 0
 	serial++;
 	if (serial != 0) {
 		return;
 	}
 
-	// �S�L���b�V���̃V���A�����N���A(32bit���[�v���Ă���)
+	// Clear all cache serial numbers (32bit overflow occurred)
 	for (i=0; i<CacheMax; i++) {
 		cache[i].serial = 0;
 	}
@@ -650,21 +650,21 @@ void FASTCALL DiskCache::Update()
 
 //===========================================================================
 //
-//	�f�B�X�N
+//	Disk
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 Disk::Disk(Device *dev)
 {
-	// �R���g���[���ƂȂ�f�o�C�X���L��
+	// Remember device as controller
 	ctrl = dev;
 
-	// ���[�N������
+	// Initialize
 	disk.id = MAKEID('N', 'U', 'L', 'L');
 	disk.ready = FALSE;
 	disk.writep = FALSE;
@@ -682,19 +682,19 @@ Disk::Disk(Device *dev)
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 Disk::~Disk()
 {
-	// �f�B�X�N�L���b�V���̕ۑ�
+	// Save disk cache
 	if (disk.ready) {
-		// ���f�B�̏ꍇ�̂�
+		// Only if disk present
 		ASSERT(disk.dcache);
 		disk.dcache->Save();
 	}
 
-	// �f�B�X�N�L���b�V���̍폜
+	// Delete disk cache
 	if (disk.dcache) {
 		delete disk.dcache;
 		disk.dcache = NULL;
@@ -703,14 +703,14 @@ Disk::~Disk()
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL Disk::Reset()
 {
 	ASSERT(this);
 
-	// ���b�N�Ȃ��A�A�e���V�����Ȃ��A���Z�b�g����
+	// Not locked, no attention, reset done
 	disk.lock = FALSE;
 	disk.attn = FALSE;
 	disk.reset = TRUE;
@@ -718,7 +718,7 @@ void FASTCALL Disk::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Save(Fileio *fio, int ver)
@@ -728,18 +728,18 @@ BOOL FASTCALL Disk::Save(Fileio *fio, int ver)
 	ASSERT(this);
 	ASSERT(fio);
 
-	// �T�C�Y���Z�[�u
+	// Save size
 	sz = sizeof(disk_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// ���̂��Z�[�u
+	// Save self
 	if (!fio->Write(&disk, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p�X���Z�[�u
+	// Save path
 	if (!diskpath.Save(fio, ver)) {
 		return FALSE;
 	}
@@ -749,7 +749,7 @@ BOOL FASTCALL Disk::Save(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Load(Fileio *fio, int ver)
@@ -761,19 +761,19 @@ BOOL FASTCALL Disk::Load(Fileio *fio, int ver)
 	ASSERT(this);
 	ASSERT(fio);
 
-	// version2.03���O�́A�f�B�X�N�̓Z�[�u���Ă��Ȃ�
+	// Before version2.03, disk was not saved
 	if (ver <= 0x0202) {
 		return TRUE;
 	}
 
-	// ���݂̃f�B�X�N�L���b�V�����폜
+	// Delete current disk cache
 	if (disk.dcache) {
 		disk.dcache->Save();
 		delete disk.dcache;
 		disk.dcache = NULL;
 	}
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Read size and check
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -781,28 +781,28 @@ BOOL FASTCALL Disk::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// �o�b�t�@�փ��[�h
+	// Read to buffer
 	if (!fio->Read(&buf, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p�X�����[�h
+	// Read path
 	if (!path.Load(fio, ver)) {
 		return FALSE;
 	}
 
-	// ID����v�����ꍇ�̂݁A�ړ�
+	// Only move if ID matches
 	if (disk.id == buf.id) {
-		// NULL�Ȃ牽�����Ȃ�
+		// NULL device is excluded
 		if (IsNULL()) {
 			return TRUE;
 		}
 
-		// �Z�[�u�������Ɠ�����ނ̃f�o�C�X
+		// Open the same device as saved
 		disk.ready = FALSE;
 		if (Open(path)) {
-			// Open���Ńf�B�X�N�L���b�V���͍쐬����Ă���
-			// �v���p�e�B�݈̂ړ�
+			// Open creates disk cache
+			// Copy properties directly
 			if (!disk.readonly) {
 				disk.writep = buf.writep;
 			}
@@ -812,12 +812,12 @@ BOOL FASTCALL Disk::Load(Fileio *fio, int ver)
 			disk.lun = buf.lun;
 			disk.code = buf.code;
 
-			// ����Ƀ��[�h�ł���
+			// Loadable
 			return TRUE;
 		}
 	}
 
-	// �f�B�X�N�L���b�V���č쐬
+	// Create disk cache again
 	if (!IsReady()) {
 		disk.dcache = NULL;
 	}
@@ -830,7 +830,7 @@ BOOL FASTCALL Disk::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	NULL�`�F�b�N
+//	NULL check
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::IsNULL() const
@@ -845,7 +845,7 @@ BOOL FASTCALL Disk::IsNULL() const
 
 //---------------------------------------------------------------------------
 //
-//	SASI�`�F�b�N
+//	SASI check
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::IsSASI() const
@@ -860,8 +860,8 @@ BOOL FASTCALL Disk::IsSASI() const
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��
-//	���h���N���X�ŁA�I�[�v��������̌㏈���Ƃ��ČĂяo������
+//	Open
+//	The base class opens, and the derived class does special processing
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Open(const Filepath& path)
@@ -872,68 +872,68 @@ BOOL FASTCALL Disk::Open(const Filepath& path)
 	ASSERT((disk.size == 8) || (disk.size == 9) || (disk.size == 11));
 	ASSERT(disk.blocks > 0);
 
-	// ���f�B
+	// Disk ready
 	disk.ready = TRUE;
 
-	// �L���b�V��������
+	// Create cache
 	ASSERT(!disk.dcache);
 	disk.dcache = new DiskCache(path, disk.size, disk.blocks);
 
-	// �ǂݏ����I�[�v���\��
+	// If write open is possible
 	if (fio.Open(path, Fileio::ReadWrite)) {
-		// �������݋��A���[�h�I�����[�łȂ�
+		// Write enabled, not read only
 		disk.writep = FALSE;
 		disk.readonly = FALSE;
 		fio.Close();
 	}
 	else {
-		// �������݋֎~�A���[�h�I�����[
+		// Write disabled, read only
 		disk.writep = TRUE;
 		disk.readonly = TRUE;
 	}
 
-	// ���b�N����Ă��Ȃ�
+	// Not locked
 	disk.lock = FALSE;
 
-	// �p�X�ۑ�
+	// Save path
 	diskpath = path;
 
-	// ����
+	// Success
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�C�W�F�N�g
+//	Eject
 //
 //---------------------------------------------------------------------------
 void FASTCALL Disk::Eject(BOOL force)
 {
 	ASSERT(this);
 
-	// �����[�o�u���łȂ���΃C�W�F�N�g�ł��Ȃ�
+	// Cannot eject if not removable
 	if (!disk.removable) {
 		return;
 	}
 
-	// ���f�B�łȂ���΃C�W�F�N�g�K�v�Ȃ�
+	// Cannot eject if not ready
 	if (!disk.ready) {
 		return;
 	}
 
-	// �����t���O���Ȃ��ꍇ�A���b�N����Ă��Ȃ����Ƃ��K�v
+	// If force flag is off, need to check if not locked
 	if (!force) {
 		if (disk.lock) {
 			return;
 		}
 	}
 
-	// �f�B�X�N�L���b�V�����폜
+	// Delete disk cache
 	disk.dcache->Save();
 	delete disk.dcache;
 	disk.dcache = NULL;
 
-	// �m�b�g���f�B�A�A�e���V�����Ȃ�
+	// Disk not ready, no attention
 	disk.ready = FALSE;
 	disk.writep = FALSE;
 	disk.readonly = FALSE;
@@ -942,31 +942,31 @@ void FASTCALL Disk::Eject(BOOL force)
 
 //---------------------------------------------------------------------------
 //
-//	�������݋֎~
+//	Write protect
 //
 //---------------------------------------------------------------------------
 void FASTCALL Disk::WriteP(BOOL writep)
 {
 	ASSERT(this);
 
-	// ���f�B�ł��邱��
+	// If not ready, do nothing
 	if (!disk.ready) {
 		return;
 	}
 
-	// Read Only�̏ꍇ�́A�v���e�N�g��Ԃ̂�
+	// If Read Only, return as is
 	if (disk.readonly) {
 		ASSERT(disk.writep);
 		return;
 	}
 
-	// �t���O�ݒ�
+	// Set flag
 	disk.writep = writep;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�������[�N�擾
+//	Get member structure
 //
 //---------------------------------------------------------------------------
 void FASTCALL Disk::GetDisk(disk_t *buffer) const
@@ -974,13 +974,13 @@ void FASTCALL Disk::GetDisk(disk_t *buffer) const
 	ASSERT(this);
 	ASSERT(buffer);
 
-	// �������[�N���R�s�[
+	// Copy member structure
 	*buffer = disk;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�p�X�擾
+//	Get path
 //
 //---------------------------------------------------------------------------
 void FASTCALL Disk::GetPath(Filepath& path) const
@@ -990,52 +990,52 @@ void FASTCALL Disk::GetPath(Filepath& path) const
 
 //---------------------------------------------------------------------------
 //
-//	�t���b�V��
+//	Flush
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Flush()
 {
 	ASSERT(this);
 
-	// �L���b�V�����Ȃ���Ή������Ȃ�
+	// If no cache, return success
 	if (!disk.dcache) {
 		return TRUE;
 	}
 
-	// �L���b�V����ۑ�
+	// Save cache
 	return disk.dcache->Save();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���f�B�`�F�b�N
+//	Disk check
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::CheckReady()
 {
 	ASSERT(this);
 
-	// ���Z�b�g�Ȃ�A�X�e�[�^�X��Ԃ�
+	// If reset, return status
 	if (disk.reset) {
 		disk.code = DISK_DEVRESET;
 		disk.reset = FALSE;
 		return FALSE;
 	}
 
-	// �A�e���V�����Ȃ�A�X�e�[�^�X��Ԃ�
+	// If attention, return status
 	if (disk.attn) {
 		disk.code = DISK_ATTENTION;
 		disk.attn = FALSE;
 		return FALSE;
 	}
 
-	// �m�b�g���f�B�Ȃ�A�X�e�[�^�X��Ԃ�
+	// If disk not ready, return status
 	if (!disk.ready) {
 		disk.code = DISK_NOTREADY;
 		return FALSE;
 	}
 
-	// �G���[�Ȃ��ɏ�����
+	// No error
 	disk.code = DISK_NOERROR;
 	return TRUE;
 }
@@ -1043,14 +1043,14 @@ BOOL FASTCALL Disk::CheckReady()
 //---------------------------------------------------------------------------
 //
 //	INQUIRY
-//	���펞��������K�v������
+//	The derived class does special processing as needed
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::Inquiry(const DWORD* /*cdb*/, BYTE* /*buf*/)
 {
 	ASSERT(this);
 
-	// �f�t�H���g��INQUIRY���s
+	// Default is INQUIRY failure
 	disk.code = DISK_INVALIDCMD;
 	return 0;
 }
@@ -1058,7 +1058,7 @@ int FASTCALL Disk::Inquiry(const DWORD* /*cdb*/, BYTE* /*buf*/)
 //---------------------------------------------------------------------------
 //
 //	REQUEST SENSE
-//	��SASI�͕ʏ���
+//	Used exclusively by SASI
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::RequestSense(const DWORD *cdb, BYTE *buf)
@@ -1069,33 +1069,33 @@ int FASTCALL Disk::RequestSense(const DWORD *cdb, BYTE *buf)
 	ASSERT(cdb);
 	ASSERT(buf);
 
-	// �G���[���Ȃ��ꍇ�Ɍ���A�m�b�g���f�B���`�F�b�N
+	// If no error, check disk not ready
 	if (disk.code == DISK_NOERROR) {
 		if (!disk.ready) {
 			disk.code = DISK_NOTREADY;
 		}
 	}
 
-	// �T�C�Y����(�A���P�[�V���������O�X�ɏ]��)
+	// Get size (follows allocation length specification)
 	size = (int)cdb[4];
 	ASSERT((size >= 0) && (size < 0x100));
 
-	// SCSI-1�ł́A�T�C�Y0�̂Ƃ���4�o�C�g�]������(SCSI-2�ł͂��̎d�l�͍폜)
+	// SCSI-1, if size is 0, transfer 4 bytes (this rule removed in SCSI-2)
 	if (size == 0) {
 		size = 4;
 	}
 
-	// �o�b�t�@���N���A
+	// Clear buffer
 	memset(buf, 0, size);
 
-	// �g���Z���X�f�[�^���܂߂��A18�o�C�g��ݒ�
+	// Set sense data, 18 bytes
 	buf[0] = 0x70;
 	buf[2] = (BYTE)(disk.code >> 16);
 	buf[7] = 10;
 	buf[12] = (BYTE)(disk.code >> 8);
 	buf[13] = (BYTE)disk.code;
 
-	// �R�[�h���N���A
+	// Clear code
 	disk.code = 0x00;
 
 	return size;
@@ -1103,8 +1103,8 @@ int FASTCALL Disk::RequestSense(const DWORD *cdb, BYTE *buf)
 
 //---------------------------------------------------------------------------
 //
-//	MODE SELECT�`�F�b�N
-//	��disk.code�̉e�����󂯂Ȃ�
+//	MODE SELECT check
+//	Does not receive effect of disk.code
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::SelectCheck(const DWORD *cdb)
@@ -1114,13 +1114,13 @@ int FASTCALL Disk::SelectCheck(const DWORD *cdb)
 	ASSERT(this);
 	ASSERT(cdb);
 
-	// �Z�[�u�p�����[�^���ݒ肳��Ă���΃G���[
+	// Error if save parameters are set
 	if (cdb[1] & 0x01) {
 		disk.code = DISK_INVALIDCDB;
 		return 0;
 	}
 
-	// �p�����[�^�����O�X�Ŏw�肳�ꂽ�f�[�^���󂯎��
+	// Receive data specified by parameter length
 	length = (int)cdb[4];
 	return length;
 }
@@ -1128,7 +1128,7 @@ int FASTCALL Disk::SelectCheck(const DWORD *cdb)
 //---------------------------------------------------------------------------
 //
 //	MODE SELECT
-//	��disk.code�̉e�����󂯂Ȃ�
+//	Does not receive effect of disk.code
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::ModeSelect(const BYTE *buf, int size)
@@ -1137,7 +1137,7 @@ BOOL FASTCALL Disk::ModeSelect(const BYTE *buf, int size)
 	ASSERT(buf);
 	ASSERT(size >= 0);
 
-	// �ݒ�ł��Ȃ�
+	// Not supported
 	disk.code = DISK_INVALIDPRM;
 
 	printf("%p %d", (const void*)buf, size);
@@ -1148,7 +1148,7 @@ BOOL FASTCALL Disk::ModeSelect(const BYTE *buf, int size)
 //---------------------------------------------------------------------------
 //
 //	MODE SENSE
-//	��disk.code�̉e�����󂯂Ȃ�
+//	Does not receive effect of disk.code
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
@@ -1164,12 +1164,12 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 	ASSERT(buf);
 	ASSERT(cdb[0] == 0x1a);
 
-	// �����O�X�擾�A�o�b�t�@�N���A
+	// Get allocation length, clear buffer
 	length = (int)cdb[4];
 	ASSERT((length >= 0) && (length < 0x100));
 	memset(buf, 0, length);
 
-	// �ύX�\�t���O�擾
+	// Get changeable flag
 	if ((cdb[2] & 0xc0) == 0x40) {
 		change = TRUE;
 	}
@@ -1177,7 +1177,7 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 		change = FALSE;
 	}
 
-	// �y�[�W�R�[�h�擾(0x00�͍ŏ�����valid)
+	// Get page code (0x00 is the smallest valid)
 	page = cdb[2] & 0x3f;
 	if (page == 0x00) {
 		valid = TRUE;
@@ -1186,48 +1186,48 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 		valid = FALSE;
 	}
 
-	// ��{���
+	// Basic settings
 	size = 4;
 	if (disk.writep) {
 		buf[2] = 0x80;
 	}
 
-	// DBD��0�Ȃ�A�u���b�N�f�B�X�N���v�^��ǉ�
+	// If DBD is 0, add block descriptor
 	if ((cdb[1] & 0x08) == 0) {
-		// ���[�h�p�����[�^�w�b�_
+		// Read parameters page
 		buf[ 3] = 0x08;
 
-		// ���f�B�̏ꍇ�Ɍ���
+		// Return if no disk
 		if (disk.ready) {
-			// �u���b�N�f�B�X�N���v�^(�u���b�N��)
+			// Block descriptor (number of blocks)
 			buf[ 5] = (BYTE)(disk.blocks >> 16);
 			buf[ 6] = (BYTE)(disk.blocks >> 8);
 			buf[ 7] = (BYTE)disk.blocks;
 
-			// �u���b�N�f�B�X�N���v�^(�u���b�N�����O�X)
+			// Block descriptor (block length)
 			size = 1 << disk.size;
 			buf[ 9] = (BYTE)(size >> 16);
 			buf[10] = (BYTE)(size >> 8);
 			buf[11] = (BYTE)size;
 		}
 
-		// �T�C�Y�Đݒ�
+		// Size reset
 		size = 12;
 	}
 
-	// �y�[�W�R�[�h1(read-write error recovery)
+	// Page code 1 (read-write error recovery)
 	if ((page == 0x01) || (page == 0x3f)) {
 		size += AddError(change, &buf[size]);
 		valid = TRUE;
 	}
 
-	// �y�[�W�R�[�h3(format device)
+	// Page code 3 (format device)
 	if ((page == 0x03) || (page == 0x3f)) {
 		size += AddFormat(change, &buf[size]);
 		valid = TRUE;
 	}
 
-	// �y�[�W�R�[�h6(optical)
+	// Page code 6 (optical)
 	if (disk.id == MAKEID('S', 'C', 'M', 'O')) {
 		if ((page == 0x06) || (page == 0x3f)) {
 			size += AddOpt(change, &buf[size]);
@@ -1235,13 +1235,13 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 		}
 	}
 
-	// �y�[�W�R�[�h8(caching)
+	// Page code 8 (caching)
 	if ((page == 0x08) || (page == 0x3f)) {
 		size += AddCache(change, &buf[size]);
 		valid = TRUE;
 	}
 
-	// �y�[�W�R�[�h13(CD-ROM)
+	// Page code 13 (CD-ROM)
 	if (disk.id == MAKEID('S', 'C', 'C', 'D')) {
 		if ((page == 0x0d) || (page == 0x3f)) {
 			size += AddCDROM(change, &buf[size]);
@@ -1249,7 +1249,7 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 		}
 	}
 
-	// �y�[�W�R�[�h14(CD-DA)
+	// Page code 14 (CD-DA)
 	if (disk.id == MAKEID('S', 'C', 'C', 'D')) {
 		if ((page == 0x0e) || (page == 0x3f)) {
 			size += AddCDDA(change, &buf[size]);
@@ -1257,29 +1257,29 @@ int FASTCALL Disk::ModeSense(const DWORD *cdb, BYTE *buf)
 		}
 	}
 
-	// ���[�h�f�[�^�����O�X���ŏI�ݒ�
+	// Set last position with allocation length
 	buf[0] = (BYTE)(size - 1);
 
-	// �T�|�[�g���Ă��Ȃ��y�[�W��
+	// Unsupported page
 	if (!valid) {
 		disk.code = DISK_INVALIDCDB;
 		return 0;
 	}
 
-	// Saved values�̓T�|�[�g���Ă��Ȃ�
+	// Saved values are not supported
 	if ((cdb[2] & 0xc0) == 0xc0) {
 		disk.code = DISK_PARAMSAVE;
 		return 0;
 	}
 
-	// MODE SENSE����
+	// MODE SENSE success
 	disk.code = DISK_NOERROR;
 	return length;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�G���[�y�[�W�ǉ�
+//	Add error page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddError(BOOL change, BYTE *buf)
@@ -1287,22 +1287,22 @@ int FASTCALL Disk::AddError(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x01;
 	buf[1] = 0x0a;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 12;
 	}
 
-	// ���g���C�J�E���g��0�A���~�b�g�^�C���͑��u�����̃f�t�H���g�l���g�p
+	// Use default values: retry count 0, recovered error stays silent
 	return 12;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�t�H�[�}�b�g�y�[�W�ǉ�
+//	Add format page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddFormat(BOOL change, BYTE *buf)
@@ -1310,16 +1310,16 @@ int FASTCALL Disk::AddFormat(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x03;
 	buf[1] = 0x16;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 24;
 	}
 
-	// �����[�o�u��������ݒ�
+	// Set removable format
 	if (disk.removable) {
 		buf[20] = 0x20;
 	}
@@ -1329,7 +1329,7 @@ int FASTCALL Disk::AddFormat(BOOL change, BYTE *buf)
 
 //---------------------------------------------------------------------------
 //
-//	�I�v�e�B�J���y�[�W�ǉ�
+//	Add optical page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddOpt(BOOL change, BYTE *buf)
@@ -1337,22 +1337,22 @@ int FASTCALL Disk::AddOpt(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x06;
 	buf[1] = 0x02;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 4;
 	}
 
-	// �X�V�u���b�N�̃��|�[�g�͍s��Ȃ�
+	// Update block transfer does not occur
 	return 4;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�L���b�V���y�[�W�ǉ�
+//	Add cache page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddCache(BOOL change, BYTE *buf)
@@ -1360,22 +1360,22 @@ int FASTCALL Disk::AddCache(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x08;
 	buf[1] = 0x0a;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 12;
 	}
 
-	// �ǂݍ��݃L���b�V���̂ݗL���A�v���t�F�b�`�͍s��Ȃ�
+	// Read cache only valid, write cache does not occur
 	return 12;
 }
 
 //---------------------------------------------------------------------------
 //
-//	CD-ROM�y�[�W�ǉ�
+//	Add CD-ROM page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddCDROM(BOOL change, BYTE *buf)
@@ -1383,19 +1383,19 @@ int FASTCALL Disk::AddCDROM(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x0d;
 	buf[1] = 0x06;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 8;
 	}
 
-	// �C���A�N�e�B�u�^�C�}��2sec
+	// Inactivity timeout is 2 sec
 	buf[3] = 0x05;
 
-	// MSF�{���͂��ꂼ��60, 75
+	// MSF format is 60, 75 respectively
 	buf[5] = 60;
 	buf[7] = 75;
 
@@ -1404,7 +1404,7 @@ int FASTCALL Disk::AddCDROM(BOOL change, BYTE *buf)
 
 //---------------------------------------------------------------------------
 //
-//	CD-DA�y�[�W�ǉ�
+//	Add CD-DA page
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::AddCDDA(BOOL change, BYTE *buf)
@@ -1412,16 +1412,16 @@ int FASTCALL Disk::AddCDDA(BOOL change, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �R�[�h�E�����O�X��ݒ�
+	// Set code and length
 	buf[0] = 0x0e;
 	buf[1] = 0x0e;
 
-	// �ύX�\�̈�͂Ȃ�
+	// If changeable, return
 	if (change) {
 		return 16;
 	}
 
-	// �I�[�f�B�I�͑��슮����҂��A �����g���b�N�ɂ܂�����PLAY��������
+	// Audio plays silently until the next track is reached
 	return 16;
 }
 
@@ -1434,12 +1434,12 @@ BOOL FASTCALL Disk::TestUnitReady(const DWORD* /*cdb*/)
 {
 	ASSERT(this);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// TEST UNIT READY����
+	// TEST UNIT READY success
 	return TRUE;
 }
 
@@ -1452,37 +1452,37 @@ BOOL FASTCALL Disk::Rezero(const DWORD* /*cdb*/)
 {
 	ASSERT(this);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// REZERO����
+	// REZERO success
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
 //	FORMAT UNIT
-//	��SASI�̓I�y�R�[�h$06�ASCSI�̓I�y�R�[�h$04
+//	For SASI is format code $06, for SCSI is format code $04
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Format(const DWORD *cdb)
 {
 	ASSERT(this);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// FMTDATA=1�̓T�|�[�g���Ȃ�
+	// FMTDATA=1 is not supported
 	if (cdb[1] & 0x10) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// FORMAT����
+	// FORMAT success
 	return TRUE;
 }
 
@@ -1495,12 +1495,12 @@ BOOL FASTCALL Disk::Reassign(const DWORD* /*cdb*/)
 {
 	ASSERT(this);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// REASSIGN BLOCKS����
+	// REASSIGN BLOCKS success
 	return TRUE;
 }
 
@@ -1515,30 +1515,30 @@ int FASTCALL Disk::Read(BYTE *buf, int block)
 	ASSERT(buf);
 	ASSERT(block >= 0);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// �g�[�^���u���b�N���𒴂��Ă���΃G���[
+	// Error if logical block number exceeds
 	if (block >= disk.blocks) {
 		disk.code = DISK_INVALIDLBA;
 		return 0;
 	}
 
-	// �L���b�V���ɔC����
+	// Read from cache
 	if (!disk.dcache->Read(buf, block)) {
 		disk.code = DISK_READFAULT;
 		return 0;
 	}
 
-	// ����
+	// Success
 	return (1 << disk.size);
 }
 
 //---------------------------------------------------------------------------
 //
-//	WRITE�`�F�b�N
+//	WRITE check
 //
 //---------------------------------------------------------------------------
 int FASTCALL Disk::WriteCheck(int block)
@@ -1546,23 +1546,23 @@ int FASTCALL Disk::WriteCheck(int block)
 	ASSERT(this);
 	ASSERT(block >= 0);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// �g�[�^���u���b�N���𒴂��Ă���΃G���[
+	// Error if logical block number exceeds
 	if (block >= disk.blocks) {
 		return 0;
 	}
 
-	// �������݋֎~�Ȃ�G���[
+	// Error if write disabled
 	if (disk.writep) {
 		disk.code = DISK_WRITEPROTECT;
 		return 0;
 	}
 
-	// ����
+	// Success
 	return (1 << disk.size);
 }
 
@@ -1577,31 +1577,31 @@ BOOL FASTCALL Disk::Write(const BYTE *buf, int block)
 	ASSERT(buf);
 	ASSERT(block >= 0);
 
-	// ���f�B�łȂ���΃G���[
+	// Error if not ready
 	if (!disk.ready) {
 		disk.code = DISK_NOTREADY;
 		return FALSE;
 	}
 
-	// �g�[�^���u���b�N���𒴂��Ă���΃G���[
+	// Error if logical block number exceeds
 	if (block >= disk.blocks) {
 		disk.code = DISK_INVALIDLBA;
 		return FALSE;
 	}
 
-	// �������݋֎~�Ȃ�G���[
+	// Error if write disabled
 	if (disk.writep) {
 		disk.code = DISK_WRITEPROTECT;
 		return FALSE;
 	}
 
-	// �L���b�V���ɔC����
+	// Write to cache
 	if (!disk.dcache->Write(buf, block)) {
 		disk.code = DISK_WRITEFAULT;
 		return FALSE;
 	}
 
-	// ����
+	// Success
 	disk.code = DISK_NOERROR;
 	return TRUE;
 }
@@ -1609,19 +1609,19 @@ BOOL FASTCALL Disk::Write(const BYTE *buf, int block)
 //---------------------------------------------------------------------------
 //
 //	SEEK
-//	��LBA�̃`�F�b�N�͍s��Ȃ�(SASI IOCS)
+//	LBA check is not performed (SASI IOCS)
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Disk::Seek(const DWORD* /*cdb*/)
 {
 	ASSERT(this);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// SEEK����
+	// SEEK success
 	return TRUE;
 }
 
@@ -1636,15 +1636,15 @@ BOOL FASTCALL Disk::StartStop(const DWORD *cdb)
 	ASSERT(cdb);
 	ASSERT(cdb[0] == 0x1b);
 
-	// �C�W�F�N�g�r�b�g�����āA�K�v�Ȃ�C�W�F�N�g
+	// Check eject bit, eject if necessary
 	if (cdb[4] & 0x02) {
 		if (disk.lock) {
-			// ���b�N����Ă���̂ŁA�C�W�F�N�g�ł��Ȃ�
+			// Locked, cannot eject
 			disk.code = DISK_PREVENT;
 			return FALSE;
 		}
 
-		// �C�W�F�N�g
+		// Eject
 		Eject(FALSE);
 	}
 
@@ -1664,19 +1664,19 @@ BOOL FASTCALL Disk::SendDiag(const DWORD *cdb)
 	ASSERT(cdb);
 	ASSERT(cdb[0] == 0x1d);
 
-	// PF�r�b�g�̓T�|�[�g���Ȃ�
+	// PF bit is not supported
 	if (cdb[1] & 0x10) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// �p�����[�^���X�g�̓T�|�[�g���Ȃ�
+	// Parameter list is not supported
 	if ((cdb[3] != 0) || (cdb[4] != 0)) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// ��ɐ���
+	// Always success
 	disk.code = DISK_NOERROR;
 	return TRUE;
 }
@@ -1692,12 +1692,12 @@ BOOL FASTCALL Disk::Removal(const DWORD *cdb)
 	ASSERT(cdb);
 	ASSERT(cdb[0] == 0x1e);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return FALSE;
 	}
 
-	// ���b�N�t���O��ݒ�
+	// Set lock flag
 	if (cdb[4] & 0x01) {
 		disk.lock = TRUE;
 	}
@@ -1705,7 +1705,7 @@ BOOL FASTCALL Disk::Removal(const DWORD *cdb)
 		disk.lock = FALSE;
 	}
 
-	// REMOVAL����
+	// REMOVAL success
 	return TRUE;
 }
 
@@ -1722,15 +1722,15 @@ int FASTCALL Disk::ReadCapacity(const DWORD* /*cdb*/, BYTE *buf)
 	ASSERT(this);
 	ASSERT(buf);
 
-	// �o�b�t�@�N���A
+	// Clear buffer
 	memset(buf, 0, 8);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// �_���u���b�N�A�h���X�̏I�[(disk.blocks - 1)���쐬
+	// Create last block address (disk.blocks - 1)
 	ASSERT(disk.blocks > 0);
 	blocks = disk.blocks - 1;
 	buf[0] = (BYTE)(blocks >> 24);
@@ -1738,14 +1738,14 @@ int FASTCALL Disk::ReadCapacity(const DWORD* /*cdb*/, BYTE *buf)
 	buf[2] = (BYTE)(blocks >>  8);
 	buf[3] = (BYTE)blocks;
 
-	// �u���b�N�����O�X(1 << disk.size)���쐬
+	// Create block length (1 << disk.size)
 	length = 1 << disk.size;
 	buf[4] = (BYTE)(length >> 24);
 	buf[5] = (BYTE)(length >> 16);
 	buf[6] = (BYTE)(length >> 8);
 	buf[7] = (BYTE)length;
 
-	// �ԑ��T�C�Y��Ԃ�
+	// Return buffer size
 	return 8;
 }
 
@@ -1763,7 +1763,7 @@ BOOL FASTCALL Disk::Verify(const DWORD *cdb)
 	ASSERT(cdb);
 	ASSERT(cdb[0] == 0x2f);
 
-	// �p�����[�^�擾
+	// Get parameters
 	record = cdb[2];
 	record <<= 8;
 	record |= cdb[3];
@@ -1775,18 +1775,18 @@ BOOL FASTCALL Disk::Verify(const DWORD *cdb)
 	blocks <<= 8;
 	blocks |= cdb[8];
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// �p�����[�^�`�F�b�N
+	// Parameter check
 	if (disk.blocks < (record + blocks)) {
 		disk.code = DISK_INVALIDLBA;
 		return FALSE;
 	}
 
-	// ����
+	// Success
 	return TRUE;
 }
 
@@ -1804,7 +1804,7 @@ int FASTCALL Disk::ReadToc(const DWORD *cdb, BYTE *buf)
 
 	printf("%p %p", (const void*)buf, (const void*)cdb);
 
-	// ���̃R�}���h�̓T�|�[�g���Ȃ�
+	// This command is not supported
 	disk.code = DISK_INVALIDCMD;
 	return FALSE;
 }
@@ -1822,7 +1822,7 @@ BOOL FASTCALL Disk::PlayAudio(const DWORD *cdb)
 
 	printf("%p", (const void*)cdb);
 
-	// ���̃R�}���h�̓T�|�[�g���Ȃ�
+	// This command is not supported
 	disk.code = DISK_INVALIDCMD;
 	return FALSE;
 }
@@ -1839,7 +1839,7 @@ BOOL FASTCALL Disk::PlayAudioMSF(const DWORD *cdb)
 	ASSERT(cdb[0] == 0x47);
 
 	printf("%p", (const void*)cdb);
-	// ���̃R�}���h�̓T�|�[�g���Ȃ�
+	// This command is not supported
 	disk.code = DISK_INVALIDCMD;
 	return FALSE;
 }
@@ -1855,31 +1855,31 @@ BOOL FASTCALL Disk::PlayAudioTrack(const DWORD *cdb)
 	ASSERT(cdb);
 	ASSERT(cdb[0] == 0x48);
 	printf("%p", (const void*)cdb);
-	// ���̃R�}���h�̓T�|�[�g���Ȃ�
+	// This command is not supported
 	disk.code = DISK_INVALIDCMD;
 	return FALSE;
 }
 
 //===========================================================================
 //
-//	SASI �n�[�h�f�B�X�N
+//	SASI hard disk
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 SASIHD::SASIHD(Device *dev) : Disk(dev)
 {
-	// SASI �n�[�h�f�B�X�N
+	// SASI hard disk
 	disk.id = MAKEID('S', 'A', 'H', 'D');
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��
+//	Open
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SASIHD::Open(const Filepath& path)
@@ -1890,16 +1890,16 @@ BOOL FASTCALL SASIHD::Open(const Filepath& path)
 	ASSERT(this);
 	ASSERT(!disk.ready);
 
-	// �ǂݍ��݃I�[�v�����K�v
+	// Need read open
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 
-	// �t�@�C���T�C�Y�̎擾
+	// Get file size
 	size = fio.GetFileSize();
 	fio.Close();
 
-	// 10MB, 20MB, 40MB�̂�
+	// Only 10MB, 20MB, 40MB
 	switch (size) {
 		// 10MB
 		case 0x9f5400:
@@ -1913,33 +1913,33 @@ BOOL FASTCALL SASIHD::Open(const Filepath& path)
 		case 0x2793000:
 			break;
 
-		// ���̑�(�T�|�[�g���Ȃ�)
+		// Others (not supported)
 		default:
 			return FALSE;
 	}
 
-	// �Z�N�^�T�C�Y�ƃu���b�N��
+	// Set sector size and blocks
 	disk.size = 8;
 	disk.blocks = size >> 8;
 
-	// ��{�N���X
+	// Base class
 	return Disk::Open(path);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�f�o�C�X���Z�b�g
+//	Device reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL SASIHD::Reset()
 {
 	ASSERT(this);
 
-	// ���b�N��ԉ����A�A�e���V��������
+	// Unlock and no attention
 	disk.lock = FALSE;
 	disk.attn = FALSE;
 
-	// ���Z�b�g�Ȃ��A�R�[�h���N���A
+	// Reset, clear code
 	disk.reset = TRUE;
 	disk.code = 0x00;
 }
@@ -1957,16 +1957,16 @@ int FASTCALL SASIHD::RequestSense(const DWORD *cdb, BYTE *buf)
 	ASSERT(cdb);
 	ASSERT(buf);
 
-	// �T�C�Y����
+	// Get size
 	size = (int)cdb[4];
 	ASSERT((size >= 0) && (size < 0x100));
 
-	// SASI�͔�g���t�H�[�}�b�g�ɌŒ�
+	// SASI is limited to non-formatted
 	memset(buf, 0, size);
 	buf[0] = (BYTE)(disk.code >> 16);
 	buf[1] = (BYTE)(disk.lun << 5);
 
-	// �R�[�h���N���A
+	// Clear code
 	disk.code = 0x00;
 
 	return size;
@@ -1974,24 +1974,24 @@ int FASTCALL SASIHD::RequestSense(const DWORD *cdb, BYTE *buf)
 
 //===========================================================================
 //
-//	SCSI �n�[�h�f�B�X�N
+//	SCSI hard disk
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 SCSIHD::SCSIHD(Device *dev) : Disk(dev)
 {
-	// SCSI �n�[�h�f�B�X�N
+	// SCSI hard disk
 	disk.id = MAKEID('S', 'C', 'H', 'D');
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��
+//	Open
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSIHD::Open(const Filepath& path)
@@ -2002,21 +2002,21 @@ BOOL FASTCALL SCSIHD::Open(const Filepath& path)
 	ASSERT(this);
 	ASSERT(!disk.ready);
 
-	// �ǂݍ��݃I�[�v�����K�v
+	// Need read open
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 
-	// �t�@�C���T�C�Y�̎擾
+	// Get file size
 	size = fio.GetFileSize();
 	fio.Close();
 
-	// 512�o�C�g�P�ʂł��邱��
+	// Must be 512 byte unit
 	if (size & 0x1ff) {
 		return FALSE;
 	}
 
-	// 10MB�ȏ�4GB����
+	// From 10MB to 4GB
 	if (size < 0x9f5400) {
 		return FALSE;
 	}
@@ -2024,11 +2024,11 @@ BOOL FASTCALL SCSIHD::Open(const Filepath& path)
 		return FALSE;
 	}
 
-	// �Z�N�^�T�C�Y�ƃu���b�N��
+	// Set sector size and blocks
 	disk.size = 9;
 	disk.blocks = size >> 9;
 
-	// ��{�N���X
+	// Base class
 	return Disk::Open(path);
 }
 
@@ -2050,33 +2050,33 @@ int FASTCALL SCSIHD::Inquiry(const DWORD *cdb, BYTE *buf)
 	ASSERT(buf);
 	ASSERT(cdb[0] == 0x12);
 
-	// EVPD�`�F�b�N
+	// EVPD check
 	if (cdb[1] & 0x01) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// ���f�B�`�F�b�N(�C���[�W�t�@�C�����Ȃ��ꍇ�A�G���[�Ƃ���)
+	// Disk check (if no image file, error)
 	if (!disk.ready) {
 		disk.code = DISK_NOTREADY;
 		return FALSE;
 	}
 
-	// ��{�f�[�^
+	// Basic data
 	// buf[0] ... Direct Access Device
-	// buf[2] ... SCSI-2�����̃R�}���h�̌n
-	// buf[3] ... SCSI-2������Inquiry���X�|���X
-	// buf[4] ... Inquiry�ǉ��f�[�^
+	// buf[2] ... SCSI-2 command system type
+	// buf[3] ... SCSI-2 response data format for Inquiry
+	// buf[4] ... Inquiry additional data
 	memset(buf, 0, 8);
 	buf[2] = 0x02;
 	buf[3] = 0x02;
 	buf[4] = 0x1f;
 
-	// �x���_
+	// Fill space
 	memset(&buf[8], 0x20, 28);
 	memcpy(&buf[8], "XM6", 3);
 
-	// ���i��
+	// Product name
 	size = disk.blocks >> 11;
 	if (size < 300)
 		sprintf(string, "PRODRIVE LPS%dS", size);
@@ -2092,47 +2092,47 @@ int FASTCALL SCSIHD::Inquiry(const DWORD *cdb, BYTE *buf)
 		sprintf(string, "FBSE%d.%dS", size / 1000, (size % 1000) / 100);
 	memcpy(&buf[16], string, strlen(string));
 
-	// ���r�W����(XM6�̃o�[�W����No)
+	// Revision (XM6 version No)
 	ctrl->GetVM()->GetVersion(major, minor);
 	sprintf(string, "0%01d%01d%01d",
 				major, (minor >> 4), (minor & 0x0f));
 	memcpy((char*)&buf[32], string, 4);
 
-	// �T�C�Y36�o�C�g���A���P�[�V���������O�X�̂����A�Z�����œ]��
+	// Return size 36 bytes, but limit to allocation length
 	size = 36;
 	len = (int)cdb[4];
 	if (len < size) {
 		size = len;
 	}
 
-	// ����
+	// Success
 	disk.code = DISK_NOERROR;
 	return size;
 }
 
 //===========================================================================
 //
-//	SCSI �����C�f�B�X�N
+//	SCSI magneto-optical disk
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 SCSIMO::SCSIMO(Device *dev) : Disk(dev)
 {
-	// SCSI �����C�f�B�X�N
+	// SCSI magneto-optical disk
 	disk.id = MAKEID('S', 'C', 'M', 'O');
 
-	// �����[�o�u��
+	// Removable
 	disk.removable = TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��
+//	Open
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSIMO::Open(const Filepath& path, BOOL attn)
@@ -2143,12 +2143,12 @@ BOOL FASTCALL SCSIMO::Open(const Filepath& path, BOOL attn)
 	ASSERT(this);
 	ASSERT(!disk.ready);
 
-	// �ǂݍ��݃I�[�v�����K�v
+	// Need read open
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 
-	// �t�@�C���T�C�Y�̎擾
+	// Get file size
 	size = fio.GetFileSize();
 	fio.Close();
 
@@ -2177,15 +2177,15 @@ BOOL FASTCALL SCSIMO::Open(const Filepath& path, BOOL attn)
 			disk.blocks = 310352;
 			break;
 
-		// ���̑�(�G���[)
+		// Others (error)
 		default:
 			return FALSE;
 	}
 
-	// ��{�N���X
+	// Base class
 	Disk::Open(path);
 
-	// ���f�B�Ȃ�A�e���V����
+	// If disk, attention
 	if (disk.ready && attn) {
 		disk.attn = TRUE;
 	}
@@ -2195,7 +2195,7 @@ BOOL FASTCALL SCSIMO::Open(const Filepath& path, BOOL attn)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSIMO::Load(Fileio *fio, int ver)
@@ -2208,12 +2208,12 @@ BOOL FASTCALL SCSIMO::Load(Fileio *fio, int ver)
 	ASSERT(fio);
 	ASSERT(ver >= 0x0200);
 
-	// version2.03���O�́A�f�B�X�N�̓Z�[�u���Ă��Ȃ�
+	// Before version2.03, disk was not saved
 	if (ver <= 0x0202) {
 		return TRUE;
 	}
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Read size and check
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -2221,32 +2221,32 @@ BOOL FASTCALL SCSIMO::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// �o�b�t�@�փ��[�h
+	// Read to buffer
 	if (!fio->Read(&buf, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p�X�����[�h
+	// Read path
 	if (!path.Load(fio, ver)) {
 		return FALSE;
 	}
 
-	// �K���C�W�F�N�g
+	// Force eject
 	Eject(TRUE);
 
-	// ID����v�����ꍇ�̂݁A�ړ�
+	// Only move if ID matches
 	if (disk.id != buf.id) {
-		// �Z�[�u����MO�łȂ������B�C�W�F�N�g��Ԃ��ێ�
+		// Saved MO is different. Keep eject state
 		return TRUE;
 	}
 
-	// �ăI�[�v�������݂�
+	// Try re-open
 	if (!Open(path, FALSE)) {
-		// �ăI�[�v���ł��Ȃ��B�C�W�F�N�g��Ԃ��ێ�
+		// Cannot re-open. Keep eject state
 		return TRUE;
 	}
 
-	// Open���Ńf�B�X�N�L���b�V���͍쐬����Ă���B�v���p�e�B�݈̂ړ�
+	// Open creates disk cache. Copy properties directly
 	if (!disk.readonly) {
 		disk.writep = buf.writep;
 	}
@@ -2256,7 +2256,7 @@ BOOL FASTCALL SCSIMO::Load(Fileio *fio, int ver)
 	disk.lun = buf.lun;
 	disk.code = buf.code;
 
-	// ����Ƀ��[�h�ł���
+	// Loadable
 	return TRUE;
 }
 
@@ -2278,18 +2278,18 @@ int FASTCALL SCSIMO::Inquiry(const DWORD *cdb, BYTE *buf)
 	ASSERT(buf);
 	ASSERT(cdb[0] == 0x12);
 
-	// EVPD�`�F�b�N
+	// EVPD check
 	if (cdb[1] & 0x01) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// ��{�f�[�^
+	// Basic data
 	// buf[0] ... Optical Memory Device
-	// buf[1] ... �����[�o�u��
-	// buf[2] ... SCSI-2�����̃R�}���h�̌n
-	// buf[3] ... SCSI-2������Inquiry���X�|���X
-	// buf[4] ... Inquiry�ǉ��f�[�^
+	// buf[1] ... Removable
+	// buf[2] ... SCSI-2 command system type
+	// buf[3] ... SCSI-2 response data format for Inquiry
+	// buf[4] ... Inquiry additional data
 	memset(buf, 0, 8);
 	buf[0] = 0x07;
 	buf[1] = 0x80;
@@ -2297,53 +2297,53 @@ int FASTCALL SCSIMO::Inquiry(const DWORD *cdb, BYTE *buf)
 	buf[3] = 0x02;
 	buf[4] = 0x1f;
 
-	// �x���_
+	// Fill space
 	memset(&buf[8], 0x20, 28);
 	memcpy(&buf[8], "XM6", 3);
 
-	// ���i��
+	// Product name
 	memcpy(&buf[16], "M2513A", 6);
 
-	// ���r�W����(XM6�̃o�[�W����No)
+	// Revision (XM6 version No)
 	ctrl->GetVM()->GetVersion(major, minor);
 	sprintf(string, "0%01d%01d%01d",
 				major, (minor >> 4), (minor & 0x0f));
 	memcpy((char*)&buf[32], string, 4);
 
-	// �T�C�Y36�o�C�g���A���P�[�V���������O�X�̂����A�Z�����œ]��
+	// Return size 36 bytes, but limit to allocation length
 	size = 36;
 	len = cdb[4];
 	if (len < size) {
 		size = len;
 	}
 
-	// ����
+	// Success
 	disk.code = DISK_NOERROR;
 	return size;
 }
 
 //===========================================================================
 //
-//	CD�g���b�N
+//	CD track
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CDTrack::CDTrack(SCSICD *scsicd)
 {
 	ASSERT(scsicd);
 
-	// �e�ƂȂ�CD-ROM�f�o�C�X��ݒ�
+	// Set parent CD-ROM device
 	cdrom = scsicd;
 
-	// �g���b�N����
+	// Track invalid
 	valid = FALSE;
 
-	// ���̑��̃f�[�^��������
+	// Initialize other data
 	track_no = -1;
 	first_lba = 0;
 	last_lba = 0;
@@ -2353,7 +2353,7 @@ CDTrack::CDTrack(SCSICD *scsicd)
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 CDTrack::~CDTrack()
@@ -2362,7 +2362,7 @@ CDTrack::~CDTrack()
 
 //---------------------------------------------------------------------------
 //
-//	������
+//	Initialize
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CDTrack::Init(int track, DWORD first, DWORD last)
@@ -2372,11 +2372,11 @@ BOOL FASTCALL CDTrack::Init(int track, DWORD first, DWORD last)
 	ASSERT(track >= 1);
 	ASSERT(first < last);
 
-	// �g���b�N�ԍ���ݒ�A�L����
+	// Set and validate track number
 	track_no = track;
 	valid = TRUE;
 
-	// LBA���L��
+	// LBA is valid
 	first_lba = first;
 	last_lba = last;
 
@@ -2385,7 +2385,7 @@ BOOL FASTCALL CDTrack::Init(int track, DWORD first, DWORD last)
 
 //---------------------------------------------------------------------------
 //
-//	�p�X�ݒ�
+//	Set path
 //
 //---------------------------------------------------------------------------
 void FASTCALL CDTrack::SetPath(BOOL cdda, const Filepath& path)
@@ -2393,16 +2393,16 @@ void FASTCALL CDTrack::SetPath(BOOL cdda, const Filepath& path)
 	ASSERT(this);
 	ASSERT(valid);
 
-	// CD-DA���A�f�[�^��
+	// CD-DA or data track
 	audio = cdda;
 
-	// �p�X�L��
+	// Path valid
 	imgpath = path;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�p�X�擾
+//	Get path
 //
 //---------------------------------------------------------------------------
 void FASTCALL CDTrack::GetPath(Filepath& path) const
@@ -2410,13 +2410,13 @@ void FASTCALL CDTrack::GetPath(Filepath& path) const
 	ASSERT(this);
 	ASSERT(valid);
 
-	// �p�X��Ԃ�
+	// Return path
 	path = imgpath;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�C���f�b�N�X�ǉ�
+//	Add index
 //
 //---------------------------------------------------------------------------
 void FASTCALL CDTrack::AddIndex(int index, DWORD lba)
@@ -2429,13 +2429,13 @@ void FASTCALL CDTrack::AddIndex(int index, DWORD lba)
 
 	printf("%d %d", lba, index);
 
-	// ���݂̓C���f�b�N�X�̓T�|�[�g���Ȃ�
+	// Current index is not supported
 	ASSERT(FALSE);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�J�nLBA�擾
+//	Get first LBA
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL CDTrack::GetFirst() const
@@ -2449,7 +2449,7 @@ DWORD FASTCALL CDTrack::GetFirst() const
 
 //---------------------------------------------------------------------------
 //
-//	�I�[LBA�擾
+//	Get last LBA
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL CDTrack::GetLast() const
@@ -2463,7 +2463,7 @@ DWORD FASTCALL CDTrack::GetLast() const
 
 //---------------------------------------------------------------------------
 //
-//	�u���b�N���擾
+//	Get blocks
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL CDTrack::GetBlocks() const
@@ -2472,13 +2472,13 @@ DWORD FASTCALL CDTrack::GetBlocks() const
 	ASSERT(valid);
 	ASSERT(first_lba < last_lba);
 
-	// �J�nLBA�ƍŏILBA����Z�o
+	// Calculate from first to last LBA
 	return (DWORD)(last_lba - first_lba + 1);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�g���b�N�ԍ��擾
+//	Get track number
 //
 //---------------------------------------------------------------------------
 int FASTCALL CDTrack::GetTrackNo() const
@@ -2492,35 +2492,35 @@ int FASTCALL CDTrack::GetTrackNo() const
 
 //---------------------------------------------------------------------------
 //
-//	�L���ȃu���b�N��
+//	Valid block
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CDTrack::IsValid(DWORD lba) const
 {
 	ASSERT(this);
 
-	// �g���b�N���̂������Ȃ�AFALSE
+	// Track is invalid, return FALSE
 	if (!valid) {
 		return FALSE;
 	}
 
-	// first���O�Ȃ�AFALSE
+	// If before first, return FALSE
 	if (lba < first_lba) {
 		return FALSE;
 	}
 
-	// last����Ȃ�AFALSE
+	// If after last, return FALSE
 	if (last_lba < lba) {
 		return FALSE;
 	}
 
-	// ���̃g���b�N
+	// Valid track
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�f�B�I�g���b�N��
+//	Audio track
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL CDTrack::IsAudio() const
@@ -2533,13 +2533,13 @@ BOOL FASTCALL CDTrack::IsAudio() const
 
 //===========================================================================
 //
-//	CD-DA�o�b�t�@
+//	CD-DA buffer
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 CDDABuf::CDDABuf()
@@ -2548,7 +2548,7 @@ CDDABuf::CDDABuf()
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 CDDABuf::~CDDABuf()
@@ -2563,7 +2563,7 @@ CDDABuf::~CDDABuf()
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 SCSICD::SCSICD(Device *dev) : Disk(dev)
@@ -2573,17 +2573,17 @@ SCSICD::SCSICD(Device *dev) : Disk(dev)
 	// SCSI CD-ROM
 	disk.id = MAKEID('S', 'C', 'C', 'D');
 
-	// �����[�o�u���A�����݋֎~
+	// Removable, write disabled
 	disk.removable = TRUE;
 	disk.writep = TRUE;
 
-	// RAW�`���łȂ�
+	// Not RAW format
 	rawfile = FALSE;
 
-	// �t���[��������
+	// Initialize frame
 	frame = 0;
 
-	// �g���b�N������
+	// Track management
 	for (i=0; i<TrackMax; i++) {
 		track[i] = NULL;
 	}
@@ -2594,18 +2594,18 @@ SCSICD::SCSICD(Device *dev) : Disk(dev)
 
 //---------------------------------------------------------------------------
 //
-//	�f�X�g���N�^
+//	Destructor
 //
 //---------------------------------------------------------------------------
 SCSICD::~SCSICD()
 {
-	// �g���b�N�N���A
+	// Clear tracks
 	ClearTrack();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSICD::Load(Fileio *fio, int ver)
@@ -2618,12 +2618,12 @@ BOOL FASTCALL SCSICD::Load(Fileio *fio, int ver)
 	ASSERT(fio);
 	ASSERT(ver >= 0x0200);
 
-	// version2.03���O�́A�f�B�X�N�̓Z�[�u���Ă��Ȃ�
+	// Before version2.03, disk was not saved
 	if (ver <= 0x0202) {
 		return TRUE;
 	}
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Read size and check
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -2631,32 +2631,32 @@ BOOL FASTCALL SCSICD::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// �o�b�t�@�փ��[�h
+	// Read to buffer
 	if (!fio->Read(&buf, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p�X�����[�h
+	// Read path
 	if (!path.Load(fio, ver)) {
 		return FALSE;
 	}
 
-	// �K���C�W�F�N�g
+	// Force eject
 	Eject(TRUE);
 
-	// ID����v�����ꍇ�̂݁A�ړ�
+	// Only move if ID matches
 	if (disk.id != buf.id) {
-		// �Z�[�u����CD-ROM�łȂ������B�C�W�F�N�g��Ԃ��ێ�
+		// Saved CD-ROM is different. Keep eject state
 		return TRUE;
 	}
 
-	// �ăI�[�v�������݂�
+	// Try re-open
 	if (!Open(path, FALSE)) {
-		// �ăI�[�v���ł��Ȃ��B�C�W�F�N�g��Ԃ��ێ�
+		// Cannot re-open. Keep eject state
 		return TRUE;
 	}
 
-	// Open���Ńf�B�X�N�L���b�V���͍쐬����Ă���B�v���p�e�B�݈̂ړ�
+	// Open creates disk cache. Copy properties directly
 	if (!disk.readonly) {
 		disk.writep = buf.writep;
 	}
@@ -2666,22 +2666,22 @@ BOOL FASTCALL SCSICD::Load(Fileio *fio, int ver)
 	disk.lun = buf.lun;
 	disk.code = buf.code;
 
-	// �ēx�A�f�B�X�N�L���b�V����j��
+	// Delete disk cache again
 	if (disk.dcache) {
 		delete disk.dcache;
 		disk.dcache = NULL;
 	}
 	disk.dcache = NULL;
 
-	// �b��
+	// Calculate
 	disk.blocks = track[0]->GetBlocks();
 	if (disk.blocks > 0) {
-		// �f�B�X�N�L���b�V������蒼��
+		// Create disk cache
 		track[0]->GetPath(path);
 		disk.dcache = new DiskCache(path, disk.size, disk.blocks);
 		disk.dcache->SetRawMode(rawfile);
 
-		// �f�[�^�C���f�b�N�X���Đݒ�
+		// Reset data index
 		dataindex = 0;
 	}
 
@@ -2690,7 +2690,7 @@ BOOL FASTCALL SCSICD::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��
+//	Open
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSICD::Open(const Filepath& path, BOOL attn)
@@ -2702,57 +2702,57 @@ BOOL FASTCALL SCSICD::Open(const Filepath& path, BOOL attn)
 	ASSERT(this);
 	ASSERT(!disk.ready);
 
-	// �������A�g���b�N�N���A
+	// Reset, clear tracks
 	disk.blocks = 0;
 	rawfile = FALSE;
 	ClearTrack();
 
-	// �ǂݍ��݃I�[�v�����K�v
+	// Need read open
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 
-	// �T�C�Y�擾
+	// Get size
 	size = fio.GetFileSize();
 	if (size <= 4) {
 		fio.Close();
 		return FALSE;
 	}
 
-	// CUE�V�[�g���AISO�t�@�C�����̔�����s��
+	// Read CUE sheet or ISO file to distinguish
 	fio.Read(file, 4);
 	file[4] = '\0';
 	fio.Close();
 
-	// FILE�Ŏn�܂��Ă���΁ACUE�V�[�g�Ƃ݂Ȃ�
+	// If starts with FILE, it is CUE sheet
 	if (_strnicmp(file, "FILE", 4) == 0) {
-		// CUE�Ƃ��ăI�[�v��
+		// Open as CUE
 		if (!OpenCue(path)) {
 			return FALSE;
 		}
 	}
 	else {
-		// ISO�Ƃ��ăI�[�v��
+		// Open as ISO
 		if (!OpenIso(path)) {
 			return FALSE;
 		}
 	}
 
-	// �I�[�v������
+	// Open success
 	ASSERT(disk.blocks > 0);
 	disk.size = 11;
 
-	// ��{�N���X
+	// Base class
 	Disk::Open(path);
 
-	// RAW�t���O��ݒ�
+	// Set RAW flag
 	ASSERT(disk.dcache);
 	disk.dcache->SetRawMode(rawfile);
 
-	// ROM���f�B�A�Ȃ̂ŁA�������݂͂ł��Ȃ�
+	// ROM disk, write is not possible
 	disk.writep = TRUE;
 
-	// ���f�B�Ȃ�A�e���V����
+	// If disk, attention
 	if (disk.ready && attn) {
 		disk.attn = TRUE;
 	}
@@ -2762,7 +2762,7 @@ BOOL FASTCALL SCSICD::Open(const Filepath& path, BOOL attn)
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��(CUE)
+//	Open (CUE)
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSICD::OpenCue(const Filepath& path)
@@ -2770,13 +2770,13 @@ BOOL FASTCALL SCSICD::OpenCue(const Filepath& path)
 	ASSERT(this);
 
 	printf("%p", (const void*)&path);
-	// ��Ɏ��s
+	// Currently fails
 	return FALSE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�v��(ISO)
+//	Open (ISO)
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSICD::OpenIso(const Filepath& path)
@@ -2788,50 +2788,50 @@ BOOL FASTCALL SCSICD::OpenIso(const Filepath& path)
 
 	ASSERT(this);
 
-	// �ǂݍ��݃I�[�v�����K�v
+	// Need read open
 	if (!fio.Open(path, Fileio::ReadOnly)) {
 		return FALSE;
 	}
 
-	// �T�C�Y�擾
+	// Get size
 	size = fio.GetFileSize();
 	if (size < 0x800) {
 		fio.Close();
 		return FALSE;
 	}
 
-	// �ŏ���12�o�C�g��ǂݎ���āA�N���[�Y
+	// Read first 12 bytes, close
 	if (!fio.Read(header, sizeof(header))) {
 		fio.Close();
 		return FALSE;
 	}
 
-	// RAW�`�����`�F�b�N
+	// Check RAW format
 	memset(sync, 0xff, sizeof(sync));
 	sync[0] = 0x00;
 	sync[11] = 0x00;
 	rawfile = FALSE;
 	if (memcmp(header, sync, sizeof(sync)) == 0) {
-		// 00,FFx10,00�Ȃ̂ŁARAW�`���Ɛ��肳���
+		// 00,FFx10,00 so RAW format
 		if (!fio.Read(header, 4)) {
 			fio.Close();
 			return FALSE;
 		}
 
-		// MODE1/2048�܂���MODE1/2352�̂݃T�|�[�g
+		// Only MODE1/2048 or MODE1/2352 are supported
 		if (header[3] != 0x01) {
-			// ���[�h���Ⴄ
+			// Load different
 			fio.Close();
 			return FALSE;
 		}
 
-		// RAW�t�@�C���ɐݒ�
+		// Set as RAW file
 		rawfile = TRUE;
 	}
 	fio.Close();
 
 	if (rawfile) {
-		// �T�C�Y��2536�̔{���ŁA700MB�ȉ��ł��邱��
+		// Size must be multiple of 2536, up to 700MB
 		if (size % 0x930) {
 			return FALSE;
 		}
@@ -2839,11 +2839,11 @@ BOOL FASTCALL SCSICD::OpenIso(const Filepath& path)
 			return FALSE;
 		}
 
-		// �u���b�N����ݒ�
+		// Set block count
 		disk.blocks = size / 0x930;
 	}
 	else {
-		// �T�C�Y��2048�̔{���ŁA700MB�ȉ��ł��邱��
+		// Size must be multiple of 2048, up to 700MB
 		if (size & 0x7ff) {
 			return FALSE;
 		}
@@ -2851,11 +2851,11 @@ BOOL FASTCALL SCSICD::OpenIso(const Filepath& path)
 			return FALSE;
 		}
 
-		// �u���b�N����ݒ�
+		// Set block count
 		disk.blocks = size >> 11;
 	}
 
-	// �f�[�^�g���b�N1�̂ݍ쐬
+	// Create only one data track
 	ASSERT(!track[0]);
 	track[0] = new CDTrack(this);
 	track[0]->Init(1, 0, disk.blocks - 1);
@@ -2863,7 +2863,7 @@ BOOL FASTCALL SCSICD::OpenIso(const Filepath& path)
 	tracks = 1;
 	dataindex = 0;
 
-	// �I�[�v������
+	// Open success
 	return TRUE;
 }
 
@@ -2885,18 +2885,18 @@ int FASTCALL SCSICD::Inquiry(const DWORD *cdb, BYTE *buf)
 	ASSERT(buf);
 	ASSERT(cdb[0] == 0x12);
 
-	// EVPD�`�F�b�N
+	// EVPD check
 	if (cdb[1] & 0x01) {
 		disk.code = DISK_INVALIDCDB;
 		return FALSE;
 	}
 
-	// ��{�f�[�^
+	// Basic data
 	// buf[0] ... CD-ROM Device
-	// buf[1] ... �����[�o�u��
-	// buf[2] ... SCSI-2�����̃R�}���h�̌n
-	// buf[3] ... SCSI-2������Inquiry���X�|���X
-	// buf[4] ... Inquiry�ǉ��f�[�^
+	// buf[1] ... Removable
+	// buf[2] ... SCSI-2 command system type
+	// buf[3] ... SCSI-2 response data format for Inquiry
+	// buf[4] ... Inquiry additional data
 	memset(buf, 0, 8);
 	buf[0] = 0x05;
 	buf[1] = 0x80;
@@ -2904,27 +2904,27 @@ int FASTCALL SCSICD::Inquiry(const DWORD *cdb, BYTE *buf)
 	buf[3] = 0x02;
 	buf[4] = 0x1f;
 
-	// �x���_
+	// Fill space
 	memset(&buf[8], 0x20, 28);
 	memcpy(&buf[8], "XM6", 3);
 
-	// ���i��
+	// Product name
 	memcpy(&buf[16], "CDU-55S", 7);
 
-	// ���r�W����(XM6�̃o�[�W����No)
+	// Revision (XM6 version No)
 	ctrl->GetVM()->GetVersion(major, minor);
 	sprintf(string, "0%01d%01d%01d",
 				major, (minor >> 4), (minor & 0x0f));
 	memcpy((char*)&buf[32], string, 4);
 
-	// �T�C�Y36�o�C�g���A���P�[�V���������O�X�̂����A�Z�����œ]��
+	// Return size 36 bytes, but limit to allocation length
 	size = 36;
 	len = cdb[4];
 	if (len < size) {
 		size = len;
 	}
 
-	// ����
+	// Success
 	disk.code = DISK_NOERROR;
 	return size;
 }
@@ -2943,41 +2943,41 @@ int FASTCALL SCSICD::Read(BYTE *buf, int block)
 	ASSERT(buf);
 	ASSERT(block >= 0);
 
-	// ��ԃ`�F�b�N
+	// Status check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// �g���b�N����
+	// Track search
 	index = SearchTrack(block);
 
-	// �����Ȃ�A�͈͊O
+	// Invalid, out of range
 	if (index < 0) {
 		disk.code = DISK_INVALIDLBA;
 		return 0;
 	}
 	ASSERT(track[index]);
 
-	// ���݂̃f�[�^�g���b�N�ƈقȂ��Ă����
+	// If different from current data track
 	if (dataindex != index) {
-		// ���݂̃f�B�X�N�L���b�V�����폜(Save�̕K�v�͂Ȃ�)
+		// Delete current disk cache (no need to Save)
 		delete disk.dcache;
 		disk.dcache = NULL;
 
-		// �u���b�N�����Đݒ�
+		// Reset block count
 		disk.blocks = track[index]->GetBlocks();
 		ASSERT(disk.blocks > 0);
 
-		// �f�B�X�N�L���b�V������蒼��
+		// Create disk cache
 		track[index]->GetPath(path);
 		disk.dcache = new DiskCache(path, disk.size, disk.blocks);
 		disk.dcache->SetRawMode(rawfile);
 
-		// �f�[�^�C���f�b�N�X���Đݒ�
+		// Reset data index
 		dataindex = index;
 	}
 
-	// ��{�N���X
+	// Base class
 	ASSERT(dataindex >= 0);
 	return Disk::Read(buf, block);
 }
@@ -3002,21 +3002,21 @@ int FASTCALL SCSICD::ReadToc(const DWORD *cdb, BYTE *buf)
 	ASSERT(cdb[0] == 0x43);
 	ASSERT(buf);
 
-	// ���f�B�`�F�b�N
+	// Disk check
 	if (!CheckReady()) {
 		return 0;
 	}
 
-	// ���f�B�ł���Ȃ�A�g���b�N���Œ�1�ȏ㑶�݂���
+	// If disk, tracks are at least 1
 	ASSERT(tracks > 0);
 	ASSERT(track[0]);
 
-	// �A���P�[�V���������O�X�擾�A�o�b�t�@�N���A
+	// Get allocation length, clear buffer
 	length = cdb[7] << 8;
 	length |= cdb[8];
 	memset(buf, 0, length);
 
-	// MSF�t���O�擾
+	// Get MSF flag
 	if (cdb[1] & 0x02) {
 		msf = TRUE;
 	}
@@ -3024,20 +3024,20 @@ int FASTCALL SCSICD::ReadToc(const DWORD *cdb, BYTE *buf)
 		msf = FALSE;
 	}
 
-	// �ŏI�g���b�N�ԍ����擾�A�`�F�b�N
+	// Get last track number and check
 	last = track[tracks - 1]->GetTrackNo();
 	if ((int)cdb[6] > last) {
-		// ������AA�͏��O
+		// If not AA, out of range
 		if (cdb[6] != 0xaa) {
 			disk.code = DISK_INVALIDCDB;
 			return 0;
 		}
 	}
 
-	// �J�n�C���f�b�N�X���`�F�b�N
+	// Check starting index
 	index = 0;
 	if (cdb[6] != 0x00) {
-		// �g���b�N�ԍ�����v����܂ŁA�g���b�N��i�߂�
+		// Track number was specified, search track
 		while (track[index]) {
 			if ((int)cdb[6] == track[index]->GetTrackNo()) {
 				break;
@@ -3045,10 +3045,10 @@ int FASTCALL SCSICD::ReadToc(const DWORD *cdb, BYTE *buf)
 			index++;
 		}
 
-		// ������Ȃ����AA���A�����G���[
+		// If not found, if AA, error
 		if (!track[index]) {
 			if (cdb[6] == 0xaa) {
-				// AA�Ȃ̂ŁA�ŏILBA+1��Ԃ�
+				// Since AA, return last LBA+1
 				buf[0] = 0x00;
 				buf[1] = 0x0a;
 				buf[2] = (BYTE)track[0]->GetTrackNo();
@@ -3065,53 +3065,53 @@ int FASTCALL SCSICD::ReadToc(const DWORD *cdb, BYTE *buf)
 				return length;
 			}
 
-			// ����ȊO�̓G���[
+			// Others are error
 			disk.code = DISK_INVALIDCDB;
 			return 0;
 		}
 	}
 
-	// ����Ԃ��g���b�N�f�B�X�N���v�^�̌�(���[�v��)
+	// Calculate number of track descriptor entries (loop count)
 	loop = last - track[index]->GetTrackNo() + 1;
 	ASSERT(loop >= 1);
 
-	// �w�b�_�쐬
+	// Create header
 	buf[0] = (BYTE)(((loop << 3) + 2) >> 8);
 	buf[1] = (BYTE)((loop << 3) + 2);
 	buf[2] = (BYTE)track[0]->GetTrackNo();
 	buf[3] = (BYTE)last;
 	buf += 4;
 
-	// ���[�v
+	// Loop
 	for (i=0; i<loop; i++) {
-		// ADR��Control
+		// ADR and Control
 		if (track[index]->IsAudio()) {
-			// �I�[�f�B�I�g���b�N
+			// Audio track
 			buf[1] = 0x10;
 		}
 		else {
-			// �f�[�^�g���b�N
+			// Data track
 			buf[1] = 0x14;
 		}
 
-		// �g���b�N�ԍ�
+		// Track number
 		buf[2] = (BYTE)track[index]->GetTrackNo();
 
-		// �g���b�N�A�h���X
+		// Track address
 		if (msf) {
 			LBAtoMSF(track[index]->GetFirst(), &buf[4]);
 		}
 		else {
 			buf[6] = (BYTE)(track[index]->GetFirst() >> 8);
-			buf[7] = (BYTE)(track[index]->GetFirst());
+			buf[7] = (BYTE)track[index]->GetFirst();
 		}
 
-		// �o�b�t�@�ƃC���f�b�N�X��i�߂�
+		// Advance buffer and index
 		buf += 8;
 		index++;
 	}
 
-	// �A���P�[�V���������O�X�����K���Ԃ�
+	// Return allocation length
 	return length;
 }
 
@@ -3156,7 +3156,7 @@ BOOL FASTCALL SCSICD::PlayAudioTrack(const DWORD *cdb)
 
 //---------------------------------------------------------------------------
 //
-//	LBA��MSF�ϊ�
+//	LBA to MSF conversion
 //
 //---------------------------------------------------------------------------
 void FASTCALL SCSICD::LBAtoMSF(DWORD lba, BYTE *msf) const
@@ -3167,20 +3167,20 @@ void FASTCALL SCSICD::LBAtoMSF(DWORD lba, BYTE *msf) const
 
 	ASSERT(this);
 
-	// 75�A75*60�ł��ꂼ��]����o��
+	// Convert by 75, 75*60 respectively
 	m = lba / (75 * 60);
 	s = lba % (75 * 60);
 	f = s % 75;
 	s /= 75;
 
-	// ��_��M=0,S=2,F=0
+	// Offset: M=0,S=2,F=0
 	s += 2;
 	if (s >= 60) {
 		s -= 60;
 		m++;
 	}
 
-	// �i�[
+	// Store
 	ASSERT(m < 0x100);
 	ASSERT(s < 60);
 	ASSERT(f < 75);
@@ -3192,7 +3192,7 @@ void FASTCALL SCSICD::LBAtoMSF(DWORD lba, BYTE *msf) const
 
 //---------------------------------------------------------------------------
 //
-//	MSF��LBA�ϊ�
+//	MSF to LBA conversion
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL SCSICD::MSFtoLBA(const BYTE *msf) const
@@ -3203,14 +3203,14 @@ DWORD FASTCALL SCSICD::MSFtoLBA(const BYTE *msf) const
 	ASSERT(msf[2] < 60);
 	ASSERT(msf[3] < 75);
 
-	// 1, 75, 75*60�̔{���ō��Z
+	// Calculate by multiples of 1, 75, 75*60
 	lba = msf[1];
 	lba *= 60;
 	lba += msf[2];
 	lba *= 75;
 	lba += msf[3];
 
-	// ��_��M=0,S=2,F=0�Ȃ̂ŁA150������
+	// Since offset is M=0,S=2,F=0, subtract 150
 	lba -= 150;
 
 	return lba;
@@ -3218,7 +3218,7 @@ DWORD FASTCALL SCSICD::MSFtoLBA(const BYTE *msf) const
 
 //---------------------------------------------------------------------------
 //
-//	�g���b�N�N���A
+//	Clear tracks
 //
 //---------------------------------------------------------------------------
 void FASTCALL SCSICD::ClearTrack()
@@ -3227,7 +3227,7 @@ void FASTCALL SCSICD::ClearTrack()
 
 	ASSERT(this);
 
-	// �g���b�N�I�u�W�F�N�g���폜
+	// Delete track objects
 	for (i=0; i<TrackMax; i++) {
 		if (track[i]) {
 			delete track[i];
@@ -3235,18 +3235,18 @@ void FASTCALL SCSICD::ClearTrack()
 		}
 	}
 
-	// �g���b�N��0
+	// Tracks is 0
 	tracks = 0;
 
-	// �f�[�^�A�I�[�f�B�I�Ƃ��ݒ�Ȃ�
+	// Set data and audio index invalid
 	dataindex = -1;
 	audioindex = -1;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�g���b�N����
-//	��������Ȃ����-1��Ԃ�
+//	Search track
+//	Returns -1 if not found
 //
 //---------------------------------------------------------------------------
 int FASTCALL SCSICD::SearchTrack(DWORD lba) const
@@ -3255,22 +3255,22 @@ int FASTCALL SCSICD::SearchTrack(DWORD lba) const
 
 	ASSERT(this);
 
-	// �g���b�N���[�v
+	// Track loop
 	for (i=0; i<tracks; i++) {
-		// �g���b�N�ɕ���
+		// Compare with track
 		ASSERT(track[i]);
 		if (track[i]->IsValid(lba)) {
 			return i;
 		}
 	}
 
-	// ������Ȃ�����
+	// Not found
 	return -1;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�t���[���ʒm
+//	Frame advance
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SCSICD::NextFrame()
@@ -3278,10 +3278,10 @@ BOOL FASTCALL SCSICD::NextFrame()
 	ASSERT(this);
 	ASSERT((frame >= 0) && (frame < 75));
 
-	// �t���[����0�`74�͈̔͂Őݒ�
+	// Set frame in range 0-74
 	frame = (frame + 1) % 75;
 
-	// 1��������FALSE
+	// Returns FALSE when 1 arrives
 	if (frame != 0) {
 		return TRUE;
 	}
@@ -3292,7 +3292,7 @@ BOOL FASTCALL SCSICD::NextFrame()
 
 //---------------------------------------------------------------------------
 //
-//	CD-DA�o�b�t�@�擾
+//	Get CD-DA buffer
 //
 //---------------------------------------------------------------------------
 void FASTCALL SCSICD::GetBuf(DWORD *buffer, int samples, DWORD rate)
