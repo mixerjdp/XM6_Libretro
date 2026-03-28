@@ -261,6 +261,59 @@ static void apply_surround_fx(XM6Context *ctx, DWORD *buffer, unsigned int frame
 	ctx->surround_prev_r = prev_r;
 }
 
+static void apply_surround_fx_s16(XM6Context *ctx, short *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0) {
+		return;
+	}
+
+	// Same tone-shaping as the 32-bit path, but applied after the X68Sound
+	// backend has already produced the final mixed stereo PCM.
+	enum {
+		kLowNum = 3,
+		kLowDen = 16,
+		kHighNum = 9,
+		kHighDen = 16,
+		kWidthNum = 3,
+		kWidthDen = 2
+	};
+
+	int prev_l = ctx->surround_prev_l;
+	int prev_r = ctx->surround_prev_r;
+	short *samples = buffer;
+
+	for (unsigned int i = 0; i < frames; i++) {
+		const long long input_l = samples[0];
+		const long long input_r = samples[1];
+
+		const long long low_l = (input_l + prev_l) >> 1;
+		const long long low_r = (input_r + prev_r) >> 1;
+		const long long high_l = input_l - prev_l;
+		const long long high_r = input_r - prev_r;
+
+		const long long shaped_l = input_l
+			+ ((low_l * kLowNum) / kLowDen)
+			+ ((high_l * kHighNum) / kHighDen);
+		const long long shaped_r = input_r
+			+ ((low_r * kLowNum) / kLowDen)
+			+ ((high_r * kHighNum) / kHighDen);
+
+		long long mid = (shaped_l + shaped_r) / 2;
+		long long side = (shaped_l - shaped_r) / 2;
+		side = (side * kWidthNum) / kWidthDen;
+
+		samples[0] = saturate_s16((int)(mid + side));
+		samples[1] = saturate_s16((int)(mid - side));
+
+		prev_l = (int)input_l;
+		prev_r = (int)input_r;
+		samples += 2;
+	}
+
+	ctx->surround_prev_l = prev_l;
+	ctx->surround_prev_r = prev_r;
+}
+
 static bool ensure_reverb_buffer(XM6Context *ctx, unsigned int sample_rate)
 {
 	if (!ctx || sample_rate == 0) {
@@ -1153,7 +1206,7 @@ static void apply_default_runtime_config(XM6Context *ctx)
 	config->mem_type = Memory::SASI;
 
 	config->sample_rate = 5;
-	config->master_volume = 100;
+	config->master_volume = 80;
 	config->fm_volume = 50;
 	config->adpcm_volume = 50;
 	config->fm_enable = TRUE;
@@ -2570,8 +2623,6 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		frames = ctx->audio_buf_frames;
 	}
 
-	const int master = (ctx->runtime_config.master_volume < 0) ? 0 :
-		(ctx->runtime_config.master_volume > 100 ? 100 : ctx->runtime_config.master_volume);
 	const bool use_reverb = (ctx->reverb_level > 0);
 	const bool use_eq = !(ctx->eq_bass_level == 50 &&
 	                      ctx->eq_mid_level == 50 &&
@@ -2589,11 +2640,7 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		unsigned int produced = px68k_ring_pop_frames(ctx, out_interleaved_stereo, frames);
 		unsigned int total_samples = produced * 2;
 		for (unsigned int i = 0; i < total_samples; i++) {
-			int mixed = out_interleaved_stereo[i];
-			if (master != 100) {
-				mixed = (mixed * master) / 100;
-			}
-			out_interleaved_stereo[i] = saturate_s16(mixed);
+			out_interleaved_stereo[i] = saturate_s16(out_interleaved_stereo[i]);
 		}
 
 		if (produced > 0) {
@@ -2621,6 +2668,8 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 #if defined(XM6CORE_ENABLE_X68SOUND)
 	if (ctx->audio_engine == XM6CORE_AUDIO_ENGINE_X68SOUND) {
+		const int master = (ctx->runtime_config.master_volume < 0) ? 0 :
+			(ctx->runtime_config.master_volume > 100 ? 100 : ctx->runtime_config.master_volume);
 		short *x68sound_src = reinterpret_cast<short*>(ctx->opm_buf);
 		const int *cdda_src = reinterpret_cast<const int*>(ctx->adpcm_buf);
 
@@ -2648,6 +2697,9 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 			out_interleaved_stereo[(i * 2) + 1] = saturate_s16(out_r);
 		}
 
+		if (ctx->surround_enabled) {
+			apply_surround_fx_s16(ctx, out_interleaved_stereo, frames);
+		}
 		if (use_reverb) {
 			apply_reverb_fx(ctx, out_interleaved_stereo, frames);
 		}
@@ -2716,10 +2768,8 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		const int fm_r = (ctx->runtime_config.fm_volume <= 0) ? 0 : fm_src[(i * 2) + 1];
 		const int mixed_l = fm_l + adpcm_src[(i * 2) + 0];
 		const int mixed_r = fm_r + adpcm_src[(i * 2) + 1];
-		const int out_l = (master != 100) ? ((mixed_l * master) / 100) : mixed_l;
-		const int out_r = (master != 100) ? ((mixed_r * master) / 100) : mixed_r;
-		out_interleaved_stereo[(i * 2) + 0] = saturate_s16(out_l);
-		out_interleaved_stereo[(i * 2) + 1] = saturate_s16(out_r);
+		out_interleaved_stereo[(i * 2) + 0] = saturate_s16(mixed_l);
+		out_interleaved_stereo[(i * 2) + 1] = saturate_s16(mixed_r);
 	}
 
 	if (use_reverb) {
