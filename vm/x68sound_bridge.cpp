@@ -6,6 +6,8 @@
 
 #include "x68sound_bridge.h"
 
+#include <cstdio>
+
 #if defined(XM6CORE_ENABLE_X68SOUND)
 
 #include "vm.h"
@@ -16,6 +18,10 @@ namespace {
 
 static Memory *g_memory = nullptr;
 static bool g_started = false;
+static unsigned int g_last_write_value = 0;
+static unsigned int g_write_dma_count = 0;
+static unsigned int g_write_adpcm_count = 0;
+thread_local const char *g_trace_source = "vm";
 
 static int CALLBACK x68sound_mem_read(unsigned char *adrs)
 {
@@ -103,8 +109,11 @@ void Start(unsigned int sample_rate)
 	X68Sound_Reset();
 	X68Sound_OpmClock(4000000);
 	X68Sound_TotalVolume(256);
-	const int rc = X68Sound_StartPcm(static_cast<int>(sample_rate), 1, 1, 5);
+	const int rc = X68Sound_StartPcm(static_cast<int>(sample_rate), 1, 0, 5);
 	X68Sound_MemReadFunc(g_memory ? x68sound_mem_read : nullptr);
+	g_last_write_value = 0;
+	g_write_dma_count = 0;
+	g_write_adpcm_count = 0;
 	g_started = (rc >= 0);
 	if (!g_started) {
 		X68Sound_MemReadFunc(nullptr);
@@ -129,7 +138,15 @@ void Reset()
 	if (g_started) {
 		X68Sound_Reset();
 		X68Sound_MemReadFunc(g_memory ? x68sound_mem_read : nullptr);
+		g_last_write_value = 0;
+		g_write_dma_count = 0;
+		g_write_adpcm_count = 0;
 	}
+}
+
+void SetTraceSource(const char *source)
+{
+	g_trace_source = (source && source[0]) ? source : "vm";
 }
 
 int GetPcm(void *buffer, int frames)
@@ -154,6 +171,18 @@ void WriteAdpcm(unsigned char data)
 	if (!g_started) {
 		return;
 	}
+	if (data & 0x06u) {
+		const unsigned char backend_csr = X68Sound_DmaPeek(0x00);
+		std::fprintf(stderr,
+		             "[xm6-x68sound][%s] ADPCM start csr=$%02X\n",
+		             g_trace_source,
+		             static_cast<unsigned>(backend_csr));
+	}
+	++g_write_adpcm_count;
+	std::fprintf(stderr, "[xm6-x68sound][%s] WriteAdpcm #%u data=$%02X\n",
+	             g_trace_source,
+	             g_write_adpcm_count, static_cast<unsigned>(data));
+	g_last_write_value = 0xC0000000u | static_cast<unsigned int>(data);
 	X68Sound_AdpcmPoke(data);
 }
 
@@ -162,6 +191,14 @@ void WritePpi(unsigned char data)
 	if (!g_started) {
 		return;
 	}
+	static unsigned int g_write_ppi_count = 0;
+	if (g_write_ppi_count < 24u) {
+		std::fprintf(stderr, "[xm6-x68sound][%s] WritePpi #%u data=$%02X\n",
+		             g_trace_source,
+		             g_write_ppi_count + 1u,
+		             static_cast<unsigned>(data));
+	}
+	++g_write_ppi_count;
 	X68Sound_PpiPoke(data);
 }
 
@@ -178,7 +215,17 @@ void WriteDma(unsigned char adrs, unsigned char data)
 	if (!g_started) {
 		return;
 	}
-	X68Sound_DmaPoke(adrs, data);
+	const unsigned char original_data = data;
+	++g_write_dma_count;
+	if (adrs == 0x04u || adrs == 0x05u || adrs == 0x06u || adrs == 0x07u) {
+		std::fprintf(stderr, "[xm6-x68sound][%s] WriteDma #%u adrs=$%02X data=$%02X\n",
+		             g_trace_source,
+		             g_write_dma_count,
+		             static_cast<unsigned>(adrs),
+		             static_cast<unsigned>(original_data));
+	}
+	g_last_write_value = 0xB0000000u | (static_cast<unsigned int>(adrs) << 8) | static_cast<unsigned int>(original_data);
+	X68Sound_DmaPoke(adrs, original_data);
 }
 
 void TimerA()
@@ -187,6 +234,26 @@ void TimerA()
 		return;
 	}
 	X68Sound_TimerA();
+}
+
+int GetErrorCode()
+{
+	return X68Sound_ErrorCode();
+}
+
+int GetDebugValue()
+{
+	return X68Sound_DebugValue();
+}
+
+int GetTraceValue()
+{
+	return X68Sound_TraceValue();
+}
+
+int GetWriteValue()
+{
+	return static_cast<int>(g_last_write_value);
 }
 
 } // namespace Xm6X68Sound
@@ -243,6 +310,26 @@ void WriteDma(unsigned char /*adrs*/, unsigned char /*data*/)
 
 void TimerA()
 {
+}
+
+int GetErrorCode()
+{
+	return 0;
+}
+
+int GetDebugValue()
+{
+	return 0;
+}
+
+int GetTraceValue()
+{
+	return 0;
+}
+
+int GetWriteValue()
+{
+	return 0;
 }
 
 } // namespace Xm6X68Sound

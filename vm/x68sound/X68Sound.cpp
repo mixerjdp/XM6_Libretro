@@ -164,7 +164,34 @@ extern "C" int X68Sound_StartPcm(int samprate, int opmflag, int adpcmflag, int p
 	return opm.StartPcm(samprate, opmflag, adpcmflag, pcmbuf);
 }
 extern "C" int X68Sound_GetPcm(void *buf, int len) {
-	return opm.GetPcm(buf, len);
+	const int ret = opm.GetPcm(buf, len);
+	if (ret != 0) {
+		DebugValue = 0x62000000 | (ret & 0xffff);
+	} else {
+		static int pcm_trace_count = 0;
+		if (pcm_trace_count < 24 && buf && len > 0) {
+			const short *samples = reinterpret_cast<const short*>(buf);
+			unsigned peak = 0;
+			for (int i = 0; i < (len * 2); ++i) {
+				const int value = samples[i];
+				const unsigned abs_value = static_cast<unsigned>(value < 0 ? -value : value);
+				if (abs_value > peak) {
+					peak = abs_value;
+				}
+			}
+			if (peak > 0) {
+				fprintf(stderr,
+					"[x68sound][pcm-out] len=%d peak=%u first_l=%d first_r=%d ret=%d\r\n",
+					len,
+					peak,
+					(int)samples[0],
+					(int)samples[1],
+					ret);
+				++pcm_trace_count;
+			}
+		}
+	}
+	return ret;
 }
 
 extern "C" unsigned char X68Sound_OpmPeek() {
@@ -257,6 +284,12 @@ extern "C" int X68Sound_ErrorCode() {
 }
 extern "C" int X68Sound_DebugValue() {
 	return DebugValue;
+}
+extern "C" int X68Sound_TraceValue() {
+	return TraceValue;
+}
+extern "C" int X68Sound_WriteValue() {
+	return WriteValue;
 }
 
 extern "C" void X68Sound_TimerA() {

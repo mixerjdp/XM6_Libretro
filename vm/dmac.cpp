@@ -269,64 +269,52 @@ DWORD FASTCALL DMAC::ReadWord(DWORD addr)
 void FASTCALL DMAC::WriteByte(DWORD addr, DWORD data)
 {
 	int ch;
+	bool mirror_to_x68sound;
 
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT(data < 0x100);
 
-	// �E�F�C�g
 	scheduler->Wait(7);
 
-	// �`���l���Ɋ��蓖��
 	ch = (int)(addr >> 6);
 	ch &= 3;
 	addr &= 0x3f;
+	mirror_to_x68sound = (ch == 3) && !(dma[ch].act && (addr == 0x04 || addr == 0x05 || addr == 0x06 || addr == 0x29 || addr == 0x31 || (addr == 0x07 && data == 0x48)));
 
-	// �`���l���P�ʂōs��
 	WriteDMA(ch, addr, data);
-	if (ch == 3) {
+	if (mirror_to_x68sound) {
 		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr), static_cast<unsigned char>(data));
 	}
 }
 
-//---------------------------------------------------------------------------
-//
-//	���[�h��������
-//
-//---------------------------------------------------------------------------
 void FASTCALL DMAC::WriteWord(DWORD addr, DWORD data)
 {
 	int ch;
+	bool mirror_to_x68sound;
 
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT((addr & 1) == 0);
 	ASSERT(data < 0x10000);
 
-	// �E�F�C�g
 	scheduler->Wait(7);
 
-	// �`���l���Ɋ��蓖��
 	ch = (int)(addr >> 6);
 	ch &= 3;
 	addr &= 0x3f;
 
-	// �`���l���P�ʂōs��
 	WriteDMA(ch, addr, (BYTE)(data >> 8));
-	if (ch == 3) {
+	mirror_to_x68sound = (ch == 3) && !(dma[ch].act && (addr == 0x04 || addr == 0x05 || addr == 0x06 || addr == 0x29 || addr == 0x31 || (addr == 0x07 && data == 0x48)));
+	if (mirror_to_x68sound) {
 		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr), static_cast<unsigned char>(data >> 8));
 	}
 	WriteDMA(ch, addr + 1, (BYTE)data);
-	if (ch == 3) {
+	mirror_to_x68sound = (ch == 3) && !(dma[ch].act && (addr + 1 == 0x04 || addr + 1 == 0x05 || addr + 1 == 0x06 || addr + 1 == 0x29 || addr + 1 == 0x31 || (addr + 1 == 0x07 && (data & 0xff) == 0x48)));
+	if (mirror_to_x68sound) {
 		Xm6X68Sound::WriteDma(static_cast<unsigned char>(addr + 1), static_cast<unsigned char>(data));
 	}
 }
-
-//---------------------------------------------------------------------------
-//
-//	�ǂݍ��݂̂�
-//
-//---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::ReadOnly(DWORD addr) const
 {
 	int ch;
@@ -2077,3 +2065,5 @@ const int DMAC::DevDiffTable[8][4] = {
 	{ 0, 4, -4, 0},		// 16bit, �����O���[�h
 	{ 0, 1, -1, 0}		// 16bit, �p�b�N�o�C�g
 };
+
+

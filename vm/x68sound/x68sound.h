@@ -43,6 +43,8 @@ extern "C" int X68Sound_TotalVolume(int v);
 
 extern "C" int X68Sound_ErrorCode();
 extern "C" int X68Sound_DebugValue();
+extern "C" int X68Sound_TraceValue();
+extern "C" int X68Sound_WriteValue();
 
 extern "C" void X68Sound_SetMask(int mask);
 extern "C" void X68Sound_TimerA();

@@ -25,6 +25,7 @@ void SetMemory(Memory *memory);
 void Start(unsigned int sample_rate);
 void Shutdown();
 void Reset();
+void SetTraceSource(const char *source);
 int GetPcm(void *buffer, int frames);
 void WriteOpm(unsigned char reg, unsigned char data);
 void WriteAdpcm(unsigned char data);
@@ -32,6 +33,10 @@ void WritePpi(unsigned char data);
 void WritePpiCtrl(unsigned char data);
 void WriteDma(unsigned char adrs, unsigned char data);
 void TimerA();
+int GetErrorCode();
+int GetDebugValue();
+int GetTraceValue();
+int GetWriteValue();
 
 } // namespace Xm6X68Sound
 

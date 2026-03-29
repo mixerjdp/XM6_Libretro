@@ -516,6 +516,18 @@ void FASTCALL PPI::SetPortC(DWORD data)
 
 	// ƒf[ƒ^‚ð‹L‰¯
 	ppi.portc = data;
+	static int portc_trace_count = 0;
+	if (portc_trace_count < 24) {
+		fprintf(stderr,
+			"[vm][ppi-portc] n=%d data=$%02X ctl0=$%02X ctl1=$%02X pan=%u rate=%u\r\n",
+			portc_trace_count,
+			(unsigned)data,
+			(unsigned)((ppi.portc & 0x03u)),
+			(unsigned)((ppi.portc >> 2) & 0x03u),
+			(unsigned)(ppi.portc & 3u),
+			(unsigned)((ppi.portc >> 2) & 3u));
+		++portc_trace_count;
+	}
 
 	// ƒRƒ“ƒgƒ[ƒ‹ƒf[ƒ^‘g‚Ý—§‚Ä(ƒ|[ƒgA)...bit0‚ªPC4Abit6,7‚ªPC6,7‚ðŽ¦‚·
 	ppi.ctl[0] = ppi.portc & 0xc0;

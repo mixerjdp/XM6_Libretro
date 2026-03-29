@@ -10,6 +10,8 @@
 //#define	DEBUG
 
 int	DebugValue=0;
+int	TraceValue=0;
+int	WriteValue=0;
 int	ErrorCode=0;
 
 #define	N_CH	8
@@ -271,6 +273,20 @@ const int PCM8VOLTBL[16] = {
 unsigned char *bswapl(unsigned char *adrs) {
 	return reinterpret_cast<unsigned char *>(
 		static_cast<std::uintptr_t>(x68sound_bswap32(static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(adrs)))));
+}
+
+inline std::uint32_t x68sound_read_u32_be(const volatile unsigned char *adrs) {
+	return (static_cast<std::uint32_t>(adrs[0]) << 24) |
+		(static_cast<std::uint32_t>(adrs[1]) << 16) |
+		(static_cast<std::uint32_t>(adrs[2]) << 8) |
+		static_cast<std::uint32_t>(adrs[3]);
+}
+
+inline void x68sound_write_u32_be(volatile unsigned char *adrs, std::uint32_t data) {
+	adrs[0] = static_cast<unsigned char>((data >> 24) & 0xffu);
+	adrs[1] = static_cast<unsigned char>((data >> 16) & 0xffu);
+	adrs[2] = static_cast<unsigned char>((data >> 8) & 0xffu);
+	adrs[3] = static_cast<unsigned char>(data & 0xffu);
 }
 
 unsigned short bswapw(unsigned short data) {

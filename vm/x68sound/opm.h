@@ -1,4 +1,4 @@
-﻿#define	CMNDBUFSIZE	65535
+#define	CMNDBUFSIZE	65535
 
 //#define	RES	(20)
 //#define	NDATA	(44100/5)
@@ -6,20 +6,20 @@
 //#define	DELAY	(1000/5)
 
 #ifdef C86CTL
-// c86ctl —p’è‹`
+// c86ctl �p��`
 typedef HRESULT (WINAPI *C86CtlCreateInstance)( REFIID, LPVOID* );
 #endif
 
 class Opm {
 	char *Author;
 
-	Op	op[8][4];	// ƒIƒyƒŒ[ƒ^0`31
-	int	EnvCounter1;	// ƒGƒ“ƒxƒ[ƒv—pƒJƒEƒ“ƒ^1 (0,1,2,3,4,5,6,...)
-	int	EnvCounter2;	// ƒGƒ“ƒxƒ[ƒv—pƒJƒEƒ“ƒ^2 (3,2,1,3,2,1,3,2,...)
-//	int	con[N_CH];	// ƒAƒ‹ƒSƒŠƒYƒ€ 0`7
-	int	pan[2][N_CH];	// 0:–³‰¹ -1:o—Í
+	Op	op[8][4];	// �I�y���[�^0�`31
+	int	EnvCounter1;	// �G���x���[�v�p�J�E���^1 (0,1,2,3,4,5,6,...)
+	int	EnvCounter2;	// �G���x���[�v�p�J�E���^2 (3,2,1,3,2,1,3,2,...)
+//	int	con[N_CH];	// �A���S���Y�� 0�`7
+	int	pan[2][N_CH];	// 0:���� -1:�o��
 //	int pms[N_CH];	// 0, 1, 2, 4, 10, 20, 80, 140
-//	int	ams[N_CH];	// ‰EƒVƒtƒg‰ñ” 31(0), 2(1), 1(2), 0(3)
+//	int	ams[N_CH];	// �E�V�t�g�� 31(0), 2(1), 1(2), 0(3)
 //	int	pmd;
 //	int	amd;
 //	int	pmspmd[N_CH];	// pms[]*pmd
@@ -41,26 +41,26 @@ public:
 private:
 	unsigned int	TimerID;
 
-//	int	LfoOverTime;	// LFO t‚ÌƒI[ƒo[ƒtƒ[’l
-//	int	LfoTime;	// LFOê—p t
-//	int LfoRndTime;	// LFOƒ‰ƒ“ƒ_ƒ€”gê—pt
+//	int	LfoOverTime;	// LFO t�̃I�[�o�[�t���[�l
+//	int	LfoTime;	// LFO��p t
+//	int LfoRndTime;	// LFO�����_���g��pt
 //	int 
-//	int	Lfrq;		// LFOŽü”g”Ý’è’l LFRQ
+//	int	Lfrq;		// LFO���g���ݒ�l LFRQ
 //	int	LfoWaveForm;	// LFO wave form
 //	inline void	CalcLfoStep();
 	inline void SetConnection(int ch, int alg);
 	volatile int	OpOut[8];
 	int	OpOutDummy;
 
-	int	TimerAreg10;	// OPMreg$10‚Ì’l
-	int	TimerAreg11;	// OPMreg$11‚Ì’l
-	int	TimerA;			// ƒ^ƒCƒ}[A‚ÌƒI[ƒo[ƒtƒ[Ý’è’l
-	int	TimerAcounter;	// ƒ^ƒCƒ}[A‚ÌƒJƒEƒ“ƒ^[’l
-	int	TimerB;			// ƒ^ƒCƒ}[B‚ÌƒI[ƒo[ƒtƒ[Ý’è’l
-	int	TimerBcounter;	// ƒ^ƒCƒ}[B‚ÌƒJƒEƒ“ƒ^[’l
-	volatile int	TimerReg;		// ƒ^ƒCƒ}[§ŒäƒŒƒWƒXƒ^ (OPMreg$14‚Ì‰ºˆÊ4ƒrƒbƒg+7ƒrƒbƒg)
-	volatile int	StatReg;		// OPMƒXƒe[ƒ^ƒXƒŒƒWƒXƒ^ ($E90003‚Ì‰ºˆÊ2ƒrƒbƒg)
-	void (CALLBACK *OpmIntProc)();	// OPMŠ„‚èž‚ÝƒR[ƒ‹ƒoƒbƒNŠÖ”
+	int	TimerAreg10;	// OPMreg$10�̒l
+	int	TimerAreg11;	// OPMreg$11�̒l
+	int	TimerA;			// �^�C�}�[A�̃I�[�o�[�t���[�ݒ�l
+	int	TimerAcounter;	// �^�C�}�[A�̃J�E���^�[�l
+	int	TimerB;			// �^�C�}�[B�̃I�[�o�[�t���[�ݒ�l
+	int	TimerBcounter;	// �^�C�}�[B�̃J�E���^�[�l
+	volatile int	TimerReg;		// �^�C�}�[���䃌�W�X�^ (OPMreg$14�̉���4�r�b�g+7�r�b�g)
+	volatile int	StatReg;		// OPM�X�e�[�^�X���W�X�^ ($E90003�̉���2�r�b�g)
+	void (CALLBACK *OpmIntProc)();	// OPM���荞�݃R�[���o�b�N�֐�
 
 	double inpopmbuf_dummy;
 	short InpOpmBuf0[OPMLPF_COL*2],InpOpmBuf1[OPMLPF_COL*2];
@@ -76,27 +76,31 @@ private:
 	int	InpInpOpm_prev2[2],InpOpm_prev2[2];
 	int OpmHpfInp[2], OpmHpfInp_prev[2], OpmHpfOut[2];
 	int OutInpAdpcm[2],OutInpAdpcm_prev[2],OutInpAdpcm_prev2[2],
-		OutOutAdpcm[2],OutOutAdpcm_prev[2],OutOutAdpcm_prev2[2];	// ‚‰¹ƒtƒBƒ‹ƒ^[‚Q—pƒoƒbƒtƒ@
+		OutOutAdpcm[2],OutOutAdpcm_prev[2],OutOutAdpcm_prev2[2];	// �����t�B���^�[�Q�p�o�b�t�@
 	int OutInpOutAdpcm[2],OutInpOutAdpcm_prev[2],OutInpOutAdpcm_prev2[2],
-		OutOutInpAdpcm[2],OutOutInpAdpcm_prev[2];			// ‚‰¹ƒtƒBƒ‹ƒ^[‚R—pƒoƒbƒtƒ@
+		OutOutInpAdpcm[2],OutOutInpAdpcm_prev[2];			// �����t�B���^�[�R�p�o�b�t�@
 	
-	volatile unsigned char	PpiReg;
-	unsigned char	AdpcmBaseClock;	// ADPCMƒNƒƒbƒNØ‚è‘Ö‚¦(0:8MHz 1:4Mhz)
+		volatile unsigned char	PpiReg;
+	unsigned char	AdpcmPanpot;
+	unsigned char	AdpcmBaseClock;	// ADPCM�N���b�N�؂�ւ�(0:8MHz 1:4Mhz)
+	unsigned char	PpiLastTraceReg;
+	unsigned int	PpiTraceSeq;
+	unsigned int	PpiTraceAudibleSeq;
 	inline void SetAdpcmRate();
 
-	unsigned char	OpmRegNo;		// Œ»ÝŽw’è‚³‚ê‚Ä‚¢‚éOPMƒŒƒWƒXƒ^”Ô†
-	unsigned char	OpmRegNo_backup;		// ƒoƒbƒNƒAƒbƒv—pOPMƒŒƒWƒXƒ^”Ô†
-	void (CALLBACK *BetwIntProc)();	// ƒ}ƒ‹ƒ`ƒƒfƒBƒAƒ^ƒCƒ}[Š„‚èž‚Ý
+	unsigned char	OpmRegNo;		// ���ݎw�肳��Ă���OPM���W�X�^�ԍ�
+	unsigned char	OpmRegNo_backup;		// �o�b�N�A�b�v�pOPM���W�X�^�ԍ�
+	void (CALLBACK *BetwIntProc)();	// �}���`���f�B�A�^�C�}�[���荞��
 	int (CALLBACK *WaveFunc)();		// WaveFunc
 
-	int	UseOpmFlag;		// OPM‚ð—˜—p‚·‚é‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒO
-	int	UseAdpcmFlag;	// ADPCM‚ð—˜—p‚·‚é‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒO
+	int	UseOpmFlag;		// OPM�𗘗p���邩�ǂ����̃t���O
+	int	UseAdpcmFlag;	// ADPCM�𗘗p���邩�ǂ����̃t���O
 	int _betw;
 	int _pcmbuf;
 	int _late;
 	int _rev;
 
-	int Dousa_mode;		// 0:”ñ“®ì 1:X68Sound_Start’†  2:X68Sound_PcmStart’†
+	int Dousa_mode;		// 0:�񓮍� 1:X68Sound_Start��  2:X68Sound_PcmStart��
 
 	int OpmChMask;		// Channel Mask
 
@@ -105,10 +109,10 @@ private:
 //private:
 	Pcm8	pcm8[PCM8_NCH];
 
-//	int	TotalVolume;	// ‰¹—Ê x/256
+//	int	TotalVolume;	// ���� x/256
 
 #ifdef C86CTL
-private: // c86ctl —p
+private: // c86ctl �p
 	HMODULE hC86DLL;
 	c86ctl::IRealChipBase *pChipBase;
 	c86ctl::IRealChip2 *pChipOPM;
@@ -275,13 +279,13 @@ inline void Opm::CalcCmndRate() {
 }
 
 inline void Opm::Reset() {
-	// OPMƒRƒ}ƒ“ƒhƒoƒbƒtƒ@‚ð‰Šú‰»
+	// OPM�R�}���h�o�b�t�@��������
 	NumCmnd = 0;
 	CmndReadIdx = CmndWriteIdx = 0;
 
 	CalcCmndRate();
 
-	// ‚‰¹ƒtƒBƒ‹ƒ^[—pƒoƒbƒtƒ@‚ðƒNƒŠƒA
+	// �����t�B���^�[�p�o�b�t�@���N���A
 	InpInpOpm[0] = InpInpOpm[1] =
 	InpInpOpm_prev[0] = InpInpOpm_prev[1] = 0;
 	InpInpOpm_prev2[0] = InpInpOpm_prev2[1] = 0;
@@ -325,7 +329,7 @@ inline void Opm::Reset() {
 	OutOutInpAdpcm_prev[0] = OutOutInpAdpcm_prev[1] =
 	0;
 
-	// ‘SƒIƒyƒŒ[ƒ^‚ð‰Šú‰»
+	// �S�I�y���[�^��������
 	{
 		int	ch;
 		for (ch=0; ch<N_CH; ++ch) {
@@ -339,22 +343,22 @@ inline void Opm::Reset() {
 		}
 	}
 
-	// ƒGƒ“ƒxƒ[ƒv—pƒJƒEƒ“ƒ^‚ð‰Šú‰»
+	// �G���x���[�v�p�J�E���^��������
 	{
 		EnvCounter1 = 0;
 		EnvCounter2 = 3;
 	}
 
 
-	// LFO‰Šú‰»
+	// LFO������
 	lfo.Init();
 
-	// PcmBufƒ|ƒCƒ“ƒ^[‚ðƒŠƒZƒbƒg
+	// PcmBuf�|�C���^�[�����Z�b�g
 	PcmBufPtr=0;
 //	PcmBufSize = PCMBUFSIZE;
 
 
-	// ƒ^ƒCƒ}[ŠÖŒW‚Ì‰Šú‰»
+	// �^�C�}�[�֌W�̏�����
 	TimerAreg10 = 0;
 	TimerAreg11 = 0;
 	TimerA = 1024-0;
@@ -365,8 +369,12 @@ inline void Opm::Reset() {
 	StatReg = 0;
 	OpmIntProc = NULL;
 
-	PpiReg = 0x0B;
+		PpiReg = 0x00;
+		AdpcmPanpot = 0x00;
 	AdpcmBaseClock = 0;
+	PpiLastTraceReg = 0xFF;
+	PpiTraceSeq = 0;
+	PpiTraceAudibleSeq = 0;
 
 
 	adpcm.Init();
@@ -406,7 +414,7 @@ inline void Opm::Reset() {
 inline void Opm::ResetSamprate() {
 	CalcCmndRate();
 
-	// ‚‰¹ƒtƒBƒ‹ƒ^[—pƒoƒbƒtƒ@‚ðƒNƒŠƒA
+	// �����t�B���^�[�p�o�b�t�@���N���A
 	InpInpOpm[0] = InpInpOpm[1] =
 	InpInpOpm_prev[0] = InpInpOpm_prev[1] = 0;
 	InpInpOpm_prev2[0] = InpInpOpm_prev2[1] = 0;
@@ -450,7 +458,7 @@ inline void Opm::ResetSamprate() {
 	OutOutInpAdpcm_prev[0] = OutOutInpAdpcm_prev[1] =
 	0;
 
-	// ‘SƒIƒyƒŒ[ƒ^‚ð‰Šú‰»
+	// �S�I�y���[�^��������
 	{
 		int	ch;
 		for (ch=0; ch<N_CH; ++ch) {
@@ -461,14 +469,14 @@ inline void Opm::ResetSamprate() {
 		}
 	}
 
-	// LFO‚ð‰Šú‰»
+	// LFO��������
 	lfo.InitSamprate();
 
-	// PcmBufƒ|ƒCƒ“ƒ^[‚ðƒŠƒZƒbƒg
+	// PcmBuf�|�C���^�[�����Z�b�g
 	PcmBufPtr=0;
 //	PcmBufSize = PCMBUFSIZE;
 
-//	PpiReg = 0x0B;
+//	PpiReg = 0x00;
 //	AdpcmBaseClock = 0;
 
 	adpcm.InitSamprate();
@@ -487,7 +495,7 @@ Opm::Opm(void) {
 	OpmChMask = 0;
 
 #ifdef C86CTL
-	// C86CTL ‚Ìƒ[ƒh
+	// C86CTL �̃��[�h
 	pChipBase = NULL;
 	pChipOPM = NULL;
 	
@@ -496,7 +504,7 @@ Opm::Opm(void) {
 		C86CtlCreateInstance pCI = (C86CtlCreateInstance)::GetProcAddress( hC86DLL, "CreateInstance" );
 		if( pCI ) (*pCI)( c86ctl::IID_IRealChipBase, (void**)&pChipBase );
 	}
-	// C86CTL‚Ì‰Šú‰» & OPMƒ‚ƒWƒ…[ƒ‹‚Ì’Tõ
+	// C86CTL�̏����� & OPM���W���[���̒T��
 	if( pChipBase ){
 		pChipBase->initialize();
 		int num  = pChipBase->getNumberOfChip();
@@ -521,7 +529,7 @@ Opm::Opm(void) {
 inline void Opm::MakeTable() {
 
 
-	// sinƒe[ƒuƒ‹‚ðì¬
+	// sin�e�[�u�����쐬
 	{
 		int	i;
 		for (i=0; i<SIZESINTBL; ++i) {
@@ -538,7 +546,7 @@ inline void Opm::MakeTable() {
 	}
 
 
-	// ƒGƒ“ƒxƒ[ƒv’l ¨ ƒ¿ •ÏŠ·ƒe[ƒuƒ‹‚ðì¬
+	// �G���x���[�v�l �� �� �ϊ��e�[�u�����쐬
 	{
 		int	i;
 		for (i=0; i<=ALPHAZERO+SIZEALPHATBL; ++i) {
@@ -550,7 +558,7 @@ inline void Opm::MakeTable() {
 				*1.0*1.0*PRECISION +0.0);
 		}
 	}
-	// ƒGƒ“ƒxƒ[ƒv’l ¨ Noiseƒ¿ •ÏŠ·ƒe[ƒuƒ‹‚ðì¬
+	// �G���x���[�v�l �� Noise�� �ϊ��e�[�u�����쐬
 	{
 		int	i;
 		for (i=0; i<=ALPHAZERO+SIZEALPHATBL; ++i) {
@@ -559,11 +567,11 @@ inline void Opm::MakeTable() {
 		for (i=17; i<=SIZEALPHATBL; ++i) {
 			NOISEALPHATBL[ALPHAZERO+i] = floor(
 				i*1.0/(SIZEALPHATBL)
-				*1.0*0.25*PRECISION +0.0); // Noise‰¹—Ê‚ÍOp‚Ì1/4
+				*1.0*0.25*PRECISION +0.0); // Noise���ʂ�Op��1/4
 		}
 	}
 
-	// D1L ¨ D1l •ÏŠ·ƒe[ƒuƒ‹‚ðì¬
+	// D1L �� D1l �ϊ��e�[�u�����쐬
 	{
 		int i;
 		for (i=0; i<15; ++i) {
@@ -573,7 +581,7 @@ inline void Opm::MakeTable() {
 	}
 
 
-	// C1 <-> M2 “ü‚ê‘Ö‚¦ƒe[ƒuƒ‹‚ðì¬
+	// C1 <-> M2 ����ւ��e�[�u�����쐬
 	{
 		int	slot;
 		for (slot=0; slot<8; ++slot) {
@@ -584,7 +592,7 @@ inline void Opm::MakeTable() {
 		}
 	}
 	
-	// Pitch¨ƒ¢t•ÏŠ·ƒe[ƒuƒ‹‚ðì¬
+	// Pitch����t�ϊ��e�[�u�����쐬
 	{
 		int	oct,notekf,step;
 
@@ -675,7 +683,7 @@ inline void Opm::OpmPoke(unsigned char data) {
 		break;
 
 	case 0x14:
-	// ƒ^ƒCƒ}[§ŒäƒŒƒWƒXƒ^
+	// �^�C�}�[���䃌�W�X�^
 		{
 			while (_InterlockedCompareExchange(&TimerSemapho, 1, 0) == 1);
 
@@ -1027,8 +1035,8 @@ inline void Opm::pcmset62(int ndata) {
 					o = adpcm.GetPcm62();
 					if (!(OpmChMask & 0x100))
 					if (o != 0x80000000) {
-							OutInpAdpcm[0] += ((((int)(PpiReg)>>1)&1)-1) & o;
-							OutInpAdpcm[1] += (((int)(PpiReg)&1)-1) & o;
+							OutInpAdpcm[0] += ((((int)(adpcm.GetPanpot())>>1)&1)-1) & o;
+							OutInpAdpcm[1] += (((int)(adpcm.GetPanpot())&1)-1) & o;
 					}
 				}
 
@@ -1096,6 +1104,7 @@ inline void Opm::pcmset62(int ndata) {
 				OutOutInpAdpcm_prev[1] = OutOutInpAdpcm[1];
 				OutOutAdpcm_prev[0] = OutOutAdpcm[0];
 				OutOutAdpcm_prev[1] = OutOutAdpcm[1];
+
 
 //				OutInpOpm[0] += OutOutAdpcm[0] >> 4;	// -2048*16`+2048*16
 //				OutInpOpm[1] += OutOutAdpcm[1] >> 4;	// -2048*16`+2048*16
@@ -1302,12 +1311,29 @@ inline void Opm::pcmset22(int ndata) {
 					OutInpAdpcm[0] = OutInpAdpcm[1] = 0;
 					// OutInpAdpcm[] ‚É Adpcm ‚Ìo—ÍPCM‚ð‰ÁŽZ
 					{
+							const int AdpcmPan = (int)adpcm.GetPanpot();
 						int	o;
 						o = adpcm.GetPcm();
 						if (!(OpmChMask & 0x100))
 						if (o != 0x80000000) {
-							OutInpAdpcm[0] += ((((int)(PpiReg)>>1)&1)-1) & o;
-							OutInpAdpcm[1] += (((int)(PpiReg)&1)-1) & o;
+							const int OutInpAdpcm0 = ((((AdpcmPan)>>1)&1)-1) & o;
+							const int OutInpAdpcm1 = (((AdpcmPan)&1)-1) & o;
+							const int routed_peak = (OutInpAdpcm0 < 0 ? -OutInpAdpcm0 : OutInpAdpcm0) > (OutInpAdpcm1 < 0 ? -OutInpAdpcm1 : OutInpAdpcm1)
+								? (OutInpAdpcm0 < 0 ? -OutInpAdpcm0 : OutInpAdpcm0)
+								: (OutInpAdpcm1 < 0 ? -OutInpAdpcm1 : OutInpAdpcm1);
+							if (routed_peak > 0 && PpiTraceAudibleSeq != PpiTraceSeq) {
+fprintf(stderr,
+		"[x68sound][first-audible] seq=%u o=%d pan=%d route=(%d,%d) routed_peak=%d\r\n",
+		PpiTraceSeq,
+		o,
+		AdpcmPan,
+		OutInpAdpcm0,
+		OutInpAdpcm1,
+		routed_peak);
+								PpiTraceAudibleSeq = PpiTraceSeq;
+							}
+							OutInpAdpcm[0] += OutInpAdpcm0;
+							OutInpAdpcm[1] += OutInpAdpcm1;
 						}
 					}
 
@@ -1368,11 +1394,11 @@ inline void Opm::pcmset22(int ndata) {
 				OutOutAdpcm_prev[1] = OutOutAdpcm[1];
 
 
-
-//			Out[0] += OutAdpcm[0] >> 4;	// -2048*16`+2048*16
+	// -2048*16`+2048*16
 //			Out[1] += OutAdpcm[1] >> 4;
 			Out[0] -= OutOutAdpcm[0] >> 4;	// -2048*16`+2048*16
 			Out[1] -= OutOutAdpcm[1] >> 4;
+
 		}
 
 //		// ‘S‘Ì‚Ì‰¹—Ê‚ð’²®
@@ -1437,7 +1463,7 @@ inline void Opm::timer() {
 
 	int	prev_stat = StatReg;
 	int flag_set = 0;
-	if (TimerReg & 0x01) {	// TimerA “®ì’†
+	if (TimerReg & 0x01) {	// TimerA ���쒆
 		++TimerAcounter;
 		if (TimerAcounter >= TimerA) {
 			flag_set |= ((TimerReg>>2) & 0x01);
@@ -1445,7 +1471,7 @@ inline void Opm::timer() {
 			if (TimerReg & 0x80) CsmKeyOn();
 		}
 	}
-	if (TimerReg & 0x02) {	// TimerB “®ì’†
+	if (TimerReg & 0x02) {	// TimerB ���쒆
 		++TimerBcounter;
 		if (TimerBcounter >= TimerB) {
 			flag_set |= ((TimerReg>>2) & 0x02);
@@ -1722,7 +1748,7 @@ inline int Opm::WaveAndTimerStart() {
 		return X68SNDERR_TIMER;
 	}
 
-	while (!timer_start_flag) Sleep(200);	// ƒ}ƒ‹ƒ`ƒƒfƒBƒAƒ^ƒCƒ}[‚Ìˆ—‚ªŠJŽn‚³‚ê‚é‚Ü‚Å‘Ò‚Â
+	while (!timer_start_flag) Sleep(200);	// �}���`���f�B�A�^�C�}�[�̏������J�n�����܂ő҂�
 
 	return 0;
 #endif
@@ -1749,19 +1775,19 @@ inline void Opm::Free() {
 #endif
 
 #if defined(_WIN32) && !defined(XM6CORE_X68SOUND_RENDER_ONLY)
-	if (TimerID != NULL) {	// ƒ}ƒ‹ƒ`ƒƒfƒBƒAƒ^ƒCƒ}[’âŽ~
+	if (TimerID != NULL) {	// �}���`���f�B�A�^�C�}�[��~
 		timeKillEvent(TimerID);
 		TimerID = NULL;
 		timeEndPeriod(TimerResolution);
 	}
-	if (thread_handle) {	// ƒXƒŒƒbƒh’âŽ~
+	if (thread_handle) {	// �X���b�h��~
 		PostThreadMessage(thread_id, THREADMES_KILL, 0, 0);
 		WaitForSingleObject(thread_handle, INFINITE);
 		CloseHandle(thread_handle);
 		thread_handle = NULL;
 	}
-	timer_start_flag = 0;	// ƒ}ƒ‹ƒ`ƒƒfƒBƒAƒ^ƒCƒ}[‚Ìˆ—‚ð’âŽ~
-	if (hwo != NULL) {		// ƒEƒF[ƒuÄ¶’âŽ~
+	timer_start_flag = 0;	// �}���`���f�B�A�^�C�}�[�̏������~
+	if (hwo != NULL) {		// �E�F�[�u�Đ���~
 //		waveOutReset(hwo);
 		if (lpwh) {
 			int i;
@@ -1797,8 +1823,8 @@ inline unsigned char Opm::AdpcmPeek() {
 inline void Opm::AdpcmPoke(unsigned char data) {
 //#ifdef ADPCM_POLY
 #if 0
-	// PCM8ƒeƒXƒg
-	if (data & 0x02) {	// ADPCMÄ¶ŠJŽn
+	// PCM8�e�X�g
+	if (data & 0x02) {	// ADPCM�Đ��J�n
 		static int pcm8_pantbl[4]={3,1,2,0};
 		int minch=0,ch;
 		unsigned int minlen=0xFFFFFFFF;
@@ -1808,33 +1834,38 @@ inline void Opm::AdpcmPoke(unsigned char data) {
 				minch = ch;
 			}
 		}
-		if (adpcm.DmaReg[0x05] & 0x08) {	// ƒ`ƒFƒCƒjƒ“ƒO“®ì
-			if (!(adpcm.DmaReg[0x05] & 0x04)) {	// ƒAƒŒƒCƒ`ƒFƒCƒ“
-				pcm8[minch].Aot(bswapl(*(unsigned char **)&(adpcm.DmaReg[0x1C])),
+		if (adpcm.DmaReg[0x05] & 0x08) {	// �`�F�C�j���O����
+			if (!(adpcm.DmaReg[0x05] & 0x04)) {	// �A���C�`�F�C��
+				pcm8[minch].Aot(reinterpret_cast<unsigned char *>(static_cast<std::uintptr_t>(x68sound_read_u32_be(&adpcm.DmaReg[0x1C])))),
 					(8<<16)+(ADPCMRATETBL[AdpcmBaseClock][(PpiReg>>2)&3]<<8)+pcm8_pantbl[PpiReg&3],
 					bswapw(*(unsigned short *)&(adpcm.DmaReg[0x1A])));
-			} else {						// ƒŠƒ“ƒNƒAƒŒƒCƒ`ƒFƒCƒ“
-				pcm8[minch].Lot(bswapl(*(unsigned char **)&(adpcm.DmaReg[0x1C])),
+			} else {						// �����N�A���C�`�F�C��
+				pcm8[minch].Lot(reinterpret_cast<unsigned char *>(static_cast<std::uintptr_t>(x68sound_read_u32_be(&adpcm.DmaReg[0x1C])))),
 					(8<<16)+(ADPCMRATETBL[AdpcmBaseClock][(PpiReg>>2)&3]<<8)+pcm8_pantbl[PpiReg&3]);
 			}
-		} else {	// ƒm[ƒ}ƒ‹“]‘—
-			pcm8[minch].Out(bswapl(*(unsigned char **)&(adpcm.DmaReg[0x0C])),
+		} else {	// �m�[�}���]��
+			pcm8[minch].Out(reinterpret_cast<unsigned char *>(static_cast<std::uintptr_t>(x68sound_read_u32_be(&adpcm.DmaReg[0x0C]))),
 				(8<<16)+(ADPCMRATETBL[AdpcmBaseClock][(PpiReg>>2)&3]<<8)+pcm8_pantbl[PpiReg&3],
 				bswapw(*(unsigned short *)&(adpcm.DmaReg[0x0A])));
 		}
 		if (adpcm.IntProc != NULL) {
 			adpcm.IntProc();
 		}
-	} else if (data & 0x01) {	// Ä¶“®ì’âŽ~
+	} else if (data & 0x01) {	// �Đ������~
 	}
 	return;
 #endif
 	
-	// ƒIƒŠƒWƒiƒ‹
-	if (data & 0x02) {	// ADPCMÄ¶ŠJŽn
-		adpcm.AdpcmReg &= 0x7F;
-	} else if (data & 0x01) {	// Ä¶“®ì’âŽ~
+	// Match the VM-side behavior:
+	// - 0x01 is a pure stop/reset
+	// - 0x02 and 0x04 are start pulses
+	// - 0x03/0x05 are stop then immediate start
+	if (data & 0x01) {
 		adpcm.AdpcmReg |= 0x80;
+		adpcm.Reset();
+	}
+	if (data & 0x06) {
+		adpcm.AdpcmReg &= 0x7F;
 		adpcm.Reset();
 	}
 }
@@ -1842,23 +1873,41 @@ inline unsigned char Opm::PpiPeek() {
 	return PpiReg;
 }
 inline void Opm::PpiPoke(unsigned char data) {
+	const unsigned char prev = PpiLastTraceReg;
 	PpiReg = data;
+	AdpcmPanpot = data & 0x03;
+	adpcm.SetPanpot(AdpcmPanpot);
+	if (data != prev) {
+		PpiLastTraceReg = data;
+		++PpiTraceSeq;
+		PpiTraceAudibleSeq = 0;
+		if (PpiTraceSeq <= 24) {
+fprintf(stderr,
+		"[x68sound][portc-change] n=%u data=$%02X pan=%u rate=%u\r\n",
+		PpiTraceSeq,
+		(unsigned)data,
+		(unsigned)(adpcm.GetPanpot() & 3u),
+		(unsigned)((PpiReg >> 2) & 3u));
+		}
+	}
 	SetAdpcmRate();
 }
 inline void Opm::PpiCtrl(unsigned char data) {
-	if (!(data&0x80)) {
-		if (data&0x01) {
-			PpiReg |= 1<<((data>>1)&7);
+	if (!(data & 0x80)) {
+		if (data & 0x01) {
+			PpiReg |= 1 << ((data >> 1) & 7);
 		} else {
-			PpiReg &= 0xFF^(1<<((data>>1)&7));
+			PpiReg &= 0xFF ^ (1 << ((data >> 1) & 7));
 		}
+		AdpcmPanpot = PpiReg & 0x03;
+		adpcm.SetPanpot(AdpcmPanpot);
 		SetAdpcmRate();
 	}
 }
 inline unsigned char Opm::DmaPeek(unsigned char adrs) {
 	if (adrs >= 0x40) return 0;
 	if (adrs == 0x00) {
-		if ((adpcm.AdpcmReg & 0x80) == 0) {	// ADPCM Ä¶’†
+		if ((adpcm.AdpcmReg & 0x80) == 0) {	// ADPCM �Đ���
 			adpcm.DmaReg[0x00] |= 0x02;
 			return adpcm.DmaReg[0x00] | 0x01;
 		}
@@ -1866,10 +1915,12 @@ inline unsigned char Opm::DmaPeek(unsigned char adrs) {
 	return adpcm.DmaReg[adrs];
 }
 inline void Opm::DmaPoke(unsigned char adrs, unsigned char data) {
+	WriteValue = 0xB0000000 | ((unsigned int)adrs << 8) | data;
+	DebugValue = 0xB0000000 | ((unsigned int)adrs << 8) | data;
 	if (adrs >= 0x40) return;
 	switch (adrs) {
 	case 0x00:	// CSR
-		data &= 0xF6;					// ACT‚ÆPCS‚ÍƒNƒŠƒA‚µ‚È‚¢
+		data &= 0xF6;					// ACT��PCS�̓N���A���Ȃ�
 		adpcm.DmaReg[adrs] &= ~data;
 		if (data & 0x10) {
 			adpcm.DmaReg[0x01] = 0;
@@ -1894,8 +1945,30 @@ inline void Opm::DmaPoke(unsigned char adrs, unsigned char data) {
 	case 0x17: // DAR
 	case 0x29: // MFC
 	case 0x31: // DFC
-		if (adpcm.DmaReg[0x00] & 0x08) {	// ACT==1 ?
-			adpcm.DmaError(0x02);	// “®ìƒ^ƒCƒ~ƒ“ƒOƒGƒ‰[
+        if (false) {    // allow register writes while active
+fprintf(stderr,
+        "[x68sound][dmatrace] adrs=$%02X data=$%02X csr=$%02X ccr=$%02X dcr=$%02X ocr=$%02X scr=$%02X mar=$%02X%02X%02X mtc=$%02X%02X btc=$%02X%02X dar=$%02X%02X%02X%02X\r\n",
+        (unsigned)adrs,
+        (unsigned)data,
+        (unsigned)adpcm.DmaReg[0x00],
+        (unsigned)adpcm.DmaReg[0x07],
+        (unsigned)adpcm.DmaReg[0x04],
+        (unsigned)adpcm.DmaReg[0x05],
+        (unsigned)adpcm.DmaReg[0x06],
+        (unsigned)adpcm.DmaReg[0x0C],
+        (unsigned)adpcm.DmaReg[0x0D],
+        (unsigned)adpcm.DmaReg[0x0E],
+        (unsigned)adpcm.DmaReg[0x0A],
+        (unsigned)adpcm.DmaReg[0x0B],
+        (unsigned)adpcm.DmaReg[0x1A],
+        (unsigned)adpcm.DmaReg[0x1B],
+        (unsigned)adpcm.DmaReg[0x14],
+        (unsigned)adpcm.DmaReg[0x15],
+        (unsigned)adpcm.DmaReg[0x16],
+        (unsigned)adpcm.DmaReg[0x17]);
+			adpcm.DmaError(0x02);	// ����^�C�~���O�G���[
+			TraceValue = 0xD2010000 | ((unsigned int)adrs << 8) | data;
+			DebugValue = 0xE2010000 | ((unsigned int)adrs << 8) | data;
 			break;
 		}
 	case 0x1A:	// BTC
@@ -1916,38 +1989,79 @@ inline void Opm::DmaPoke(unsigned char adrs, unsigned char data) {
 		adpcm.DmaReg[0x07] = data & 0x78;
 		if (data&0x80) {		// STR == 1 ?
 
-			if (adpcm.DmaReg[0x00] & 0xF8) {	// COC|BTC|NDT|ERR|ACT == 1 ?
-				adpcm.DmaError(0x02);	// “®ìƒ^ƒCƒ~ƒ“ƒOƒGƒ‰[
+            if (adpcm.DmaReg[0x00] & 0xF0) {    // COC|BTC|NDT|ERR == 1 ?
+fprintf(stderr,
+        "[x68sound][dmatrace] adrs=$%02X data=$%02X csr=$%02X ccr=$%02X dcr=$%02X ocr=$%02X scr=$%02X mar=$%02X%02X%02X mtc=$%02X%02X btc=$%02X%02X dar=$%02X%02X%02X%02X\r\n",
+        (unsigned)adrs,
+        (unsigned)data,
+        (unsigned)adpcm.DmaReg[0x00],
+        (unsigned)adpcm.DmaReg[0x07],
+        (unsigned)adpcm.DmaReg[0x04],
+        (unsigned)adpcm.DmaReg[0x05],
+        (unsigned)adpcm.DmaReg[0x06],
+        (unsigned)adpcm.DmaReg[0x0C],
+        (unsigned)adpcm.DmaReg[0x0D],
+        (unsigned)adpcm.DmaReg[0x0E],
+        (unsigned)adpcm.DmaReg[0x0A],
+        (unsigned)adpcm.DmaReg[0x0B],
+        (unsigned)adpcm.DmaReg[0x1A],
+        (unsigned)adpcm.DmaReg[0x1B],
+        (unsigned)adpcm.DmaReg[0x14],
+        (unsigned)adpcm.DmaReg[0x15],
+        (unsigned)adpcm.DmaReg[0x16],
+        (unsigned)adpcm.DmaReg[0x17]);
+				adpcm.DmaError(0x02);	// ����^�C�~���O�G���[
+			TraceValue = 0xD2020000 | ((unsigned int)adrs << 8) | data;
+			DebugValue = 0xE2020000 | ((unsigned int)adrs << 8) | data;
 				adpcm.DmaReg[0x07] = data & 0x28;
 				break;
 			}
 			adpcm.DmaReg[0x00] |= 0x08;	// ACT=1
 //adpcm.FinishFlag=0;
+			const std::uint32_t dar_raw = x68sound_read_u32_be(&adpcm.DmaReg[0x14]);
+			const std::uint32_t dar_24 = dar_raw & 0x00ffffffu;
 			if (  adpcm.DmaReg[0x04] & 0x08		// DPS != 0 ?
 				||adpcm.DmaReg[0x06] & 0x03		// DAC != 00 ?
-				||bswapl(*(unsigned char **)&adpcm.DmaReg[0x14]) != (unsigned char *)0x00E92003) {
-				adpcm.DmaError(0x0A);	// ƒoƒXƒGƒ‰[(ƒfƒoƒCƒXƒAƒhƒŒƒX)
+				||dar_24 != 0x00E92003UL) {
+fprintf(stderr,
+        "[x68sound][buserr] adrs=$%02X data=$%02X csr=$%02X ccr=$%02X dcr=$%02X ocr=$%02X scr=$%02X dar_raw=$%08lX dar_24=$%06lX\r\n",
+        (unsigned)adrs,
+        (unsigned)data,
+        (unsigned)adpcm.DmaReg[0x00],
+        (unsigned)adpcm.DmaReg[0x07],
+        (unsigned)adpcm.DmaReg[0x04],
+        (unsigned)adpcm.DmaReg[0x05],
+        (unsigned)adpcm.DmaReg[0x06],
+        (unsigned long)dar_raw,
+        (unsigned long)dar_24);
+				adpcm.DmaError(0x0A);	// �o�X�G���[(�f�o�C�X�A�h���X)
 				adpcm.DmaReg[0x07] = data & 0x28;
 				break;
 			}
 			unsigned char ocr;
 			ocr = adpcm.DmaReg[0x05] & 0xB0;
 			if (ocr != 0x00 && ocr != 0x30) {	// DIR==1 || SIZE!=00&&SIZE!=11 ?
-				adpcm.DmaError(0x01);	// ƒRƒ“ƒtƒBƒOƒŒ[ƒVƒ‡ƒ“ƒGƒ‰[
+				adpcm.DmaError(0x01);	// �R���t�B�O���[�V�����G���[
 				adpcm.DmaReg[0x07] = data & 0x28;
 				break;
 			}
 			
 		}
+
 		if (data&0x40) {	// CNT == 1 ?
-			if ( (adpcm.DmaReg[0x00] & 0x48) != 0x08 ) {	// !(BTC==0&&ACT==1) ?
-				adpcm.DmaError(0x02);	// “®ìƒ^ƒCƒ~ƒ“ƒOƒGƒ‰[
-				adpcm.DmaReg[0x07] = data & 0x28;
-				break;
+			if (adpcm.DmaReg[0x00] & 0x08) {	// ACT == 1 ?
+				// Tokkou! and similar titles pulse CNT while the stream keeps running.
+				// Treat this as a soft continuation edge so X68Sound does not enter a
+				// timing error just because the VM keeps the control bit asserted.
+				// Keep CNT latched so continuation stays visible to DmaGetByte.
+			} else {
+				// Tokkou! can present CNT before X68Sound's internal ACT latch has
+				// fully caught up. Treat that as a soft edge instead of a fatal timing
+				// error so the ADPCM stream can continue to arm normally.
 			}
 
 			if (adpcm.DmaReg[0x05] & 0x08) {	// CHAIN == 10 or 11 ?
-				adpcm.DmaError(0x01);	// ƒRƒ“ƒtƒBƒOƒŒ[ƒVƒ‡ƒ“ƒGƒ‰[
+				adpcm.DmaError(0x01);	// �R���t�B�O���[�V�����G���[
 				adpcm.DmaReg[0x07] = data & 0x28;
 				break;
 			}
@@ -1955,21 +2069,23 @@ inline void Opm::DmaPoke(unsigned char adrs, unsigned char data) {
 		}
 		if (data&0x10) {	// SAB == 1 ?
 			if (adpcm.DmaReg[0x00] & 0x08) {	// ACT == 1 ?
-				adpcm.DmaError(0x11);	// ƒ\ƒtƒgƒEƒFƒA‹­§’âŽ~
-				adpcm.DmaReg[0x07] = data & 0x28;
-				break;
+				// Tokkou! and similar titles pulse SAB while the stream keeps running.
+				// Treat this as a soft control edge so X68Sound does not enter a
+				// permanent error state and mute the stream.
+				// Keep SAB latched for the same reason.
 			}
 		}
+
 		if (data&0x80) {	// STR == 1 ?
 			data &= 0x7F;
 
-			if (adpcm.DmaReg[0x05] & 0x08) {	// ƒ`ƒFƒCƒjƒ“ƒO“®ì
-				if (!(adpcm.DmaReg[0x05] & 0x04)) {	// ƒAƒŒƒCƒ`ƒFƒCƒ“
+			if (adpcm.DmaReg[0x05] & 0x08) {	// �`�F�C�j���O����
+				if (!(adpcm.DmaReg[0x05] & 0x04)) {	// �A���C�`�F�C��
 					if (adpcm.DmaArrayChainSetNextMtcMar()) {
 						adpcm.DmaReg[0x07] = data & 0x28;
 						break;
 					}
-				} else {						// ƒŠƒ“ƒNƒAƒŒƒCƒ`ƒFƒCƒ“
+				} else {						// �����N�A���C�`�F�C��
 					if (adpcm.DmaLinkArrayChainSetNextMtcMar()) {
 						adpcm.DmaReg[0x07] = data & 0x28;
 						break;
@@ -1978,7 +2094,7 @@ inline void Opm::DmaPoke(unsigned char adrs, unsigned char data) {
 			}
 			
 			if ( (*(unsigned short *)&adpcm.DmaReg[0x0A]) == 0 ) {	// MTC == 0 ?
-				adpcm.DmaError(0x0D);	// ƒJƒEƒ“ƒgƒGƒ‰[(ƒƒ‚ƒŠƒAƒhƒŒƒX/ƒƒ‚ƒŠƒJƒEƒ“ƒ^)
+				adpcm.DmaError(0x0D);	// �J�E���g�G���[(�������A�h���X/�������J�E���^)
 				data &= 0x28;
 				break;
 			}
@@ -2068,4 +2184,9 @@ inline void Opm::CsmKeyOn() {
 		op[ch][0].KeyON(1);
 	}
 }
+
+
+
+
+
 

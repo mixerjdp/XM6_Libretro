@@ -84,6 +84,11 @@ typedef struct xm6_adpcm_telemetry_t {
   unsigned int dmac3_btc;
   unsigned int dmac3_csr;
   unsigned int dmac3_ccr;
+  unsigned int dmac3_cer;
+  unsigned int x68sound_error_code;
+  unsigned int x68sound_debug_value;
+  unsigned int x68sound_write_value;
+  unsigned int x68sound_trace_value;
 } xm6_adpcm_telemetry_t;
 
 typedef void (XM6CORE_CALL *xm6_message_callback_t)(const char* message, void* user);

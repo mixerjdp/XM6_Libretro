@@ -105,7 +105,6 @@ static bool g_alt_raster_enabled = true;
 static bool g_render_bg0_enabled = true;
 static bool g_transparency_enabled = true;
 static enum retro_pixel_format g_frontend_pixel_format = RETRO_PIXEL_FORMAT_UNKNOWN;
-static int g_x68sound_volume = 50;
 static int g_fm_volume = 50;
 static int g_adpcm_volume = 50;
 static bool g_hq_adpcm_enabled = false;
@@ -1749,7 +1748,7 @@ static void apply_runtime_core_options()
     g_xm6.set_transparency_enabled(g_xm6_handle, g_transparency_enabled ? 1 : 0);
   }
   if (g_xm6.set_master_volume) {
-    g_xm6.set_master_volume(g_xm6_handle, g_x68sound_volume);
+    g_xm6.set_master_volume(g_xm6_handle, 100);
   }
   if (g_xm6.set_fm_volume) {
     g_xm6.set_fm_volume(g_xm6_handle, g_fm_volume);
@@ -1963,11 +1962,6 @@ static void apply_core_option_values()
     g_transparency_enabled = (std::strcmp(var.value, "disabled") != 0);
   }
 
-  var.key = "xm6_x68sound_volume";
-  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-    g_x68sound_volume = std::atoi(var.value);
-  }
-
   var.key = "xm6_fm_volume";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_fm_volume = std::atoi(var.value);
@@ -2158,7 +2152,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(x68sound=%d fm=%d adpcm=%d hq_adpcm=%s reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%s reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2172,7 +2166,7 @@ static void apply_core_option_values()
            (g_render_mode == XM6CORE_RENDER_MODE_FAST) ? "fast" : "original",
            g_alt_raster_enabled ? "enabled" : "disabled",
            g_render_bg0_enabled ? "enabled" : "disabled",
-           g_x68sound_volume, g_fm_volume, g_adpcm_volume,
+           g_fm_volume, g_adpcm_volume,
            g_hq_adpcm_enabled ? "enabled" : "disabled",
            g_reverb_level,
            g_eq_sub_bass_level, g_eq_bass_level, g_eq_mid_level, g_eq_presence_level, g_eq_treble_level, g_eq_air_level,
@@ -2375,29 +2369,6 @@ static void register_core_options()
           { nullptr, nullptr }
         },
         "XM6"
-      },
-      {
-        "xm6_x68sound_volume",
-        "X68Sound Volume",
-        nullptr,
-        "Controls the final output level for X68Sound.",
-        nullptr,
-        "sound",
-        {
-          { "100", nullptr },
-          { "90", nullptr },
-          { "80", nullptr },
-          { "70", nullptr },
-          { "60", nullptr },
-          { "50", nullptr },
-          { "40", nullptr },
-          { "30", nullptr },
-          { "20", nullptr },
-          { "10", nullptr },
-          { "0", nullptr },
-          { nullptr, nullptr }
-        },
-        "80"
       },
       {
         "xm6_fm_volume",
@@ -3758,7 +3729,6 @@ void retro_init(void)
   g_alt_raster_enabled = true;
   g_render_bg0_enabled = true;
   g_transparency_enabled = true;
-  g_x68sound_volume = 80;
   g_fm_volume = 50;
   g_adpcm_volume = 50;
   g_hq_adpcm_enabled = false;
@@ -3997,9 +3967,8 @@ void retro_run(void)
 	      const bool old_alt_raster_enabled = g_alt_raster_enabled;
 	      const bool old_render_bg0_enabled = g_render_bg0_enabled;
 	      const bool old_transparency_enabled = g_transparency_enabled;
-	      const int old_x68sound_volume = g_x68sound_volume;
-	      const int old_fm_volume = g_fm_volume;
-	      const int old_adpcm_volume = g_adpcm_volume;
+      const int old_fm_volume = g_fm_volume;
+      const int old_adpcm_volume = g_adpcm_volume;
 	      const bool old_hq_adpcm_enabled = g_hq_adpcm_enabled;
 	      const int old_reverb_level = g_reverb_level;
 	      const int old_eq_sub_bass_level = g_eq_sub_bass_level;
@@ -4100,9 +4069,6 @@ void retro_run(void)
           old_eq_presence_level != g_eq_presence_level ||
           old_eq_treble_level != g_eq_treble_level) {
         apply_runtime_core_options();
-                core_log(RETRO_LOG_INFO,
-                         "[xm6-libretro] EQ changed (sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d)",
-                         g_eq_sub_bass_level, g_eq_bass_level, g_eq_mid_level, g_eq_presence_level, g_eq_treble_level, g_eq_air_level);
       }
       if (old_surround_enabled != g_surround_enabled) {
         apply_runtime_core_options();
@@ -4116,13 +4082,9 @@ void retro_run(void)
                  "[xm6-libretro] Legacy DMAC CNT behavior %s",
                  g_legacy_dmac_cnt ? "enabled" : "disabled");
       }
-      if (old_x68sound_volume != g_x68sound_volume ||
-          old_fm_volume != g_fm_volume ||
+      if (old_fm_volume != g_fm_volume ||
           old_adpcm_volume != g_adpcm_volume) {
         apply_runtime_core_options();
-        core_log(RETRO_LOG_INFO,
-                 "[xm6-libretro] Audio volumes changed (x68sound=%d fm=%d adpcm=%d)",
-                 g_x68sound_volume, g_fm_volume, g_adpcm_volume);
       }
       if (old_hq_adpcm_enabled != g_hq_adpcm_enabled) {
         apply_runtime_core_options();
