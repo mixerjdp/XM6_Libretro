@@ -73,10 +73,11 @@ void CFrmWnd::OnFastOpen()
 {
 	Filepath path;
 	TCHAR szPath[_MAX_PATH];
-	TCHAR quickLoadPath[_MAX_PATH];
-	 sprintf(quickLoadPath, "%s\\%s.xm6", m_strSaveStatePath, m_strXM6FileName);
+	CString quickLoadPath;
+	quickLoadPath.Format(_T("%s\\%s.xm6"), (LPCTSTR)m_strSaveStatePath, (LPCTSTR)m_strXM6FileName);
 
-	_tcscpy(szPath, quickLoadPath);
+	_tcsncpy(szPath, (LPCTSTR)quickLoadPath, _MAX_PATH - 1);
+	szPath[_MAX_PATH - 1] = _T('\0');
 	path.SetPath(szPath);
 
 
@@ -466,10 +467,8 @@ void CFrmWnd::OnSaveAs()
 		return;
 	}*/
 
-	 TCHAR lpFile[_MAX_PATH];
-	 strcpy(lpFile, m_strSaveStatePath);
-	 TCHAR fileString[_MAX_PATH];
-	 sprintf(fileString, "%s\\%s.xm6", lpFile, m_strXM6FileName);
+	 CString fileString;
+	 fileString.Format(_T("%s\\%s.xm6"), (LPCTSTR)m_strSaveStatePath, (LPCTSTR)m_strXM6FileName);
 
 	 /* QUICK STATE SAVE HERE */
 
@@ -480,7 +479,7 @@ void CFrmWnd::OnSaveAs()
 
 
 
-	 path.SetPath(fileString);
+	 path.SetPath((LPCTSTR)fileString);
 
 
 	// Sub-save
@@ -759,7 +758,7 @@ void CFrmWnd::OnScc()
 		m_pConfig->Cleanup2();
 
 		CString sz;
-		sz.Format(_T("\n\nConfiguration saved for %s\n\n"), m_strXM6FileName);
+		sz.Format(_T("\n\nConfiguration saved for %s\n\n"), (LPCTSTR)m_strXM6FileName);
 		OutputDebugStringW(CT2W(sz));
 
 		MessageBox(sz, "Configuration", MB_OK);
@@ -3446,35 +3445,52 @@ void CFrmWnd::OnRefresh()
 
 //---------------------------------------------------------------------------
 //
-//	Stretch
+//	Window scale
 //
 //---------------------------------------------------------------------------
-void CFrmWnd::OnStretch()
+void CFrmWnd::OnWindowScale(UINT uID)
 {
-	BOOL bFlag;
+	int nScaleIndex;
+
+	if (uID < IDM_SCALE_100) {
+		return;
+	}
+	nScaleIndex = (int)(uID - IDM_SCALE_100);
+	if (nScaleIndex < 0) {
+		nScaleIndex = 0;
+	}
+	if (nScaleIndex > 4) {
+		nScaleIndex = 4;
+	}
 
 	// Lock VM
 	::LockVM();
 
-	// Toggle
-	bFlag = GetView()->IsStretch();
-	GetView()->Stretch(!bFlag);
-
-	// Save stretch setting
-	GetConfig()->SetStretch(!bFlag);
+	GetView()->SetScaleIndex(nScaleIndex);
+	GetConfig()->SetWindowScale(nScaleIndex);
 
 	// Unlock VM
 	::UnlockVM();
+
+	// Keep the window size in sync when not fullscreen.
+	// Do this outside the VM lock to avoid stalling audio while DX9 resets.
+	ApplyWindowScale();
 }
 
 //---------------------------------------------------------------------------
 //
-//	Stretch UI
+//	Window scale UI
 //
 //---------------------------------------------------------------------------
-void CFrmWnd::OnStretchUI(CCmdUI *pCmdUI)
+void CFrmWnd::OnWindowScaleUI(CCmdUI *pCmdUI)
 {
-	pCmdUI->SetCheck(GetView()->IsStretch());
+	if (!pCmdUI) {
+		return;
+	}
+
+	const int nScaleIndex = GetView()->GetScaleIndex();
+	const int nItemIndex = (int)(pCmdUI->m_nID - IDM_SCALE_100);
+	pCmdUI->SetCheck(nScaleIndex == nItemIndex);
 }
 
 //---------------------------------------------------------------------------
@@ -4206,7 +4222,7 @@ void CFrmWnd::OnOptions()
 	ResetCaption();
 	::UnlockVM();
 }
-
+ 
 //---------------------------------------------------------------------------
 //
 //	Show cascaded

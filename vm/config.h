@@ -36,7 +36,7 @@ public:
 	BOOL adpcm_interp;					// ADPCM interpolation
 
 	// Display
-	BOOL aspect_stretch;				// Aspect ratio stretching
+	int window_scale;					// Window scale index (0=1.0x)
 	BOOL render_vsync;					// VSync (TRUE=ON)
 	int render_mode;					// Renderer (0=GDI, 1=DirectX 9)
 	BOOL render_shader;					// Show Shader (CRT)

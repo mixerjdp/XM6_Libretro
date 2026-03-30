@@ -86,6 +86,7 @@ CDrawView::CDrawView()
 	m_hRenderAckEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_lRenderCmd = 0;
 	m_lPendingShaderEnable=-1;	// -1: no change
+	m_lScaleIndex = 0;
 	m_pRenderThread = AfxBeginThread(RenderThreadFunc, this, THREAD_PRIORITY_ABOVE_NORMAL, 0, CREATE_SUSPENDED);
 	if (m_pRenderThread) {
 		m_pRenderThread->m_bAutoDelete = FALSE;
@@ -133,8 +134,9 @@ CDrawView::CDrawView()
 	m_Info.nBltBottom = 0;
 	m_Info.nBltLeft = 0;
 	m_Info.nBltRight = 0;
+	m_Info.nScaleIndex = 0;
 	m_Info.bBltAll = TRUE;
-	m_Info.bBltStretch = FALSE;
+	m_Info.bBltStretch = TRUE;
 }
 
 //---------------------------------------------------------------------------
@@ -497,17 +499,28 @@ BOOL CDrawView::OnMouseWheel(UINT /*nFlags*/, short zDelta, CPoint /*pt*/)
 	// Depends on the Z-axis direction
 	if (zDelta > 0) {
 		// Backward: zoom in
-		Stretch(TRUE);
-		pConfig->SetStretch(TRUE);
+		int nScale = GetScaleIndex();
+		if (nScale < 4) {
+			nScale++;
+		}
+		SetScaleIndex(nScale);
+		pConfig->SetWindowScale(nScale);
 	}
 	else {
 		// Forward: zoom out
-		Stretch(FALSE);
-		pConfig->SetStretch(FALSE);
+		int nScale = GetScaleIndex();
+		if (nScale > 0) {
+			nScale--;
+		}
+		SetScaleIndex(nScale);
+		pConfig->SetWindowScale(nScale);
 	}
 
 	// Unlock the VM
 	::UnlockVM();
+
+	// Resize outside the VM lock to avoid short audio stalls.
+	m_pFrmWnd->ApplyWindowScale();
 
 	return TRUE;
 }
@@ -1224,7 +1237,7 @@ void FASTCALL CDrawView::RenderLoop()
 							DrawOSD(NULL);
 							m_DX9Renderer.SetOverlayText(m_bShowOSD ? m_szPerfLine : NULL,
 								(m_szOSDText[0] && (GetTickCount() <= m_dwOSDUntil)) ? m_szOSDText : NULL);
-							if (m_DX9Renderer.PresentFrame(srcWidth, srcHeight, TRUE, FALSE)) {
+							if (m_DX9Renderer.PresentFrame(srcWidth, srcHeight, GetScalePercent())) {
 								bPresented = TRUE;
 							}
 						}
@@ -1373,8 +1386,8 @@ void FASTCALL CDrawView::ApplyCfg(const Config *pConfig)
 
 	ASSERT(pConfig);
 
-	// Stretch
-	Stretch(pConfig->aspect_stretch);
+	// Window scale
+	SetScaleIndex(pConfig->window_scale);
 
 	// Shader (CRT)
 	SetShaderEnabled(pConfig->render_shader);
@@ -1451,25 +1464,19 @@ void CDrawView::OnDraw(CDC *pDC)
 
 	/* Horizontal stretch is set here */
 	if(m_Info.bBltStretch){	// If stretching is required
-		// If not 768x512, keep the specified aspect mode
+		// Stretch to cover the client area instead of stopping at the last fit.
 		int multiplierCount = 4;
 
 
-		/* Test code for calculating maximum possible stretch relative to the host */
+		/* Test code for calculating the minimum stretch that reaches the host area */
 		int myHmul = hmul;
 		int calculatedWidth = 0;
-		while (calculatedWidth <= rect.Width())
+		while (calculatedWidth < rect.Width())
 		{
 			multiplierCount++;
 			myHmul = hmul * multiplierCount;
 			calculatedWidth = (m_Info.nWidth * myHmul) >> 2;
 		}
-		multiplierCount--;
-
-
-		/*CString sz;
-		sz.Format(_T("numeroDeMultiplicador: %d   \r\n"),  numeroDeMultiplicador);
-		OutputDebugStringW(CT2W(sz));		*/
 
 		hmul *= multiplierCount;
 
@@ -1484,8 +1491,8 @@ void CDrawView::OnDraw(CDC *pDC)
 
 
 	/* Test code for calculating maximum possible vertical stretch relative to the host */
-		if (m_Info.bBltStretch)
-		{
+	if (m_Info.bBltStretch)
+	{
 			vmul = 1;
 			int myVmul = vmul;
 			int calculatedHeight = 0;
@@ -1494,8 +1501,6 @@ void CDrawView::OnDraw(CDC *pDC)
 				myVmul++;
 				calculatedHeight = (m_Info.nRendHeight * myVmul) >> 2;
 			}
-			if(calculatedHeight-rect.Height()>16)// Adjust 256 for 240p when 16 pixels are missing
-				myVmul--;
 			vmul = myVmul;
 
 		}
@@ -1725,17 +1730,15 @@ void FASTCALL CDrawView::ReCalc(CRect& rect)
 	/* The upper-left corner positions and TOP of the main frame are determined here */
 
 		if (m_Info.bBltStretch)
-			m_Info.nLeft = (borderWidth > 0) ? (borderWidth >> 3) : borderWidth;
+			m_Info.nLeft = 0;
 		else
 		    m_Info.nLeft = (rect.Width() - width) >> 1;
 
 
 		if (m_Info.bBltStretch)
-			m_Info.nTop = (borderHeight > 0) ? (borderHeight >> 3) : borderHeight;
+			m_Info.nTop = 0;
 		else
 			m_Info.nTop = (rect.Height() - height) >> 1;
-
-
 
 	// Specify area drawing
 	m_Info.bBltAll = TRUE;
@@ -1743,33 +1746,51 @@ void FASTCALL CDrawView::ReCalc(CRect& rect)
 
 //---------------------------------------------------------------------------
 //
-// Stretch mode
+// Window scale
 //
 //---------------------------------------------------------------------------
-void FASTCALL CDrawView::Stretch(BOOL bStretch)
+void FASTCALL CDrawView::SetScaleIndex(int nScaleIndex)
 {
 	CRect rect;
 
 	ASSERT(this);
 
-	/*char cadena[20];
-    sprintf(cadena, "%d", bStretch);
-	 int msgboxID = MessageBox(
-       cadena,"Stretch",
-        2 );*/
+	if (nScaleIndex < 0) {
+		nScaleIndex = 0;
+	}
+	if (nScaleIndex > 4) {
+		nScaleIndex = 4;
+	}
 
-	// If it matches, do nothing
-	if (bStretch == m_Info.bBltStretch) {
+	if (nScaleIndex == m_Info.nScaleIndex) {
 		return;
 	}
-	m_Info.bBltStretch = bStretch;
 
-	// Recalculate when not 768x512
-	if((m_Info.nRendWidth>0)&&(m_Info.nRendWidth<768)){		// If a different layout is needed
-		m_Info.nRendWidth = m_Info.pWork->width + 1;
+	m_Info.nScaleIndex = nScaleIndex;
+	// Window scale always renders stretched to the client area.
+	m_Info.bBltStretch = TRUE;
+	InterlockedExchange(&m_lScaleIndex, nScaleIndex);
+
+	if (m_Info.pWork) {
 		GetClientRect(&rect);
 		ReCalc(rect);
 	}
+
+	m_Info.bBltAll = TRUE;
+	if (m_hWnd) {
+		Invalidate(FALSE);
+	}
+	RequestPresent();
+}
+
+int FASTCALL CDrawView::GetScaleIndex() const
+{
+	return (int)m_lScaleIndex;
+}
+
+int FASTCALL CDrawView::GetScalePercent() const
+{
+	return 100 + (GetScaleIndex() * 50);
 }
 
 //---------------------------------------------------------------------------

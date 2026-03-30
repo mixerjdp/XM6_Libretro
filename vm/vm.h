@@ -126,6 +126,9 @@ private:
 	void FASTCALL NotifyHostMessage(const TCHAR* message) const;
 	host_message_callback_t host_message_callback;
 	void *host_message_user;
+	host_sync_callback_t host_lock_vm_callback;
+	host_sync_callback_t host_unlock_vm_callback;
+	void *host_sync_user;
 
 	Filepath current;
 										// Current path

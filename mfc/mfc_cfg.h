@@ -40,8 +40,8 @@ public:
 										// Set configuration data
 
 	// Configuration data (individual)
-	void FASTCALL SetStretch(BOOL bStretch);
-										// Screen scaling configuration
+	void FASTCALL SetWindowScale(int nScale);
+										// Window scaling configuration
 	void FASTCALL SetMIDIDevice(int nDevice, BOOL bIn);
 										// MIDI device configuration
 

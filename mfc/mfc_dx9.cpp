@@ -399,8 +399,10 @@ BOOL CDX9Renderer::UpdateOverlayTexture()
 
 BOOL CDX9Renderer::UpdateSurface(const DWORD* pSrcBuffer, int srcWidth, int srcHeight, int srcPitchPixels)
 {
-    ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
     if (!m_bInitialized || m_bDeviceLost || !m_pDevice || !pSrcBuffer) return FALSE;
+    if (m_dwOwnerThreadId != 0) {
+        ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
+    }
 
     if (!CreateTexture(srcWidth, srcHeight)) return FALSE;
 
@@ -420,8 +422,10 @@ BOOL CDX9Renderer::UpdateSurface(const DWORD* pSrcBuffer, int srcWidth, int srcH
 
 BOOL CDX9Renderer::ResetDevice(int width, int height, BOOL bWindowed, BOOL bVSync)
 {
-    ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
     if (!m_bInitialized || !m_pDevice) return FALSE;
+    if (m_dwOwnerThreadId != 0) {
+        ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
+    }
 
     ReleaseTexture();
     ReleaseOverlayTexture();
@@ -459,10 +463,13 @@ BOOL CDX9Renderer::ResetDevice(int width, int height, BOOL bWindowed, BOOL bVSyn
     return FALSE;
 }
 
-BOOL CDX9Renderer::PresentFrame(int srcWidth, int srcHeight, BOOL fillWindow, BOOL keepAspect)
+BOOL CDX9Renderer::PresentFrame(int srcWidth, int srcHeight, int scalePercent)
 {
-    ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
     if (!m_bInitialized || !m_pDevice) return FALSE;
+    if (m_dwOwnerThreadId != 0) {
+        ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
+    }
+    (void)scalePercent;
 
     if (m_bDeviceLost) {
         HRESULT hrTest = m_bIsEx ? m_pDeviceEx->CheckDeviceState(m_hWnd) : m_pDevice->TestCooperativeLevel();
@@ -480,6 +487,9 @@ BOOL CDX9Renderer::PresentFrame(int srcWidth, int srcHeight, BOOL fillWindow, BO
             return FALSE;
         }
 
+        if (FAILED(m_pDevice->Clear(0, NULL, D3DCLEAR_TARGET, D3DCOLOR_ARGB(255, 0, 0, 0), 1.0f, 0))) {
+            return FALSE;
+        }
         m_pDevice->BeginScene();
 
         float bw = (float)m_d3dpp.BackBufferWidth;
@@ -489,28 +499,11 @@ BOOL CDX9Renderer::PresentFrame(int srcWidth, int srcHeight, BOOL fillWindow, BO
         float uMax = (float)srcWidth / (float)m_TexWidth;
         float vMax = (float)srcHeight / (float)m_TexHeight;
 
-        float destW, destH, destX = 0, destY = 0;
-        if (fillWindow) {
-            if (keepAspect) {
-                float srcAspect = (float)srcWidth / (float)srcHeight;
-                float backAspect = bw / bh;
-                if (srcAspect > backAspect) {
-                    destW = bw;
-                    destH = bw / srcAspect;
-                } else {
-                    destH = bh;
-                    destW = bh * srcAspect;
-                }
-                destX = (bw - destW) / 2.0f;
-                destY = (bh - destH) / 2.0f;
-            } else {
-                destW = bw;
-                destH = bh;
-            }
-        } else {
-            destW = (float)srcWidth;
-            destH = (float)srcHeight;
-        }
+        // Always stretch to the full client/backbuffer area.
+        float destW = bw;
+        float destH = bh;
+        float destX = 0.0f;
+        float destY = 0.0f;
 
         Vertex *pVertices = NULL;
         if (FAILED(m_pVertexBuffer->Lock(0, 0, (void**)&pVertices, D3DLOCK_DISCARD | D3DLOCK_NOSYSLOCK))) {
@@ -648,9 +641,11 @@ BOOL CDX9Renderer::PresentFrame(int srcWidth, int srcHeight, BOOL fillWindow, BO
 //---------------------------------------------------------------------------
 BOOL CDX9Renderer::CreateCRTShader(LPCTSTR szPath)
 {
-    ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
     if (!m_pDevice || !szPath || szPath[0] == _T('\0'))
         return FALSE;
+    if (m_dwOwnerThreadId != 0) {
+        ASSERT(GetCurrentThreadId() == m_dwOwnerThreadId);
+    }
 
 // Release the previous shader if one exists
     ReleaseCRTShader();

@@ -328,9 +328,9 @@ BEGIN_MESSAGE_MAP(CFrmWnd, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(IDM_MENU, OnMenuUI)
 	ON_COMMAND(IDM_STATUS, OnStatus)
 	ON_UPDATE_COMMAND_UI(IDM_STATUS, OnStatusUI)
+	ON_COMMAND_RANGE(IDM_SCALE_100, IDM_SCALE_300, OnWindowScale)
+	ON_UPDATE_COMMAND_UI_RANGE(IDM_SCALE_100, IDM_SCALE_300, OnWindowScaleUI)
 	ON_COMMAND(IDM_REFRESH, OnRefresh)
-	ON_COMMAND(IDM_STRETCH, OnStretch)
-	ON_UPDATE_COMMAND_UI(IDM_STRETCH, OnStretchUI)
 	ON_COMMAND(IDM_FULLSCREEN, OnFullScreen)
 	ON_UPDATE_COMMAND_UI(IDM_FULLSCREEN, OnFullScreenUI)
 	ON_COMMAND(IDM_RENDER_FAST, OnRenderFast)
@@ -547,7 +547,14 @@ BOOL FASTCALL CFrmWnd::InitChild()
 
 	// Restore shader setting before initializing the view
 	Config config;
-	GetConfig()->GetConfig(&config);
+	memset(&config, 0, sizeof(config));
+	if (m_pConfig) {
+		m_pConfig->GetConfig(&config);
+	}
+	else {
+		// Early startup path: config component is not created yet.
+		config.render_shader = FALSE;
+	}
 
 	// Create view with the initial shader state
 	m_pDrawView = new CDrawView;
@@ -627,6 +634,9 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 	CRect rect;
 	CRect rectStatus;
 	CRect rectWnd;
+	Config config;
+	int scaleIndex;
+	int scalePercent;
 
 	ASSERT(this);
 
@@ -634,6 +644,23 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 	cx = ::GetSystemMetrics(SM_CXSCREEN);
 	cy = ::GetSystemMetrics(SM_CYSCREEN);
 	GetWindowRect(&rectWnd);
+	memset(&config, 0, sizeof(config));
+	if (m_pConfig) {
+		m_pConfig->GetConfig(&config);
+	}
+	else {
+		// Early startup path before component creation.
+		config.window_scale = 0;
+	}
+
+	scaleIndex = config.window_scale;
+	if (scaleIndex < 0) {
+		scaleIndex = 0;
+	}
+	if (scaleIndex > 4) {
+		scaleIndex = 4;
+	}
+	scalePercent = 100 + (scaleIndex * 50);
 
 	// On 800x600 or smaller, force full-screen-sized window
 	if ((cx <= 800) || (cy <= 600)) {
@@ -650,7 +677,7 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 
 
 	/* Set main-window size and fullscreen size here */
-	// 824x560 (DDP2) is treated as the max non-interlaced size
+	// 768x512 is treated as the 1.0x base size.
 	rect.left = 0;
 	rect.top = 0;
 
@@ -662,8 +689,8 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 	}
 	else /* In windowed mode, 1024x768 is used */
 	{
-		rect.right = 1024;
-		rect.bottom = 768;
+		rect.right = (768 * scalePercent) / 100;
+		rect.bottom = (512 * scalePercent) / 100;
 	}
 	::AdjustWindowRectEx(&rect, GetView()->GetStyle(), FALSE, GetView()->GetExStyle());
 	m_StatusBar.GetWindowRect(&rectStatus);
@@ -715,6 +742,16 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 		SetWindowPos(&wndTop, rect.left, rect.top, rect.right, rect.bottom, 0);
 		return;
 	}
+}
+
+//---------------------------------------------------------------------------
+//
+//	Recompute frame layout for the selected window scale
+//
+//---------------------------------------------------------------------------
+void FASTCALL CFrmWnd::ApplyWindowScale()
+{
+	InitPos(FALSE);
 }
 
 //---------------------------------------------------------------------------
@@ -1306,6 +1343,11 @@ void FASTCALL CFrmWnd::ApplyCfg()
 
 	// Then apply to the draw view
 	GetView()->ApplyCfg(&config);
+
+	// Sync the top-level window size with the saved scale after the config is applied.
+	// InitPos() runs once before the config component exists, so the initial frame size
+	// can otherwise stay at the 1.0x fallback even when the INI says otherwise.
+	ApplyWindowScale();
 
 	// Popup subwindow mode
 	if (config.popup_swnd != m_bPopup) {
@@ -2593,8 +2635,9 @@ void CFrmWnd::GetMessageString(UINT nID, CString& rMessage) const
 	if ((nID >= IDM_OPEN) && (nID <= IDM_ABOUT)) {
 		// English environment?
 		if (!::IsJapanese()) {
-			// Try alternate string ID (+5000)
-			if (rMessage.LoadString(nID + 5000)) {
+			// Resolve through safe message loader (handles +5000 fallback safely).
+			::GetMsg(nID, rMessage);
+			if (!rMessage.IsEmpty()) {
 				bValid = TRUE;
 			}
 		}
@@ -2604,8 +2647,9 @@ void CFrmWnd::GetMessageString(UINT nID, CString& rMessage) const
 	if (nID == IDM_STDWIN) {
 		// English environment?
 		if (!::IsJapanese()) {
-			// Try alternate string ID (+5000)
-			if (rMessage.LoadString(nID + 5000)) {
+			// Resolve through safe message loader (handles +5000 fallback safely).
+			::GetMsg(nID, rMessage);
+			if (!rMessage.IsEmpty()) {
 				bValid = TRUE;
 			}
 		}

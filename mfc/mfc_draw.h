@@ -50,6 +50,7 @@ public:
 		int nBltBottom;				// Draw end Y
 		int nBltLeft;					// Draw start X
 		int nBltRight;				// Draw end X
+		int nScaleIndex;				// Selected scale index
 		BOOL bBltAll;					// Full display flag
 		BOOL bBltStretch;				// Stretch to match aspect ratio
 	} DRAWINFO, *LPDRAWINFO;
@@ -101,10 +102,12 @@ public:
 	// Rendering
 	void OnDraw(CDC *pDC);
 										// Draw
-	void FASTCALL Stretch(BOOL bStretch);
-										// Stretch mode
-	BOOL IsStretch() const				{ return m_Info.bBltStretch; }
-										// Get stretch mode
+	void FASTCALL SetScaleIndex(int nScaleIndex);
+										// Set window scale
+	int FASTCALL GetScaleIndex() const;
+										// Get window scale index
+	int FASTCALL GetScalePercent() const;
+										// Get window scale percent
 
 	// Subwindow management
 	int FASTCALL GetNewSWnd() const;
@@ -193,6 +196,7 @@ private:
 	CWinThread *m_pRenderThread;
 	volatile LONG m_lRenderCmd;
 	volatile LONG m_lPendingShaderEnable;	// -1: no change, 0: disable, 1: enable
+	volatile LONG m_lScaleIndex;
 	int m_nRenderWidth;
 	int m_nRenderHeight;
 	BOOL m_bRenderVSync;

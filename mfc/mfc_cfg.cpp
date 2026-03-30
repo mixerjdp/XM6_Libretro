@@ -34,6 +34,38 @@
 #include "mfc_info.h"
 #include "mfc_cfg.h"
 
+namespace {
+CFrmWnd *FASTCALL ResolveFrmWnd(CWnd *pHint)
+{
+	CWnd *pCandidates[3];
+
+	pCandidates[0] = pHint;
+	pCandidates[1] = AfxGetMainWnd();
+	pCandidates[2] = (AfxGetApp()) ? AfxGetApp()->m_pMainWnd : NULL;
+
+	for (int i = 0; i < (sizeof(pCandidates) / sizeof(pCandidates[0])); i++) {
+		CWnd *pCur = pCandidates[i];
+		for (int depth = 0; pCur && (depth < 16); depth++) {
+			CFrmWnd *pFrame = DYNAMIC_DOWNCAST(CFrmWnd, pCur);
+			if (pFrame) {
+				return pFrame;
+			}
+
+			CWnd *pNext = pCur->GetParent();
+			if (!pNext) {
+				pNext = pCur->GetOwner();
+			}
+			if (pNext == pCur) {
+				break;
+			}
+			pCur = pNext;
+		}
+	}
+
+	return NULL;
+}
+}
+
 //===========================================================================
 //
 //	Configuration
@@ -89,7 +121,7 @@ BOOL FASTCALL CConfig::Init()
 
 
 	CString sz;
-	sz.Format(_T("%s"), m_pFrmWnd->m_strXM6FilePath);
+	sz = m_pFrmWnd->m_strXM6FilePath;
 	m_pFrmWnd->m_strXM6FileName = sz.Mid(sz.ReverseFind('\\') + 1);
 
 	int nLen = m_pFrmWnd->m_strXM6FileName.GetLength();
@@ -335,14 +367,20 @@ void FASTCALL CConfig::SetConfig(Config *pConfigBuf)
 
 //---------------------------------------------------------------------------
 //
-//	Stretch setting
+//	Window scale setting
 //
 //---------------------------------------------------------------------------
-void FASTCALL CConfig::SetStretch(BOOL bStretch)
+void FASTCALL CConfig::SetWindowScale(int nScale)
 {
 	ASSERT(this);
 
-	m_Config.aspect_stretch = bStretch;
+	if (nScale < 0) {
+		nScale = 0;
+	}
+	if (nScale > 4) {
+		nScale = 4;
+	}
+	m_Config.window_scale = nScale;
 }
 
 //---------------------------------------------------------------------------
@@ -384,7 +422,7 @@ const CConfig::INIKEY CConfig::IniTable[] = {
 	{ &CConfig::m_Config.polling_buffer, NULL, _T("Polling"), 0, 5, 1, 100 },
 	{ &CConfig::m_Config.adpcm_interp, NULL, _T("ADPCMInterP"), 1, TRUE, 0, 0 },
 
-	{ &CConfig::m_Config.aspect_stretch, _T("Display"), _T("Stretch"), 1, TRUE, 0, 0 },
+	{ &CConfig::m_Config.window_scale, _T("Display"), _T("Scale"), 0, 0, 0, 4 },
 	{ &CConfig::m_Config.render_shader, NULL, _T("Shader"), 1, FALSE, 0, 0 },
 	{ &CConfig::m_Config.render_vsync, NULL, _T("VSync"), 1, TRUE, 0, 0 },
 	{ &CConfig::m_Config.render_mode, NULL, _T("Renderer"), 0, 1, 0, 1 },
@@ -1671,8 +1709,10 @@ BOOL CSoundPage::OnInitDialog()
 	CConfigPage::OnInitDialog();
 
 	// Get el componente de sonido
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
+	pFrmWnd = ResolveFrmWnd(this);
+	if (!pFrmWnd) {
+		return FALSE;
+	}
 	pSound = pFrmWnd->GetSound();
 	ASSERT(pSound);
 
@@ -1989,8 +2029,10 @@ BOOL CVolPage::OnInitDialog()
 	CConfigPage::OnInitDialog();
 
 	// Get el componente de sonido
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
+	pFrmWnd = ResolveFrmWnd(this);
+	if (!pFrmWnd) {
+		return FALSE;
+	}
 	m_pSound = pFrmWnd->GetSound();
 	ASSERT(m_pSound);
 
@@ -2378,18 +2420,11 @@ void CVolPage::OnCancel()
 //---------------------------------------------------------------------------
 CKbdPage::CKbdPage()
 {
-	CFrmWnd *pWnd;
-
 	// Configurar siempre ID y Help
 	m_dwID = MAKEID('K', 'E', 'Y', 'B');
 	m_nTemplate = IDD_KBDPAGE;
 	m_uHelpID = IDC_KBD_HELP;
-
-	// Get entrada
-	pWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pWnd);
-	m_pInput = pWnd->GetInput();
-	ASSERT(m_pInput);
+	m_pInput = NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -2423,6 +2458,16 @@ BOOL CKbdPage::OnInitDialog()
 
 	// Clase base
 	CConfigPage::OnInitDialog();
+
+	if (!m_pInput) {
+		CFrmWnd *pWnd = ResolveFrmWnd(this);
+		if (pWnd) {
+			m_pInput = pWnd->GetInput();
+		}
+	}
+	if (!m_pInput) {
+		return FALSE;
+	}
 
 	// Hacer copia de seguridad del mapa de teclas
 	m_pInput->GetKeyMap(m_dwBackup);
@@ -2852,10 +2897,8 @@ CKbdMapDlg::CKbdMapDlg(CWnd *pParent, DWORD *pMap) : CDialog(IDD_KBDMAPDLG, pPar
 	}
 
 	// Get entrada
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
+	pFrmWnd = ResolveFrmWnd(pParent);
+	m_pInput = pFrmWnd ? pFrmWnd->GetInput() : NULL;
 
 	// Sin mensaje de estado
 	m_strStat.Empty();
@@ -2890,6 +2933,16 @@ BOOL CKbdMapDlg::OnInitDialog()
 
 	// Clase base
 	CDialog::OnInitDialog();
+
+	if (!m_pInput) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			m_pInput = pFrmWnd->GetInput();
+		}
+	}
+	if (!m_pInput) {
+		return FALSE;
+	}
 
 	// Get el size del cliente
 	GetClientRect(&rectClient);
@@ -3217,10 +3270,8 @@ CKeyinDlg::CKeyinDlg(CWnd *pParent) : CDialog(IDD_KEYINDLG, pParent)
 	}
 
 	// Get entrada
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
+	pFrmWnd = ResolveFrmWnd(pParent);
+	m_pInput = pFrmWnd ? pFrmWnd->GetInput() : NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -3247,9 +3298,20 @@ BOOL CKeyinDlg::OnInitDialog()
 {
 	CStatic *pStatic;
 	CString string;
+	CString targetText;
 
 	// Clase base
 	CDialog::OnInitDialog();
+
+	if (!m_pInput) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			m_pInput = pFrmWnd->GetInput();
+		}
+	}
+	if (!m_pInput) {
+		return FALSE;
+	}
 
 	// Desactivar IME
 	::ImmAssociateContext(m_hWnd, (HIMC)NULL);
@@ -3260,16 +3322,24 @@ BOOL CKeyinDlg::OnInitDialog()
 
 	// �E�K�E�C�E�h�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_LABEL);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CKeyinDlg::OnInitDialog: missing IDC_KEYIN_LABEL\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(string);
-	m_GuideString.Format(string, m_nTarget);
+	targetText.Format(_T("%02X"), m_nTarget);
+	m_GuideString = string;
+	m_GuideString.Replace(_T("%02X"), targetText);
 	pStatic->GetWindowRect(&m_GuideRect);
 	ScreenToClient(&m_GuideRect);
 	pStatic->DestroyWindow();
 
 	// Asignacion�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_STATIC);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CKeyinDlg::OnInitDialog: missing IDC_KEYIN_STATIC\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(m_AssignString);
 	pStatic->GetWindowRect(&m_AssignRect);
 	ScreenToClient(&m_AssignRect);
@@ -3277,7 +3347,10 @@ BOOL CKeyinDlg::OnInitDialog()
 
 	// �E�L�E�[�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_KEY);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CKeyinDlg::OnInitDialog: missing IDC_KEYIN_KEY\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(m_KeyString);
 	if (m_nKey != 0) {
 		m_KeyString = m_pInput->GetKeyID(m_nKey);
@@ -3691,18 +3764,11 @@ const UINT CMousePage::ControlTable[] = {
 //---------------------------------------------------------------------------
 CJoyPage::CJoyPage()
 {
-	CFrmWnd *pFrmWnd;
-
 	// Configurar siempre ID y Help
 	m_dwID = MAKEID('J', 'O', 'Y', ' ');
 	m_nTemplate = IDD_JOYPAGE;
 	m_uHelpID = IDC_JOY_HELP;
-
-	// Get entrada
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
+	m_pInput = NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -3720,10 +3786,19 @@ BOOL CJoyPage::OnInitDialog()
 	CComboBox *pComboBox;
 
 	ASSERT(this);
-	ASSERT(m_pInput);
 
 	// Clase base
 	CConfigPage::OnInitDialog();
+
+	if (!m_pInput) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			m_pInput = pFrmWnd->GetInput();
+		}
+	}
+	if (!m_pInput) {
+		return FALSE;
+	}
 
 	// Get cadena "No Assign"
 	::GetMsg(IDS_JOY_NOASSIGN, strNoA);
@@ -4288,7 +4363,6 @@ BOOL CJoyDetDlg::OnInitDialog()
 //---------------------------------------------------------------------------
 CBtnSetPage::CBtnSetPage()
 {
-	CFrmWnd *pFrmWnd;
 	int i;
 
 #if defined(_DEBUG)
@@ -4296,11 +4370,7 @@ CBtnSetPage::CBtnSetPage()
 	ASSERT(CInput::JoyButtons <= (sizeof(m_rectLabel)/sizeof(CRect)));
 #endif	// _DEBUG
 
-	// Get entrada
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
+	m_pInput = NULL;
 
 	// �E�W�E��E��E�C�E�X�E�e�E�B�E�b�E�N�E�ԍ��E��E�Limpiar
 	m_nJoy = -1;
@@ -4379,6 +4449,16 @@ BOOL CBtnSetPage::OnInitDialog()
 	// Clase base
 	CPropertyPage::OnInitDialog();
 
+	if (!m_pInput) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			m_pInput = pFrmWnd->GetInput();
+		}
+	}
+	if (!m_pInput) {
+		return FALSE;
+	}
+
 	// �E�e�E�N�E��E��E�X�E��E�Initialization(CPropertySheet�E��E�OnInitDialog�E��E��E��E��E��E��E�Ȃ�)
 	pJoySheet = (CJoySheet*)m_pSheet;
 	pJoySheet->InitSheet();
@@ -4436,7 +4516,7 @@ BOOL CBtnSetPage::OnInitDialog()
 					GetButtonDesc(pJoyDevice->GetButtonDesc(nCandidate), strDesc);
 
 					// Formato
-					strText.Format(strBase, nPort + 1, nCandidate + 1, strDesc);
+					strText.Format(strBase, nPort + 1, nCandidate + 1, (LPCTSTR)strDesc);
 					pComboBox->AddString(strText);
 				}
 
@@ -4961,10 +5041,8 @@ CJoySheet::CJoySheet(CWnd *pParent) : CPropertySheet(IDS_JOYSET, pParent)
 	m_psh.dwFlags |= PSH_NOAPPLYNOW;
 
 	// Get the CInput instance
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
+	pFrmWnd = ResolveFrmWnd(pParent);
+	m_pInput = pFrmWnd ? pFrmWnd->GetInput() : NULL;
 
 	// Parameter initialization
 	m_nJoy = -1;
@@ -5016,17 +5094,19 @@ void FASTCALL CJoySheet::InitSheet()
 	CString strText;
 
 	ASSERT(this);
-	ASSERT(m_pInput);
 	ASSERT((m_nJoy == 0) || (m_nJoy == 1));
 	ASSERT(m_nJoy < CInput::JoyDevices);
 	ASSERT(m_nCombo >= 0);
+	if (!m_pInput) {
+		return;
+	}
 
 	// Get Caps del dispositivo
 	m_pInput->GetJoyCaps(m_nCombo, strDesc, &m_DevCaps);
 
 	// �E�E�E�B�E��E��E�h�E�E�E�e�E�L�E�X�E�gEditar
 	GetWindowText(strFmt);
-	strText.Format(strFmt, _T('A' + m_nJoy), strDesc);
+	strText.Format(strFmt, _T('A' + m_nJoy), (LPCTSTR)strDesc);
 	SetWindowText(strText);
 
 	// Distribuir parametros a cada pagina
@@ -7294,8 +7374,10 @@ BOOL CMIDIPage::OnInitDialog()
 	CConfigPage::OnInitDialog();
 
 	// Get componente MIDI
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
+	pFrmWnd = ResolveFrmWnd(this);
+	if (!pFrmWnd) {
+		return FALSE;
+	}
 	m_pMIDI = pFrmWnd->GetMIDI();
 	ASSERT(m_pMIDI);
 
@@ -7754,10 +7836,8 @@ CTKeyDlg::CTKeyDlg(CWnd *pParent) : CDialog(IDD_KEYINDLG, pParent)
 	}
 
 	// Get TrueKey
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pTKey = pFrmWnd->GetTKey();
-	ASSERT(m_pTKey);
+	pFrmWnd = ResolveFrmWnd(pParent);
+	m_pTKey = pFrmWnd ? pFrmWnd->GetTKey() : NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -7780,27 +7860,46 @@ END_MESSAGE_MAP()
 BOOL CTKeyDlg::OnInitDialog()
 {
 	CString strText;
+	CString targetText;
 	CStatic *pStatic;
 	LPCSTR lpszKey;
 
 	// Clase base
 	CDialog::OnInitDialog();
 
+	if (!m_pTKey) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			m_pTKey = pFrmWnd->GetTKey();
+		}
+	}
+	if (!m_pTKey) {
+		return FALSE;
+	}
+
 	// Desactivar IME
 	::ImmAssociateContext(m_hWnd, (HIMC)NULL);
 
 	// �E�K�E�C�E�h�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_LABEL);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CTKeyDlg::OnInitDialog: missing IDC_KEYIN_LABEL\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(strText);
-	m_strGuide.Format(strText, m_nTarget);
+	targetText.Format(_T("%02X"), m_nTarget);
+	m_strGuide = strText;
+	m_strGuide.Replace(_T("%02X"), targetText);
 	pStatic->GetWindowRect(&m_rectGuide);
 	ScreenToClient(&m_rectGuide);
 	pStatic->DestroyWindow();
 
 	// Asignacion�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_STATIC);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CTKeyDlg::OnInitDialog: missing IDC_KEYIN_STATIC\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(m_strAssign);
 	pStatic->GetWindowRect(&m_rectAssign);
 	ScreenToClient(&m_rectAssign);
@@ -7808,7 +7907,10 @@ BOOL CTKeyDlg::OnInitDialog()
 
 	// �E�L�E�[�E��E�`�E��E�Procesamiento
 	pStatic = (CStatic*)GetDlgItem(IDC_KEYIN_KEY);
-	ASSERT(pStatic);
+	if (!pStatic) {
+		TRACE(_T("CTKeyDlg::OnInitDialog: missing IDC_KEYIN_KEY\n"));
+		return FALSE;
+	}
 	pStatic->GetWindowText(m_strKey);
 	if (m_nKey != 0) {
 		lpszKey = m_pTKey->GetKeyID(m_nKey);
@@ -8038,22 +8140,12 @@ void CTKeyDlg::OnRButtonDown(UINT /*nFlags*/, CPoint /*point*/)
 //---------------------------------------------------------------------------
 CTKeyPage::CTKeyPage()
 {
-	CFrmWnd *pFrmWnd;
-
 	// Configurar siempre ID y Help
 	m_dwID = MAKEID('T', 'K', 'E', 'Y');
 	m_nTemplate = IDD_TKEYPAGE;
 	m_uHelpID = IDC_TKEY_HELP;
-
-	// Get entrada
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
-	ASSERT(pFrmWnd);
-	m_pInput = pFrmWnd->GetInput();
-	ASSERT(m_pInput);
-
-	// Get TrueKey
-	m_pTKey = pFrmWnd->GetTKey();
-	ASSERT(m_pTKey);
+	m_pInput = NULL;
+	m_pTKey = NULL;
 }
 
 //---------------------------------------------------------------------------
@@ -8088,6 +8180,21 @@ BOOL CTKeyPage::OnInitDialog()
 
 	// Clase base
 	CConfigPage::OnInitDialog();
+
+	if (!m_pInput || !m_pTKey) {
+		CFrmWnd *pFrmWnd = ResolveFrmWnd(this);
+		if (pFrmWnd) {
+			if (!m_pInput) {
+				m_pInput = pFrmWnd->GetInput();
+			}
+			if (!m_pTKey) {
+				m_pTKey = pFrmWnd->GetTKey();
+			}
+		}
+	}
+	if (!m_pInput || !m_pTKey) {
+		return FALSE;
+	}
 
 	// Cuadro combinado de puertos
 	pComboBox = (CComboBox*)GetDlgItem(IDC_TKEY_COMC);
@@ -8508,11 +8615,16 @@ BOOL CMiscPage::OnInitDialog()
 	int nRendererLblID;
 	CConfigPage::OnInitDialog();
 	CFrmWnd *pFrmWnd;
-	pFrmWnd = (CFrmWnd*)AfxGetApp()->m_pMainWnd;
+	pFrmWnd = ResolveFrmWnd(this);
 
 	// Opciones
 	pEdit = (CEdit*)GetDlgItem(IDC_EDIT1);
-	pEdit->SetWindowTextA(pFrmWnd->m_strSaveStatePath);
+	if (pFrmWnd) {
+		pEdit->SetWindowTextA(pFrmWnd->m_strSaveStatePath);
+	}
+	else {
+		pEdit->SetWindowTextA(m_pConfig->ruta_savestate);
+	}
 
 	// Determinar IDs segun idioma
 	if (::IsJapanese()) {

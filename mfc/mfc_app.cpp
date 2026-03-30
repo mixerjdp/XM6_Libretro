@@ -125,8 +125,6 @@ static LANGID FASTCALL SelectUiLangId(ui_language_mode_t mode)
 
 static void FASTCALL ApplyUiLanguageForResources(LANGID langid)
 {
-	::SetThreadLocale(MAKELCID(langid, SORT_DEFAULT));
-
 	HMODULE kernel = ::GetModuleHandle(_T("KERNEL32.DLL"));
 	if (kernel) {
 		typedef LANGID (WINAPI *set_thread_ui_lang_t)(LANGID);
@@ -189,13 +187,11 @@ BOOL FASTCALL IsCMOV(void)
 }
 
 //---------------------------------------------------------------------------
-//
 //	Load a message string
 //
 //---------------------------------------------------------------------------
 void FASTCALL GetMsg(UINT uID, CString& string)
 {
-
 	if (uID == 0) {
 		string.Empty();
 		return;

@@ -54,9 +54,11 @@ public:
 	CHost* FASTCALL GetHost() const;
 										// Get Info
 	CInfo* FASTCALL GetInfo() const;
-										// Get Config
+	// Get Config
 	CConfig* FASTCALL GetConfig() const;
 										// Recalculate status view
+	void FASTCALL ApplyWindowScale();
+										// Recompute the frame size using the selected window scale
 
 	// Status bar support
 	void FASTCALL RecalcStatusView();
@@ -446,9 +448,10 @@ protected:
 										// Refresh
 	afx_msg void OnRefresh();
 										// Refresh
-	afx_msg void OnStretch();
-										// Stretch
-	afx_msg void OnStretchUI(CCmdUI *pCmdUI);
+	afx_msg void OnWindowScale(UINT uID);
+										// Window scale
+	afx_msg void OnWindowScaleUI(CCmdUI *pCmdUI);
+										// Window scale UI
 										// Fullscreen
 	afx_msg void OnFullScreen();
 										// Fullscreen

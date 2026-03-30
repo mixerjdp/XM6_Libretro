@@ -994,12 +994,23 @@ void FASTCALL CBitmapWnd::Setup()
 	y++;
 
 	// Flags
-	SetString(x, y, "BitBlt Stretch");
-	if (info.bBltStretch) {
-		SetString(x + 18, y, "Yes");
-	}
-	else {
-		SetString(x + 19, y, "No");
+	SetString(x, y, "Window Scale");
+	switch (info.nScaleIndex) {
+	case 0:
+		SetString(x + 18, y, "1.0x");
+		break;
+	case 1:
+		SetString(x + 18, y, "1.5x");
+		break;
+	case 2:
+		SetString(x + 18, y, "2.0x");
+		break;
+	case 3:
+		SetString(x + 18, y, "2.5x");
+		break;
+	default:
+		SetString(x + 18, y, "3.0x");
+		break;
 	}
 
 	// Move to right side

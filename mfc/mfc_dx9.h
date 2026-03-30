@@ -18,7 +18,7 @@ public:
     BOOL UpdateSurface(const DWORD* pSrcBuffer, int srcWidth, int srcHeight, int srcPitchPixels);
 
 // Present the image on screen
-    BOOL PresentFrame(int srcWidth, int srcHeight, BOOL fillWindow, BOOL keepAspect);
+    BOOL PresentFrame(int srcWidth, int srcHeight, int scalePercent);
 
 // Hardware-rendered OSD overlay
     void SetOverlayText(LPCTSTR line1, LPCTSTR line2);

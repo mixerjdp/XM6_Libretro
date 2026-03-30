@@ -76,6 +76,9 @@ VM::VM()
 	sram = NULL;
 	host_message_callback = NULL;
 	host_message_user = NULL;
+	host_lock_vm_callback = NULL;
+	host_unlock_vm_callback = NULL;
+	host_sync_user = NULL;
 
 	// Version number (preinitialized to the platform default)
 	major_ver = 0x01;
@@ -134,6 +137,9 @@ BOOL FASTCALL VM::Init()
 	new Mercury(this);
 	new Neptune(this);
 	sram = new SRAM(this);
+
+	// Host callbacks may have been configured before VM::Init().
+	SetHostSyncCallbacks(host_lock_vm_callback, host_unlock_vm_callback, host_sync_user);
 
 	// Initialize logging
 	if (!log.Init(this)) {
@@ -247,8 +253,11 @@ void FASTCALL VM::SetHostSyncCallbacks(host_sync_callback_t lock_vm_cb, host_syn
 {
 	ASSERT(this);
 
+	host_lock_vm_callback = lock_vm_cb;
+	host_unlock_vm_callback = unlock_vm_cb;
+	host_sync_user = user;
+
 	Windrv* pWindrv = (Windrv*)SearchDevice(MAKEID('W', 'D', 'R', 'V'));
-	ASSERT(pWindrv);
 	if (!pWindrv) {
 		return;
 	}
@@ -276,7 +285,6 @@ void FASTCALL VM::SetHostFileSystem(FileSys *fs)
 	ASSERT(this);
 
 	Windrv* pWindrv = (Windrv*)SearchDevice(MAKEID('W', 'D', 'R', 'V'));
-	ASSERT(pWindrv);
 	if (!pWindrv) {
 		return;
 	}

@@ -93,6 +93,10 @@
       <Culture>0x0411</Culture>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <PostBuildEvent>
+      <Command>if exist "$(ProjectDir)Release\Scsiinrom.dat" copy /Y "$(ProjectDir)Release\Scsiinrom.dat" "$(OutDir)SCSIINROM.DAT"&amp;if exist "$(ProjectDir)Release\Scsiexrom.dat" copy /Y "$(ProjectDir)Release\Scsiexrom.dat" "$(OutDir)SCSIEXROM.DAT"</Command>
+      <Message>Copying SCSI ROM files to Debug output</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
