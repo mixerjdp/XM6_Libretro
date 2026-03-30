@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 �o�h�D(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2005 PI(ytanaka@ipc-tokai.or.jp)
 //	[ Event ]
 //
 //---------------------------------------------------------------------------

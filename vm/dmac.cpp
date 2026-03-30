@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 PI(ytanaka@ipc-tokai.or.jp)
 //	[ DMAC(HD63450) ]
 //
 //---------------------------------------------------------------------------
@@ -28,20 +28,20 @@
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 DMAC::DMAC(VM *p) : MemDevice(p)
 {
-	// �f�o�C�XID��������
+	// Device ID setting
 	dev.id = MAKEID('D', 'M', 'A', 'C');
 	dev.desc = "DMAC (HD63450)";
 
-	// �J�n�A�h���X�A�I���A�h���X
+	// Start address, end address
 	memdev.first = 0xe84000;
 	memdev.last = 0xe85fff;
 
-	// ���̑�
+	// Others
 	memory = NULL;
 	fdc = NULL;
 	legacy_cnt_mode = FALSE;
@@ -49,7 +49,7 @@ DMAC::DMAC(VM *p) : MemDevice(p)
 
 //---------------------------------------------------------------------------
 //
-//	������
+//	Initialize
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::Init()
@@ -58,20 +58,20 @@ BOOL FASTCALL DMAC::Init()
 
 	ASSERT(this);
 
-	// ��{�N���X
+	// Base class
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// �������擾
+	// Get memory
 	memory = (Memory*)vm->SearchDevice(MAKEID('M', 'E', 'M', ' '));
 	ASSERT(memory);
 
-	// FDC�擾
+	// Get FDC
 	fdc = (FDC*)vm->SearchDevice(MAKEID('F', 'D', 'C', ' '));
 	ASSERT(fdc);
 
-	// �`���l�����[�N��������
+	// Initialize channel structures
 	for (ch=0; ch<4; ch++) {
 		memset(&dma[ch], 0, sizeof(dma[ch]));
 	}
@@ -81,20 +81,20 @@ BOOL FASTCALL DMAC::Init()
 
 //---------------------------------------------------------------------------
 //
-//	�N���[���A�b�v
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::Cleanup()
 {
 	ASSERT(this);
 
-	// ��{�N���X��
+	// Base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::Reset()
@@ -102,9 +102,9 @@ void FASTCALL DMAC::Reset()
 	int ch;
 
 	ASSERT(this);
-	LOG0(Log::Normal, "���Z�b�g");
+	LOG0(Log::Normal, "Reset");
 
-	// �O���[�o��
+	// Global
 	dmactrl.transfer = 0;
 	dmactrl.load = 0;
 	dmactrl.exec = FALSE;
@@ -112,7 +112,7 @@ void FASTCALL DMAC::Reset()
 	dmactrl.cpu_cycle = 0;
 	dmactrl.vector = -1;
 
-	// DMAC�`���l�������
+	// Reset channel structures
 	for (ch=0; ch<4; ch++) {
 		ResetDMA(ch);
 	}
@@ -120,7 +120,7 @@ void FASTCALL DMAC::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::Save(Fileio *fio, int /*ver*/)
@@ -130,9 +130,9 @@ BOOL FASTCALL DMAC::Save(Fileio *fio, int /*ver*/)
 
 	ASSERT(this);
 	ASSERT(fio);
-	LOG0(Log::Normal, "�Z�[�u");
+	LOG0(Log::Normal, "Save");
 
-	// �`���l����
+	// Channel
 	sz = sizeof(dma_t);
 	for (i=0; i<4; i++) {
 		if (!fio->Write(&sz, sizeof(sz))) {
@@ -143,7 +143,7 @@ BOOL FASTCALL DMAC::Save(Fileio *fio, int /*ver*/)
 		}
 	}
 
-	// �O���[�o��
+	// Global
 	sz = sizeof(dmactrl_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
@@ -157,7 +157,7 @@ BOOL FASTCALL DMAC::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::Load(Fileio *fio, int /*ver*/)
@@ -167,11 +167,11 @@ BOOL FASTCALL DMAC::Load(Fileio *fio, int /*ver*/)
 
 	ASSERT(this);
 	ASSERT(fio);
-	LOG0(Log::Normal, "���[�h");
+	LOG0(Log::Normal, "Load");
 
-	// �`���l����
+	// Channel
 	for (i=0; i<4; i++) {
-		// �T�C�Y�����[�h�A�ƍ�
+		// Read size and check
 		if (!fio->Read(&sz, sizeof(sz))) {
 			return FALSE;
 		}
@@ -179,13 +179,13 @@ BOOL FASTCALL DMAC::Load(Fileio *fio, int /*ver*/)
 			return FALSE;
 		}
 
-		// ���̂����[�h
+		// Read self
 		if (!fio->Read(&dma[i], (int)sz)) {
 			return FALSE;
 		}
 	}
 
-	// �O���[�o��
+	// Global
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -202,19 +202,19 @@ BOOL FASTCALL DMAC::Load(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	�ݒ�K�p
+//	Apply config
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::ApplyCfg(const Config* /*config*/)
 {
 	ASSERT(this);
 //	ASSERT(config);
-	LOG0(Log::Normal, "�ݒ�K�p");
+	LOG0(Log::Normal, "Apply config");
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g�ǂݍ���
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::ReadByte(DWORD addr)
@@ -224,21 +224,21 @@ DWORD FASTCALL DMAC::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// �E�F�C�g
+	// Wait
 	scheduler->Wait(7);
 
-	// �`���l���Ɋ��蓖��
+	// Assign to channel
 	ch = (int)(addr >> 6);
 	ch &= 3;
 	addr &= 0x3f;
 
-	// �`���l���P�ʂōs��
+	// Execute in channel unit
 	return ReadDMA(ch, addr);
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h�ǂݍ���
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::ReadWord(DWORD addr)
@@ -249,21 +249,21 @@ DWORD FASTCALL DMAC::ReadWord(DWORD addr)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT((addr & 1) == 0);
 
-	// �E�F�C�g
+	// Wait
 	scheduler->Wait(7);
 
-	// �`���l���Ɋ��蓖��
+	// Assign to channel
 	ch = (int)(addr >> 6);
 	ch &= 3;
 	addr &= 0x3f;
 
-	// �`���l���P�ʂōs��
+	// Execute in channel unit
 	return ((ReadDMA(ch, addr) << 8) | ReadDMA(ch, addr + 1));
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g��������
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::WriteByte(DWORD addr, DWORD data)
@@ -322,19 +322,19 @@ DWORD FASTCALL DMAC::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// �`���l���Ɋ��蓖��
+	// Assign to channel
 	ch = (int)(addr >> 6);
 	ch &= 3;
 	addr &= 0x3f;
 
-	// �`���l���P�ʂōs��
+	// Execute in channel unit
 	return ReadDMA(ch, addr);
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�ǂݍ���
-//	����ʃ[���ۏ�
+//	DMA read
+//	Internal register access
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::ReadDMA(int ch, DWORD addr) const
@@ -439,7 +439,7 @@ DWORD FASTCALL DMAC::ReadDMA(int ch, DWORD addr) const
 		// GCR
 		case 0x3f:
 			if (ch == 3) {
-				// �`���l��3�̂݃o�[�X�g�]������Ԃ�
+				// Only channel 3 returns burst mode
 				ASSERT(dma[ch].bt <= 3);
 				ASSERT(dma[ch].br <= 3);
 
@@ -456,8 +456,8 @@ DWORD FASTCALL DMAC::ReadDMA(int ch, DWORD addr) const
 
 //---------------------------------------------------------------------------
 //
-//	DMA��������
-//	����ʃ[���ۏ؂�v��
+//	DMA write
+//	Internal register access required
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::WriteDMA(int ch, DWORD addr, DWORD data)
@@ -554,7 +554,7 @@ void FASTCALL DMAC::WriteDMA(int ch, DWORD addr, DWORD data)
 			return;
 		case 0x1d:
 			dma[ch].bar &= 0x0000ffff;
-			dma[ch].bar |=(data << 16);
+			dma[ch].bar |= (data << 16);
 			return;
 		case 0x1e:
 			dma[ch].bar &= 0x00ff00ff;
@@ -598,7 +598,7 @@ void FASTCALL DMAC::WriteDMA(int ch, DWORD addr, DWORD data)
 		// GCR
 		case 0x3f:
 			if (ch == 3) {
-				// �`���l��3�̂�
+				// Only channel 3
 				SetGCR(data);
 			}
 			return;
@@ -607,7 +607,7 @@ void FASTCALL DMAC::WriteDMA(int ch, DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	DCR�Z�b�g
+//	DCR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetDCR(int ch, DWORD data)
@@ -616,10 +616,10 @@ void FASTCALL DMAC::SetDCR(int ch, DWORD data)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(data < 0x100);
 
-	// ACT���オ���Ă���΃^�C�~���O�G���[
+	// Timing error if ACT is already on
 	if (dma[ch].act) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[(SetDCR)", ch);
+		LOG1(Log::Normal, "Channel %d Timing error(SetDCR)", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x02);
 		return;
@@ -642,13 +642,13 @@ void FASTCALL DMAC::SetDCR(int ch, DWORD data)
 	// PCL
 	dma[ch].pcl = (data & 0x03);
 
-	// ���荞�݃`�F�b�N
+	// Interrupt check
 	Interrupt();
 }
 
 //---------------------------------------------------------------------------
 //
-//	DCR�擾
+//	DCR get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetDCR(int ch) const
@@ -661,7 +661,7 @@ DWORD FASTCALL DMAC::GetDCR(int ch) const
 	ASSERT(dma[ch].dtyp <= 3);
 	ASSERT(dma[ch].pcl <= 3);
 
-	// �f�[�^�쐬
+	// Create data
 	data = dma[ch].xrm;
 	data <<= 2;
 	data |= dma[ch].dtyp;
@@ -677,7 +677,7 @@ DWORD FASTCALL DMAC::GetDCR(int ch) const
 
 //---------------------------------------------------------------------------
 //
-//	OCR�Z�b�g
+//	OCR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetOCR(int ch, DWORD data)
@@ -686,10 +686,10 @@ void FASTCALL DMAC::SetOCR(int ch, DWORD data)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(data < 0x100);
 
-	// ACT���オ���Ă���΃^�C�~���O�G���[
+	// Timing error if ACT is already on
 	if (dma[ch].act) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[(SetOCR)", ch);
+		LOG1(Log::Normal, "Channel %d Timing error(SetOCR)", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x02);
 		return;
@@ -723,7 +723,7 @@ void FASTCALL DMAC::SetOCR(int ch, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	OCR�擾
+//	OCR get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetOCR(int ch) const
@@ -736,7 +736,7 @@ DWORD FASTCALL DMAC::GetOCR(int ch) const
 	ASSERT(dma[ch].chain <= 3);
 	ASSERT(dma[ch].reqg <= 3);
 
-	// �f�[�^�쐬
+	// Create data
 	data = 0;
 	if (dma[ch].dir) {
 		data |= 0x02;
@@ -756,7 +756,7 @@ DWORD FASTCALL DMAC::GetOCR(int ch) const
 
 //---------------------------------------------------------------------------
 //
-//	SCR�Z�b�g
+//	SCR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetSCR(int ch, DWORD data)
@@ -765,10 +765,10 @@ void FASTCALL DMAC::SetSCR(int ch, DWORD data)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(data < 0x100);
 
-	// ACT���オ���Ă���΃^�C�~���O�G���[
+	// Timing error if ACT is already on
 	if (dma[ch].act) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[(SetSCR)", ch);
+		LOG1(Log::Normal, "Channel %d Timing error(SetSCR)", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x02);
 		return;
@@ -780,7 +780,7 @@ void FASTCALL DMAC::SetSCR(int ch, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	SCR�擾
+//	SCR get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetSCR(int ch) const
@@ -792,7 +792,7 @@ DWORD FASTCALL DMAC::GetSCR(int ch) const
 	ASSERT(dma[ch].mac <= 3);
 	ASSERT(dma[ch].dac <= 3);
 
-	// �f�[�^�쐬
+	// Create data
 	data = dma[ch].mac;
 	data <<= 2;
 	data |= dma[ch].dac;
@@ -802,7 +802,7 @@ DWORD FASTCALL DMAC::GetSCR(int ch) const
 
 //---------------------------------------------------------------------------
 //
-//	CCR�Z�b�g
+//	CCR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetCCR(int ch, DWORD data)
@@ -851,7 +851,7 @@ void FASTCALL DMAC::SetCCR(int ch, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	CCR�擾
+//	CCR get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetCCR(int ch) const
@@ -861,7 +861,7 @@ DWORD FASTCALL DMAC::GetCCR(int ch) const
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// INT,HLT,STR,CNT�����Ԃ�
+	// Return INT,HLT,STR,CNT status
 	data = 0;
 	if (dma[ch].intr) {
 		data |= 0x08;
@@ -881,7 +881,7 @@ DWORD FASTCALL DMAC::GetCCR(int ch) const
 
 //---------------------------------------------------------------------------
 //
-//	CSR�Z�b�g
+//	CSR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetCSR(int ch, DWORD data)
@@ -890,7 +890,7 @@ void FASTCALL DMAC::SetCSR(int ch, DWORD data)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(data < 0x100);
 
-	// ACT,PCS�ȊO��1���������ނ��Ƃɂ��N���A�ł���
+	// Writing 1 to non-ACT,PCS clears the flag (allows clearing)
 	if (data & 0x80) {
 		dma[ch].coc = FALSE;
 	}
@@ -910,13 +910,13 @@ void FASTCALL DMAC::SetCSR(int ch, DWORD data)
 		dma[ch].pct = FALSE;
 	}
 
-	// ���荞�ݏ���
+	// Interrupt processing
 	Interrupt();
 }
 
 //---------------------------------------------------------------------------
 //
-//	CSR�擾
+//	CSR get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetCSR(int ch) const
@@ -926,7 +926,7 @@ DWORD FASTCALL DMAC::GetCSR(int ch) const
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// �f�[�^�쐬
+	// Create data
 	data = 0;
 	if (dma[ch].coc) {
 		data |= 0x80;
@@ -958,7 +958,7 @@ DWORD FASTCALL DMAC::GetCSR(int ch) const
 
 //---------------------------------------------------------------------------
 //
-//	GCR�ݒ�
+//	GCR set
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::SetGCR(DWORD data)
@@ -970,11 +970,11 @@ void FASTCALL DMAC::SetGCR(DWORD data)
 	ASSERT(this);
 	ASSERT(data < 0x100);
 
-	// �f�[�^����
+	// Separate data
 	bt = (data >> 2) & 0x03;
 	br = data & 0x03;
 
-	// �S�`���l���ɐݒ�
+	// Set all channels
 	for (ch=0; ch<4; ch++) {
 		dma[ch].bt = bt;
 		dma[ch].br = br;
@@ -983,7 +983,7 @@ void FASTCALL DMAC::SetGCR(DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	DMA���Z�b�g
+//	DMA reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::ResetDMA(int ch)
@@ -991,35 +991,35 @@ void FASTCALL DMAC::ResetDMA(int ch)
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// GCR������
+	// GCR reset
 	dma[ch].bt = 0;
 	dma[ch].br = 0;
 
-	// DCR������
+	// DCR reset
 	dma[ch].xrm = 0;
 	dma[ch].dtyp = 0;
 	dma[ch].dps = FALSE;
 	dma[ch].pcl = 0;
 
-	// OCR������
+	// OCR reset
 	dma[ch].dir = FALSE;
 	dma[ch].btd = FALSE;
 	dma[ch].size = 0;
 	dma[ch].chain = 0;
 	dma[ch].reqg = 0;
 
-	// SCR������
+	// SCR reset
 	dma[ch].mac = 0;
 	dma[ch].dac = 0;
 
-	// CCR������
+	// CCR reset
 	dma[ch].str = FALSE;
 	dma[ch].cnt = FALSE;
 	dma[ch].hlt = FALSE;
 	dma[ch].sab = FALSE;
 	dma[ch].intr = FALSE;
 
-	// CSR������
+	// CSR reset
 	dma[ch].coc = FALSE;
 	dma[ch].boc = FALSE;
 	dma[ch].ndt = FALSE;
@@ -1028,32 +1028,32 @@ void FASTCALL DMAC::ResetDMA(int ch)
 	dma[ch].dit = FALSE;
 	dma[ch].pct = FALSE;
 	if (ch == 0) {
-		// FDC��'L'
+		// FDC is 'L'
 		dma[ch].pcs = FALSE;
 	}
 	else {
-		// ����ȊO��'H'
+		// Others are 'H'
 		dma[ch].pcs = TRUE;
 	}
 
-	// CPR������
+	// CPR reset
 	dma[ch].cp = 0;
 
-	// CER������
+	// CER reset
 	dma[ch].ecode = 0;
 
-	// ���荞�݃x�N�^������
+	// Interrupt vector reset
 	dma[ch].niv = 0x0f;
 	dma[ch].eiv = 0x0f;
 
-	// �A�h���X�y�уJ�E���^�̓��Z�b�g���Ȃ�(�f�[�^�V�[�g�ɂ��)
+	// Address and counter increment reset (by data sheet)
 	dma[ch].mar &= 0x00ffffff;
 	dma[ch].dar &= 0x00ffffff;
 	dma[ch].bar &= 0x00ffffff;
 	dma[ch].mtc &= 0x0000ffff;
 	dma[ch].btc &= 0x0000ffff;
 
-	// �]���^�C�v�A�J�E���^������
+	// Transfer type, counter reset
 	dma[ch].type = 0;
 	dma[ch].startcnt = 0;
 	dma[ch].errorcnt = 0;
@@ -1061,7 +1061,7 @@ void FASTCALL DMAC::ResetDMA(int ch)
 
 //---------------------------------------------------------------------------
 //
-//	DMA�X�^�[�g
+//	DMA start
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::StartDMA(int ch)
@@ -1072,97 +1072,97 @@ void FASTCALL DMAC::StartDMA(int ch)
 	ASSERT((ch >= 0) && (ch <= 3));
 
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "�`���l��%d �X�^�[�g", ch);
+	LOG1(Log::Normal, "Channel %d Start", ch);
 #endif	// DMAC_LOG
 
-	// ACT,COC,BOC,NDT,ERR���オ���Ă���΃^�C�~���O�G���[
+	// Timing error if ACT,COC,BOC,NDT,ERR are already on
 	if (dma[ch].act || dma[ch].coc || dma[ch].boc || dma[ch].ndt || dma[ch].err) {
 #if defined(DMAC_LOG)
 		if (dma[ch].act) {
-			LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[ (ACT)", ch);
+			LOG1(Log::Normal, "Channel %d Timing error (ACT)", ch);
 		}
 		if (dma[ch].coc) {
-			LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[ (COC)", ch);
+			LOG1(Log::Normal, "Channel %d Timing error (COC)", ch);
 		}
 		if (dma[ch].boc) {
-			LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[ (BOC)", ch);
+			LOG1(Log::Normal, "Channel %d Timing error (BOC)", ch);
 		}
 		if (dma[ch].ndt) {
-			LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[ (NDT)", ch);
+			LOG1(Log::Normal, "Channel %d Timing error (NDT)", ch);
 		}
 		if (dma[ch].err) {
-			LOG1(Log::Normal, "�`���l��%d �^�C�~���O�G���[ (ERR)", ch);
+			LOG1(Log::Normal, "Channel %d Timing error (ERR)", ch);
 		}
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x02);
 		return;
 	}
 
-	// �`�F�C���Ȃ��̏ꍇ�́AMTC=0�Ȃ烁�����J�E���g�G���[
+	// If not chaining, MTC=0 causes transfer count error
 	if (dma[ch].chain == 0) {
 		if (dma[ch].mtc == 0) {
 #if defined(DMAC_LOG)
-			LOG1(Log::Normal, "�`���l��%d �������J�E���g�G���[", ch);
+			LOG1(Log::Normal, "Channel %d Transfer count error", ch);
 #endif	// DMAC_LOG
 			ErrorDMA(ch, 0x0d);
 			return;
 		}
 	}
 
-	// �A���C�`�F�C���̏ꍇ�́ABTC=0�Ȃ�x�[�X�J�E���g�G���[
+	// If burst chaining, BTC=0 causes base count error
 	if (dma[ch].chain == 0x02) {
 		if (dma[ch].btc == 0) {
 #if defined(DMAC_LOG)
-			LOG1(Log::Normal, "�`���l��%d �x�[�X�J�E���g�G���[", ch);
+			LOG1(Log::Normal, "Channel %d Base count error", ch);
 #endif	// DMAC_LOG
 			ErrorDMA(ch, 0x0f);
 			return;
 		}
 	}
 
-	// �R���t�B�M�����[�V�����G���[�`�F�b�N
+	// Compatibility error check
 	if ((dma[ch].xrm == 0x01) || (dma[ch].mac == 0x03) || (dma[ch].dac == 0x03)
 			|| (dma[ch].chain == 0x01)) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �R���t�B�O�G���[", ch);
+		LOG1(Log::Normal, "Channel %d Compatibility error", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x01);
 		return;
 	}
 
-	// �]���^�C�v�쐬
+	// Create transfer type
 	dma[ch].type = 0;
 	if (dma[ch].dps) {
 		dma[ch].type += 4;
 	}
 	dma[ch].type += dma[ch].size;
 
-	// ���[�N������
+	// Clear flags
 	dma[ch].str = FALSE;
 	dma[ch].act = TRUE;
 	dma[ch].cnt = FALSE;
 	dma[ch].sab = FALSE;
 
-	// �J�E���g�A�b�v
+	// Count up
 	dma[ch].startcnt++;
 
-	// �A���C�`�F�C���܂��̓����N�A���C�`�F�C���́A�ŏ��̃u���b�N�����[�h
+	// If chaining or burst chaining, load first block
 	if (dma[ch].chain != 0) {
 		LoadDMA(ch);
-		// ���[�h���ɃA�h���X�G���[�܂��̓o�X�G���[���N������A�G���[�t���O���オ��
+		// If address error or bus error occurs, error flag is set
 		if (dma[ch].err) {
 			return;
 		}
 	}
 
-	// CPU�T�C�N�����N���A���āA���[�h��
+	// Clear CPU cycle counter and execute
 	dmactrl.cpu_cycle = 0;
 	switch (dma[ch].reqg) {
-		// �I�[�g���N�G�X�g����
+		// External request start
 		case 0:
-		// �I�[�g���N�G�X�g�ő�
+		// External request maximum
 		case 1:
-			// ���݂̎c�肾��DMA�𓮂����āACPU���~�߂�
+			// Stop DMA while current pending DMA is running, stop CPU
 			dmactrl.current_ch = ch;
 			dmactrl.cpu_cycle = 0;
 			dmactrl.exec = TRUE;
@@ -1173,13 +1173,13 @@ void FASTCALL DMAC::StartDMA(int ch)
 			}
 			break;
 
-		// �O���v���]��
+		// Priority rotation
 		case 2:
 			break;
 
-		// �I�[�g���N�G�X�g�{�O���v���]��
+		// External request priority rotation
 		case 3:
-			// ���݂̎c�肾��DMA�𓮂����āACPU���~�߂�
+			// Stop DMA while current pending DMA is running, stop CPU
 			dmactrl.current_ch = ch;
 			dmactrl.cpu_cycle = 0;
 			dmactrl.exec = TRUE;
@@ -1199,7 +1199,7 @@ void FASTCALL DMAC::StartDMA(int ch)
 
 //---------------------------------------------------------------------------
 //
-//	DMA�R���e�B�j���[
+//	DMA continue
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::ContDMA(int ch)
@@ -1208,21 +1208,21 @@ void FASTCALL DMAC::ContDMA(int ch)
 	ASSERT((ch >= 0) && (ch <= 3));
 
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "�`���l��%d �R���e�B�j���[", ch);
+	LOG1(Log::Normal, "Channel %d Continue", ch);
 #endif	// DMAC_LOG
 
-	// ACT���オ���Ă��Ȃ��Ɠ���^�C�~���O�G���[
+	// Timing error if ACT is not on
 	if (!dma[ch].act) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d ����^�C�~���O�G���[(Cont)", ch);
+		LOG1(Log::Normal, "Channel %d Timing error(Cont)", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x02);
 		return;
-}
-	// �`�F�C�����[�h�̏ꍇ�̓R���t�B�O�G���[
+	}
+	// Compatibility error for chaining mode
 	if (dma[ch].chain != 0) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �R���t�B�O�G���[", ch);
+		LOG1(Log::Normal, "Channel %d Compatibility error", ch);
 #endif	// DMAC_LOG
 		ErrorDMA(ch, 0x01);
 	}
@@ -1230,7 +1230,7 @@ void FASTCALL DMAC::ContDMA(int ch)
 
 //---------------------------------------------------------------------------
 //
-//	DMA�\�t�g�E�F�A�A�{�[�g
+//	DMA software abort
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::AbortDMA(int ch)
@@ -1238,28 +1238,28 @@ void FASTCALL DMAC::AbortDMA(int ch)
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// ��A�N�e�B�u�Ȃ�G���[�������s��Ȃ�(Marianne.pan)
+	// Error processing does not occur if not active (Marianne.pan)
 	if (!dma[ch].act) {
-		// �����COC�𗎂Ƃ�(�o���f���[�N)
+		// Clear COC (original flag)
 		dma[ch].coc = FALSE;
 		return;
 	}
 
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "�`���l��%d �\�t�g�E�F�A�A�{�[�g", ch);
+	LOG1(Log::Normal, "Channel %d Software abort", ch);
 #endif	// DMAC_LOG
 
-	// �]�������A��A�N�e�B�u
+	// Set transfer end, not active
 	dma[ch].coc = TRUE;
 	dma[ch].act = FALSE;
 
-	// �\�t�g�E�F�A�A�{�[�g�ŃG���[����
+	// Error caused by software abort
 	ErrorDMA(ch, 0x11);
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA���u���b�N�̃��[�h
+//	DMA block load
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::LoadDMA(int ch)
@@ -1270,18 +1270,18 @@ void FASTCALL DMAC::LoadDMA(int ch)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(dmactrl.load == 0);
 
-	// ���[�h��(ReadWord�ł̃A�h���X�G���[�A�o�X�G���[�ɒ���)
+	// Load mode (stops on address error in ReadWord and bus error)
 	dmactrl.load = (ch + 1);
 
 	if (dma[ch].bar & 1) {
-		// BAR�A�h���X�G���[
+		// BAR address error
 		AddrErr(dma[ch].bar, TRUE);
 
 		dmactrl.load = 0;
 		return;
 	}
 
-	// MAR�ǂݍ���
+	// MAR read
 	dma[ch].bar &= 0xfffffe;
 	dma[ch].mar = (memory->ReadWord(dma[ch].bar) & 0x00ff);
 	dma[ch].bar += 2;
@@ -1290,30 +1290,30 @@ void FASTCALL DMAC::LoadDMA(int ch)
 	dma[ch].mar |= (memory->ReadWord(dma[ch].bar) & 0xffff);
 	dma[ch].bar += 2;
 
-	// MTC�ǂݍ���
+	// MTC read
 	dma[ch].bar &= 0xfffffe;
 	dma[ch].mtc = (memory->ReadWord(dma[ch].bar) & 0xffff);
 	dma[ch].bar += 2;
 
 	if (dma[ch].err) {
-		// MAR,MTC�ǂݍ��݃G���[
+		// MAR,MTC read error
 		dmactrl.load = 0;
 		return;
 	}
 
-	// �A���C�`�F�C���ł͂����܂�
+	// Burst chaining is not done here
 	if (dma[ch].chain == 0x02) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �A���C�`�F�C�����u���b�N", ch);
+		LOG1(Log::Normal, "Channel %d Burst chaining block", ch);
 #endif	// DMAC_LOG
 		dma[ch].btc--;
 		dmactrl.load = 0;
 		return;
 	}
 
-	// �����N�A���C�`�F�C��(�ł͎��̃����N�A�h���X��BAR�փ��[�h
+	// Chain chaining (loads next chain address into BAR here)
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "�`���l��%d �����N�A���C�`�F�C�����u���b�N", ch);
+	LOG1(Log::Normal, "Channel %d Chain chaining block", ch);
 #endif	// DMAC_LOG
 	dma[ch].bar &= 0xfffffe;
 	base = (memory->ReadWord(dma[ch].bar) & 0x00ff);
@@ -1323,13 +1323,13 @@ void FASTCALL DMAC::LoadDMA(int ch)
 	base |= (memory->ReadWord(dma[ch].bar) & 0xffff);
 	dma[ch].bar = base;
 
-	// ���[�h�I��
+	// Load complete
 	dmactrl.load = 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�G���[
+//	DMA error
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::ErrorDMA(int ch, DWORD code)
@@ -1339,28 +1339,28 @@ void FASTCALL DMAC::ErrorDMA(int ch, DWORD code)
 	ASSERT((code >= 0x01) && (code <= 17));
 
 #if defined(DMAC_LOG)
-	LOG2(Log::Normal, "�`���l��%d �G���[����$%02X", ch, code);
+	LOG2(Log::Normal, "Channel %d Error occurred $%02X", ch, code);
 #endif	// DMAC_LOG
 
-	// ACT���~�낷(�t�@�����N�X ADPCM)
+	// ACT turns off (ADPCM)
 	dma[ch].act = FALSE;
 
-	// �G���[�R�[�h����������
+	// Error code set
 	dma[ch].ecode = code;
 
-	// �G���[�t���O�𗧂Ă�
+	// Error flag set
 	dma[ch].err = TRUE;
 
-	// �J�E���g�A�b�v
+	// Count up
 	dma[ch].errorcnt++;
 
-	// ���荞�ݏ���
+	// Interrupt processing
 	Interrupt();
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA���荞��
+//	DMA interrupt
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::Interrupt()
@@ -1370,28 +1370,28 @@ void FASTCALL DMAC::Interrupt()
 
 	ASSERT(this);
 
-	// DMA�Ɠ����D��x�ŏ���(�f�[�^�V�[�g���)
+	// DMA at same priority level lowest (data sheet)
 	for (cp=0; cp<=3; cp++) {
 		for (ch=0; ch<=3; ch++) {
-			// CP�`�F�b�N
+			// CP check
 			if (cp != dma[ch].cp) {
 				continue;
 			}
 
-			// �C���^���v�g�C�l�[�u�����`�F�b�N
+			// Interrupt controller check
 			if (!dma[ch].intr) {
 				continue;
 			}
 
-			// ERR�ɂ��EIV�ŏo��
+			// Output at EIV if ERR
 			if (dma[ch].err) {
 				if (dmactrl.vector != (int)dma[ch].eiv) {
-					// �ʂ̊��荞�݂�v�����Ă���΁A��U�L�����Z��
+					// If pending interrupt exists, cancel subsequent
 					if (dmactrl.vector >= 0) {
 						cpu->IntCancel(3);
 					}
 #if defined(DMAC_LOG)
-					LOG1(Log::Normal, "�`���l��%d �G���[���荞��", ch);
+					LOG1(Log::Normal, "Channel %d Error interrupt", ch);
 #endif	// DMAC_LOG
 					cpu->Interrupt(3, (BYTE)dma[ch].eiv);
 					dmactrl.vector = (int)dma[ch].eiv;
@@ -1399,15 +1399,15 @@ void FASTCALL DMAC::Interrupt()
 				return;
 			}
 
-			// COC,BOC,NDT,PCT(���荞�݃��C���̏ꍇ)��NIV�ŏo��
+			// Output at NIV if COC,BOC,NDT(about interrupt level)
 			if (dma[ch].coc || dma[ch].boc || dma[ch].ndt) {
 				if (dmactrl.vector != (int)dma[ch].niv) {
-					// �ʂ̊��荞�݂�v�����Ă���΁A��U�L�����Z��
+					// If pending interrupt exists, cancel subsequent
 					if (dmactrl.vector >= 0) {
 						cpu->IntCancel(3);
 					}
 #if defined(DMAC_LOG)
-					LOG1(Log::Normal, "�`���l��%d �ʏ튄�荞��", ch);
+					LOG1(Log::Normal, "Channel %d Normal interrupt", ch);
 #endif	// DMAC_LOG
 					cpu->Interrupt(3, (BYTE)dma[ch].niv);
 					dmactrl.vector = (int)dma[ch].niv;
@@ -1417,12 +1417,12 @@ void FASTCALL DMAC::Interrupt()
 
 			if ((dma[ch].pcl == 0x01) && dma[ch].pct) {
 				if (dmactrl.vector != (int)dma[ch].niv) {
-					// �ʂ̊��荞�݂�v�����Ă���΁A��U�L�����Z��
+					// If pending interrupt exists, cancel subsequent
 					if (dmactrl.vector >= 0) {
 						cpu->IntCancel(3);
 					}
 #if defined(DMAC_LOG)
-					LOG1(Log::Normal, "�`���l��%d PCL���荞��", ch);
+					LOG1(Log::Normal, "Channel %d PCL interrupt", ch);
 #endif	// DMAC_LOG
 					cpu->Interrupt(3, (BYTE)dma[ch].niv);
 					dmactrl.vector = (int)dma[ch].niv;
@@ -1432,10 +1432,10 @@ void FASTCALL DMAC::Interrupt()
 		}
 	}
 
-	// �v�����̊��荞�݂͂Ȃ�
+	// No pending interrupt
 	if (dmactrl.vector >= 0) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "���荞�݃L�����Z�� �x�N�^$%02X", dmactrl.vector);
+		LOG1(Log::Normal, "Interrupt canceled vector$%02X", dmactrl.vector);
 #endif	// DMAC_LOG
 
 		cpu->IntCancel(3);
@@ -1445,30 +1445,30 @@ void FASTCALL DMAC::Interrupt()
 
 //---------------------------------------------------------------------------
 //
-//	���荞��ACK
+//	Interrupt ACK
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::IntAck()
 {
 	ASSERT(this);
 
-	// ���Z�b�g����ɁACPU���犄�荞�݂��Ԉ���ē���ꍇ������
+	// If vector is negative, the interrupt was not acknowledged and passed through
 	if (dmactrl.vector < 0) {
-		LOG0(Log::Warning, "�v�����Ă��Ȃ����荞��");
+		LOG0(Log::Warning, "Unrequested interrupt");
 		return;
 	}
 
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "���荞�݉��� �x�N�^$%02X", dmactrl.vector);
+	LOG1(Log::Normal, "Interrupt acknowledged vector$%02X", dmactrl.vector);
 #endif	// DMAC_LOG
 
-	// �v�����x�N�^�Ȃ�
+	// Clear vector
 	dmactrl.vector = -1;
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA���擾
+//	Get DMA
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::GetDMA(int ch, dma_t *buffer) const
@@ -1477,13 +1477,13 @@ void FASTCALL DMAC::GetDMA(int ch, dma_t *buffer) const
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(buffer);
 
-	// �`���l�����[�N���R�s�[
+	// Copy channel structure
 	*buffer = dma[ch];
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA������擾
+//	Get DMA control
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::GetDMACtrl(dmactrl_t *buffer) const
@@ -1491,31 +1491,31 @@ void FASTCALL DMAC::GetDMACtrl(dmactrl_t *buffer) const
 	ASSERT(this);
 	ASSERT(buffer);
 
-	// ���䃏�[�N���R�s�[
+	// Copy structure
 	*buffer = dmactrl;
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�]������
+//	DMA transfer query
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::IsDMA() const
 {
 	ASSERT(this);
 
-	// �]�����t���O(�`���l�����p)�ƁA���[�h�t���O������
+	// If both transfer flag (per channel) and load flag are 0
 	if ((dmactrl.transfer == 0) && (dmactrl.load == 0)) {
 		return FALSE;
 	}
 
-	// �ǂ��炩�������Ă���
+	// Something is happening
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�]���\��
+//	DMA transfer possible
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::IsAct(int ch) const
@@ -1523,12 +1523,12 @@ BOOL FASTCALL DMAC::IsAct(int ch) const
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// ACT�łȂ����AERR���AHLT�Ȃ�]���ł��Ȃ�
+	// If not ACT, or ERR, or HLT, cannot transfer
 	if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 		return FALSE;
 	}
 
-	// �]���ł���
+	// Can transfer
 	return TRUE;
 }
 
@@ -1546,7 +1546,7 @@ BOOL FASTCALL DMAC::IsLegacyCntMode() const
 
 //---------------------------------------------------------------------------
 //
-//	DMA�o�X�G���[
+//	DMA bus error
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::BusErr(DWORD addr, BOOL read)
@@ -1555,28 +1555,28 @@ void FASTCALL DMAC::BusErr(DWORD addr, BOOL read)
 	ASSERT(addr <= 0xffffff);
 
 	if (read) {
-		LOG1(Log::Warning, "DMA�o�X�G���[(�ǂݍ���) $%06X", addr);
+		LOG1(Log::Warning, "DMA bus error(read) $%06X", addr);
 	}
 	else {
-		LOG1(Log::Warning, "DMA�o�X�G���[(��������) $%06X", addr);
+		LOG1(Log::Warning, "DMA bus error(write) $%06X", addr);
 	}
 
-	// ���[�h���̃G���[��
+	// Load error
 	if (dmactrl.load != 0) {
-		// �������E�f�o�C�X�E�x�[�X�̋�ʂ͍l�����Ă��Ȃ�
+		// Ignores the boundary of current/device address
 		ASSERT((dmactrl.load >= 1) && (dmactrl.load <= 4));
 		ErrorDMA(dmactrl.load - 1, 0x08);
 		return;
 	}
 
-	// �������E�f�o�C�X�E�x�[�X�̋�ʂ͍l�����Ă��Ȃ�
+	// Ignores the boundary of current/device address
 	ASSERT((dmactrl.transfer >= 1) && (dmactrl.transfer <= 4));
 	ErrorDMA(dmactrl.transfer - 1, 0x08);
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�A�h���X�G���[
+//	DMA address error
 //
 //---------------------------------------------------------------------------
 void FASTCALL DMAC::AddrErr(DWORD addr, BOOL read)
@@ -1585,28 +1585,28 @@ void FASTCALL DMAC::AddrErr(DWORD addr, BOOL read)
 	ASSERT(addr <= 0xffffff);
 
 	if (read) {
-		LOG1(Log::Warning, "DMA�A�h���X�G���[(�ǂݍ���) $%06X", addr);
+		LOG1(Log::Warning, "DMA address error(read) $%06X", addr);
 	}
 	else {
-		LOG1(Log::Warning, "DMA�A�h���X�G���[(��������) $%06X", addr);
+		LOG1(Log::Warning, "DMA address error(write) $%06X", addr);
 	}
 
-	// ���[�h���̃G���[��
+	// Load error
 	if (dmactrl.load != 0) {
-		// �������E�f�o�C�X�E�x�[�X�̋�ʂ͍l�����Ă��Ȃ�
+		// Ignores the boundary of current/device address
 		ASSERT((dmactrl.load >= 1) && (dmactrl.load <= 4));
 		ErrorDMA(dmactrl.load - 1, 0x0c);
 		return;
 	}
 
-	// �������E�f�o�C�X�E�x�[�X�̋�ʂ͍l�����Ă��Ȃ�
+	// Ignores the boundary of current/device address
 	ASSERT((dmactrl.transfer >= 1) && (dmactrl.transfer <= 4));
 	ErrorDMA(dmactrl.transfer - 1, 0x0c);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�x�N�^�擾
+//	Get vector
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::GetVector(int type) const
@@ -1614,20 +1614,20 @@ DWORD FASTCALL DMAC::GetVector(int type) const
 	ASSERT(this);
 	ASSERT((type >= 0) && (type < 8));
 
-	// �m�[�}���E�G���[�̃x�N�^�����݂ɏo��
+	// Normal/error vector output
 	if (type & 1) {
-		// �G���[
+		// Error
 		return dma[type >> 1].eiv;
 	}
 	else {
-		// �m�[�}��
+		// Normal
 		return dma[type >> 1].niv;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	DMA�O�����N�G�X�g
+//	DMA external request
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::ReqDMA(int ch)
@@ -1635,22 +1635,22 @@ BOOL FASTCALL DMAC::ReqDMA(int ch)
 	ASSERT(this);
 	ASSERT((ch >= 0) && (ch <= 3));
 
-	// ACT�łȂ����AERR���AHLT�Ȃ牽�����Ȃ�
+	// If not ACT, or ERR, or HLT, cannot accept
 	if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �O�����N�G�X�g���s", ch);
+		LOG1(Log::Normal, "Channel %d External request failed", ch);
 #endif	// DMAC_LOG
 		return FALSE;
 	}
 
-	// DMA�]��
+	// DMA transfer
 	TransDMA(ch);
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�I�[�g���N�G�X�g
+//	Auto request
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL DMAC::AutoDMA(DWORD cycle)
@@ -1665,149 +1665,149 @@ DWORD FASTCALL DMAC::AutoDMA(DWORD cycle)
 
 	ASSERT(this);
 
-	// �p�����[�^�L��
+	// Parameter save
 	remain = (int)cycle;
 
-	// ���s�t���O���オ���Ă��Ȃ���΃I�[�g���N�G�X�g�͖���
+	// Cannot auto request if execute flag is not on
 	if (!dmactrl.exec) {
 		return cycle;
 	}
 
-	// ���s�p���t���O�����Z�b�g
+	// Clear execute flag
 	flag = FALSE;
 
-	// �ő呬�x�I�[�g���N�G�X�g�̃`���l�����ɏ���
+	// Process maximum priority auto request channel
 	for (i=0; i<4; i++) {
-		// ����ׂ��`���l��������
+		// Round robin channel
 		ch = (dmactrl.current_ch + i) & 3;
 
-		// ACT, ERR, HLT�̃`�F�b�N
+		// ACT, ERR, HLT check
 		if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 			continue;
 		}
 
-		// �ő呬�x�I�[�g���N�G�X�g��
+		// Not maximum priority auto request
 		if (dma[ch].reqg != 1) {
 			continue;
 		}
 
-		// ���Z���āA�Œ�ł�10�T�C�N���͕K�v�B
+		// Accumulate, if less than 10 cycles, not needed
 		dmactrl.cpu_cycle += cycle;
 		if (dmactrl.cpu_cycle < 10) {
-			// CPU�͎��s�ł��Ȃ��BDMA�p��
+			// CPU cannot execute, for DMA use
 			return 0;
 		}
 
-		// 2��ȏ���Z�����Ȃ��A�t���OUP
+		// If less than 2 cycles, flag UP
 		cycle = 0;
 		flag = TRUE;
 
-		// �X�P�W���[����cycle(�I�[�o�[�T�C�N���v�Z)��ێ����A���Z�b�g
+		// Save multiplier cycle (elapsed cycle calculation) and reset
 		backup = scheduler->GetCPUCycle();
 		scheduler->SetCPUCycle(0);
 
-		// cpu_cycle���}�C�i�X�ɂȂ�܂Ŏ��s�B����Ԃ̓X�P�W���[����蓾��
+		// Execute until cpu_cycle becomes minus. Temporarily, multiplier applies
 		while (scheduler->GetCPUCycle() < dmactrl.cpu_cycle) {
-			// ACT, ERR, HLT�̃`�F�b�N
+			// ACT, ERR, HLT check
 			if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 				break;
 			}
 
-			// scheulder->GetCPUCycle()���g���ADMAC����T�C�N�������擾����
+			// Use scheulder->GetCPUCycle() to get cycle count from DMAC
 			TransDMA(ch);
 		}
 
-		// ����T�C�N�������A����
+		// Subtract cycle count and restore
 		dmactrl.cpu_cycle -= scheduler->GetCPUCycle();
 		remain -= scheduler->GetCPUCycle();
 		scheduler->SetCPUCycle(backup);
 
-		// �`���l��������(���E���h���r��)
+		// Round robin channel
 		dmactrl.current_ch = (dmactrl.current_ch + 1) & 3;
 
-		// ���ׂĎ��Ԃ��g���؂�����
+		// If all round robin is exhausted, exit
 		if (dmactrl.cpu_cycle <= 0) {
-			// CPU�͎��s�ł��Ȃ�
-			// �����őS�`���l�������������ꍇ�A����AudoDMA�Ńt���O���Ƃ�
+			// CPU cannot execute
+			// If all channels exhausted, clear flag in AutoDMA
 			return 0;
 		}
 	}
 
-	// �ő呬�x�I�[�g���N�G�X�g���Ȃ��������A�������Ď��Ԃ��]����
-	// ���葬�x�I�[�g���N�G�X�g�̃`���l��������
+	// If no maximum priority auto request, rotate and continue
+	// Burst priority auto request channel
 	for (i=0; i<4; i++) {
-		// ����ׂ��`���l��������
+		// Round robin channel
 		ch = (dmactrl.current_ch + i) & 3;
 
-		// ACT, ERR, HLT�̃`�F�b�N
+		// ACT, ERR, HLT check
 		if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 			continue;
 		}
 
-		// �ő呬�x�I�[�g���N�G�X�g�͂��肦�Ȃ�(��̕����ŕK������)
+		// Not burst priority auto request (handled by other code)
 		ASSERT(dma[ch].reqg != 1);
 
-		// ���葬�x�I�[�g���N�G�X�g��
+		// Not burst priority auto request
 		if (dma[ch].reqg != 0) {
 			continue;
 		}
 
-		// ���Z���āA�Œ�ł�10�T�C�N���͕K�v�B
+		// Accumulate, if less than 10 cycles, not needed
 		dmactrl.cpu_cycle += cycle;
 		if (dmactrl.cpu_cycle < 10) {
-			// CPU�͎��s�ł��Ȃ��BDMA�p��
+			// CPU cannot execute, for DMA use
 			return 0;
 		}
 
-		// 2��ȏ���Z�����Ȃ��A�t���OUP
+		// If less than 2 cycles, flag UP
 		cycle = 0;
 		flag = TRUE;
 
-		// �X�P�W���[����cycle(�I�[�o�[�T�C�N���v�Z)��ێ����A���Z�b�g
+		// Save multiplier cycle (elapsed cycle calculation) and reset
 		backup = scheduler->GetCPUCycle();
 		scheduler->SetCPUCycle(0);
 
-		// �o�X��L���{�����v�Z(BT=0�Ȃ�2�{�Ȃ�)
+		// Calculate burst multiplication
 		mul = (dma[ch].bt + 1);
 
-		// cpu_cycle���o�X��L�����l�������l�𒴂��Ă��邩
+		// If cpu_cycle multiplied by burst multiplier exceeds
 		while ((scheduler->GetCPUCycle() << mul) < dmactrl.cpu_cycle) {
-			// ACT, ERR, HLT�̃`�F�b�N
+			// ACT, ERR, HLT check
 			if (!dma[ch].act || dma[ch].err || dma[ch].hlt) {
 				break;
 			}
 
-			// �]��
+			// Transfer
 			TransDMA(ch);
 		}
 
-		// �g�p�T�C�N�����L��(��Ŏg������)
+		// Save used cycle count (to use later)
 		used = scheduler->GetCPUCycle();
 		scheduler->SetCPUCycle(backup);
 
-		// �`���l��������(���E���h���r��)
+		// Round robin channel
 		dmactrl.current_ch = (dmactrl.current_ch + 1) & 3;
 
-		// �����ŏI����
+		// End if less than burst
 		if (dmactrl.cpu_cycle < (used << mul)) {
-			// �\�肳��Ă����o�X��L�����g���؂����B�c���CPU�ɕԋp
+			// Exceeded specified burst multiplier. Return remainder to CPU
 			dmactrl.cpu_cycle -= used;
 			if (used < remain) {
-				// �\���]�肪����
+				// Excess transfer exists
 				return (remain - used);
 			}
 			else {
-				// �Ȃ����A�g���������BCPU��0
+				// None, use all. CPU gets 0
 				return 0;
 			}
 		}
 
-		// �܂��o�X�̎g�p���������̂ŁA���`���l�����܂��
+		// Still within burst use, continue
 		remain -= used;
 	}
 
 	if (!flag) {
-		// DMA�͎g��Ȃ������Bdmactrl.exec���~�낷
+		// DMA is not used. Stop dmactrl.exec
 		dmactrl.exec = FALSE;
 		scheduler->dma_active = FALSE;
 	}
@@ -1817,7 +1817,7 @@ DWORD FASTCALL DMAC::AutoDMA(DWORD cycle)
 
 //---------------------------------------------------------------------------
 //
-//	DMA1��]��
+//	DMA1 transfer
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL DMAC::TransDMA(int ch)
@@ -1828,18 +1828,18 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 	ASSERT((ch >= 0) && (ch <= 3));
 	ASSERT(dmactrl.transfer == 0);
 
-	// �]���t���OON
+	// Transfer flag ON
 	dmactrl.transfer = ch + 1;
 
-	// �^�C�v�A�f�B���N�V�����ɉ����ē]��
+	// Transfer according to type and direction
 	switch (dma[ch].type) {
-		// 8bit, Pack�o�C�g, 8bit�|�[�g
+		// 8bit, Pack byte, 8bit port
 		case 0:
-		// 8bit, Unpack�o�C�g, 8bit�|�[�g
+		// 8bit, Unpack byte, 8bit port
 		case 3:
-		// 8bit, Unpack�o�C�g, 16bit�|�[�g
+		// 8bit, Unpack byte, 16bit port
 		case 7:
-			// SCSI�f�B�X�N �x���`�}�[�N(dskbench.x)���
+			// SCSI disk default mode (dskbench.x)
 			if (dma[ch].dir) {
 				memory->WriteByte(dma[ch].mar, (BYTE)(memory->ReadByte(dma[ch].dar)));
 				scheduler->Wait(11);
@@ -1850,8 +1850,8 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// 8bit, Pack�o�C�g, 16bit�|�[�g(Unpack��葬������:�p���f�B�E�X��!)
-		// Wait12:�p���f�B�E�X��!�AWait?:Moon Fighter
+		// 8bit, Pack byte, 16bit port(Unpack exception:Paradise!)
+		// Wait12:Paradise!,Wait?:Moon Fighter
 		case 4:
 			if (dma[ch].dir) {
 				memory->WriteByte(dma[ch].mar, (BYTE)(memory->ReadByte(dma[ch].dar)));
@@ -1863,7 +1863,7 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// 8bit, ���[�h
+		// 8bit, Word
 		case 1:
 			if (dma[ch].dir) {
 				data = (BYTE)(memory->ReadByte(dma[ch].dar));
@@ -1880,7 +1880,7 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// 8bit, �����O���[�h
+		// 8bit, Longword
 		case 2:
 			if (dma[ch].dir) {
 				data = (BYTE)(memory->ReadByte(dma[ch].dar));
@@ -1906,9 +1906,9 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// 16bit, ���[�h
+		// 16bit, Word
 		case 5:
-			// ���܂�x�������FM�������荞�݂��Ђ�������(�O���f�B�E�XII)
+			// FM synth continues after DMA transfer interrupt sometimes (Out Burst II)
 			if (dma[ch].dir) {
 				data = memory->ReadWord(dma[ch].dar);
 				memory->WriteWord(dma[ch].mar, (WORD)data);
@@ -1921,7 +1921,7 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// 16bit, �����O���[�h
+		// 16bit, Longword
 		case 6:
 			if (dma[ch].dir) {
 				data = memory->ReadWord(dma[ch].dar);
@@ -1941,43 +1941,43 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 			}
 			break;
 
-		// ����ȊO
+		// Others
 		default:
 			ASSERT(FALSE);
 	}
 
-	// �]���t���OOFF
+	// Transfer flag OFF
 	dmactrl.transfer = 0;
 
-	// �]���G���[�̃`�F�b�N(�o�X�G���[�y�уA�h���X�G���[)
+	// Transfer error check (bus error and address error)
 	if (dma[ch].err) {
-		// �A�h���X�X�V�O�ɔ�����(�f�[�^�V�[�g�ɂ��)
+		// Address update is not done (by data sheet)
 		return FALSE;
 	}
 
-	// �A�h���X�X�V(12bit�ɐ���:Racing Champ)
+	// Address update(multiple of 12: Racing Champ)
 	dma[ch].mar += MemDiffTable[ dma[ch].type ][ dma[ch].mac ];
 	dma[ch].mar &= 0xffffff;
 	dma[ch].dar += DevDiffTable[ dma[ch].type ][ dma[ch].dac ];
 	dma[ch].dar &= 0xffffff;
 
-	// �������J�E���g���f�N�������g
+	// Decrement transfer count
 	dma[ch].mtc--;
 	if (dma[ch].mtc > 0) {
-		// �I��钼�O��DONE���A�T�[�g��FDC�̂�TC��ݒ�(DCII)
+		// If last block, set DONE and TC signal to FDC (DCII)
 		if ((ch == 0) && (dma[ch].mtc == 1)) {
 			fdc->SetTC();
 		}
 		return TRUE;
 	}
 
-	// �R���e�B�j���[�̏���
+	// Continue processing
 	if (dma[ch].cnt) {
 #if defined(DMAC_LOG)
-		LOG1(Log::Normal, "�`���l��%d �R���e�B�j���[���u���b�N", ch);
+		LOG1(Log::Normal, "Channel %d Continue block", ch);
 #endif	// DMAC_LOG
 
-		// BOC���グ��
+		// BOC set
 		dma[ch].boc = TRUE;
 		Interrupt();
 
@@ -2003,30 +2003,30 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 		dma[ch].cnt = FALSE;
 	}
 
-	// �A���C�`�F�C���̏���
+	// Burst chaining processing
 	if (dma[ch].chain == 0x02) {
 		if (dma[ch].btc > 0) {
-			// ���̃u���b�N������
+			// Load next block
 			LoadDMA(ch);
 			return TRUE;
 		}
 	}
 
-	// �����N�A���C�`�F�C���̏���
+	// Chain chaining processing
 	if (dma[ch].chain == 0x03) {
 		if (dma[ch].bar != 0) {
-			// ���̃u���b�N������
+			// Load next block
 			LoadDMA(ch);
 			return TRUE;
 		}
 	}
 
-	// DMA����
+	// DMA end
 #if defined(DMAC_LOG)
-	LOG1(Log::Normal, "�`���l��%d DMA����", ch);
+	LOG1(Log::Normal, "Channel %d DMA end", ch);
 #endif	// DMAC_LOG
 
-	// �t���O�ݒ�A���荞��
+	// Flag set, interrupt
 	dma[ch].act = FALSE;
 	dma[ch].coc = TRUE;
 	Interrupt();
@@ -2036,34 +2036,33 @@ BOOL FASTCALL DMAC::TransDMA(int ch)
 
 //---------------------------------------------------------------------------
 //
-//	�������A�h���X�X�V�e�[�u��
+//	Memory address difference table
 //
 //---------------------------------------------------------------------------
 const int DMAC::MemDiffTable[8][4] = {
-	{ 0, 1, -1, 0},		// 8bit, �o�C�g
-	{ 0, 2, -2, 0},		// 8bit, ���[�h
-	{ 0, 4, -4, 0},		// 8bit, �����O���[�h
-	{ 0, 1, -1, 0},		// 8bit, �p�b�N�o�C�g
-	{ 0, 1, -1, 0},		// 16bit, �o�C�g
-	{ 0, 2, -2, 0},		// 16bit, ���[�h
-	{ 0, 4, -4, 0},		// 16bit, �����O���[�h
-	{ 0, 1, -1, 0}		// 16bit, �p�b�N�o�C�g
+	{ 0, 1, -1, 0},		// 8bit, byte
+	{ 0, 2, -2, 0},		// 8bit, word
+	{ 0, 4, -4, 0},		// 8bit, longword
+	{ 0, 1, -1, 0},		// 8bit, pack byte
+	{ 0, 1, -1, 0},		// 16bit, byte
+	{ 0, 2, -2, 0},		// 16bit, word
+	{ 0, 4, -4, 0},		// 16bit, longword
+	{ 0, 1, -1, 0}		// 16bit, pack byte
 };
 
 //---------------------------------------------------------------------------
 //
-//	�f�o�C�X�A�h���X�X�V�e�[�u��
+//	Device address difference table
 //
 //---------------------------------------------------------------------------
 const int DMAC::DevDiffTable[8][4] = {
-	{ 0, 2, -2, 0},		// 8bit, �o�C�g
-	{ 0, 4, -4, 0},		// 8bit, ���[�h
-	{ 0, 8, -8, 0},		// 8bit, �����O���[�h
-	{ 0, 2, -2, 0},		// 8bit, �p�b�N�o�C�g
-	{ 0, 1, -1, 0},		// 16bit, �o�C�g
-	{ 0, 2, -2, 0},		// 16bit, ���[�h
-	{ 0, 4, -4, 0},		// 16bit, �����O���[�h
-	{ 0, 1, -1, 0}		// 16bit, �p�b�N�o�C�g
+	{ 0, 2, -2, 0},		// 8bit, byte
+	{ 0, 4, -4, 0},		// 8bit, word
+	{ 0, 8, -8, 0},		// 8bit, longword
+	{ 0, 2, -2, 0},		// 8bit, pack byte
+	{ 0, 1, -1, 0},		// 16bit, byte
+	{ 0, 2, -2, 0},		// 16bit, word
+	{ 0, 4, -4, 0},		// 16bit, longword
+	{ 0, 1, -1, 0}		// 16bit, pack byte
 };
-
 

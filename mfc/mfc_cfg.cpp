@@ -2,7 +2,7 @@
 //
 //	EMULADOR X68000 "XM6"
 //
-//	Copyright (C) 2001-2006 Ytanaka (ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
 //	[MFC configuration]
 //
 //---------------------------------------------------------------------------
@@ -47,7 +47,7 @@
 //---------------------------------------------------------------------------
 CConfig::CConfig(CFrmWnd *pWnd) : CComponent(pWnd)
 {
-	// Parameters del componente
+	// Component parameters
 	m_dwID = MAKEID('C', 'F', 'G', ' ');
 	m_strDesc = _T("Config Manager");
 }
@@ -64,12 +64,12 @@ BOOL FASTCALL CConfig::Init()
 
 	ASSERT(this);
 
-	// Clase basica
+	// Base class
 	if (!CComponent::Init()) {
 		return FALSE;
 	}
 
-	// Determinacion de la ruta del archivo INI
+	// Determine INI file path
 	path.SetPath(_T("XM6.ini"));
 
 
@@ -160,7 +160,7 @@ BOOL FASTCALL CConfig::Init()
 
 
 
-	// Mantener la compatibilidad
+	// Maintain compatibility
 	ResetSASI();
 	ResetCDROM();
 
@@ -170,7 +170,7 @@ BOOL FASTCALL CConfig::Init()
 		LoadMRU(i);
 	}
 
-	// Clave
+	// Key
 	LoadKey();
 
 	// TrueKey
@@ -179,7 +179,7 @@ BOOL FASTCALL CConfig::Init()
 
 
 
-	// Save y cargar
+	// Save and load
 	m_bApply = FALSE;
 
 	return TRUE;
@@ -195,12 +195,12 @@ BOOL FASTCALL CConfig::CustomInit(BOOL ArchivoDefault)
 
 	ASSERT(this);
 
-	// Clase basica
+	// Base class
 	if (!CComponent::Init()) {
 		return FALSE;
 	}
 
-	// Determinacion de la ruta del archivo INI
+	// Determine INI file path
 	path.SetPath(_T("XM6.ini"));
 
 	int nLen = m_pFrmWnd->m_strXM6FileName.GetLength();
@@ -210,7 +210,7 @@ BOOL FASTCALL CConfig::CustomInit(BOOL ArchivoDefault)
 
 	//int msgboxID = MessageBox(NULL, lpszBuf, "Xm6", 2);
 
-	// Si elige archivo default guardara XM6 aunque haya juego cargado
+	// If default file is chosen, saves as XM6 even if a game is loaded
 	if (ArchivoDefault)
 	{
 		_tcscpy(lpszBuf, "XM6");
@@ -226,7 +226,7 @@ BOOL FASTCALL CConfig::CustomInit(BOOL ArchivoDefault)
 
 	OutputDebugString("\n\nExecuted CustomInit para guardar configuracion...\n\n");
 
-	// Save y cargar
+	// Save and load
 	m_bApply = FALSE;
 
 	return TRUE;
@@ -237,7 +237,7 @@ BOOL FASTCALL CConfig::CustomInit(BOOL ArchivoDefault)
 
 //---------------------------------------------------------------------------
 //
-//	Limpieza
+	// Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL CConfig::Cleanup()
@@ -300,14 +300,14 @@ void FASTCALL CConfig::Cleanup2()
 
 //---------------------------------------------------------------------------
 //
-//	�E�ݒ�f�E�[�E�^�E��E��E��E�
+//	Config class variable
 //
 //---------------------------------------------------------------------------
 Config CConfig::m_Config;
 
 //---------------------------------------------------------------------------
 //
-//	�E�ݒ�f�E�[�E�^�E�擾
+//	Config reference
 //
 //---------------------------------------------------------------------------
 void FASTCALL CConfig::GetConfig(Config *pConfigBuf) const
@@ -321,7 +321,7 @@ void FASTCALL CConfig::GetConfig(Config *pConfigBuf) const
 
 //---------------------------------------------------------------------------
 //
-//	�E�ݒ�f�E�[�E�^�E�ݒ�
+//	Config setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CConfig::SetConfig(Config *pConfigBuf)
@@ -335,7 +335,7 @@ void FASTCALL CConfig::SetConfig(Config *pConfigBuf)
 
 //---------------------------------------------------------------------------
 //
-//	�E��E�ʊg�E��E�ݒ�
+//	Stretch setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CConfig::SetStretch(BOOL bStretch)
@@ -347,7 +347,7 @@ void FASTCALL CConfig::SetStretch(BOOL bStretch)
 
 //---------------------------------------------------------------------------
 //
-//	MIDI�E�f�E�o�E�C�E�X�E�ݒ�
+//	MIDI device setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL CConfig::SetMIDIDevice(int nDevice, BOOL bIn)
@@ -366,8 +366,8 @@ void FASTCALL CConfig::SetMIDIDevice(int nDevice, BOOL bIn)
 
 //---------------------------------------------------------------------------
 //
-//	INI�E�t�E�@�E�C�E��E��E�e�E�[�E�u�E��E�
-//	�E��E��E�|�E�C�E��E��E�^�E�E�E�Z�E�N�E�V�E��E��E��E��E��E��E�E�E�L�E�[�E��E��E�E�E�^�E�E�E�f�E�t�E�H�E��E��E�g�E�l�E�E�E�ŏ��E�l�E�E�E�ő�l�E�̏�
+//	INI file lookup table
+//	Offset: Section, Key, Type, Default value, Min value, Max value
 //
 //---------------------------------------------------------------------------
 const CConfig::INIKEY CConfig::IniTable[] = {
