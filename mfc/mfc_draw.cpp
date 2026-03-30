@@ -1548,13 +1548,23 @@ void CDrawView::OnDraw(CDC *pDC)
 				SRCCOPY);
 		}
 		else {
-			::StretchBlt(pDC->m_hDC,
-				m_Info.nLeft, m_Info.nTop,
-				(m_Info.nWidth * hmul) >> 2,
-				(m_Info.nHeight * vmul) >> 2,
-				hMemDC, 0, 0,
-				m_Info.nWidth, m_Info.nHeight,
-				SRCCOPY);
+			if (m_Info.bBltStretch) {
+				::StretchBlt(pDC->m_hDC,
+					0, 0,
+					rect.Width(), rect.Height(),
+					hMemDC, 0, 0,
+					m_Info.nWidth, m_Info.nHeight,
+					SRCCOPY);
+			}
+			else {
+				::StretchBlt(pDC->m_hDC,
+					m_Info.nLeft, m_Info.nTop,
+					(m_Info.nWidth * hmul) >> 2,
+					(m_Info.nHeight * vmul) >> 2,
+					hMemDC, 0, 0,
+					m_Info.nWidth, m_Info.nHeight,
+					SRCCOPY);
+			}
 		}
 		::GdiFlush();
 		m_Info.bBltAll = FALSE;
@@ -1610,17 +1620,37 @@ void CDrawView::OnDraw(CDC *pDC)
 			SRCCOPY);
 	}
 	else {
-		::StretchBlt(pDC->m_hDC,
-			m_Info.nLeft + ((m_Info.nBltLeft * hmul) >> 2),
-			m_Info.nTop + ((m_Info.nBltTop * vmul) >> 2),
-			((m_Info.nBltRight - m_Info.nBltLeft + 1) * hmul) >> 2,
-			((m_Info.nBltBottom - m_Info.nBltTop + 1) * vmul) >> 2,
-			hMemDC,
-			m_Info.nBltLeft,
-			m_Info.nBltTop,
-			m_Info.nBltRight - m_Info.nBltLeft + 1,
-			m_Info.nBltBottom - m_Info.nBltTop + 1,
-			SRCCOPY);
+		if (m_Info.bBltStretch) {
+			const int destX = MulDiv(m_Info.nBltLeft, rect.Width(), m_Info.nWidth);
+			const int destY = MulDiv(m_Info.nBltTop, rect.Height(), m_Info.nHeight);
+			const int destW = MulDiv(m_Info.nBltRight - m_Info.nBltLeft + 1, rect.Width(), m_Info.nWidth);
+			const int destH = MulDiv(m_Info.nBltBottom - m_Info.nBltTop + 1, rect.Height(), m_Info.nHeight);
+
+			::StretchBlt(pDC->m_hDC,
+				m_Info.nLeft + destX,
+				m_Info.nTop + destY,
+				destW,
+				destH,
+				hMemDC,
+				m_Info.nBltLeft,
+				m_Info.nBltTop,
+				m_Info.nBltRight - m_Info.nBltLeft + 1,
+				m_Info.nBltBottom - m_Info.nBltTop + 1,
+				SRCCOPY);
+		}
+		else {
+			::StretchBlt(pDC->m_hDC,
+				m_Info.nLeft + ((m_Info.nBltLeft * hmul) >> 2),
+				m_Info.nTop + ((m_Info.nBltTop * vmul) >> 2),
+				((m_Info.nBltRight - m_Info.nBltLeft + 1) * hmul) >> 2,
+				((m_Info.nBltBottom - m_Info.nBltTop + 1) * vmul) >> 2,
+				hMemDC,
+				m_Info.nBltLeft,
+				m_Info.nBltTop,
+				m_Info.nBltRight - m_Info.nBltLeft + 1,
+				m_Info.nBltBottom - m_Info.nBltTop + 1,
+				SRCCOPY);
+		}
 	}
 	::GdiFlush();
 
