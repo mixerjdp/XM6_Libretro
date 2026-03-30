@@ -927,35 +927,29 @@
 #define IDM_MENU						40178
 #define IDM_STATUS						40179
 #define IDM_REFRESH						40180
-#define IDM_SCALE_100				40181
-#define IDM_SCALE_150				40182
-#define IDM_SCALE_200				40183
-#define IDM_SCALE_250				40184
-#define IDM_SCALE_300				40185
-#define IDM_STRETCH				IDM_SCALE_100
-#define IDM_FULLSCREEN					40186
-#define IDM_TOGGLE_VSYNC         40187
-#define IDM_TOGGLE_RENDERER      40188
+#define IDM_STRETCH						40181
+#define IDM_FULLSCREEN					40182
+#define IDM_TOGGLE_VSYNC         40183
+#define IDM_TOGGLE_RENDERER      40184
 #define IDM_RENDER_FAST          40553
-#define IDM_YMFM                 40554
 #define IDM_TOGGLE_SHADER        40550
 
 // �f�o�b�O���j���[
-#define IDM_EXEC 						40189
-#define IDM_BREAK						40190
-#define IDM_TRACE						40191
+#define IDM_EXEC 						40185
+#define IDM_BREAK						40186
+#define IDM_TRACE						40187
 
 // �c�[�����j���[
-#define IDM_MOUSEMODE					40192
-#define IDM_SOFTKEY						40193
-#define IDM_TIMEADJ						40194
-#define IDM_TRAP0						40195
-#define IDM_SAVEWAV						40196
-#define IDM_TOGGLE_OSD                  40197
-#define IDM_NEWSASI						40198
-#define IDM_NEWSCSI						40199
-#define IDM_NEWMO						40200
-#define IDM_OPTIONS						40201
+#define IDM_MOUSEMODE					40190
+#define IDM_SOFTKEY						40191
+#define IDM_TIMEADJ						40192
+#define IDM_TRAP0						40193
+#define IDM_SAVEWAV						40194
+#define IDM_TOGGLE_OSD                  40195
+#define IDM_NEWSASI						40196
+#define IDM_NEWSCSI						40197
+#define IDM_NEWMO						40198
+#define IDM_OPTIONS						40199
 #define IDM_NEWFD						40551
 
 // �E�B���h�E���j���[(�ő�E�B���h�E��72���m��)
@@ -1415,11 +1409,6 @@
 #define IDM_US_REFRESH					45180
 #define IDM_US_STRETCH					45181
 #define IDM_US_FULLSCREEN				45182
-#define IDM_US_SCALE_100				45183
-#define IDM_US_SCALE_150				45184
-#define IDM_US_SCALE_200				45185
-#define IDM_US_SCALE_250				45186
-#define IDM_US_SCALE_300				45187
 #define IDM_US_MOUSEMODE				45190
 #define IDM_US_SOFTKEY					45191
 #define IDM_US_TIMEADJ					45192
@@ -1438,7 +1427,6 @@
 #define IDM_US_RESTORE					45225
 #define IDM_US_ABOUT					45299
 
-#define IDS_WINDOW_SCALE							46080
 // ������(�T�u�E�B���h�E, US)
 #define IDS_US_SWND_LOG					46000
 #define IDS_US_SWND_LOG_NUMBER			46001
@@ -1611,3 +1599,11 @@
 
 #endif	// mfc_res_h
 #endif	// _WIN32
+
+// Kept for current command handlers even though the menus were restored to eb267c5f.
+#define IDM_SCALE_100            47000
+#define IDM_SCALE_150            47001
+#define IDM_SCALE_200            47002
+#define IDM_SCALE_250            47003
+#define IDM_SCALE_300            47004
+#define IDM_YMFM                 47005

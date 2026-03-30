@@ -16,6 +16,7 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <windowsx.h>
+#include <intrin.h>
 
 static inline std::uint32_t x68sound_bswap32(std::uint32_t value)
 {

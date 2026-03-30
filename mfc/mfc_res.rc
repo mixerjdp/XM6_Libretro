@@ -158,18 +158,16 @@ BEGIN
         MENUITEM "ステータスバー(&B)", IDM_STATUS
         MENUITEM "最新の更新(&F)", IDM_REFRESH
         MENUITEM SEPARATOR
-        POPUP "ウィンドウ倍率"
-        BEGIN
-            MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-            MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-            MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-            MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-            MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-        END
+ POPUP "ウィンドウ倍率"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
         MENUITEM "フルスクリーン(&U)\tAlt+Enter", IDM_FULLSCREEN
         MENUITEM "高速描画",                    IDM_RENDER_FAST
-
-        MENUITEM "YMFM",                        IDM_YMFM
         MENUITEM "CRTシェーダー\tF9",         IDM_TOGGLE_SHADER
     END
     POPUP "デバッグ(&D)"
@@ -348,18 +346,17 @@ BEGIN
             MENUITEM "??????(&M)", IDM_MENU
             MENUITEM "???????(&B)", IDM_STATUS
             MENUITEM "?????(&F)", IDM_REFRESH
-            POPUP "ウィンドウ倍率"
-            BEGIN
-                MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-                MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-                MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-                MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-                MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-            END
+            MENUITEM SEPARATOR
+ POPUP "ウィンドウ倍率"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
             MENUITEM "???????(&U)	Alt+Enter", IDM_FULLSCREEN
             MENUITEM "????",                    IDM_RENDER_FAST
-
-        MENUITEM "YMFM",                        IDM_YMFM
             MENUITEM "CRT?????	F9",         IDM_TOGGLE_SHADER
         END
         POPUP "????(&D)"
@@ -537,19 +534,18 @@ BEGIN
         MENUITEM "&Caption",                    IDM_CAPTION
         MENUITEM "&Menu Bar",                   IDM_MENU
         MENUITEM "Status &Bar",                 IDM_STATUS
-        POPUP "Escala de ventana"
-        BEGIN
-            MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-            MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-            MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-            MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-            MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-        END
+        MENUITEM "Re&fresh",                    IDM_REFRESH
         MENUITEM SEPARATOR
+ POPUP "Escala de ventana"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
         MENUITEM "Render Fast",                 IDM_RENDER_FAST
-
-        MENUITEM "YMFM",                        IDM_YMFM
         MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
     END
     POPUP "&Depurar"
@@ -725,20 +721,19 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "&Caption",                    IDM_CAPTION
             MENUITEM "&Menu Bar",                   IDM_MENU
-            POPUP "Escala de ventana"
-            BEGIN
-                MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-                MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-                MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-                MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-                MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-            END
+            MENUITEM "Status &Bar",                 IDM_STATUS
             MENUITEM "Re&fresh",                    IDM_REFRESH
             MENUITEM SEPARATOR
+ POPUP "Window Scale"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
             MENUITEM "Render Fast",                 IDM_RENDER_FAST
-
-        MENUITEM "YMFM",                        IDM_YMFM
             MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
         END
         POPUP "&Depurar"
@@ -2865,15 +2860,12 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_WINDOW_SCALE             "ウィンドウ倍率"
-    IDM_SCALE_100           "1.0x / 768x512"
-    IDM_SCALE_150           "1.5x / 1152x768"
-    IDM_SCALE_200           "2.0x / 1536x1024"
-    IDM_SCALE_250           "2.5x / 1920x1280"
-    IDM_SCALE_300           "3.0x / 2304x1536"
+    IDM_CAPTION             "1・ｽL・ｽ・ｽ・ｽv・ｽV・ｽ・ｽ・ｽ・ｽ・ｽﾌ表\・ｽ・ｽ・ｽﾘゑｿｽﾖゑｿｽ"
     IDM_MENU                "2・ｽ・ｽ・ｽj・ｽ・ｽ・ｽ[・ｽo・ｽ[・ｽﾌ表\・ｽ・ｽ・ｽﾘゑｿｽﾖゑｿｽ"
     IDM_STATUS              "3・ｽX・ｽe・ｽ[・ｽ^・ｽX・ｽo・ｽ[・ｽﾌ表\・ｽ・ｽ・ｽﾘゑｿｽﾖゑｿｽ"
     IDM_REFRESH             "4・ｽS・ｽﾄのウ・ｽB・ｽ・ｽ・ｽh・ｽE・ｽ・ｽ・ｽﾄ描・ｽ・ｽ"
+    IDM_STRETCH             "5768・ｽ~512・ｽﾈ外・ｽﾌ・ｿｽ・ｽ[・ｽh・ｽﾅ、・ｽA・ｽX・ｽy・ｽN・ｽg・ｽ・ｽ・ｽ5:4・ｽﾉ抵ｿｽ・ｽ・ｽ"
+    IDM_FULLSCREEN          "6・ｽS・ｽ・ｽﾊ・ｿｽ・ｽ[・ｽh・ｽﾖ切ゑｿｽﾖゑｿｽ"
     IDM_EXEC                "7・ｽ・ｽ・ｽz・ｽ}・ｽV・ｽ・ｽ・ｽﾌ趣ｿｽ・ｽs・ｽ・ｽ・ｽJ・ｽn"
     IDM_BREAK               "8・ｽ・ｽ・ｽz・ｽ}・ｽV・ｽ・ｽ・ｽﾌ趣ｿｽ・ｽs・ｽ・ｽ・ｽ~"
     IDM_TRACE               "91・ｽ・ｽ・ｽﾟゑｿｽ・ｽ・ｽ・ｽ・ｽ・ｽs"
@@ -3531,15 +3523,11 @@ BEGIN
     IDM_US_PORT             "Ver ventana de puertos"
     IDM_US_BITMAP           "Ver ventana de bitmap"
     IDM_US_MIDIDRV          "Ver ventana de driver MIDI"
-    IDM_US_STRETCH          "Escala de ventana"
-    IDM_US_SCALE_100           "1.0x / 768x512"
-    IDM_US_SCALE_150           "1.5x / 1152x768"
-    IDM_US_SCALE_200           "2.0x / 1536x1024"
-    IDM_US_SCALE_250           "2.5x / 1920x1280"
-    IDM_US_SCALE_300           "3.0x / 2304x1536"
+    IDM_US_CAPTION          "Mostrar u ocultar el tﾃｭtulo de la ventana"
     IDM_US_MENU             "Mostrar u ocultar la barra de menﾃｺs"
     IDM_US_STATUS           "Mostrar u ocultar la barra de estado"
     IDM_US_REFRESH          "Redibujar todas las ventanas"
+    IDM_US_STRETCH          "Estirar a proporciﾃｳn 5:4 excepto modo 768x512"
     IDM_US_FULLSCREEN       "Mostrar en pantalla completa"
 END
 

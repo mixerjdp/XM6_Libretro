@@ -15,7 +15,9 @@
 #include "vm.h"
 #include "opmif.h"
 #include "opm.h"
+#if defined(XM6CORE_ENABLE_YMFM)
 #include "ymfm_opm_engine.h"
+#endif
 #include "adpcm.h"
 #include "scsi.h"
 #include "schedule.h"
@@ -202,7 +204,11 @@ BOOL FASTCALL CSound::InitSub()
 	memset(m_lpBuf, sizeof(DWORD) * (m_uBufSize / 2), m_uBufSize);
 
 	// OPM device (synthesizer) initialization
+#if defined(XM6CORE_ENABLE_YMFM)
 	m_pOPM = m_bYmfm ? CreateYmfmOpmEngine(FALSE) : new FM::OPM;
+#else
+	m_pOPM = new FM::OPM;
+#endif
 	if (!m_pOPM) {
 		CleanupSub();
 		return FALSE;
@@ -215,7 +221,11 @@ BOOL FASTCALL CSound::InitSub()
 	}
 	m_pOPM->Reset();
 	m_pOPM->SetVolume(m_nFMVol);
+#if defined(XM6CORE_ENABLE_YMFM)
 	m_bYmfmActive = m_bYmfm;
+#else
+	m_bYmfmActive = FALSE;
+#endif
 
 	// Register with OPMIF
 	m_pOPMIF->InitBuf(m_uRate);
@@ -306,7 +316,12 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	ASSERT(pConfig);
 
 	uConfiguredRate = RateTable[pConfig->sample_rate];
-	uRate = m_bYmfm ? 62500 : uConfiguredRate;
+	uRate = uConfiguredRate;
+#if defined(XM6CORE_ENABLE_YMFM)
+	if (m_bYmfm) {
+		uRate = 62500;
+	}
+#endif
 
 	// Check for changes
 	bFlag = FALSE;
@@ -319,9 +334,11 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	if (m_uTick != (UINT)(pConfig->primary_buffer * 10)) {
 		bFlag = TRUE;
 	}
+#if defined(XM6CORE_ENABLE_YMFM)
 	if (m_bYmfmActive != m_bYmfm) {
 		bFlag = TRUE;
 	}
+#endif
 
 	// Apply changes
 	if (bFlag) {
@@ -332,6 +349,7 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 		m_uTick = pConfig->primary_buffer * 10;
 
 		// For 62.5kHz, temporarily switch to 96kHz (Prodigy7.1 workaround)
+#if defined(XM6CORE_ENABLE_YMFM)
 		if (m_uRate == 62500) {
 			// First try at 96kHz
 			m_uRate = 96000;
@@ -354,6 +372,7 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 			CleanupSub();
 			m_uRate = 62500;
 		}
+#endif
 		InitSub();
 	}
 	else {
@@ -705,7 +724,13 @@ void FASTCALL CSound::SetYmfm(BOOL bEnable)
 {
 	ASSERT(this);
 
+#if defined(XM6CORE_ENABLE_YMFM)
 	m_bYmfm = bEnable ? TRUE : FALSE;
+#else
+	(void)bEnable;
+	m_bYmfm = FALSE;
+	m_bYmfmActive = FALSE;
+#endif
 }
 
 //---------------------------------------------------------------------------

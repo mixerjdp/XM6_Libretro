@@ -21,7 +21,7 @@ static bool g_started = false;
 static unsigned int g_last_write_value = 0;
 static unsigned int g_write_dma_count = 0;
 static unsigned int g_write_adpcm_count = 0;
-thread_local const char *g_trace_source = "vm";
+static const char *g_trace_source = "vm";
 
 static int CALLBACK x68sound_mem_read(unsigned char *adrs)
 {
@@ -29,7 +29,7 @@ static int CALLBACK x68sound_mem_read(unsigned char *adrs)
 		return 0;
 	}
 
-	const std::uintptr_t raw = reinterpret_cast<std::uintptr_t>(adrs);
+	const UINT_PTR raw = reinterpret_cast<UINT_PTR>(adrs);
 	const DWORD addr = static_cast<DWORD>(raw & 0x00ffffffu);
 	return static_cast<int>(g_memory->ReadByte(addr) & 0xffu);
 }

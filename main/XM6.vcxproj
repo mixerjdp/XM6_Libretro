@@ -18,13 +18,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v110</PlatformToolset>
     <UseOfMfc>Dynamic</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -45,21 +45,21 @@
     <OutDir>Debug\</OutDir>
     <IntDir>Debug\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\mssdk\lib;%(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib;C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\atlmfc\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\mssdk\lib;%(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>Release\</OutDir>
     <IntDir>Release\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\mssdk\lib;%(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\lib;C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\atlmfc\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);C:\mssdk\lib;%(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Full</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -104,8 +104,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\ymfm;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_ENABLE_YMFM;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../mfc;../vm;../cpu/Musashi;..\vm\x68sound;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;XM6CORE_ENABLE_X68SOUND;XM6CORE_X68SOUND_RENDER_ONLY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -178,7 +178,6 @@
     <ClCompile Include="..\vm\opm.cpp" />
     <ClCompile Include="..\vm\opmif.cpp" />
     <ClCompile Include="..\vm\x68sound_bridge.cpp" />
-    <ClCompile Include="..\vm\ymfm_opm_engine.cpp" />
     <ClCompile Include="..\vm\x68sound\X68Sound.cpp" />
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
@@ -199,7 +198,6 @@
     <ClCompile Include="..\vm\vc.cpp" />
     <ClCompile Include="..\vm\vm.cpp" />
     <ClCompile Include="..\vm\windrv.cpp" />
-    <ClCompile Include="..\vm\ymfm\ymfm_opm.cpp" />
     <ClCompile Include="..\vm\musashi_adapter.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -310,7 +308,6 @@
     <ClInclude Include="..\vm\mouse.h" />
     <ClInclude Include="..\vm\opm.h" />
     <ClInclude Include="..\vm\opmif.h" />
-    <ClInclude Include="..\vm\ymfm_opm_engine.h" />
     <ClInclude Include="..\vm\os.h" />
     <ClInclude Include="..\vm\ppi.h" />
     <ClInclude Include="..\vm\printer.h" />

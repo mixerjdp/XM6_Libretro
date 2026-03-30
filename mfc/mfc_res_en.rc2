@@ -132,17 +132,16 @@ BEGIN
         MENUITEM "Status &Bar",                 IDM_STATUS
         MENUITEM "Re&fresh",                    IDM_REFRESH
         MENUITEM SEPARATOR
-        POPUP "&Window Scale"
-        BEGIN
-            MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-            MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-            MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-            MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-            MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-        END
+ POPUP "Window Scale"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
         MENUITEM "Render Fast",                 IDM_RENDER_FAST
-        MENUITEM "YMFM",                        IDM_YMFM
         MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
     END
     POPUP "&Debug"
@@ -320,17 +319,16 @@ BEGIN
             MENUITEM "Status &Bar",                 IDM_STATUS
             MENUITEM "Re&fresh",                    IDM_REFRESH
             MENUITEM SEPARATOR
-            POPUP "&Window Scale"
-            BEGIN
-                MENUITEM "1.0x\t768x512",           IDM_SCALE_100
-                MENUITEM "1.5x\t1152x768",          IDM_SCALE_150
-                MENUITEM "2.0x\t1536x1024",         IDM_SCALE_200
-                MENUITEM "2.5x\t1920x1280",         IDM_SCALE_250
-                MENUITEM "3.0x\t2304x1536",         IDM_SCALE_300
-            END
+ POPUP "Window Scale"
+ BEGIN
+     MENUITEM "1.0x	768x512",           IDM_SCALE_100
+     MENUITEM "1.5x	1152x768",          IDM_SCALE_150
+     MENUITEM "2.0x	1536x1024",         IDM_SCALE_200
+     MENUITEM "2.5x	1920x1280",         IDM_SCALE_250
+     MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
+ END
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
             MENUITEM "Render Fast",                 IDM_RENDER_FAST
-        MENUITEM "YMFM",                        IDM_YMFM
             MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
         END
         POPUP "&Debug"
@@ -1250,12 +1248,7 @@ BEGIN
     IDM_US_MENU             "Show or hide the menu bar"
     IDM_US_STATUS           "Show or hide the status bar"
     IDM_US_REFRESH          "Redraw all windows"
-    IDM_US_STRETCH          "Window scale"
-    IDM_SCALE_100           "1.0x / 768x512"
-    IDM_SCALE_150           "1.5x / 1152x768"
-    IDM_SCALE_200           "2.0x / 1536x1024"
-    IDM_SCALE_250           "2.5x / 1920x1280"
-    IDM_SCALE_300           "3.0x / 2304x1536"
+    IDM_US_STRETCH          "stretch to 5:4-ratio except 768x512 mode"
     IDM_US_FULLSCREEN       "Display on full screen"
 END
 STRINGTABLE 
