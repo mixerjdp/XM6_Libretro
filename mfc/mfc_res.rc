@@ -2284,7 +2284,7 @@ LANGUAGE LANG_SPANISH, SUBLANG_SPANISH_MODERN
 // Menu
 //
 
-IDR_US_MENU MENU
+IDR_ES_MENU MENU
 BEGIN
     POPUP "&Archivo"
     BEGIN
@@ -2469,7 +2469,7 @@ BEGIN
     END
 END
 
-IDR_US_MENUPOPUP MENU
+IDR_ES_MENUPOPUP MENU
 BEGIN
     POPUP "POPUP"
     BEGIN
@@ -2530,10 +2530,10 @@ BEGIN
             END
             POPUP "&Procesador"
             BEGIN
-                MENUITEM "&Register",                   IDM_CPUREG
+                MENUITEM "&Registro",                   IDM_CPUREG
                 MENUITEM "&Interrupt",                  IDM_INT
-                MENUITEM "&Disassemble",                IDM_DISASM
-                MENUITEM "&Memory",                     IDM_MEMORY
+                MENUITEM "&Desensambla",                IDM_DISASM
+                MENUITEM "&Memoria",                     IDM_MEMORY
                 MENUITEM "&Break Point",                IDM_BREAKP
             END
             POPUP "&Dispositivos"
@@ -2617,7 +2617,7 @@ BEGIN
         END
         POPUP "&Depurar"
         BEGIN
-            MENUITEM "E&xecute",                    IDM_EXEC
+            MENUITEM "E&jecuta",                    IDM_EXEC
             MENUITEM "&Break\tAlt+F12",             IDM_BREAK
             MENUITEM "&Trace\tShift+F12",           IDM_TRACE
             MENUITEM SEPARATOR
@@ -2628,14 +2628,14 @@ BEGIN
             MENUITEM "&Modo mouse\tF12",            IDM_MOUSEMODE
             MENUITEM "Software &Keyboard",          IDM_SOFTKEY
             MENUITEM SEPARATOR
-            MENUITEM "Adjust &Time",                IDM_TIMEADJ
+            MENUITEM "Ajustar &Tiempo",                IDM_TIMEADJ
             MENUITEM "trap #&0...",                 IDM_TRAP0
-            MENUITEM "&WAV Dump...",                IDM_SAVEWAV
+            MENUITEM "Dump de &Wav...",                IDM_SAVEWAV
             MENUITEM SEPARATOR
-            MENUITEM "Make a new &Floppy Disk...",  IDM_NEWFD
-            MENUITEM "Make a new S&ASI Fixed Disk...", IDM_NEWSASI
-            MENUITEM "Make a new S&CSI Fixed Disk...", IDM_NEWSCSI
-            MENUITEM "Make a new SCSI MO &Disk...", IDM_NEWMO
+            MENUITEM "Crea un &Floppy Disk...",  IDM_NEWFD
+            MENUITEM "Crea un S&ASI Fixed Disk...", IDM_NEWSASI
+            MENUITEM "Crea un S&CSI Fixed Disk...", IDM_NEWSCSI
+            MENUITEM "Crea un SCSI MO &Disk...", IDM_NEWMO
             MENUITEM SEPARATOR
             MENUITEM "&Opciones...",                IDM_OPTIONS
             MENUITEM "Guardar archivo de config. personalizada", IDM_SAVECUSTOMCONFIG
@@ -2809,12 +2809,12 @@ BEGIN
     END
 END
 
-IDR_US_DISMENU MENU
+IDR_ES_DISMENU MENU
 BEGIN
     POPUP "POPUP"
     BEGIN
-        MENUITEM "Enter &Address...",           IDM_DIS_ADDR
-        MENUITEM "&New Window...",              IDM_DIS_NEWWIN
+        MENUITEM "Entr&a direccion...",           IDM_DIS_ADDR
+        MENUITEM "&Nueva Ventana...",              IDM_DIS_NEWWIN
         MENUITEM SEPARATOR
         MENUITEM "Go to &PC",                   IDM_DIS_PC
         MENUITEM "S&ync",                       IDM_DIS_SYNC
@@ -3085,7 +3085,7 @@ BEGIN
     END
 END
 
-IDR_US_MEMORYMENU MENU
+IDR_ES_MEMORYMENU MENU
 BEGIN
     POPUP "POPUP"
     BEGIN
@@ -3289,7 +3289,7 @@ BEGIN
     END
 END
 
-IDR_US_BREAKPMENU MENU
+IDR_ES_BREAKPMENU MENU
 BEGIN
     POPUP "POPUP"
     BEGIN
@@ -3337,7 +3337,7 @@ BEGIN
     LTEXT           "FM Sound Generator with OPM interface\nCopyright (C) by cisc 1998, 2003.",IDC_ABOUT_CISC,12,104,121,16
 END
 
-IDD_US_ABOUTDLG DIALOGEX 0, 0, 184, 149
+IDD_ES_ABOUTDLG DIALOGEX 0, 0, 184, 149
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Sobre XM6"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
@@ -3346,7 +3346,7 @@ BEGIN
     CONTROL         "",IDC_ABOUT_ICON,"Static",SS_BLACKFRAME,7,5,72,44
     LTEXT           "X68000 EMULATOR XM6",IDC_ABOUT_XM6,85,11,91,8
     LTEXT           "version %x.%02x (10/23/2006)",IDC_ABOUT_VER,85,27,91,8
-    LTEXT           "Trad: MiXeR Cr・ｽdito a PI",IDC_ABOUT_PI,47,57,88,8
+    LTEXT           "Trad: MiXeRjdp Cr‘dito a PI",IDC_ABOUT_PI,47,57,88,8
     LTEXT           "http://www.ipc-tokai.or.jp/~ytanaka/",IDC_ABOUT_URL,30,66,122,8
     LTEXT           "Starscream 680x0 emulation library\nby Neill Corlett (neill@neillcorlett.com)",IDC_ABOUT_CORLETT,22,83,146,16
     LTEXT           "FM Sound Generator with OPM interface\nCopyright (C) by cisc 1998, 2003.",IDC_ABOUT_CISC,22,104,146,16
@@ -3363,7 +3363,7 @@ BEGIN
     PUSHBUTTON      "・ｽ・ｽﾝｾ・ｽ",IDCANCEL,70,26,50,14
 END
 
-IDD_US_ADDRDLG DIALOG 0, 0, 127, 47
+IDD_ES_ADDRDLG DIALOG 0, 0, 127, 47
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Enter Address"
 FONT 8, "MS Sans Serif"
@@ -3385,7 +3385,7 @@ BEGIN
     PUSHBUTTON      "・ｽ・ｽﾝｾ・ｽ",IDCANCEL,70,26,50,14
 END
 
-IDD_US_REGDLG DIALOG 0, 0, 127, 47
+IDD_ES_REGDLG DIALOG 0, 0, 127, 47
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Enter Value"
 FONT 8, "MS Sans Serif"
@@ -3407,7 +3407,7 @@ BEGIN
     PUSHBUTTON      "・ｽ・ｽﾝｾ・ｽ",IDCANCEL,70,26,50,14
 END
 
-IDD_US_DATADLG DIALOG 0, 0, 127, 47
+IDD_ES_DATADLG DIALOG 0, 0, 127, 47
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Enter Value"
 FONT 8, "MS Sans Serif"
@@ -3448,7 +3448,7 @@ BEGIN
     CONTROL         "・ｽZ・ｽb・ｽg・ｽ・ｽ・ｽﾈゑｿｽ(&M)",IDC_FDI_NOTMOUNT,"Button",BS_AUTORADIOBUTTON,133,197,59,10
 END
 
-IDD_US_FDIDLG DIALOG 0, 0, 203, 245
+IDD_ES_FDIDLG DIALOG 0, 0, 203, 245
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "New Floppy Disk"
 FONT 8, "MS Sans Serif"
@@ -3508,7 +3508,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_GROUP | WS_TABSTOP,13,153,96,10
 END
 
-IDD_US_DISKDLG DIALOG 0, 0, 203, 201
+IDD_ES_DISKDLG DIALOG 0, 0, 203, 201
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION " Image File"
 FONT 8, "MS Sans Serif"
@@ -3546,7 +3546,7 @@ BEGIN
     CTEXT           "40MB / 40MB (99%)",IDC_DMAKE_STATIC,7,33,173,8
 END
 
-IDD_US_DMAKEDLG DIALOG 0, 0, 187, 73
+IDD_ES_DMAKEDLG DIALOG 0, 0, 187, 73
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "In Progress"
 FONT 8, "MS Sans Serif"
@@ -3569,7 +3569,7 @@ BEGIN
     LTEXT           "・ｽ・ｽ・ｽ・ｽ・ｽ24bit・ｽ・ｽ0・ｽﾅ抵ｿｽ",IDC_TRAP_WARN,80,10,60,8
 END
 
-IDD_US_TRAPDLG DIALOG 0, 0, 151, 55
+IDD_ES_TRAPDLG DIALOG 0, 0, 151, 55
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "trap#0 Instruction"
 FONT 8, "MS Sans Serif"
@@ -3601,7 +3601,7 @@ BEGIN
     LTEXT           "",IDC_BASIC_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_BASICPAGE DIALOG 0, 0, 210, 154
+IDD_ES_BASICPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "System"
 FONT 8, "MS Sans Serif"
@@ -3645,7 +3645,7 @@ BEGIN
     LTEXT           "",IDC_SOUND_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_SOUNDPAGE DIALOG 0, 0, 210, 154
+IDD_ES_SOUNDPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Sound"
 FONT 8, "MS Sans Serif"
@@ -3699,7 +3699,7 @@ BEGIN
     LTEXT           "",IDC_VOL_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_VOLPAGE DIALOG 0, 0, 210, 154
+IDD_ES_VOLPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Volume"
 FONT 8, "MS Sans Serif"
@@ -3749,7 +3749,7 @@ BEGIN
     LTEXT           "",IDC_MISC_HELP,7,179,196,18,SS_SUNKEN
 END
 
-IDD_US_MISCPAGE DIALOGEX 0, 0, 212, 198
+IDD_ES_MISCPAGE DIALOGEX 0, 0, 212, 198
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Misc"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
@@ -3760,9 +3760,9 @@ BEGIN
     CONTROL         "&Popup Window Style",IDC_MISC_POPUP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,52,125,10
     CONTROL         "&Auto Mouse Mode",IDC_MISC_AUTOMOUSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,68,100,10
     CONTROL         "&Boot with POWER OFF State",IDC_MISC_POWEROFF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,84,110,10
-    CONTROL         "Default V&Sync",IDC_US_MISC_VSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,100,80,10
-    LTEXT           "Default &Renderer:",IDC_US_MISC_RENDERERL,14,117,70,8
-    COMBOBOX        IDC_US_MISC_RENDERER,76,116,80,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Default V&Sync",IDC_ES_MISC_VSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,100,80,10
+    LTEXT           "Default &Renderer:",IDC_ES_MISC_RENDERERL,14,117,70,8
+    COMBOBOX        IDC_ES_MISC_RENDERER,76,116,80,50,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "",IDC_MISC_HELP,8,179,196,18,SS_SUNKEN
     EDITTEXT        IDC_EDIT1,16,146,118,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Buscar...",IDC_BUSCAR,137,145,55,14
@@ -3782,7 +3782,7 @@ BEGIN
     LTEXT           "",IDC_KBD_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_KBDPAGE DIALOG 0, 0, 210, 154
+IDD_ES_KBDPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Keyboard"
 FONT 8, "MS Sans Serif"
@@ -3804,7 +3804,7 @@ BEGIN
     LTEXT           "Status",IDC_KBDMAP_STAT,0,51,258,10,SS_SUNKEN
 END
 
-IDD_US_KBDMAPDLG DIALOG 0, 0, 258, 61
+IDD_ES_KBDMAPDLG DIALOG 0, 0, 258, 61
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Keyboard Mapping"
 FONT 8, "MS Sans Serif"
@@ -3823,7 +3823,7 @@ BEGIN
     LTEXT           "(・ｽ・ｽ・ｽ闢厄ｿｽﾄなゑｿｽ)",IDC_KEYIN_KEY,53,45,57,8
 END
 
-IDD_US_KEYINDLG DIALOG 0, 0, 117, 62
+IDD_ES_KEYINDLG DIALOG 0, 0, 117, 62
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Keyin"
 FONT 8, "MS Sans Serif"
@@ -3852,7 +3852,7 @@ BEGIN
     LTEXT           "",IDC_MOUSE_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_MOUSEPAGE DIALOG 0, 0, 210, 154
+IDD_ES_MOUSEPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Mouse"
 FONT 8, "MS Sans Serif"
@@ -3891,7 +3891,7 @@ BEGIN
     LTEXT           "",IDC_PORT_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_PORTPAGE DIALOG 0, 0, 210, 154
+IDD_ES_PORTPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Port"
 FONT 8, "MS Sans Serif"
@@ -3929,7 +3929,7 @@ BEGIN
     LTEXT           "",IDC_ALTER_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_ALTERPAGE DIALOG 0, 0, 210, 154
+IDD_ES_ALTERPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Alteration"
 FONT 8, "MS Sans Serif"
@@ -3959,7 +3959,7 @@ BEGIN
     LTEXT           "",IDC_SASI_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_SASIPAGE DIALOG 0, 0, 210, 154
+IDD_ES_SASIPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "SASI"
 FONT 8, "MS Sans Serif"
@@ -3987,7 +3987,7 @@ BEGIN
     LTEXT           "",IDC_SXSI_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_SXSIPAGE DIALOG 0, 0, 210, 154
+IDD_ES_SXSIPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "SxSI"
 FONT 8, "MS Sans Serif"
@@ -4034,7 +4034,7 @@ BEGIN
     LTEXT           "",IDC_MIDI_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_MIDIPAGE DIALOG 0, 0, 210, 154
+IDD_ES_MIDIPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "MIDI"
 FONT 8, "MS Sans Serif"
@@ -4084,7 +4084,7 @@ BEGIN
     LTEXT           "",IDC_TKEY_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_TKEYPAGE DIALOG 0, 0, 210, 154
+IDD_ES_TKEYPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "TrueKey"
 FONT 8, "MS Sans Serif"
@@ -4126,7 +4126,7 @@ BEGIN
     LTEXT           "",IDC_JOY_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_JOYPAGE DIALOGEX 0, 0, 210, 154
+IDD_ES_JOYPAGE DIALOGEX 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Joystick"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
@@ -4168,7 +4168,7 @@ BEGIN
     LTEXT           "%d",IDC_JOYDET_DATASS,66,63,8,8
 END
 
-IDD_US_JOYDETDLG DIALOG 0, 0, 106, 103
+IDD_ES_JOYDETDLG DIALOG 0, 0, 106, 103
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Port%d Info"
 FONT 8, "MS Sans Serif"
@@ -4244,7 +4244,7 @@ BEGIN
     LTEXT           "0",IDC_BTNSET_RAPIDL12,196,187,11,8
 END
 
-IDD_US_BTNSETPAGE DIALOG 0, 0, 222, 213
+IDD_ES_BTNSETPAGE DIALOG 0, 0, 222, 213
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Button"
 FONT 8, "MS Sans Serif"
@@ -4321,7 +4321,7 @@ BEGIN
     LTEXT           "",IDC_SCSI_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_SCSIPAGE DIALOG 0, 0, 210, 154
+IDD_ES_SCSIPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "SCSI"
 FONT 8, "MS Sans Serif"
@@ -4357,7 +4357,7 @@ BEGIN
     LTEXT           "",IDC_RESUME_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_RESUMEPAGE DIALOG 0, 0, 210, 154
+IDD_ES_RESUMEPAGE DIALOG 0, 0, 210, 154
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Resume"
 FONT 8, "MS Sans Serif"
@@ -4493,31 +4493,31 @@ END
 #ifdef APSTUDIO_INVOKED
 GUIDELINES DESIGNINFO
 BEGIN
-    IDD_US_ABOUTDLG, DIALOG
+    IDD_ES_ABOUTDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_ADDRDLG, DIALOG
+    IDD_ES_ADDRDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_REGDLG, DIALOG
+    IDD_ES_REGDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_DATADLG, DIALOG
+    IDD_ES_DATADLG, DIALOG
     BEGIN
     END
 
-    IDD_US_DISKDLG, DIALOG
+    IDD_ES_DISKDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_DMAKEDLG, DIALOG
+    IDD_ES_DMAKEDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_TRAPDLG, DIALOG
+    IDD_ES_TRAPDLG, DIALOG
     BEGIN
     END
 
@@ -4525,11 +4525,11 @@ BEGIN
     BEGIN
     END
 
-    IDD_US_BASICPAGE, DIALOG
+    IDD_ES_BASICPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_SOUNDPAGE, DIALOG
+    IDD_ES_SOUNDPAGE, DIALOG
     BEGIN
     END
 
@@ -4537,7 +4537,7 @@ BEGIN
     BEGIN
     END
 
-    IDD_US_VOLPAGE, DIALOG
+    IDD_ES_VOLPAGE, DIALOG
     BEGIN
     END
 
@@ -4545,57 +4545,57 @@ BEGIN
     BEGIN
     END
 
-    IDD_US_MISCPAGE, DIALOG
+    IDD_ES_MISCPAGE, DIALOG
     BEGIN
         RIGHTMARGIN, 210
         BOTTOMMARGIN, 197
     END
 
-    IDD_US_KBDPAGE, DIALOG
+    IDD_ES_KBDPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_KBDMAPDLG, DIALOG
+    IDD_ES_KBDMAPDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_KEYINDLG, DIALOG
+    IDD_ES_KEYINDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_PORTPAGE, DIALOG
+    IDD_ES_PORTPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_ALTERPAGE, DIALOG
+    IDD_ES_ALTERPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_SXSIPAGE, DIALOG
+    IDD_ES_SXSIPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_MIDIPAGE, DIALOG
+    IDD_ES_MIDIPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_TKEYPAGE, DIALOG
+    IDD_ES_TKEYPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_JOYPAGE, DIALOG
+    IDD_ES_JOYPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_JOYDETDLG, DIALOG
+    IDD_ES_JOYDETDLG, DIALOG
     BEGIN
     END
 
-    IDD_US_BTNSETPAGE, DIALOG
+    IDD_ES_BTNSETPAGE, DIALOG
     BEGIN
     END
 
-    IDD_US_SCSIPAGE, DIALOG
+    IDD_ES_SCSIPAGE, DIALOG
     BEGIN
     END
 END
@@ -4607,7 +4607,7 @@ END
 // AFX_DIALOG_LAYOUT
 //
 
-IDD_US_MISCPAGE AFX_DIALOG_LAYOUT
+IDD_ES_MISCPAGE AFX_DIALOG_LAYOUT
 BEGIN
     0
 END
@@ -5320,626 +5320,626 @@ END
 
 STRINGTABLE
 BEGIN
-    IDM_US_OPEN             "Abre rapido un archivo de estado"
-    IDM_US_SAVE             "Guarda un archivo de estado"
-    IDM_US_SAVEAS           "Guarda rapido un archivo de estado"
-    IDM_US_RESET            "Presionar 'RESET'"
-    IDM_US_INTERRUPT        "Presionar 'INTERRUPT'"
-    IDM_US_POWER            "switch 'POWER'"
+    IDM_ES_OPEN             "Abre rapido un archivo de estado"
+    IDM_ES_SAVE             "Guarda un archivo de estado"
+    IDM_ES_SAVEAS           "Guarda rapido un archivo de estado"
+    IDM_ES_RESET            "Presionar 'RESET'"
+    IDM_ES_INTERRUPT        "Presionar 'INTERRUPT'"
+    IDM_ES_POWER            "switch 'POWER'"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_EXIT             "Salir de XM6"
-    IDM_US_D0OPEN           "Abrir archivo de imagen de disquete"
-    IDM_US_D0EJECT          "Expulsar disco normalmente"
-    IDM_US_D0WRITEP         "Proteger contra escritura"
-    IDM_US_D0FORCE          "Expulsar disco forzosamente"
+    IDM_ES_EXIT             "Salir de XM6"
+    IDM_ES_D0OPEN           "Abrir archivo de imagen de disquete"
+    IDM_ES_D0EJECT          "Expulsar disco normalmente"
+    IDM_ES_D0WRITEP         "Proteger contra escritura"
+    IDM_ES_D0FORCE          "Expulsar disco forzosamente"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_D0INVALID        "Inserta un medio inv・ｽlido"
+    IDM_ES_D0INVALID        "Inserta un medio inv∥lido"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_D1OPEN           "Abre una imagen de floppy disk"
-    IDM_US_D1EJECT          "Expulsa disco normalmente"
-    IDM_US_D1WRITEP         "Protege contra escritura"
-    IDM_US_D1FORCE          "Expulsa disco forzosamente"
-    IDM_US_D1INVALID        "Inserta un medio inv・ｽlido"
+    IDM_ES_D1OPEN           "Abre una imagen de floppy disk"
+    IDM_ES_D1EJECT          "Expulsa disco normalmente"
+    IDM_ES_D1WRITEP         "Protege contra escritura"
+    IDM_ES_D1FORCE          "Expulsa disco forzosamente"
+    IDM_ES_D1INVALID        "Inserta un medio inv・ｽlido"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_MOOPEN           "Abrir archivo de imagen de disco MO"
-    IDM_US_MOEJECT          "Expulsar disco normalmente"
-    IDM_US_MOWRITEP         "Proteger contra escritura"
-    IDM_US_MOFORCE          "Expulsar disco forzosamente"
+    IDM_ES_MOOPEN           "Abrir archivo de imagen de disco MO"
+    IDM_ES_MOEJECT          "Expulsar disco normalmente"
+    IDM_ES_MOWRITEP         "Proteger contra escritura"
+    IDM_ES_MOFORCE          "Expulsar disco forzosamente"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_CDOPEN           "Abrir archivo de imagen de CD"
-    IDM_US_CDEJECT          "Expulsar disco normalmente"
-    IDM_US_CDFORCE          "Expulsar disco forzosamente"
+    IDM_ES_CDOPEN           "Abrir archivo de imagen de CD"
+    IDM_ES_CDEJECT          "Expulsar disco normalmente"
+    IDM_ES_CDFORCE          "Expulsar disco forzosamente"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_CPUREG           "Ver ventana de registros"
-    IDM_US_INT              "Ver ventana de interrupciones"
-    IDM_US_DISASM           "Ver ventana de desensamblador"
-    IDM_US_MEMORY           "Ver ventana de memoria"
-    IDM_US_BREAKP           "Ver ventana de puntos de ruptura"
-    IDM_US_MFP              "Ver ventana de perifﾃｩrico multifunciﾃｳn"
-    IDM_US_DMAC             "Ver ventana de acceso directo a memoria"
-    IDM_US_CRTC             "Ver ventana de control CRT"
-    IDM_US_VC               "Ver ventana de control de video"
-    IDM_US_RTC              "Ver ventana de reloj en tiempo real"
-    IDM_US_OPM              "Ver ventana de sintetizador de sonido FM"
-    IDM_US_KEYBOARD         "Ver ventana de teclado"
-    IDM_US_FDD              "Ver ventana de unidad de disquete"
+    IDM_ES_CPUREG           "Ver ventana de registros"
+    IDM_ES_INT              "Ver ventana de interrupciones"
+    IDM_ES_DISASM           "Ver ventana de desensamblador"
+    IDM_ES_MEMORY           "Ver ventana de memoria"
+    IDM_ES_BREAKP           "Ver ventana de puntos de ruptura"
+    IDM_ES_MFP              "Ver ventana de perifﾃｩrico multifunciﾃｳn"
+    IDM_ES_DMAC             "Ver ventana de acceso directo a memoria"
+    IDM_ES_CRTC             "Ver ventana de control CRT"
+    IDM_ES_VC               "Ver ventana de control de video"
+    IDM_ES_RTC              "Ver ventana de reloj en tiempo real"
+    IDM_ES_OPM              "Ver ventana de sintetizador de sonido FM"
+    IDM_ES_KEYBOARD         "Ver ventana de teclado"
+    IDM_ES_FDD              "Ver ventana de unidad de disquete"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_FDC              "Ver ventana de controlador de disquete"
-    IDM_US_SCC              "Ver ventana de comunicaciﾃｳn serial"
-    IDM_US_CYNTHIA          "Ver ventana de BG/sprite"
-    IDM_US_SASI             "Ver ventana de disco SASI"
-    IDM_US_MIDI             "Ver ventana de controlador MIDI"
-    IDM_US_SCSI             "Ver ventana de controlador de protocolo SCSI"
+    IDM_ES_FDC              "Ver ventana de controlador de disquete"
+    IDM_ES_SCC              "Ver ventana de comunicaciﾃｳn serial"
+    IDM_ES_CYNTHIA          "Ver ventana de BG/sprite"
+    IDM_ES_SASI             "Ver ventana de disco SASI"
+    IDM_ES_MIDI             "Ver ventana de controlador MIDI"
+    IDM_ES_SCSI             "Ver ventana de controlador de protocolo SCSI"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_COMPONENT        "Ver ventana de componentes"
+    IDM_ES_COMPONENT        "Ver ventana de componentes"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_OSINFO           "Ver ventana de OS"
-    IDM_US_SOUND            "Ver ventana de sonido"
-    IDM_US_INPUT            "Ver ventana de entrada"
-    IDM_US_PORT             "Ver ventana de puertos"
-    IDM_US_BITMAP           "Ver ventana de bitmap"
-    IDM_US_MIDIDRV          "Ver ventana de driver MIDI"
-    IDM_US_CAPTION          "Mostrar u ocultar el tﾃｭtulo de la ventana"
-    IDM_US_MENU             "Mostrar u ocultar la barra de menﾃｺs"
-    IDM_US_STATUS           "Mostrar u ocultar la barra de estado"
-    IDM_US_REFRESH          "Redibujar todas las ventanas"
-    IDM_US_STRETCH          "Estirar a proporciﾃｳn 5:4 excepto modo 768x512"
-    IDM_US_FULLSCREEN       "Mostrar en pantalla completa"
+    IDM_ES_OSINFO           "Ver ventana de OS"
+    IDM_ES_SOUND            "Ver ventana de sonido"
+    IDM_ES_INPUT            "Ver ventana de entrada"
+    IDM_ES_PORT             "Ver ventana de puertos"
+    IDM_ES_BITMAP           "Ver ventana de bitmap"
+    IDM_ES_MIDIDRV          "Ver ventana de driver MIDI"
+    IDM_ES_CAPTION          "Mostrar u ocultar el tﾃｭtulo de la ventana"
+    IDM_ES_MENU             "Mostrar u ocultar la barra de menﾃｺs"
+    IDM_ES_STATUS           "Mostrar u ocultar la barra de estado"
+    IDM_ES_REFRESH          "Redibujar todas las ventanas"
+    IDM_ES_STRETCH          "Estirar a proporciﾃｳn 5:4 excepto modo 768x512"
+    IDM_ES_FULLSCREEN       "Mostrar en pantalla completa"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_MOUSEMODE        "Entrar/Salir del modo ratﾃｳn"
-    IDM_US_SOFTKEY          "Ver ventana de teclado software"
-    IDM_US_TIMEADJ          "Ajustar el calendario del X68000"
-    IDM_US_TRAP0            "Ejecutar instrucciﾃｳn trap #0"
-    IDM_US_SAVEWAV          "Volcar el sonido a archivo WAV"
-    IDM_US_NEWFD            "Crear nuevo disquete"
-    IDM_US_NEWSASI          "Crear nuevo disco duro SASI"
-    IDM_US_NEWSCSI          "Crear nuevo disco duro SCSI"
-    IDM_US_NEWMO            "Crear nuevo disco MO SCSI"
-    IDM_US_OPTIONS          "Opciones de XM6"
+    IDM_ES_MOUSEMODE        "Entrar/Salir del modo ratﾃｳn"
+    IDM_ES_SOFTKEY          "Ver ventana de teclado software"
+    IDM_ES_TIMEADJ          "Ajustar el calendario del X68000"
+    IDM_ES_TRAP0            "Ejecutar instrucciﾃｳn trap #0"
+    IDM_ES_SAVEWAV          "Volcar el sonido a archivo WAV"
+    IDM_ES_NEWFD            "Crear nuevo disquete"
+    IDM_ES_NEWSASI          "Crear nuevo disco duro SASI"
+    IDM_ES_NEWSCSI          "Crear nuevo disco duro SCSI"
+    IDM_ES_NEWMO            "Crear nuevo disco MO SCSI"
+    IDM_ES_OPTIONS          "Opciones de XM6"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_CASCADE          "Cascada de todas las ventanas"
-    IDM_US_TILE             "Mosaico de todas las ventanas"
-    IDM_US_ICONIC           "Minimizar todas las ventanas"
-    IDM_US_ARRANGEICON      "Organizar iconos de ventanas"
-    IDM_US_HIDE             "Ocultar todas las ventanas"
-    IDM_US_RESTORE          "Restaurar todas las ventanas"
+    IDM_ES_CASCADE          "Cascada de todas las ventanas"
+    IDM_ES_TILE             "Mosaico de todas las ventanas"
+    IDM_ES_ICONIC           "Minimizar todas las ventanas"
+    IDM_ES_ARRANGEICON      "Organizar iconos de ventanas"
+    IDM_ES_HIDE             "Ocultar todas las ventanas"
+    IDM_ES_RESTORE          "Restaurar todas las ventanas"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_ABOUT            "Acerca de XM6"
+    IDM_ES_ABOUT            "Acerca de XM6"
 END
 
 STRINGTABLE
 BEGIN
-    IDM_US_STDWIN           "Mover ventana de XM6 a posiciﾃｳn estﾃ｡ndar."
+    IDM_ES_STDWIN           "Mover ventana de XM6 a posiciﾃｳn estﾃ｡ndar."
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_LOG         "REGISTRO"
-    IDS_US_SWND_LOG_NUMBER  "No."
-    IDS_US_SWND_LOG_TIME    "Tiempo"
-    IDS_US_SWND_LOG_PC      "PC"
-    IDS_US_SWND_LOG_LEVEL   "Nivel"
-    IDS_US_SWND_LOG_DEVICE  "Dispositivo"
-    IDS_US_SWND_LOG_MSG     "Mensaje"
-    IDS_US_SWND_LOG_DETAIL  "Detalle"
-    IDS_US_SWND_LOG_NORMAL  "Normal"
-    IDS_US_SWND_LOG_WARNING "Advertencia"
-    IDS_US_SWND_SCHEDULER   "PLANIFICADOR"
-    IDS_US_SWND_DEVICE      "DISPOSITIVO"
+    IDS_ES_SWND_LOG         "REGISTRO"
+    IDS_ES_SWND_LOG_NUMBER  "No."
+    IDS_ES_SWND_LOG_TIME    "Tiempo"
+    IDS_ES_SWND_LOG_PC      "PC"
+    IDS_ES_SWND_LOG_LEVEL   "Nivel"
+    IDS_ES_SWND_LOG_DEVICE  "Dispositivo"
+    IDS_ES_SWND_LOG_MSG     "Mensaje"
+    IDS_ES_SWND_LOG_DETAIL  "Detalle"
+    IDS_ES_SWND_LOG_NORMAL  "Normal"
+    IDS_ES_SWND_LOG_WARNING "Advertencia"
+    IDS_ES_SWND_SCHEDULER   "PLANIFICADOR"
+    IDS_ES_SWND_DEVICE      "DISPOSITIVO"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_CPUREG      "REGISTRO MPU"
-    IDS_US_SWND_INT         "INTERRUPCIﾃ哲"
-    IDS_US_SWND_DISASM      "DESENSAMBLADOR"
-    IDS_US_SWND_MEMORY      "MEMORIA"
-    IDS_US_SWND_BREAKP      "PUNTO DE RUPTURA"
+    IDS_ES_SWND_CPUREG      "REGISTRO MPU"
+    IDS_ES_SWND_INT         "INTERRUPCIﾃ哲"
+    IDS_ES_SWND_DISASM      "DESENSAMBLADOR"
+    IDS_ES_SWND_MEMORY      "MEMORIA"
+    IDS_ES_SWND_BREAKP      "PUNTO DE RUPTURA"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_MFP         "MFP (MC68901)"
-    IDS_US_SWND_DMAC        "DMAC (HD63450)"
-    IDS_US_SWND_CRTC        "CRTC (VICON)"
-    IDS_US_SWND_VC          "VC (CATHY and VIPS)"
-    IDS_US_SWND_RTC         "RTC (RP5C15)"
-    IDS_US_SWND_OPM         "OPM (YM2151)"
-    IDS_US_SWND_KEYBOARD    "TECLADO"
-    IDS_US_SWND_FDD         "FDD (FD55GFR)"
+    IDS_ES_SWND_MFP         "MFP (MC68901)"
+    IDS_ES_SWND_DMAC        "DMAC (HD63450)"
+    IDS_ES_SWND_CRTC        "CRTC (VICON)"
+    IDS_ES_SWND_VC          "VC (CATHY and VIPS)"
+    IDS_ES_SWND_RTC         "RTC (RP5C15)"
+    IDS_ES_SWND_OPM         "OPM (YM2151)"
+    IDS_ES_SWND_KEYBOARD    "TECLADO"
+    IDS_ES_SWND_FDD         "FDD (FD55GFR)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_FDC         "FDC (uPD72065)"
-    IDS_US_SWND_SCC         "SCC (Z8530)"
-    IDS_US_SWND_CYNTHIA     "BG/SPRITE (CYNTHIA)"
-    IDS_US_SWND_SASI        "SASI (IOSC-2)"
-    IDS_US_SWND_MIDI        "MIDI (YM3802)"
-    IDS_US_SWND_SCSI        "SCSI (MB89352)"
+    IDS_ES_SWND_FDC         "FDC (uPD72065)"
+    IDS_ES_SWND_SCC         "SCC (Z8530)"
+    IDS_ES_SWND_CYNTHIA     "BG/SPRITE (CYNTHIA)"
+    IDS_ES_SWND_SASI        "SASI (IOSC-2)"
+    IDS_ES_SWND_MIDI        "MIDI (YM3802)"
+    IDS_ES_SWND_SCSI        "SCSI (MB89352)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_TVRAM       "PLANO DE TEXTO"
-    IDS_US_SWND_G1024       "PLANO GRﾃ：ICO(16COLORES, 1024X1024)"
-    IDS_US_SWND_G16P0       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA0)"
-    IDS_US_SWND_G16P1       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA1)"
+    IDS_ES_SWND_TVRAM       "PLANO DE TEXTO"
+    IDS_ES_SWND_G1024       "PLANO GRﾃ：ICO(16COLORES, 1024X1024)"
+    IDS_ES_SWND_G16P0       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA0)"
+    IDS_ES_SWND_G16P1       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA1)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_G16P2       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA2)"
-    IDS_US_SWND_G16P3       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA3)"
-    IDS_US_SWND_G256P0      "PLANO GRﾃ：ICO(256COLORES, Pﾃ；INA0)"
-    IDS_US_SWND_G256P1      "PLANO GRﾃ：ICO(256COLORES, Pﾃ；INA1)"
-    IDS_US_SWND_G64K        "PLANO GRﾃ：ICO(65536COLORES)"
-    IDS_US_SWND_PCG         "PCG"
-    IDS_US_SWND_BG0         "PLANO BG(Pﾃ；INA0)"
-    IDS_US_SWND_BG1         "PLANO BG(Pﾃ；INA1)"
-    IDS_US_SWND_SPRITE      "PLANO DE SPRITES"
-    IDS_US_SWND_PALET       "PALETA"
+    IDS_ES_SWND_G16P2       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA2)"
+    IDS_ES_SWND_G16P3       "PLANO GRﾃ：ICO(16COLORES, Pﾃ；INA3)"
+    IDS_ES_SWND_G256P0      "PLANO GRﾃ：ICO(256COLORES, Pﾃ；INA0)"
+    IDS_ES_SWND_G256P1      "PLANO GRﾃ：ICO(256COLORES, Pﾃ；INA1)"
+    IDS_ES_SWND_G64K        "PLANO GRﾃ：ICO(65536COLORES)"
+    IDS_ES_SWND_PCG         "PCG"
+    IDS_ES_SWND_BG0         "PLANO BG(Pﾃ；INA0)"
+    IDS_ES_SWND_BG1         "PLANO BG(Pﾃ；INA1)"
+    IDS_ES_SWND_SPRITE      "PLANO DE SPRITES"
+    IDS_ES_SWND_PALET       "PALETA"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_REND_TEXT   "BUFFER DE TEXTO"
-    IDS_US_SWND_REND_GP0    "BUFFER GRﾃ：ICO (0)"
-    IDS_US_SWND_REND_GP1    "BUFFER GRﾃ：ICO (1)"
-    IDS_US_SWND_REND_GP2    "BUFFER GRﾃ：ICO (2)"
-    IDS_US_SWND_REND_GP3    "BUFFER GRﾃ：ICO (3)"
-    IDS_US_SWND_REND_PCG    "BUFFER PCG"
-    IDS_US_SWND_REND_BGSPRITE "BUFFER BG/SPRITE"
-    IDS_US_SWND_REND_PALET  "BUFFER DE PALETA"
-    IDS_US_SWND_REND_MIX    "BUFFER MEZCLADO"
+    IDS_ES_SWND_REND_TEXT   "BUFFER DE TEXTO"
+    IDS_ES_SWND_REND_GP0    "BUFFER GRﾃ：ICO (0)"
+    IDS_ES_SWND_REND_GP1    "BUFFER GRﾃ：ICO (1)"
+    IDS_ES_SWND_REND_GP2    "BUFFER GRﾃ：ICO (2)"
+    IDS_ES_SWND_REND_GP3    "BUFFER GRﾃ：ICO (3)"
+    IDS_ES_SWND_REND_PCG    "BUFFER PCG"
+    IDS_ES_SWND_REND_BGSPRITE "BUFFER BG/SPRITE"
+    IDS_ES_SWND_REND_PALET  "BUFFER DE PALETA"
+    IDS_ES_SWND_REND_MIX    "BUFFER MEZCLADO"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_COMPONENT   "COMPONENTE"
-    IDS_US_SWND_OSINFO      "INFO DE OS"
-    IDS_US_SWND_SOUND       "SONIDO"
-    IDS_US_SWND_INPUT       "ENTRADA"
-    IDS_US_SWND_PORT        "PUERTO"
-    IDS_US_SWND_BITMAP      "BITMAP"
-    IDS_US_SWND_MIDIDRV     "DRIVER MIDI"
+    IDS_ES_SWND_COMPONENT   "COMPONENTE"
+    IDS_ES_SWND_OSINFO      "INFO DE OS"
+    IDS_ES_SWND_SOUND       "SONIDO"
+    IDS_ES_SWND_INPUT       "ENTRADA"
+    IDS_ES_SWND_PORT        "PUERTO"
+    IDS_ES_SWND_BITMAP      "BITMAP"
+    IDS_ES_SWND_MIDIDRV     "DRIVER MIDI"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SWND_SOFTKEY     "TECLADO SOFTWARE"
+    IDS_ES_SWND_SOFTKEY     "TECLADO SOFTWARE"
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_BASIC_CLOCKG     "Configuraciﾃｳn de velocidad"
-    IDC_US_BASIC_MEMORYG    "Configuraciﾃｳn de memoria"
-    IDC_US_BASIC_MEMSWB     "Permitir a XM6 actualizar el conmutador de memoria segﾃｺn la cantidad de RAM principal. Configuraciﾃｳn predeterminada es ON."
-    IDC_US_BASIC_MEMORYC    "Cantidad de RAM principal. Configuraciﾃｳn predeterminada es 2MB."
-    IDC_US_BASIC_MEMORYL    "Cantidad de RAM principal. Configuraciﾃｳn predeterminada es 2MB."
-    IDC_US_BASIC_CLOCKL     "Seleccionar reloj del sistema. Configuraciﾃｳn predeterminada es 10MHz."
-    IDC_US_BASIC_CLOCKC     "Seleccionar reloj del sistema. Configuraciﾃｳn predeterminada es 10MHz."
-    IDC_US_BASIC_CPUFULLB   "Sin operaciﾃｳn de espera con MPU. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_BASIC_ALLFULLB   "Sin operaciﾃｳn de espera con la mﾃ｡quina virtual. Configuraciﾃｳn predeterminada es OFF."
-    IDS_US_BASIC_CLOCK0     "10MHz  (Estﾃ｡ndar)"
-    IDS_US_BASIC_CLOCK1     "12MHz  (X68000ACE oc)"
+    IDC_ES_BASIC_CLOCKG     "Configuracion de velocidad"
+    IDC_ES_BASIC_MEMORYG    "Configuracion de memoria"
+    IDC_ES_BASIC_MEMSWB     "Permitir a XM6 actualizar el conmutador de memoria segﾃｺn la cantidad de RAM principal. Configuraciﾃｳn predeterminada es ON."
+    IDC_ES_BASIC_MEMORYC    "Cantidad de RAM principal. Configuracion predeterminada es 2MB."
+    IDC_ES_BASIC_MEMORYL    "Cantidad de RAM principal. Configuracion predeterminada es 2MB."
+    IDC_ES_BASIC_CLOCKL     "Seleccionar reloj del sistema. Configuraciﾃｳn predeterminada es 10MHz."
+    IDC_ES_BASIC_CLOCKC     "Seleccionar reloj del sistema. Configuraciﾃｳn predeterminada es 10MHz."
+    IDC_ES_BASIC_CPUFULLB   "Sin operaciﾃｳn de espera con MPU. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_BASIC_ALLFULLB   "Sin operaciﾃｳn de espera con la mﾃ｡quina virtual. Configuraciﾃｳn predeterminada es OFF."
+    IDS_ES_BASIC_CLOCK0     "10MHz  (Estﾃ｡ndar)"
+    IDS_ES_BASIC_CLOCK1     "12MHz  (X68000ACE oc)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_BASIC_CLOCK2     "15MHz  (X68000PRO oc)"
-    IDS_US_BASIC_CLOCK3     "16MHz  (X68000SUPER oc)"
-    IDS_US_BASIC_CLOCK4     "17.4MHz(X68000EXPERT oc)"
-    IDS_US_BASIC_CLOCK5     "22MHz  (ﾂ｡Suerte!!)"
-    IDS_US_BASIC_MEMORY0    "2MB  (Estﾃ｡ndar)"
-    IDS_US_BASIC_MEMORY1    "4MB  (X68030)"
-    IDS_US_BASIC_MEMORY2    "6MB"
-    IDS_US_BASIC_MEMORY3    "8MB"
-    IDS_US_BASIC_MEMORY4    "10MB"
-    IDS_US_BASIC_MEMORY5    "12MB (Mﾃ｡ximo)"
+    IDS_ES_BASIC_CLOCK2     "15MHz  (X68000PRO oc)"
+    IDS_ES_BASIC_CLOCK3     "16MHz  (X68000SUPER oc)"
+    IDS_ES_BASIC_CLOCK4     "17.4MHz(X68000EXPERT oc)"
+    IDS_ES_BASIC_CLOCK5     "22MHz  (ﾂ｡Suerte!!)"
+    IDS_ES_BASIC_MEMORY0    "2MB  (Estandar)"
+    IDS_ES_BASIC_MEMORY1    "4MB  (X68030)"
+    IDS_ES_BASIC_MEMORY2    "6MB"
+    IDS_ES_BASIC_MEMORY3    "8MB"
+    IDS_ES_BASIC_MEMORY4    "10MB"
+    IDS_ES_BASIC_MEMORY5    "12MB (Mﾃ｡ximo)"
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SOUND_DEVICEG    "Configuraciﾃｳn de dispositivo"
-    IDC_US_SOUND_DEVICEC    "Seleccionar dispositivo de salida."
-    IDC_US_SOUND_RATEG      "Configuraciﾃｳn de tasa de sonido"
-    IDC_US_SOUND_RATE0      "Genera sonidos a 44.1kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_US_SOUND_RATE1      "Genera sonidos a 48kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_US_SOUND_RATE2      "Genera sonidos a 88.2kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_US_SOUND_RATE3      "Genera sonidos a 96kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_US_SOUND_RATE4      "Genera sonidos a 62.5kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
+    IDC_ES_SOUND_DEVICEG    "Configuraciﾃｳn de dispositivo"
+    IDC_ES_SOUND_DEVICEC    "Seleccionar dispositivo de salida."
+    IDC_ES_SOUND_RATEG      "Configuraciﾃｳn de tasa de sonido"
+    IDC_ES_SOUND_RATE0      "Genera sonidos a 44.1kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
+    IDC_ES_SOUND_RATE1      "Genera sonidos a 48kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
+    IDC_ES_SOUND_RATE2      "Genera sonidos a 88.2kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
+    IDC_ES_SOUND_RATE3      "Genera sonidos a 96kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
+    IDC_ES_SOUND_RATE4      "Genera sonidos a 62.5kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SOUND_BUFFERG    "Configuraciﾃｳn de buffer de sonido"
-    IDC_US_SOUND_BUF1L      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_US_SOUND_BUF1E      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_US_SOUND_BUF1S      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_US_SOUND_BUF1MS     "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_US_SOUND_BUF2L      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_US_SOUND_BUF2E      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_US_SOUND_BUF2S      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_US_SOUND_BUF2MS     "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_US_SOUND_OPTIONG    "Otras opciones"
-    IDC_US_SOUND_INTERP     "Habilitar interpolaciﾃｳn al convertir ADPCM a WAV. Configuraciﾃｳn predeterminada es ON."
+    IDC_ES_SOUND_BUFFERG    "Configuraciﾃｳn de buffer de sonido"
+    IDC_ES_SOUND_BUF1L      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
+    IDC_ES_SOUND_BUF1E      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
+    IDC_ES_SOUND_BUF1S      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
+    IDC_ES_SOUND_BUF1MS     "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
+    IDC_ES_SOUND_BUF2L      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
+    IDC_ES_SOUND_BUF2E      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
+    IDC_ES_SOUND_BUF2S      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
+    IDC_ES_SOUND_BUF2MS     "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
+    IDC_ES_SOUND_OPTIONG    "Otras opciones"
+    IDC_ES_SOUND_INTERP     "Habilitar interpolaciﾃｳn al convertir ADPCM a WAV. Configuraciﾃｳn predeterminada es ON."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_VOL_OUTG         "Configuraciﾃｳn de salida"
-    IDC_US_VOL_VOLL         "Nivel del mezclador principal."
-    IDC_US_VOL_VOLS         "Nivel del mezclador principal."
-    IDC_US_VOL_VOLN         "Nivel del mezclador principal."
+    IDC_ES_VOL_OUTG         "Configuraciﾃｳn de salida"
+    IDC_ES_VOL_VOLL         "Nivel del mezclador principal."
+    IDC_ES_VOL_VOLS         "Nivel del mezclador principal."
+    IDC_ES_VOL_VOLN         "Nivel del mezclador principal."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_VOL_MASTERL      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_US_VOL_MASTERS      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_US_VOL_MASTERN      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_US_VOL_SEPL         "Nivel del fader MIDI."
-    IDC_US_VOL_SEPS         "Nivel del fader MIDI."
-    IDC_US_VOL_SEPN         "Nivel del fader MIDI."
-    IDC_US_VOL_GENG         "Configuraciﾃｳn de generaciﾃｳn"
-    IDC_US_VOL_FML          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_US_VOL_FMC          "Habilitar sonido FM. Configuraciﾃｳn predeterminada es ON."
-    IDC_US_VOL_FMS          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_US_VOL_FMN          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_US_VOL_ADPCML       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
-    IDC_US_VOL_ADPCMC       "Habilitar sonido ADPCM. Configuraciﾃｳn predeterminada es ON."
-    IDC_US_VOL_ADPCMS       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
-    IDC_US_VOL_ADPCMN       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
+    IDC_ES_VOL_MASTERL      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
+    IDC_ES_VOL_MASTERS      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
+    IDC_ES_VOL_MASTERN      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
+    IDC_ES_VOL_SEPL         "Nivel del fader MIDI."
+    IDC_ES_VOL_SEPS         "Nivel del fader MIDI."
+    IDC_ES_VOL_SEPN         "Nivel del fader MIDI."
+    IDC_ES_VOL_GENG         "Configuraciﾃｳn de generaciﾃｳn"
+    IDC_ES_VOL_FML          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
+    IDC_ES_VOL_FMC          "Habilitar sonido FM. Configuraciﾃｳn predeterminada es ON."
+    IDC_ES_VOL_FMS          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
+    IDC_ES_VOL_FMN          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
+    IDC_ES_VOL_ADPCML       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
+    IDC_ES_VOL_ADPCMC       "Habilitar sonido ADPCM. Configuraciﾃｳn predeterminada es ON."
+    IDC_ES_VOL_ADPCMS       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
+    IDC_ES_VOL_ADPCMN       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_MISC_OPTG        "Otras configuraciones"
-    IDC_US_MISC_FDSPEED     "Habilitar emulaciﾃｳn rﾃ｡pida de disquete. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_MISC_FDLED       "Mostrar estado del motor como LED de disquete. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_MISC_POPUP       "Crear todas las ventanas con estilo WS_POPUP. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_MISC_AUTOMOUSE   "Activar modo ratﾃｳn al cambiar modo de pantalla. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_MISC_POWEROFF    "Iniciar XM6 sin activar el interruptor POWER. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_MISC_OPTG        "Otras configuraciones"
+    IDC_ES_MISC_FDSPEED     "Habilitar emulaciﾃｳn rﾃ｡pida de disquete. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_MISC_FDLED       "Mostrar estado del motor como LED de disquete. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_MISC_POPUP       "Crear todas las ventanas con estilo WS_POPUP. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_MISC_AUTOMOUSE   "Activar modo ratﾃｳn al cambiar modo de pantalla. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_MISC_POWEROFF    "Iniciar XM6 sin activar el interruptor POWER. Configuraciﾃｳn predeterminada es OFF."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_KBD_MAPG         "Configuraciﾃｳn de mapeo de teclado"
-    IDC_US_KBD_MAPL         "Ver el mapeo."
-    IDC_US_KBD_EDITB        "Mostrar el mapeo."
-    IDC_US_KBD_DEFB         "Restaurar mapeo predeterminado."
-    IDC_US_KBD_NOCONB       "No conectar el teclado."
+    IDC_ES_KBD_MAPG         "Configuraciﾃｳn de mapeo de teclado"
+    IDC_ES_KBD_MAPL         "Ver el mapeo."
+    IDC_ES_KBD_EDITB        "Mostrar el mapeo."
+    IDC_ES_KBD_DEFB         "Restaurar mapeo predeterminado."
+    IDC_ES_KBD_NOCONB       "No conectar el teclado."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_MOUSE_SPEEDG     "Configuraciﾃｳn de velocidad del ratﾃｳn"
-    IDC_US_MOUSE_SLIDER     "Seleccionar proporciﾃｳn de velocidad del ratﾃｳn para Windows."
-    IDC_US_MOUSE_PARS       "Seleccionar proporciﾃｳn de velocidad del ratﾃｳn para Windows."
-    IDC_US_MOUSE_PORTG      "Configuraciﾃｳn de puerto del ratﾃｳn"
-    IDC_US_MOUSE_FPORT      "Conectar el ratﾃｳn al panel frontal."
-    IDC_US_MOUSE_KPORT      "Conectar el ratﾃｳn al teclado."
-    IDC_US_MOUSE_NPORT      "No conectar el ratﾃｳn."
+    IDC_ES_MOUSE_SPEEDG     "Configuraciﾃｳn de velocidad del ratﾃｳn"
+    IDC_ES_MOUSE_SLIDER     "Seleccionar proporciﾃｳn de velocidad del ratﾃｳn para Windows."
+    IDC_ES_MOUSE_PARS       "Seleccionar proporciﾃｳn de velocidad del ratﾃｳn para Windows."
+    IDC_ES_MOUSE_PORTG      "Configuraciﾃｳn de puerto del ratﾃｳn"
+    IDC_ES_MOUSE_FPORT      "Conectar el ratﾃｳn al panel frontal."
+    IDC_ES_MOUSE_KPORT      "Conectar el ratﾃｳn al teclado."
+    IDC_ES_MOUSE_NPORT      "No conectar el ratﾃｳn."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_MOUSE_OPTG       "Otras opciones"
-    IDC_US_MOUSE_SWAPB      "Intercambiar botﾃｳn izquierdo y derecho."
-    IDC_US_MOUSE_MIDB       "Deshabilitar el botﾃｳn central."
-    IDC_US_MOUSE_TBG        "Cambiar modo de ratﾃｳn a trackball."
+    IDC_ES_MOUSE_OPTG       "Otras opciones"
+    IDC_ES_MOUSE_SWAPB      "Intercambiar botﾃｳn izquierdo y derecho."
+    IDC_ES_MOUSE_MIDB       "Deshabilitar el botﾃｳn central."
+    IDC_ES_MOUSE_TBG        "Cambiar modo de ratﾃｳn a trackball."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SASI_GROUP       "Configuraciﾃｳn de disco duro SASI"
-    IDC_US_SASI_DRIVEL      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
-    IDC_US_SASI_DRIVEE      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
-    IDC_US_SASI_DRIVES      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
-    IDC_US_SASI_MEMSWB      "Permitir a XM6 actualizar el conmutador de memoria con el nﾃｺmero de unidades."
-    IDC_US_SASI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'No.'."
+    IDC_ES_SASI_GROUP       "Configuraciﾃｳn de disco duro SASI"
+    IDC_ES_SASI_DRIVEL      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
+    IDC_ES_SASI_DRIVEE      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
+    IDC_ES_SASI_DRIVES      "Seleccionar nﾃｺmero de unidades. Se admiten unidades de 10/20/40MB."
+    IDC_ES_SASI_MEMSWB      "Permitir a XM6 actualizar el conmutador de memoria con el nﾃｺmero de unidades."
+    IDC_ES_SASI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'No.'."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SXSI_GROUP       "Configuraciﾃｳn de disco SCSI (vﾃｭa interfaz SASI)"
-    IDC_US_SXSI_DRIVEL      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
-    IDC_US_SXSI_DRIVEE      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
-    IDC_US_SXSI_MOCHECK     "Asignar ID SCSI de unidad MO primero."
+    IDC_ES_SXSI_GROUP       "Configuraciﾃｳn de disco SCSI (vﾃｭa interfaz SASI)"
+    IDC_ES_SXSI_DRIVEL      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
+    IDC_ES_SXSI_DRIVEE      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
+    IDC_ES_SXSI_MOCHECK     "Asignar ID SCSI de unidad MO primero."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SXSI_DRIVES      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
-    IDC_US_SXSI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'ID'."
+    IDC_ES_SXSI_DRIVES      "Seleccionar nﾃｺmero de unidades (incluye una unidad MO)."
+    IDC_ES_SXSI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'ID'."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_PORT_COMG        "Configuraciﾃｳn RS-232C"
-    IDC_US_PORT_COML        "Seleccionar el puerto COM asignado a RS-232C."
-    IDC_US_PORT_COMC        "Seleccionar el puerto COM asignado a RS-232C."
-    IDC_US_PORT_RECVL       "Nombre del archivo para registrar datos del puerto seleccionado."
-    IDC_US_PORT_RECVE       "Nombre del archivo para registrar datos del puerto seleccionado."
-    IDC_US_PORT_BAUDRATE    "Forzar la velocidad de RS-232C a 38400bps para RS-MIDI."
-    IDC_US_PORT_LPTG        "Configuraciﾃｳn de impresora"
-    IDC_US_PORT_LPTL        "Seleccionar el puerto LPT asignado a la impresora."
-    IDC_US_PORT_LPTC        "Seleccionar el puerto LPT asignado a la impresora."
-    IDC_US_PORT_SENDL       "Nombre del archivo para registrar datos hacia la impresora."
-    IDC_US_PORT_SENDE       "Nombre del archivo para registrar datos hacia la impresora."
+    IDC_ES_PORT_COMG        "Configuraciﾃｳn RS-232C"
+    IDC_ES_PORT_COML        "Seleccionar el puerto COM asignado a RS-232C."
+    IDC_ES_PORT_COMC        "Seleccionar el puerto COM asignado a RS-232C."
+    IDC_ES_PORT_RECVL       "Nombre del archivo para registrar datos del puerto seleccionado."
+    IDC_ES_PORT_RECVE       "Nombre del archivo para registrar datos del puerto seleccionado."
+    IDC_ES_PORT_BAUDRATE    "Forzar la velocidad de RS-232C a 38400bps para RS-MIDI."
+    IDC_ES_PORT_LPTG        "Configuraciﾃｳn de impresora"
+    IDC_ES_PORT_LPTL        "Seleccionar el puerto LPT asignado a la impresora."
+    IDC_ES_PORT_LPTC        "Seleccionar el puerto LPT asignado a la impresora."
+    IDC_ES_PORT_SENDL       "Nombre del archivo para registrar datos hacia la impresora."
+    IDC_ES_PORT_SENDE       "Nombre del archivo para registrar datos hacia la impresora."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_MIDI_BIDG        "Configuraciﾃｳn MIDI (Opc.)"
-    IDC_US_MIDI_BID0        "No hay interfaz MIDI instalada. Esta es la configuraciﾃｳn predeterminada."
-    IDC_US_MIDI_BID1        "Interfaz MIDI (ID1) instalada. Configuraciﾃｳn predeterminada es NINGUNA."
-    IDC_US_MIDI_BID2        "Interfaz MIDI (ID2) instalada. Configuraciﾃｳn predeterminada es NINGUNA."
-    IDC_US_MIDI_ILEVELG     "Configuraciﾃｳn de nivel de interrupciﾃｳn"
-    IDC_US_MIDI_ILEVEL4     "Usar INT4 para interfaz MIDI. Configuraciﾃｳn predeterminada es INT4."
-    IDC_US_MIDI_ILEVEL2     "Usar INT2 para interfaz MIDI. Configuraciﾃｳn predeterminada es INT4."
-    IDC_US_MIDI_RSTG        "Configuraciﾃｳn de comando de reinicio"
-    IDC_US_MIDI_RSTGM       "Usar comando 'GM' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
-    IDC_US_MIDI_RSTGS       "Usar comando 'GS' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
-    IDC_US_MIDI_RSTXG       "Usar comando 'XG' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
-    IDC_US_MIDI_RSTLA       "Usar comando 'LA' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
-    IDC_US_MIDI_DEVG        "Configuraciﾃｳn de dispositivo"
-    IDC_US_MIDI_INS         "Seleccionar dispositivo para entrada de datos MIDI."
-    IDC_US_MIDI_INC         "Seleccionar dispositivo para entrada de datos MIDI."
-    IDC_US_MIDI_DLYIL       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
+    IDC_ES_MIDI_BIDG        "Configuraciﾃｳn MIDI (Opc.)"
+    IDC_ES_MIDI_BID0        "No hay interfaz MIDI instalada. Esta es la configuraciﾃｳn predeterminada."
+    IDC_ES_MIDI_BID1        "Interfaz MIDI (ID1) instalada. Configuraciﾃｳn predeterminada es NINGUNA."
+    IDC_ES_MIDI_BID2        "Interfaz MIDI (ID2) instalada. Configuraciﾃｳn predeterminada es NINGUNA."
+    IDC_ES_MIDI_ILEVELG     "Configuraciﾃｳn de nivel de interrupciﾃｳn"
+    IDC_ES_MIDI_ILEVEL4     "Usar INT4 para interfaz MIDI. Configuraciﾃｳn predeterminada es INT4."
+    IDC_ES_MIDI_ILEVEL2     "Usar INT2 para interfaz MIDI. Configuraciﾃｳn predeterminada es INT4."
+    IDC_ES_MIDI_RSTG        "Configuraciﾃｳn de comando de reinicio"
+    IDC_ES_MIDI_RSTGM       "Usar comando 'GM' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
+    IDC_ES_MIDI_RSTGS       "Usar comando 'GS' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
+    IDC_ES_MIDI_RSTXG       "Usar comando 'XG' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
+    IDC_ES_MIDI_RSTLA       "Usar comando 'LA' para reiniciar dispositivo MIDI. Configuraciﾃｳn predeterminada es GM."
+    IDC_ES_MIDI_DEVG        "Configuraciﾃｳn de dispositivo"
+    IDC_ES_MIDI_INS         "Seleccionar dispositivo para entrada de datos MIDI."
+    IDC_ES_MIDI_INC         "Seleccionar dispositivo para entrada de datos MIDI."
+    IDC_ES_MIDI_DLYIL       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_MIDI_DLYIE       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
-    IDC_US_MIDI_DLYIS       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
-    IDC_US_MIDI_DLYIG       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
-    IDC_US_MIDI_OUTS        "Seleccionar dispositivo para salida de datos MIDI."
-    IDC_US_MIDI_OUTC        "Seleccionar dispositivo para salida de datos MIDI."
-    IDC_US_MIDI_DLYOL       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
-    IDC_US_MIDI_DLYOE       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
-    IDC_US_MIDI_DLYOS       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
-    IDC_US_MIDI_DLYOG       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
+    IDC_ES_MIDI_DLYIE       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
+    IDC_ES_MIDI_DLYIS       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
+    IDC_ES_MIDI_DLYIG       "Especificar tiempo de retardo para recibir datos MIDI. Configuraciﾃｳn predeterminada es 0ms."
+    IDC_ES_MIDI_OUTS        "Seleccionar dispositivo para salida de datos MIDI."
+    IDC_ES_MIDI_OUTC        "Seleccionar dispositivo para salida de datos MIDI."
+    IDC_ES_MIDI_DLYOL       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
+    IDC_ES_MIDI_DLYOE       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
+    IDC_ES_MIDI_DLYOS       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
+    IDC_ES_MIDI_DLYOG       "Especificar tiempo de retardo para enviar datos MIDI. Configuraciﾃｳn predeterminada es 84ms."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_ALTER_ALTERG     "Configuraciﾃｳn de modificaciones"
-    IDC_US_ALTER_SRAM       "Reemplazar chip SRAM 62C64 por 62C256. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_ALTER_SCC        "Cambiar reloj SCC de 5.0MHz a 7.5MHz. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_ALTER_POWERLED   "Reemplazar LED verde POWER por LED azul POWER. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_ALTER_2DD        "Reemplazar unidad modo ﾃｺnico 2HD por unidad modo dual 2DD/2HD. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_ALTER_SASIG      "Configuraciﾃｳn de bus SASI"
-    IDC_US_ALTER_PARITY     "Agregar circuito 74F280 para generar bit de paridad en bus SASI. Configuraciﾃｳn predeterminada es ON."
+    IDC_ES_ALTER_ALTERG     "Configuraciﾃｳn de modificaciones"
+    IDC_ES_ALTER_SRAM       "Reemplazar chip SRAM 62C64 por 62C256. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_ALTER_SCC        "Cambiar reloj SCC de 5.0MHz a 7.5MHz. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_ALTER_POWERLED   "Reemplazar LED verde POWER por LED azul POWER. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_ALTER_2DD        "Reemplazar unidad modo ﾃｺnico 2HD por unidad modo dual 2DD/2HD. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_ALTER_SASIG      "Configuraciﾃｳn de bus SASI"
+    IDC_ES_ALTER_PARITY     "Agregar circuito 74F280 para generar bit de paridad en bus SASI. Configuraciﾃｳn predeterminada es ON."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_TKEY_PORTG       "Configuraciﾃｳn de puerto serie"
-    IDC_US_TKEY_COML        "Seleccionar puerto COM asignado a TrueKey."
-    IDC_US_TKEY_COMC        "Seleccionar puerto COM asignado a TrueKey."
-    IDC_US_TKEY_RTS         "Invertir lﾃｭnea RTS para seﾃｱal READY."
-    IDC_US_TKEY_ASSIGNG     "Configuraciﾃｳn de destino"
-    IDC_US_TKEY_VMC         "TrueKey se envﾃｭa a VM cuando estﾃ｡ ejecutando."
-    IDC_US_TKEY_WINC        "TrueKey se envﾃｭa a Windows cuando se detiene."
-    IDC_US_TKEY_MAPG        "Ver mapeo de teclas. Haga clic en No. para cambiar tecla."
-    IDC_US_TKEY_LIST        "Ver mapeo de teclas. Haga clic en No. para cambiar tecla."
+    IDC_ES_TKEY_PORTG       "Configuraciﾃｳn de puerto serie"
+    IDC_ES_TKEY_COML        "Seleccionar puerto COM asignado a TrueKey."
+    IDC_ES_TKEY_COMC        "Seleccionar puerto COM asignado a TrueKey."
+    IDC_ES_TKEY_RTS         "Invertir lﾃｭnea RTS para seﾃｱal READY."
+    IDC_ES_TKEY_ASSIGNG     "Configuraciﾃｳn de destino"
+    IDC_ES_TKEY_VMC         "TrueKey se envﾃｭa a VM cuando estﾃ｡ ejecutando."
+    IDC_ES_TKEY_WINC        "TrueKey se envﾃｭa a Windows cuando se detiene."
+    IDC_ES_TKEY_MAPG        "Ver mapeo de teclas. Haga clic en No. para cambiar tecla."
+    IDC_ES_TKEY_LIST        "Ver mapeo de teclas. Haga clic en No. para cambiar tecla."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_JOY_PORTG        "Configuraciﾃｳn de puerto"
-    IDC_US_JOY_PORTL1       "Seleccionar dispositivo para conectar al puerto1."
-    IDC_US_JOY_PORTC1       "Seleccionar dispositivo para conectar al puerto1."
-    IDC_US_JOY_PORTD1       "Mostrar informaciﾃｳn adicional de este dispositivo."
-    IDC_US_JOY_PORTL2       "Seleccionar dispositivo para conectar al puerto2."
-    IDC_US_JOY_PORTC2       "Seleccionar dispositivo para conectar al puerto2."
-    IDC_US_JOY_PORTD2       "Mostrar informaciﾃｳn adicional de este dispositivo."
-    IDC_US_JOY_DEVG         "Configuraciﾃｳn de dispositivo"
+    IDC_ES_JOY_PORTG        "Configuraciﾃｳn de puerto"
+    IDC_ES_JOY_PORTL1       "Seleccionar dispositivo para conectar al puerto1."
+    IDC_ES_JOY_PORTC1       "Seleccionar dispositivo para conectar al puerto1."
+    IDC_ES_JOY_PORTD1       "Mostrar informaciﾃｳn adicional de este dispositivo."
+    IDC_ES_JOY_PORTL2       "Seleccionar dispositivo para conectar al puerto2."
+    IDC_ES_JOY_PORTC2       "Seleccionar dispositivo para conectar al puerto2."
+    IDC_ES_JOY_PORTD2       "Mostrar informaciﾃｳn adicional de este dispositivo."
+    IDC_ES_JOY_DEVG         "Configuraciﾃｳn de dispositivo"
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_JOY_DEVLA        "Seleccionar controlador para conectar al puerto1."
-    IDC_US_JOY_DEVCA        "Seleccionar controlador para conectar al puerto1."
-    IDC_US_JOY_DEVAA        "Mostrar informaciﾃｳn adicional del controlador seleccionado."
-    IDC_US_JOY_DEVLB        "Seleccionar controlador para conectar al puerto2."
-    IDC_US_JOY_DEVCB        "Seleccionar controlador para conectar al puerto2."
-    IDC_US_JOY_DEVAB        "Mostrar informaciﾃｳn adicional del controlador seleccionado."
-    IDC_US_JOY_DEVLC        " "
-    IDC_US_JOY_DEVCC        " "
-    IDC_US_JOY_DEVAC        " "
+    IDC_ES_JOY_DEVLA        "Seleccionar controlador para conectar al puerto1."
+    IDC_ES_JOY_DEVCA        "Seleccionar controlador para conectar al puerto1."
+    IDC_ES_JOY_DEVAA        "Mostrar informaciﾃｳn adicional del controlador seleccionado."
+    IDC_ES_JOY_DEVLB        "Seleccionar controlador para conectar al puerto2."
+    IDC_ES_JOY_DEVCB        "Seleccionar controlador para conectar al puerto2."
+    IDC_ES_JOY_DEVAB        "Mostrar informaciﾃｳn adicional del controlador seleccionado."
+    IDC_ES_JOY_DEVLC        " "
+    IDC_ES_JOY_DEVCC        " "
+    IDC_ES_JOY_DEVAC        " "
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SCSI_IFG         "Configuraciﾃｳn de interfaz SCSI"
-    IDC_US_SCSI_NONEB       "No hay interfaz SCSI instalada. Esta es la configuraciﾃｳn predeterminada."
-    IDC_US_SCSI_INTB        "Usar interfaz SCSI interna. Se requiere archivo SCSIINROM.DAT. Configuraciﾃｳn predeterminada es NINGUNA."
-    IDC_US_SCSI_EXTB        "Usar interfaz SCSI externa. Se requiere archivo SCSIEXROM.DAT. Configuraciﾃｳn predeterminada es NINGUNA."
+    IDC_ES_SCSI_IFG         "Configuraciﾃｳn de interfaz SCSI"
+    IDC_ES_SCSI_NONEB       "No hay interfaz SCSI instalada. Esta es la configuraciﾃｳn predeterminada."
+    IDC_ES_SCSI_INTB        "Usar interfaz SCSI interna. Se requiere archivo SCSIINROM.DAT. Configuraciﾃｳn predeterminada es NINGUNA."
+    IDC_ES_SCSI_EXTB        "Usar interfaz SCSI externa. Se requiere archivo SCSIEXROM.DAT. Configuraciﾃｳn predeterminada es NINGUNA."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SCSI_GROUP       "Configuraciﾃｳn de disco SCSI (vﾃｭa interfaz SCSI)"
-    IDC_US_SCSI_DRIVEL      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
-    IDC_US_SCSI_DRIVEE      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
-    IDC_US_SCSI_DRIVES      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
-    IDC_US_SCSI_MOCHECK     "Asignar ID SCSI de unidad MO primero."
-    IDC_US_SCSI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'ID'."
+    IDC_ES_SCSI_GROUP       "Configuraciﾃｳn de disco SCSI (vﾃｭa interfaz SCSI)"
+    IDC_ES_SCSI_DRIVEL      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
+    IDC_ES_SCSI_DRIVEE      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
+    IDC_ES_SCSI_DRIVES      "Seleccionar nﾃｺmero de unidades (incluye unidades MO y CD-ROM)."
+    IDC_ES_SCSI_MOCHECK     "Asignar ID SCSI de unidad MO primero."
+    IDC_ES_SCSI_LIST        "Para cambiar el nombre del archivo de imagen, haga clic en el ﾃ｡rea 'ID'."
 END
 
 STRINGTABLE
 BEGIN
-    IDC_US_RESUME_DISKG     "Configuraciﾃｳn de reanudaciﾃｳn de disco"
-    IDC_US_RESUME_FDC       "Insertar imagen de disquete anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_RESUME_MOC       "Insertar imagen de disco MO anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_RESUME_CDC       "Insertar imagen de CD-ROM anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_RESUME_STATEG    "Configuraciﾃｳn de reanudaciﾃｳn de estado"
-    IDC_US_RESUME_XM6C      "Cargar y continuar archivo de estado anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_RESUME_MISCG     "Otras configuraciones de reanudaciﾃｳn"
-    IDC_US_RESUME_SCREENC   "Restaurar propiedades de ventana anteriores al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
-    IDC_US_RESUME_DIRC      "Restaurar directorio actual al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_DISKG     "Configuraciﾃｳn de reanudaciﾃｳn de disco"
+    IDC_ES_RESUME_FDC       "Insertar imagen de disquete anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_MOC       "Insertar imagen de disco MO anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_CDC       "Insertar imagen de CD-ROM anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_STATEG    "Configuraciﾃｳn de reanudaciﾃｳn de estado"
+    IDC_ES_RESUME_XM6C      "Cargar y continuar archivo de estado anterior al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_MISCG     "Otras configuraciones de reanudaciﾃｳn"
+    IDC_ES_RESUME_SCREENC   "Restaurar propiedades de ventana anteriores al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
+    IDC_ES_RESUME_DIRC      "Restaurar directorio actual al iniciar XM6. Configuraciﾃｳn predeterminada es OFF."
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_CAPTION_RUN      "XM6 [Ejecutando]"
-    IDS_US_CAPTION_STOP     "XM6 [Detenido]"
-    IDS_US_INIT_VMERR       "Error al inicializar la mﾃ｡quina virtual."
-    IDS_US_INIT_COMERR      "Error al inicializar componentes de DirectX."
-    IDS_US_INIT_IPLERR      "IPLROM.DAT puede no ser versiﾃｳn 1.00.\nﾂｿContinuar?"
-    IDS_US_INIT_CGERR       "CGROM.DAT puede ser diferente al de X680x0.\nﾂｿContinuar?"
-    IDS_US_FDOPEN           "Todos los archivos de imagen soportados|*.XDF;*.HDM;*.2HD;*.DUP;*.IMG;*.DIM;*.D68;*.D88|Archivos de imagen de 1.25MB (XDF;HDM;2HD;DUP;IMG)|*.XDF;*.HDM;*.2HD;*.DUP;*.IMG;*.2DD;*.2HQ|Archivos de imagen DIM (DIM)|*.DIM|Archivos de imagen D68 (D68;D88)|*.D68;*.D88|Archivos de imagen de 720KB (2DD)|*.2DD|Archivos de imagen de 1.44MB (2HQ)|*.2HQ|Todos los archivos (*.*)|*.*||"
-    IDS_US_FDERR            "Sin archivo o archivo invﾃ｡lido."
+    IDS_ES_CAPTION_RUN      "XM6 [Ejecutando]"
+    IDS_ES_CAPTION_STOP     "XM6 [Detenido]"
+    IDS_ES_INIT_VMERR       "Error al inicializar la mﾃ｡quina virtual."
+    IDS_ES_INIT_COMERR      "Error al inicializar componentes de DirectX."
+    IDS_ES_INIT_IPLERR      "IPLROM.DAT puede no ser versiﾃｳn 1.00.\nﾂｿContinuar?"
+    IDS_ES_INIT_CGERR       "CGROM.DAT puede ser diferente al de X680x0.\nﾂｿContinuar?"
+    IDS_ES_FDOPEN           "Todos los archivos de imagen soportados|*.XDF;*.HDM;*.2HD;*.DUP;*.IMG;*.DIM;*.D68;*.D88|Archivos de imagen de 1.25MB (XDF;HDM;2HD;DUP;IMG)|*.XDF;*.HDM;*.2HD;*.DUP;*.IMG;*.2DD;*.2HQ|Archivos de imagen DIM (DIM)|*.DIM|Archivos de imagen D68 (D68;D88)|*.D68;*.D88|Archivos de imagen de 720KB (2DD)|*.2DD|Archivos de imagen de 1.44MB (2HQ)|*.2HQ|Todos los archivos (*.*)|*.*||"
+    IDS_ES_FDERR            "Sin archivo o archivo invﾃ｡lido."
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_NEWFD            "Se ha creado nuevo archivo de Floppy."
-    IDS_US_SASIOPEN         "Archivos de imagen de disco duro SASI (*.HDF)|*.HDF|Todos los archivos (*.*)|*.*||"
-    IDS_US_NEWSASI          "Nuevo archivo de imagen de disco duro SASI creado."
-    IDS_US_CREATEERR        "Error al crear archivo de imagen."
-    IDS_US_OPTIONS          "Opciones"
-    IDS_US_MOUSE_X68K       "Emulaciﾃｳn de ratﾃｳn habilitada."
-    IDS_US_MOUSE_WIN        "Emulaciﾃｳn de ratﾃｳn deshabilitada."
-    IDS_US_WAVOPEN          "Archivos de audio WAV (*.WAV)|*.WAV|Todos los archivos (*.*)|*.*||"
-    IDS_US_WAVSTART         "Volcado iniciado"
-    IDS_US_WAVSTOP          "Volcado terminado"
-    IDS_US_KBD_NO           "No."
-    IDS_US_KBD_KEYTOP       "Nombre"
-    IDS_US_KBD_DIRECTX      "ID de tecla DirectX"
-    IDS_US_RESET            "Reiniciar sistema"
-    IDS_US_KBDMAP_GUIDE     "Haga clic con el botﾃｳn izquierdo del ratﾃｳn para editar."
-    IDS_US_STDWIN           "Posiciﾃｳn de ventana estﾃ｡ndar"
+    IDS_ES_NEWFD            "Se ha creado nuevo archivo de Floppy."
+    IDS_ES_SASIOPEN         "Archivos de imagen de disco duro SASI (*.HDF)|*.HDF|Todos los archivos (*.*)|*.*||"
+    IDS_ES_NEWSASI          "Nuevo archivo de imagen de disco duro SASI creado."
+    IDS_ES_CREATEERR        "Error al crear archivo de imagen."
+    IDS_ES_OPTIONS          "Opciones"
+    IDS_ES_MOUSE_X68K       "Emulacion de raton habilitada."
+    IDS_ES_MOUSE_WIN        "Emulacion de raton deshabilitada."
+    IDS_ES_WAVOPEN          "Archivos de audio WAV (*.WAV)|*.WAV|Todos los archivos (*.*)|*.*||"
+    IDS_ES_WAVSTART         "Volcado iniciado"
+    IDS_ES_WAVSTOP          "Volcado terminado"
+    IDS_ES_KBD_NO           "No."
+    IDS_ES_KBD_KEYTOP       "Nombre"
+    IDS_ES_KBD_DIRECTX      "ID de tecla DirectX"
+    IDS_ES_RESET            "Reiniciar sistema"
+    IDS_ES_KBDMAP_GUIDE     "Haga clic con el botﾃｳn izquierdo del ratﾃｳn para editar."
+    IDS_ES_STDWIN           "Posiciﾃｳn de ventana estﾃ｡ndar"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SASI_CAPACITY    "Estado"
-    IDS_US_SASI_FILENAME    "Archivo de imagen SASI-HD"
-    IDS_US_SASI_DEVERROR    "Err"
-    IDS_US_NEWSCSI          "Nuevo archivo de imagen de disco duro SCSI creado."
-    IDS_US_NEWMO            "Nuevo archivo de imagen de disco MO SCSI creado."
-    IDS_US_SCSIOPEN         "Archivos de imagen de disco SCSI (*.HDS)|*.HDS|Todos los archivos (*.*)|*.*||"
-    IDS_US_MOOPEN           "Archivos de imagen de disco MO SCSI (*.MOS)|*.MOS|Todos los archivos (*.*)|*.*||"
-    IDS_US_CANCEL           "Cancelado"
-    IDS_US_MOERR            "Sin archivo o archivo invﾃ｡lido."
-    IDS_US_SXSI_CAPACITY    "Estado"
-    IDS_US_SXSI_FILENAME    "Archivo de imagen SCSI-HD"
-    IDS_US_SXSI_SASI        "(Unidad de disco fijo SASI)"
-    IDS_US_SXSI_MO          "(Unidad MO SCSI)"
-    IDS_US_SXSI_INIT        "(Iniciador)"
-    IDS_US_SXSI_NONE        " "
-    IDS_US_SXSI_DEVERROR    "Err"
+    IDS_ES_SASI_CAPACITY    "Estado"
+    IDS_ES_SASI_FILENAME    "Archivo de imagen SASI-HD"
+    IDS_ES_SASI_DEVERROR    "Err"
+    IDS_ES_NEWSCSI          "Nuevo archivo de imagen de disco duro SCSI creado."
+    IDS_ES_NEWMO            "Nuevo archivo de imagen de disco MO SCSI creado."
+    IDS_ES_SCSIOPEN         "Archivos de imagen de disco SCSI (*.HDS)|*.HDS|Todos los archivos (*.*)|*.*||"
+    IDS_ES_MOOPEN           "Archivos de imagen de disco MO SCSI (*.MOS)|*.MOS|Todos los archivos (*.*)|*.*||"
+    IDS_ES_CANCEL           "Cancelado"
+    IDS_ES_MOERR            "Sin archivo o archivo invﾃ｡lido."
+    IDS_ES_SXSI_CAPACITY    "Estado"
+    IDS_ES_SXSI_FILENAME    "Archivo de imagen SCSI-HD"
+    IDS_ES_SXSI_SASI        "(Unidad de disco fijo SASI)"
+    IDS_ES_SXSI_MO          "(Unidad MO SCSI)"
+    IDS_ES_SXSI_INIT        "(Iniciador)"
+    IDS_ES_SXSI_NONE        " "
+    IDS_ES_SXSI_DEVERROR    "Err"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_FDI_DISKNAME     "&Nombre (Hasta 16 caracteres)"
-    IDS_US_FDI_COMMENT      "Co&mentario (Hasta 59 caracteres)"
-    IDS_US_PORT_NOASSIGN    "(Ninguno)"
-    IDS_US_MIDI_NOASSIGN    "(Ninguno)"
-    IDS_US_MIDI_MAPPER      "Mapeador MIDI"
-    IDS_US_SOUND_NOASSIGN   "(Ninguno)"
-    IDS_US_BADFDI_WARNING   "Este archivo de imagen de disquete no tiene el tamaﾃｱo correcto. XM6 lo usarﾃ｡ como imagen normal de 1.25MB."
-    IDS_US_TKEY_NOASSIGN    "(Ninguno)"
-    IDS_US_TKEY_NO          "No."
-    IDS_US_TKEY_KEYTOP      "Nombre"
-    IDS_US_TKEY_VK          "ID de tecla VK"
-    IDS_US_INTERRUPT        "Interruptor INTERRUPT presionado."
-    IDS_US_POWEROFF         "La alimentaciﾃｳn ha sido apagada."
-    IDS_US_JOY_NOASSIGN     "(Ninguno)"
-    IDS_US_JOY_ATARI        "ATARI (Estﾃ｡ndar)"
-    IDS_US_JOY_ATARISS      "ATARI+START/SELECT"
+    IDS_ES_FDI_DISKNAME     "&Nombre (Hasta 16 caracteres)"
+    IDS_ES_FDI_COMMENT      "Co&mentario (Hasta 59 caracteres)"
+    IDS_ES_PORT_NOASSIGN    "(Ninguno)"
+    IDS_ES_MIDI_NOASSIGN    "(Ninguno)"
+    IDS_ES_MIDI_MAPPER      "Mapeador MIDI"
+    IDS_ES_SOUND_NOASSIGN   "(Ninguno)"
+    IDS_ES_BADFDI_WARNING   "Este archivo de imagen de disquete no tiene el tamaﾃｱo correcto. XM6 lo usarﾃ｡ como imagen normal de 1.25MB."
+    IDS_ES_TKEY_NOASSIGN    "(Ninguno)"
+    IDS_ES_TKEY_NO          "No."
+    IDS_ES_TKEY_KEYTOP      "Nombre"
+    IDS_ES_TKEY_VK          "ID de tecla VK"
+    IDS_ES_INTERRUPT        "Interruptor INTERRUPT presionado."
+    IDS_ES_POWEROFF         "La alimentaciﾃｳn ha sido apagada."
+    IDS_ES_JOY_NOASSIGN     "(Ninguno)"
+    IDS_ES_JOY_ATARI        "ATARI (Estﾃ｡ndar)"
+    IDS_ES_JOY_ATARISS      "ATARI+START/SELECT"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_JOY_CYBERA       "Cyberstick (Analﾃｳgico)"
-    IDS_US_JOY_CYBERD       "Cyberstick (Digital)"
-    IDS_US_JOY_MD3          "Genesis 3 botones"
-    IDS_US_JOY_MD6          "Genesis 6 botones"
-    IDS_US_JOY_CPSF         "CPS Fighter (SFC)"
-    IDS_US_JOY_CPSFMD       "CPS Fighter (MD)"
-    IDS_US_JOY_MAGICAL      "Magical Pad"
-    IDS_US_JOY_LR           "XPD-1LR"
-    IDS_US_JOY_PACLAND      "Pacland 3 botones"
-    IDS_US_JOY_BM           "BM68 6 botones"
-    IDS_US_KBD_DELTITLE     "Eliminar"
-    IDS_US_KBD_DELMSG       "Eliminar asignaciﾃｳn No. %02X a %s.\nﾂｿSeguro?"
-    IDS_US_JOYSET           "Configuraciﾃｳn de dispositivo %c(%s)"
-    IDS_US_JOYSET_NOASSIGN  "(Ninguno)"
-    IDS_US_JOYSET_BTNPORT   "Puerto%d-Botﾃｳn%d%s"
-    IDS_US_JOYSET_BTNLABEL  "Botﾃｳn %d"
+    IDS_ES_JOY_CYBERA       "Cyberstick (Analﾃｳgico)"
+    IDS_ES_JOY_CYBERD       "Cyberstick (Digital)"
+    IDS_ES_JOY_MD3          "Genesis 3 botones"
+    IDS_ES_JOY_MD6          "Genesis 6 botones"
+    IDS_ES_JOY_CPSF         "CPS Fighter (SFC)"
+    IDS_ES_JOY_CPSFMD       "CPS Fighter (MD)"
+    IDS_ES_JOY_MAGICAL      "Magical Pad"
+    IDS_ES_JOY_LR           "XPD-1LR"
+    IDS_ES_JOY_PACLAND      "Pacland 3 botones"
+    IDS_ES_JOY_BM           "BM68 6 botones"
+    IDS_ES_KBD_DELTITLE     "Eliminar"
+    IDS_ES_KBD_DELMSG       "Eliminar asignacion No. %02X a %s.\nﾂｿSeguro?"
+    IDS_ES_JOYSET           "Configuraciﾃｳn de dispositivo %c(%s)"
+    IDS_ES_JOYSET_NOASSIGN  "(Ninguno)"
+    IDS_ES_JOYSET_BTNPORT   "Puerto%d-Botﾃｳn%d%s"
+    IDS_ES_JOYSET_BTNLABEL  "Botﾃｳn %d"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_JOYDET_ANALOG    "Analﾃｳgico"
-    IDS_US_XM6OPEN          "Archivos de estado de XM6 (*.XM6)|*.XM6|Todos los archivos (*.*)|*.*||"
-    IDS_US_XM6LOADOK        "Restauraciﾃｳn de datos completada."
-    IDS_US_XM6LOADERR       "ﾂ｡Archivo invﾃ｡lido! ahora reiniciando XM6..."
-    IDS_US_XM6SAVEOK        "Guardado de datos completado."
-    IDS_US_XM6SAVEERR       "ﾂ｡Error de escritura!"
-    IDS_US_EXIT             "S&alir\tAlt+F4"
-    IDS_US_XM6LOADHDR       "ﾂ｡Archivo invﾃ｡lido!"
-    IDS_US_XM6LOADVER       "Versiﾃｳn no reconocida\n\n[Ahora]  versiﾃｳn%1X.%02X\n[Archivo] versiﾃｳn%1X.%02X"
-    IDS_US_FILEUPDATE       "El archivo ha sido actualizado despuﾃｩs de guardar\n\n[Archivo]  %s\n[Grabado] %d/%d/%d\n[Actual]  %d/%d/%d"
-    IDS_US_SCSI_CAPACITY    "Estado"
-    IDS_US_SCSI_FILENAME    "Archivo de imagen SCSI-HD"
-    IDS_US_SCSI_MO          "(Unidad MO SCSI)"
-    IDS_US_SCSI_CD          "(Unidad de CD-ROM SCSI)"
-    IDS_US_SCSI_INIT        "(Iniciador)"
+    IDS_ES_JOYDET_ANALOG    "Analﾃｳgico"
+    IDS_ES_XM6OPEN          "Archivos de estado de XM6 (*.XM6)|*.XM6|Todos los archivos (*.*)|*.*||"
+    IDS_ES_XM6LOADOK        "Restauraciﾃｳn de datos completada."
+    IDS_ES_XM6LOADERR       "ﾂ｡Archivo invﾃ｡lido! ahora reiniciando XM6..."
+    IDS_ES_XM6SAVEOK        "Guardado de datos completado."
+    IDS_ES_XM6SAVEERR       "ﾂ｡Error de escritura!"
+    IDS_ES_EXIT             "S&alir\tAlt+F4"
+    IDS_ES_XM6LOADHDR       "ﾂ｡Archivo invﾃ｡lido!"
+    IDS_ES_XM6LOADVER       "Versiﾃｳn no reconocida\n\n[Ahora]  versiﾃｳn%1X.%02X\n[Archivo] versiﾃｳn%1X.%02X"
+    IDS_ES_FILEUPDATE       "El archivo ha sido actualizado despuﾃｩs de guardar\n\n[Archivo]  %s\n[Grabado] %d/%d/%d\n[Actual]  %d/%d/%d"
+    IDS_ES_SCSI_CAPACITY    "Estado"
+    IDS_ES_SCSI_FILENAME    "Archivo de imagen SCSI-HD"
+    IDS_ES_SCSI_MO          "(Unidad MO SCSI)"
+    IDS_ES_SCSI_CD          "(Unidad de CD-ROM SCSI)"
+    IDS_ES_SCSI_INIT        "(Iniciador)"
 END
 
 STRINGTABLE
 BEGIN
-    IDS_US_SCSI_NONE        " "
-    IDS_US_SCSI_DEVERROR    "Err"
-    IDS_US_CDOPEN           "Archivos de imagen ISO9660 (*.ISO)|*.ISO|Todos los archivos (*.*)|*.*||"
-    IDS_US_CDERR            "Sin archivo o archivo invﾃ｡lido."
-    IDS_US_SCHDSIZE         "El disco SCSI de mﾃ｡s de 1017M bytes no es compatible con SxSI."
-    IDS_US_MPUSXSI          "Funciﾃｳn sin espera de MPU habilitada. La funciﾃｳn SxSI puede no funcionar."
-    IDS_US_SAVECLOSE        "%s ha sido actualizado. ﾂｿGuardar?"
-    IDS_US_PROCESSOR        "Este procesador no es compatible.\nSe requieren instrucciones MMX y CMOV."
+    IDS_ES_SCSI_NONE        " "
+    IDS_ES_SCSI_DEVERROR    "Err"
+    IDS_ES_CDOPEN           "Archivos de imagen ISO9660 (*.ISO)|*.ISO|Todos los archivos (*.*)|*.*||"
+    IDS_ES_CDERR            "Sin archivo o archivo invﾃ｡lido."
+    IDS_ES_SCHDSIZE         "El disco SCSI de mﾃ｡s de 1017M bytes no es compatible con SxSI."
+    IDS_ES_MPUSXSI          "Funciﾃｳn sin espera de MPU habilitada. La funciﾃｳn SxSI puede no funcionar."
+    IDS_ES_SAVECLOSE        "%s ha sido actualizado. ﾂｿGuardar?"
+    IDS_ES_PROCESSOR        "Este procesador no es compatible.\nSe requieren instrucciones MMX y CMOV."
 END
 
 #endif    // Espal (Espa, alfabetizaci internacional) resources
