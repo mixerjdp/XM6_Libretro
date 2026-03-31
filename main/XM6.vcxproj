@@ -308,6 +308,16 @@
     <ClInclude Include="..\vm\mouse.h" />
     <ClInclude Include="..\vm\opm.h" />
     <ClInclude Include="..\vm\opmif.h" />
+    <ClInclude Include="..\vm\x68sound_adpcm_core.h" />
+    <ClInclude Include="..\vm\x68sound_bridge.h" />
+    <ClInclude Include="..\vm\x68sound\adpcm.h" />
+    <ClInclude Include="..\vm\x68sound\global.h" />
+    <ClInclude Include="..\vm\x68sound\lfo.h" />
+    <ClInclude Include="..\vm\x68sound\op.h" />
+    <ClInclude Include="..\vm\x68sound\opm.h" />
+    <ClInclude Include="..\vm\x68sound\pcm8.h" />
+    <ClInclude Include="..\vm\x68sound\x68sound.h" />
+    <ClInclude Include="..\vm\x68sound\x68sound_platform.h" />
     <ClInclude Include="..\vm\os.h" />
     <ClInclude Include="..\vm\ppi.h" />
     <ClInclude Include="..\vm\printer.h" />
@@ -369,6 +379,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <None Include="..\vm\xm6core_impl.cpp" />
+    <None Include="..\vm\xm6core_runtime.cpp" />
     <ClInclude Include="..\libretro\libretro.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -2765,10 +2765,12 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		}
 
 		for (unsigned int i = 0; i < frames; i++) {
+			// X68Sound FM runs a little quieter than its ADPCM mix and the other engines,
+			// so give FM a small 20% headroom here without touching ADPCM.
 			const int fm_l = (fm_volume <= 0) ? 0 :
-				(static_cast<int>(x68sound_src[(i * 2) + 0]) * fm_volume) / 100;
+				static_cast<int>((static_cast<int64_t>(x68sound_src[(i * 2) + 0]) * fm_volume * 120) / 10000);
 			const int fm_r = (fm_volume <= 0) ? 0 :
-				(static_cast<int>(x68sound_src[(i * 2) + 1]) * fm_volume) / 100;
+				static_cast<int>((static_cast<int64_t>(x68sound_src[(i * 2) + 1]) * fm_volume * 120) / 10000);
 			const int mixed_l = fm_l + adpcm_src[(i * 2) + 0];
 			const int mixed_r = fm_r + adpcm_src[(i * 2) + 1];
 			const int out_l = (master != 100) ? ((mixed_l * master) / 100) : mixed_l;

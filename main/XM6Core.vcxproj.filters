@@ -1,5 +1,5 @@
-<?xml version='1.0' encoding='utf-8'?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="VM">
       <UniqueIdentifier>{9ed18be7-b3e2-4ee8-8f99-bb48548c73e0}</UniqueIdentifier>
@@ -96,24 +96,15 @@
     <ClCompile Include="..\vm\opmif.cpp">
       <Filter>VM</Filter>
     </ClCompile>
-    <ClCompile Include="..\vm\xm6core_impl.cpp">
-      <Filter>VM</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vm\xm6core_runtime.cpp">
-      <Filter>VM</Filter>
-    </ClCompile>
     <ClCompile Include="..\vm\x68sound_bridge.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\ymfm_opm_engine.cpp">
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\x68sound\X68Sound.cpp">
       <Filter>VM</Filter>
     </ClCompile>
-    <None Include="..\vm\xm6core_impl.cpp">
-      <Filter>VM</Filter>
-    </None>
-    <None Include="..\vm\xm6core_runtime.cpp">
-      <Filter>VM</Filter>
-    </None>
     <ClCompile Include="..\vm\ppi.cpp">
       <Filter>VM</Filter>
     </ClCompile>
@@ -171,10 +162,31 @@
     <ClCompile Include="..\vm\windrv.cpp">
       <Filter>VM</Filter>
     </ClCompile>
+    <ClCompile Include="..\vm\ymfm\ymfm_opm.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\core_soft.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\xm6core_diag.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\xm6core_impl.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\xm6core_runtime.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\xm6core_stubs.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
     <ClCompile Include="..\vm\musashi_adapter.cpp">
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\vm\musashi_mem.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cpu\Musashi\softfloat\softfloat.c">
       <Filter>VM</Filter>
     </ClCompile>
     <ClCompile Include="..\cpu\Musashi\m68kcpu.c">
@@ -185,96 +197,6 @@
     </ClCompile>
     <ClCompile Include="..\cpu\Musashi\m68kdasm.c">
       <Filter>VM</Filter>
-    </ClCompile>
-    <ClCompile Include="..\cpu\Musashi\softfloat\softfloat.c">
-      <Filter>VM</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_app.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_cfg.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_cmd.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_com.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_cpu.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_dev.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_draw.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_dx9.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_frm.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_host.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_info.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_inp.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_midi.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_port.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_que.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_rend.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_sch.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_snd.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_asm_portable.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_stat.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_sub.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_sys.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_tkey.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_tool.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_ver.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_vid.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\mfc\mfc_w32.cpp">
-      <Filter>MFC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\vm\core_soft.cpp">
-      <Filter>VM</Filter>
-    </ClCompile>
-    <ClCompile Include="..\libretro\xm6_libretro.cpp">
-      <Filter>Libretro</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -293,10 +215,16 @@
     <ClInclude Include="..\vm\config.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\core_asm.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\core_soft.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\cpu.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\cpudebug.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\crtc.h">
@@ -341,6 +269,12 @@
     <ClInclude Include="..\vm\gvram.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\host_fs.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\host_services.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\iosc.h">
       <Filter>VM</Filter>
     </ClInclude>
@@ -353,6 +287,9 @@
     <ClInclude Include="..\vm\memory.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\mercury.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\mfp.h">
       <Filter>VM</Filter>
     </ClInclude>
@@ -360,6 +297,12 @@
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\mouse.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\musashi_adapter.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\neptune.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\opm.h">
@@ -398,6 +341,9 @@
     <ClInclude Include="..\vm\x68sound\x68sound_platform.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\ymfm_opm_engine.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\os.h">
       <Filter>VM</Filter>
     </ClInclude>
@@ -407,13 +353,16 @@
     <ClInclude Include="..\vm\printer.h">
       <Filter>VM</Filter>
     </ClInclude>
-    <ClInclude Include="..\vm\rend_soft.h">
-      <Filter>VM</Filter>
-    </ClInclude>
     <ClInclude Include="..\vm\render.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\renderin.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\rend_asm.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\rend_soft.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\rtc.h">
@@ -428,22 +377,16 @@
     <ClInclude Include="..\vm\schedule.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\scsi.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\sprite.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\sram.h">
       <Filter>VM</Filter>
     </ClInclude>
-    <ClInclude Include="..\vm\musashi_adapter.h">
-      <Filter>VM</Filter>
-    </ClInclude>
-    <ClInclude Include="..\cpu\Musashi\m68k.h">
-      <Filter>VM</Filter>
-    </ClInclude>
-    <ClInclude Include="..\cpu\Musashi\m68kcpu.h">
-      <Filter>VM</Filter>
-    </ClInclude>
-    <ClInclude Include="..\cpu\Musashi\m68kconf_xm6.h">
+    <ClInclude Include="..\vm\starcpu.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\sync.h">
@@ -467,105 +410,8 @@
     <ClInclude Include="..\vm\xm6.h">
       <Filter>VM</Filter>
     </ClInclude>
-    <ClInclude Include="..\vm\cpudebug.h">
+    <ClInclude Include="..\vm\xm6core.h">
       <Filter>VM</Filter>
     </ClInclude>
-    <ClInclude Include="..\mfc\mfc.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_app.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_asm.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_cfg.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_com.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_cpu.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_dev.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_draw.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_dx9.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_frm.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_inp.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_midi.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_port.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_que.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_rend.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_res.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_sch.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_snd.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_stat.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_sub.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_sys.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_tool.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_ver.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_vid.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\mfc\mfc_w32.h">
-      <Filter>MFC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libretro\libretro.h">
-      <Filter>Libretro</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\mfc\mfc_res.rc">
-      <Filter>MFC</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\mfc\res\crt.bmp">
-      <Filter>MFC</Filter>
-    </Image>
-    <Image Include="..\mfc\res\x68000.ico">
-      <Filter>MFC</Filter>
-    </Image>
-    <Image Include="..\mfc\res\x68k.bmp">
-      <Filter>MFC</Filter>
-    </Image>
-    <Image Include="..\mfc\res\xm6.ico">
-      <Filter>MFC</Filter>
-    </Image>
   </ItemGroup>
 </Project>
