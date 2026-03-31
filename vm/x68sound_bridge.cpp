@@ -7,6 +7,7 @@
 #include "x68sound_bridge.h"
 
 #include <cstdio>
+#include <cstdint>
 
 #if defined(XM6CORE_ENABLE_X68SOUND)
 
@@ -29,7 +30,7 @@ static int CALLBACK x68sound_mem_read(unsigned char *adrs)
 		return 0;
 	}
 
-	const UINT_PTR raw = reinterpret_cast<UINT_PTR>(adrs);
+	const uintptr_t raw = reinterpret_cast<uintptr_t>(adrs);
 	const DWORD addr = static_cast<DWORD>(raw & 0x00ffffffu);
 	return static_cast<int>(g_memory->ReadByte(addr) & 0xffu);
 }
