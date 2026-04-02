@@ -1078,7 +1078,7 @@ static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r
 			(unsigned int)r->h_mul,
 			(unsigned int)r->v_mul,
 			r->lowres ? 1 : 0,
-			(ctx->render->GetCompositorMode() == 1) ? "fast" : "original"); */
+			"original"); */
 	}
 
 	if (ctx->video_probe_frames_remaining == 0) {
@@ -1095,7 +1095,7 @@ static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r
 		(unsigned int)r->h_mul,
 		(unsigned int)r->v_mul,
 		r->lowres ? 1 : 0,
-		(ctx->render->GetCompositorMode() == 1) ? "fast" : "original",
+		"original",
 		r->grptype,
 		r->mixpage,
 		r->mixtype,

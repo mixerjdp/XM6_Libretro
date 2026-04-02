@@ -529,30 +529,6 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_mouse_swap(XM6Handle handle, int
 	return XM6CORE_OK;
 }
 
-extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, int mode)
-{
-	if (!handle) {
-		return XM6CORE_ERR_INVALID_HANDLE;
-	}
-	if (mode != XM6CORE_RENDER_MODE_ORIGINAL && mode != XM6CORE_RENDER_MODE_FAST) {
-		return XM6CORE_ERR_INVALID_ARGUMENT;
-	}
-
-	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
-	if (!ctx->vm) {
-		return XM6CORE_ERR_INVALID_HANDLE;
-	}
-
-	if (!ctx->vm->SetRenderMode(mode)) {
-		return XM6CORE_ERR_INVALID_ARGUMENT;
-	}
-
-	if (ctx->render) {
-		ctx->render->Complete();
-	}
-	return XM6CORE_OK;
-}
-
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_legacy_dmac_cnt(XM6Handle handle, int enabled)
 {
 	if (!handle) {
@@ -642,7 +618,7 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_transparency_enabled(XM6Handle h
 	return XM6CORE_OK;
 }
 
-extern "C" XM6CORE_API int XM6CORE_CALL xm6_get_render_mode(XM6Handle handle)
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_px68k_graphic_engine(XM6Handle handle, int enabled)
 {
 	if (!handle) {
 		return XM6CORE_ERR_INVALID_HANDLE;
@@ -653,7 +629,19 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_get_render_mode(XM6Handle handle)
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
 
-	return ctx->vm->GetRenderMode();
+	Render *render = ctx->render;
+	if (!render) {
+		render = (Render*)ctx->vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+		ctx->render = render;
+	}
+
+	if (render) {
+		render->UsePx68kGraphicEngine(enabled ? TRUE : FALSE);
+		render->ForceRecompose();
+		render->Complete();
+	}
+
+	return XM6CORE_OK;
 }
 
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_midi_enabled(XM6Handle handle, int enabled)

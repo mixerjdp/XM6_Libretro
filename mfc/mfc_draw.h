@@ -13,13 +13,14 @@
 #define mfc_draw_h
 
 #include "mfc_dx9.h"
+#include "px68k_render_interfaces.h"
 
 //===========================================================================
 //
 // Draw view
 //
 //===========================================================================
-class CDrawView : public CView
+class CDrawView : public CView, public IRenderTarget
 {
 public:
 	// Internal data definition
@@ -92,6 +93,13 @@ public:
 										// Get shader state
 	BOOL FASTCALL IsDX9Active() const;
 										// Check whether DX9 mode is active
+	void FASTCALL DrawLine() override;
+	void FASTCALL DrawFrame() override;
+										// Render target callbacks
+	BOOL FASTCALL SetPx68kGraphicEngineEnabled(BOOL bEnable);
+										// Switch px68k graphic engine
+	BOOL FASTCALL IsPx68kGraphicEngineEnabled() const;
+										// Get px68k graphic engine state
 	void FASTCALL ShowRenderStatusOSD(BOOL bVSync);
 										// Show active renderer and VSync state
 	void FASTCALL ApplyCfg(const Config *pConfig);
@@ -188,6 +196,7 @@ private:
 	CDX9Renderer m_DX9Renderer;
 	BOOL m_bUseDX9;
 	volatile LONG m_lPresentPending;
+	BOOL m_bPx68kGraphicEngine;
 
 	// Variables for the dedicated rendering thread
 	HANDLE m_hRenderEvent;

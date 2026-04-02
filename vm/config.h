@@ -155,6 +155,7 @@ public:
 
 	// Display
 	BOOL caption_info;					// Caption information display
+	BOOL px68k_graphic_engine;			// Px68k graphic engine (TRUE=ON)
 
 	// Display
 	BOOL caption;						// Caption

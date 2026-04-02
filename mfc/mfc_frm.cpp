@@ -333,11 +333,11 @@ BEGIN_MESSAGE_MAP(CFrmWnd, CFrameWnd)
 	ON_COMMAND(IDM_REFRESH, OnRefresh)
 	ON_COMMAND(IDM_FULLSCREEN, OnFullScreen)
 	ON_UPDATE_COMMAND_UI(IDM_FULLSCREEN, OnFullScreenUI)
-	ON_COMMAND(IDM_RENDER_FAST, OnRenderFast)
-	ON_UPDATE_COMMAND_UI(IDM_RENDER_FAST, OnRenderFastUI)
 	ON_COMMAND(IDM_YMFM, OnYmfm)
 	ON_UPDATE_COMMAND_UI(IDM_YMFM, OnYmfmUI)
 	ON_COMMAND(IDM_TOGGLE_RENDERER, OnToggleRenderer)
+	ON_COMMAND(IDM_TOGGLE_PX68K_ENGINE, OnTogglePx68kGraphicEngine)
+	ON_UPDATE_COMMAND_UI(IDM_TOGGLE_PX68K_ENGINE, OnTogglePx68kGraphicEngineUI)
 	ON_COMMAND(IDM_TOGGLE_OSD, OnToggleOSD)
 	ON_COMMAND(IDM_TOGGLE_VSYNC, OnToggleVSync)
 	ON_COMMAND(IDM_TOGGLE_SHADER, OnToggleShader)
@@ -554,6 +554,7 @@ BOOL FASTCALL CFrmWnd::InitChild()
 	else {
 		// Early startup path: config component is not created yet.
 		config.render_shader = FALSE;
+		config.px68k_graphic_engine = FALSE;
 	}
 
 	// Create view with the initial shader state
@@ -1847,6 +1848,7 @@ void CFrmWnd::SaveFrameWnd()
 	// Shader state
 	if (m_pDrawView) {
 		config.render_shader = m_pDrawView->IsShaderEnabled();
+		config.px68k_graphic_engine = m_pDrawView->IsPx68kGraphicEngineEnabled();
 	}
 
 	// Store updated config
@@ -3324,61 +3326,6 @@ CConfig* FASTCALL CFrmWnd::GetConfig() const
 //	Toggle Renderer (DX9/GDI)
 //
 //---------------------------------------------------------------------------
-void CFrmWnd::OnRenderFast()
-{
-	Render *pRender;
-	int nMode;
-	CString info;
-	Config config;
-
-	pRender = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	if (!pRender) {
-		return;
-	}
-
-	nMode = (pRender->GetCompositorMode() == Render::compositor_fast) ?
-		Render::compositor_original : Render::compositor_fast;
-	if (!pRender->SetCompositorMode(nMode)) {
-		return;
-	}
-
-	pRender->Complete();
-	if (m_pDrawView) {
-		m_pDrawView->Refresh();
-	}
-
-	GetConfig()->GetConfig(&config);
-	config.alt_raster = (nMode == Render::compositor_fast) ? TRUE : FALSE;
-	GetConfig()->SetConfig(&config);
-
-	::LockVM();
-	::GetVM()->ApplyCfg(&config);
-	::UnlockVM();
-
-	info.Format(_T("Render Fast: %s"),
-		(nMode == Render::compositor_fast) ? _T("ON") : _T("OFF"));
-	SetInfo(info);
-}
-
-void CFrmWnd::OnRenderFastUI(CCmdUI *pCmdUI)
-{
-	Render *pRender;
-
-	if (!pCmdUI) {
-		return;
-	}
-
-	pRender = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	if (!pRender) {
-		pCmdUI->Enable(FALSE);
-		pCmdUI->SetCheck(0);
-		return;
-	}
-
-	pCmdUI->Enable(TRUE);
-	pCmdUI->SetCheck((pRender->GetCompositorMode() == Render::compositor_fast) ? 1 : 0);
-}
-
 void CFrmWnd::OnYmfm()
 {
 	CSound *pSound;
@@ -3422,6 +3369,42 @@ void CFrmWnd::OnToggleRenderer()
 {
 	if (m_pDrawView) {
 		m_pDrawView->ToggleRenderer();
+	}
+}
+
+void CFrmWnd::OnTogglePx68kGraphicEngine()
+{
+	if (!m_pDrawView) {
+		return;
+	}
+
+	::LockVM();
+	BOOL bEnabled = m_pDrawView->SetPx68kGraphicEngineEnabled(!m_pDrawView->IsPx68kGraphicEngineEnabled());
+	::UnlockVM();
+
+	Config config;
+	GetConfig()->GetConfig(&config);
+	config.px68k_graphic_engine = bEnabled;
+	GetConfig()->SetConfig(&config);
+
+	CString info;
+	info.Format(_T("Px68k Graphic Engine: %s"), bEnabled ? _T("ON") : _T("OFF"));
+	SetInfo(info);
+}
+
+void CFrmWnd::OnTogglePx68kGraphicEngineUI(CCmdUI *pCmdUI)
+{
+	if (!pCmdUI) {
+		return;
+	}
+
+	if (m_pDrawView) {
+		pCmdUI->Enable(TRUE);
+		pCmdUI->SetCheck(m_pDrawView->IsPx68kGraphicEngineEnabled() ? 1 : 0);
+	}
+	else {
+		pCmdUI->Enable(FALSE);
+		pCmdUI->SetCheck(0);
 	}
 }
 

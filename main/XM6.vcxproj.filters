@@ -126,6 +126,12 @@
     <ClCompile Include="..\vm\renderfast_compositor.cpp">
       <Filter>VM</Filter>
     </ClCompile>
+    <ClCompile Include="..\vm\graphic_engine.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\vm\x68krender.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
     <ClCompile Include="..\vm\rend_soft.cpp">
       <Filter>VM</Filter>
     </ClCompile>
@@ -407,10 +413,16 @@
     <ClInclude Include="..\vm\printer.h">
       <Filter>VM</Filter>
     </ClInclude>
+    <ClInclude Include="..\vm\graphic_engine.h">
+      <Filter>VM</Filter>
+    </ClInclude>
     <ClInclude Include="..\vm\rend_soft.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\render.h">
+      <Filter>VM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vm\x68krender.h">
       <Filter>VM</Filter>
     </ClInclude>
     <ClInclude Include="..\vm\renderin.h">

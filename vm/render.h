@@ -11,18 +11,25 @@
 #define render_h
 
 #include "device.h"
+#include "graphic_engine.h"
+#include "px68k_render_interfaces.h"
+
+class CRTC;
+class GVRAM;
+class Sprite;
+class TVRAM;
+class VC;
 
 //===========================================================================
 //
 //	�E��E��E��E��E�_�E��E�
 //
 //===========================================================================
-class Render : public Device
+class Render : public Device, public IVideoStateView, public IPaletteResolver
 {
 public:
 		enum compositor_mode_t {
 			compositor_original = 0,
-			compositor_fast = 1
 		};
 
 	// �E��E��E��E��E�f�E�[�E�^�E��E�`
@@ -170,14 +177,19 @@ public:
 	BOOL FASTCALL IsTransparencyEnabled() const		{ return transparency_enabled; }
 	void FASTCALL SetOriginalBG0RenderEnabled(BOOL enabled)	{ original_bg0_render_enabled = enabled ? TRUE : FALSE; }
 	BOOL FASTCALL IsOriginalBG0RenderEnabled() const		{ return original_bg0_render_enabled; }
-	BOOL FASTCALL SetCompositorMode(int mode);
-	int FASTCALL GetCompositorMode() const		{ return compositor_mode; }
 	DWORD FASTCALL GetFastFallbackCount() const	{ return fast_fallback_count; }
-	void FASTCALL StartFrame();
+	BOOL FASTCALL UsePx68kGraphicEngine(BOOL enable);
+	BOOL FASTCALL IsPx68kGraphicEngineEnabled() const	{ return px68k_graphic_engine_enabled; }
+	const IVideoStateView* FASTCALL GetVideoStateView() const { return this; }
+	const IPaletteResolver* FASTCALL GetPaletteResolver() const { return this; }
+	void FASTCALL SetRenderTarget(IRenderTarget *target) { render_target = target; }
+	IRenderTarget* FASTCALL GetRenderTarget() const { return render_target; }
+	void FASTCALL ComposeVideo();
+	virtual void FASTCALL StartFrame();
 										// �E�t�E��E��E�[�E��E��E�J�E�n(V-DISP)
-	void FASTCALL EndFrame();
+	virtual void FASTCALL EndFrame();
 										// �E�t�E��E��E�[�E��E��E�I�E��E�(V-BLANK)
-	void FASTCALL HSync(int raster);
+	virtual void FASTCALL HSync(int raster);
 										// �E��E��E��E��E��E��E��E�(raster�E�܂ŏI�E��E��E�)
 	void FASTCALL SetMixBuf(DWORD *buf, int width, int height);
 										// �E��E��E��E��E�o�E�b�E�t�E�@�E�w�E��E�
@@ -185,9 +197,9 @@ public:
 										// �E��E��E�[�E�N�E�A�E�h�E��E��E�X�E�擾
 
 	// �E�O�E��E�API(�E��E��E�)
-	void FASTCALL SetCRTC();
+	virtual void FASTCALL SetCRTC();
 										// CRTC�E�Z�E�b�E�g
-	void FASTCALL SetVC();
+	virtual void FASTCALL SetVC();
 										// VC�E�Z�E�b�E�g
 	void FASTCALL ForceRecompose();
 	void FASTCALL SetContrast(int cont);
@@ -232,39 +244,38 @@ public:
 	const DWORD* FASTCALL GetMixBuf() const;
 										// �E��E��E��E��E�o�E�b�E�t�E�@�E�擾
 
+	const CRTC* FASTCALL GetCRTCDevice() const { return crtc; }
+	const VC* FASTCALL GetVCDevice() const { return vc; }
+	const TVRAM* FASTCALL GetTVRAMDevice() const { return tvram; }
+	const GVRAM* FASTCALL GetGVRAMDevice() const { return gvram; }
+	const Sprite* FASTCALL GetSpriteDevice() const { return sprite; }
+
 private:
-	class Backend;
+	friend class GraphicEngine;
+	friend class OriginalGraphicEngine;
+	friend class Px68kGraphicEngine;
 	void FASTCALL StartFrameOriginal();
-	void FASTCALL StartFrameFast();
 	void FASTCALL EndFrameOriginal();
-	void FASTCALL EndFrameFast();
 	void FASTCALL HSyncOriginal(int raster);
-	void FASTCALL HSyncFast(int raster);
 	void FASTCALL SetCRTCOriginal();
-	void FASTCALL SetCRTCFast();
 	void FASTCALL SetVCOriginal();
-	void FASTCALL SetVCFast();
 	void FASTCALL InvalidateFrame();
 	void FASTCALL InvalidateAll();
 	void FASTCALL Process();
-	void FASTCALL ProcessFast();
 										// �E��E��E��E��E�_�E��E��E��E��E�O
 	void FASTCALL Video();
-	void FASTCALL VideoFastPX68K();
 										// VC�E��E��E��E�
 	void FASTCALL SetupGrp(int first);
 										// �E�O�E��E��E�t�E�B�E�b�E�N�E�Z�E�b�E�g�E�A�E�b�E�v
 	void FASTCALL Contrast();
 										// �E�R�E��E��E�g�E��E��E�X�E�g�E��E��E��E�
 	void FASTCALL Palette();
-	void FASTCALL PaletteFastPX68K();
 										// �E�p�E��E��E�b�E�g�E��E��E��E�
 	void FASTCALL MakePalette();
 										// �E�p�E��E��E�b�E�g�E��E�
 	DWORD FASTCALL ConvPalette(int color, int ratio);
 										// �E�F�E�ϊ�
 	void FASTCALL Text(int raster);
-	void FASTCALL TextFastPX68K(int raster);
 										// �E�e�E�L�E�X�E�g
 	void FASTCALL Grp(int block, int raster);
 										// �E�O�E��E��E�t�E�B�E�b�E�N
@@ -278,30 +289,33 @@ private:
 										// BG(�E��E��E�u�E��E��E�b�E�N)
 	void FASTCALL Mix(int offset);
 										// �E��E��E��E�
-	void FASTCALL MixFast(int y);
 	void FASTCALL MixFastLine(int dst_y, int src_y);
-	void FASTCALL FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, BOOL *active, BOOL *bg_opaq);
-	void FASTCALL FastDrawSpriteLinePX(int raster, int pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
-	void FASTCALL FastDrawBGPageLinePX(int page, int raster, BOOL gd, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
-	void FASTCALL FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp2,
-		BOOL *grp_sp_tr, BOOL *gon, BOOL *tron, BOOL *pron);
+										// Fast/px68k scanline compositor
 	void FASTCALL MixGrp(int y, DWORD *buf);
 										// �E��E��E��E�(�E�O�E��E��E�t�E�B�E�b�E�N)
+	void FASTCALL FastDrawSpriteLinePX(int raster, int pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
+	void FASTCALL FastDrawBGPageLinePX(int page, int raster, BOOL gd, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
+	void FASTCALL FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, BOOL *active, BOOL *bg_opaq);
+	void FASTCALL FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp2,
+		BOOL *grp_sp_tr, BOOL *gon, BOOL *tron, BOOL *pron);
 	CRTC *crtc;
 										// CRTC
 	VC *vc;
 										// VC
 	Sprite *sprite;
 										// �E�X�E�v�E��E��E�C�E�g
-	Backend *backend;
-	Backend *backend_original;
-	Backend *backend_fast;
-	int compositor_mode;
+	TVRAM *tvram;
+	GVRAM *gvram;
+	GraphicEngine *backend;
+	GraphicEngine *backend_original;
+	GraphicEngine *backend_px68k;
 	DWORD *palbuf_original;
 	DWORD *palbuf_fast;
 	DWORD fast_fallback_count;
 	BOOL transparency_enabled;
 	BOOL original_bg0_render_enabled;
+	BOOL px68k_graphic_engine_enabled;
+	IRenderTarget *render_target;
 	render_t render;
 										// �E��E��E��E��E�f�E�[�E�^
 	BOOL cmov;

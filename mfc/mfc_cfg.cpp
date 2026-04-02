@@ -428,6 +428,7 @@ const CConfig::INIKEY CConfig::IniTable[] = {
 	{ &CConfig::m_Config.render_mode, NULL, _T("Renderer"), 0, 1, 0, 1 },
 	{ &CConfig::m_Config.alt_raster, NULL, _T("AltRaster"), 1, FALSE, 0, 0 },
 	{ &CConfig::m_Config.caption_info, NULL, _T("Info"), 1, TRUE, 0, 0 },
+	{ &CConfig::m_Config.px68k_graphic_engine, NULL, _T("Px68kGraphicEngine"), 1, FALSE, 0, 0 },
 
 	{ &CConfig::m_Config.master_volume, _T("Volume"), _T("Master"), 0, 100, 0, 100 },
 	{ &CConfig::m_Config.fm_enable, NULL, _T("FMEnable"), 1, TRUE, 0, 0 },

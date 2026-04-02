@@ -82,11 +82,11 @@ public:
 
 	void EnterBorderlessFullscreen();
 	void ExitBorderlessFullscreen();
-	void OnRenderFast();
-	void OnRenderFastUI(CCmdUI *pCmdUI);
 	void OnYmfm();
 	void OnYmfmUI(CCmdUI *pCmdUI);
 	void OnToggleRenderer();
+	void OnTogglePx68kGraphicEngine();
+	void OnTogglePx68kGraphicEngineUI(CCmdUI *pCmdUI);
 	void OnToggleVSync();
 	void OnToggleOSD();
 	void OnToggleShader();

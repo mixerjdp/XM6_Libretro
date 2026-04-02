@@ -296,6 +296,12 @@
 					RelativePath="..\vm\renderfast_compositor.cpp">
 				</File>
 				<File
+					RelativePath="..\vm\graphic_engine.cpp">
+				</File>
+				<File
+					RelativePath="..\vm\x68krender.cpp">
+				</File>
+				<File
 					RelativePath="..\vm\rtc.cpp">
 				</File>
 				<File

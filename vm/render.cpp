@@ -16,6 +16,7 @@
 #include "gvram.h"
 #include "sprite.h"
 #include "rend_soft.h"
+#include "graphic_engine.h"
 #include "render.h"
 
 BOOL FASTCALL IsCMOV(void);
@@ -35,91 +36,11 @@ BOOL FASTCALL IsCMOV(void);
 #define REND_COLOR0		0x80000000		// ?Jo?[0?to?O(rend_asm.asmog?p)
 #define REND_PX68K_IBIT	0x40000000		// px68k Ibit marker (XRGB8888: top byte ignored)
 
-static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
+static int FASTCALL CalcBGHAdjustPixels(int, const CRTC *, const Sprite *)
 {
-	if (compositor_mode != Render::compositor_fast) {
-		return 0;
-	}
-
-	if (!sprite || !crtc) {
-		return 0;
-	}
-
-	Sprite::sprite_t spr;
-	sprite->GetSprite(&spr);
-
-	const CRTC::crtc_t *const crtc_state = crtc->GetWorkAddr();
-	if (!crtc_state) {
-		return 0;
-	}
-
-	const int bg_hdisp = (int)(spr.h_disp & 0xff);
-	const int crtc_hstart = (int)(crtc_state->reg[0x04] & 0xff);
-	return (bg_hdisp - (crtc_hstart + 4)) * 8;
+	return 0;
 }
 
-class Render::Backend
-{
-public:
-	explicit Backend(int m) : mode(m)
-	{
-	}
-
-	void Activate(Render *owner)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->InvalidateAll();
-		}
-	}
-
-	void StartFrame(Render *owner)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->StartFrameFast();
-			return;
-		}
-		owner->StartFrameOriginal();
-	}
-
-	void EndFrame(Render *owner)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->EndFrameFast();
-			return;
-		}
-		owner->EndFrameOriginal();
-	}
-
-	void HSync(Render *owner, int raster)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->HSyncFast(raster);
-			return;
-		}
-		owner->HSyncOriginal(raster);
-	}
-
-	void SetCRTC(Render *owner)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->SetCRTCFast();
-			return;
-		}
-		owner->SetCRTCOriginal();
-	}
-
-	void SetVC(Render *owner)
-	{
-		if ((mode == Render::compositor_fast) && owner) {
-			owner->SetVCFast();
-			return;
-		}
-		owner->SetVCOriginal();
-	}
-
-private:
-	int mode;
-};
 //---------------------------------------------------------------------------
 //
 //	?Ro?X?go?N?^
@@ -134,16 +55,19 @@ Render::Render(VM *p) : Device(p)
 	// ?f?o?C?X?|?Co?^
 	crtc = NULL;
 	vc = NULL;
+	tvram = NULL;
+	gvram = NULL;
 	sprite = NULL;
 	backend = NULL;
 	backend_original = NULL;
-	backend_fast = NULL;
-	compositor_mode = compositor_original;
+	backend_px68k = NULL;
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
+	render_target = NULL;
 	fast_fallback_count = 0;
 	transparency_enabled = TRUE;
 	original_bg0_render_enabled = TRUE;
+	px68k_graphic_engine_enabled = FALSE;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
@@ -227,6 +151,13 @@ BOOL FASTCALL Render::Init()
 	// VC?�E��E�
 	vc = (VC*)vm->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(vc);
+
+	tvram = (TVRAM*)vm->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
+	ASSERT(tvram);
+	gvram = (GVRAM*)vm->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
+	ASSERT(gvram);
+	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
+	ASSERT(sprite);
 
 	// ?po?b?g?o?b?t?@?mo(4MB x2: original + px68k-safe for fast)
 	palbuf_original = NULL;
@@ -379,17 +310,28 @@ BOOL FASTCALL Render::Init()
 	cmov = ::IsCMOV();
 
 	try {
-		backend_original = new Backend(compositor_original);
-		backend_fast = new Backend(compositor_fast);
+		backend_original = new OriginalGraphicEngine();
+		backend_px68k = new Px68kGraphicEngine();
 	}
 	catch (...) {
+		if (backend_original) {
+			delete backend_original;
+			backend_original = NULL;
+		}
+		if (backend_px68k) {
+			delete backend_px68k;
+			backend_px68k = NULL;
+		}
 		return FALSE;
 	}
-	if (!backend_original || !backend_fast) {
+	if (!backend_original) {
+		if (backend_px68k) {
+			delete backend_px68k;
+			backend_px68k = NULL;
+		}
 		return FALSE;
 	}
 	backend = backend_original;
-	compositor_mode = compositor_original;
 
 	return TRUE;
 }
@@ -409,12 +351,12 @@ void FASTCALL Render::Cleanup()
 		delete backend_original;
 		backend_original = NULL;
 	}
-	if (backend_fast) {
-		delete backend_fast;
-		backend_fast = NULL;
+	if (backend_px68k) {
+		delete backend_px68k;
+		backend_px68k = NULL;
 	}
 	backend = NULL;
-	compositor_mode = compositor_original;
+	px68k_graphic_engine_enabled = FALSE;
 
 	// ?`oto?O
 	if (render.drawflag) {
@@ -486,6 +428,12 @@ void FASTCALL Render::Cleanup()
 		palbuf_fast = NULL;
 	}
 	render.palbuf = NULL;
+	tvram = NULL;
+	gvram = NULL;
+	sprite = NULL;
+	crtc = NULL;
+	vc = NULL;
+	render_target = NULL;
 
 	// o{?No?Xo
 	Device::Cleanup();
@@ -498,8 +446,6 @@ void FASTCALL Render::Cleanup()
 //---------------------------------------------------------------------------
 void FASTCALL Render::Reset()
 {
-	TVRAM *tvram;
-	GVRAM *gvram;
 	int i;
 	int j;
 	int k;
@@ -532,7 +478,7 @@ void FASTCALL Render::Reset()
 	render.last = 0;
 	render.enable = TRUE;
 	render.act = TRUE;
-	render.count = (compositor_mode == compositor_fast) ? 0 : 2;
+	render.count = 2;
 	memset(render.mix, 0, sizeof(render.mix));
 	memset(render.draw, 0, sizeof(render.draw));
 	memset(render.mixptr, 0, sizeof(render.mixptr));
@@ -655,9 +601,6 @@ void FASTCALL Render::Reset()
 
 	// o?[?N?Go?Aooo(oo)
 	render.mixtype = 0;
-	if (backend) {
-		backend->Activate(this);
-	}
 }
 
 //---------------------------------------------------------------------------
@@ -700,42 +643,36 @@ void FASTCALL Render::ApplyCfg(const Config *config)
 
 //---------------------------------------------------------------------------
 //
+//	Px68k graphic engine switch
+//
+//---------------------------------------------------------------------------
+BOOL FASTCALL Render::UsePx68kGraphicEngine(BOOL enable)
+{
+	GraphicEngine *pBackend = (enable && backend_px68k) ? backend_px68k : backend_original;
+	if (backend != pBackend) {
+		backend = pBackend;
+		InvalidateAll();
+	}
+
+	px68k_graphic_engine_enabled = (backend == backend_px68k);
+	return px68k_graphic_engine_enabled;
+}
+
+void FASTCALL Render::ComposeVideo()
+{
+	if (backend) {
+		backend->Video(this);
+		return;
+	}
+
+	Video();
+}
+
+//---------------------------------------------------------------------------
+//
 //	?to?[o?J?n
 //
 //---------------------------------------------------------------------------
-BOOL FASTCALL Render::SetCompositorMode(int mode)
-{
-	Backend *next = NULL;
-	DWORD *next_palbuf = NULL;
-
-	switch (mode) {
-	case compositor_original:
-		next = backend_original;
-		next_palbuf = palbuf_original;
-		break;
-	case compositor_fast:
-		next = backend_fast;
-		next_palbuf = palbuf_fast;
-		break;
-	default:
-		return FALSE;
-	}
-
-	compositor_mode = mode;
-	if (!next) {
-		return TRUE;
-	}
-
-	backend = next;
-	if (next_palbuf && render.palbuf != next_palbuf) {
-		render.palbuf = next_palbuf;
-		render.palptr = render.palbuf + (render.contlevel << 16);
-		InvalidateAll();
-	}
-	backend->Activate(this);
-	return TRUE;
-}
-
 void FASTCALL Render::StartFrame()
 {
 	if (backend) {
@@ -825,7 +762,12 @@ void FASTCALL Render::HSyncOriginal(int raster)
 {
 	render.last = raster;
 	if (render.act) {
-		Process();
+		if (backend) {
+			backend->Process(this);
+		}
+		else {
+			Process();
+		}
 	}
 }
 
@@ -909,7 +851,12 @@ void FASTCALL Render::EndFrameOriginal()
 	// oooooX?^oo?
 	if (render.last > 0) {
 		render.last = render.height;
-		Process();
+		if (backend) {
+			backend->Process(this);
+		}
+		else {
+			Process();
+		}
 	}
 
 	// ?J?Eo?gUp
@@ -956,31 +903,12 @@ void FASTCALL Render::SetMixBuf(DWORD *buf, int width, int height)
 //---------------------------------------------------------------------------
 void FASTCALL Render::SetCRTCOriginal()
 {
-	int i;
-	int from;
-	DWORD stamp;
-
 	ASSERT(this);
 
 	// ?to?OONo?
 	render.crtc = TRUE;
 	render.vc = TRUE;
 
-	if ((compositor_mode == compositor_fast) && render.act) {
-		from = render.last;
-		if (from < 0) {
-			from = 0;
-		}
-		stamp = ++render.fast_stamp_counter;
-		for (i=from; i<render.height && i<1024; i++) {
-			render.mix[i] = TRUE;
-			render.fast_mix_stamp[i] = stamp;
-			render.fast_mix_done[i] = 0;
-			render.bgspmod[i & 0x1ff] = TRUE;
-			render.fast_bg_stamp[i & 0x1ff] = stamp;
-			render.fast_bg_done[i & 0x1ff] = 0;
-		}
-	}
 }
 
 //---------------------------------------------------------------------------
@@ -990,30 +918,11 @@ void FASTCALL Render::SetCRTCOriginal()
 //---------------------------------------------------------------------------
 void FASTCALL Render::SetVCOriginal()
 {
-	int i;
-	int from;
-	DWORD stamp;
-
 	ASSERT(this);
 
 	// ?to?OONo?
 	render.vc = TRUE;
 
-	if ((compositor_mode == compositor_fast) && render.act) {
-		from = render.last;
-		if (from < 0) {
-			from = 0;
-		}
-		stamp = ++render.fast_stamp_counter;
-		for (i=from; i<render.height && i<1024; i++) {
-			render.mix[i] = TRUE;
-			render.fast_mix_stamp[i] = stamp;
-			render.fast_mix_done[i] = 0;
-			render.bgspmod[i & 0x1ff] = TRUE;
-			render.fast_bg_stamp[i & 0x1ff] = stamp;
-			render.fast_bg_done[i & 0x1ff] = 0;
-		}
-	}
 }
 
 //---------------------------------------------------------------------------
@@ -1060,9 +969,6 @@ void FASTCALL Render::Video()
 	type = 0;
 	if (!p->siz) {
 		type = (int)(p->col + 1);
-		if ((compositor_mode == compositor_fast) && (p->col == 2)) {
-			type = 2;
-		}
 	}
 	if (type != render.grptype) {
 		render.grptype = type;
@@ -1103,31 +1009,6 @@ void FASTCALL Render::Video()
 				break;
 			// 512x512x2
 			case 2:
-				if (compositor_mode == compositor_fast) {
-				// px68k semantics:
-				// - Only GS0 and GS2 are meaningful enables in 256-color mode.
-				// - Page priority is decided by comparing GP0 vs GP2 (equal => page0 wins).
-				// - The two 8-bit pages are represented as blocks 0 and 2 in XM6.
-				{
-					const BOOL page0_on = (BOOL)p->gs[0];
-					const BOOL page2_on = (BOOL)p->gs[2];
-					const BOOL page0_top = (BOOL)(((int)p->gp[0]) <= ((int)p->gp[2]));
-
-					if (page0_on) { render.grpen[0] = TRUE; }
-					if (page2_on) { render.grpen[2] = TRUE; }
-
-					// Build bottom -> top (later layers overlay earlier ones).
-					if (page0_top) {
-						if (page2_on) { map[0] = 2; render.mixpage++; }
-						if (page0_on) { map[1] = 0; render.mixpage++; }
-					}
-					else {
-						if (page0_on) { map[0] = 0; render.mixpage++; }
-						if (page2_on) { map[1] = 2; render.mixpage++; }
-					}
-				}
-				}
-				else {
 				for (i=0; i<2; i++) {
 					// page0 check
 					if ((p->gp[i * 2 + 0] == 0) && (p->gp[i * 2 + 1] == 1)) {
@@ -1145,7 +1026,6 @@ void FASTCALL Render::Video()
 							render.mixpage++;
 						}
 					}
-				}
 				}
 				break;
 			// 512x512x1
@@ -2814,7 +2694,7 @@ void FASTCALL Render::BGSprite(int raster)
 	DWORD *buf;
 	DWORD pcgno;
 	DWORD stamp;
-	const int bg_hadjust = CalcBGHAdjustPixels(compositor_mode, crtc, sprite);
+	const int bg_hadjust = CalcBGHAdjustPixels(0, crtc, sprite);
 	const BOOL sprite_visible = sprite->IsDisplay();
 
 	if (raster >= 512) return;
@@ -2931,7 +2811,7 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	ASSERT((raster >= 0) && (raster < 512));
 	ASSERT(buf);
 
-	const int bg_hadjust = CalcBGHAdjustPixels(compositor_mode, crtc, sprite);
+	const int bg_hadjust = CalcBGHAdjustPixels(0, crtc, sprite);
 
 	// y?uo?b?Noo?oo
 	y = render.bgy[page] + raster;
@@ -3185,11 +3065,6 @@ void FASTCALL Render::Mix(int y)
 	int offset;
 	DWORD buf[1024];
 
-	if (compositor_mode == compositor_fast) {
-		MixFast(y);
-		return;
-	}
-
 	// oo?wooooo?Aoo?o?b?t?@oooo?Ay?I?[?o?[o?return
 	if ((!render.mix[y]) || (!render.mixbuf)) {
 		return;
@@ -3199,23 +3074,6 @@ void FASTCALL Render::Mix(int y)
 	}
 	ASSERT(render.mixlen > 0);
 
-
-	// Original compositor: if half-transparency / special priority is active,
-	// use the px68k-style scanline compositor so effects like transparent clouds match.
-	 {
-		const VC::vc_t *vp = (vc ? vc->GetWorkAddr() : NULL);
-		if (vp) {
-			const BYTE vr2h = (BYTE)vp->vr2h;
-			const BOOL tr_mode = (BOOL)((vr2h & 0x5d) == 0x1d);
-			const BOOL dim_mode = (BOOL)((vr2h & 0x5d) == 0x1c);
-			const BOOL pri_mode = (BOOL)((vr2h & 0x5c) == 0x14);
-			if (transparency_enabled &&
-				(vp->hp || vp->exon || vp->gg || vp->gt || vp->ah || vp->vht || tr_mode || dim_mode || pri_mode)) {
-				MixFastLine(y, y);
-				return;
-			}
-		}
-	}
 
 #if defined(REND_LOG)
 	LOG1(Log::Normal, "???? y=%d", y);
@@ -3505,15 +3363,15 @@ const DWORD* FASTCALL Render::GetMixBuf() const
 //---------------------------------------------------------------------------
 void FASTCALL Render::Process()
 {
+	if (backend) {
+		backend->Process(this);
+		return;
+	}
+
 	int i;
 
 	// ?sooooooos?v
 	if (render.first >= render.last) {
-		return;
-	}
-
-	if (compositor_mode == compositor_fast) {
-		ProcessFast();
 		return;
 	}
 
@@ -3522,7 +3380,7 @@ void FASTCALL Render::Process()
 #if defined(REND_LOG)
 		LOG0(Log::Normal, "?r?f?I????");
 #endif	// RENDER_LOG
-		Video();
+		ComposeVideo();
 	}
 
 	// ?Ro?go?X?g

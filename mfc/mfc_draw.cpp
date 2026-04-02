@@ -81,6 +81,7 @@ CDrawView::CDrawView()
 	m_pFrmWnd = NULL;
 	m_bUseDX9 = TRUE;
 	m_lPresentPending = 0;
+	m_bPx68kGraphicEngine = FALSE;
 	m_hRenderEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hRenderExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hRenderAckEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -204,6 +205,50 @@ BOOL FASTCALL CDrawView::Init(CWnd *pParent, BOOL bShaderEnabled)
 	}
 
 	return TRUE;
+}
+
+//---------------------------------------------------------------------------
+//
+//	Render target callbacks
+//
+//---------------------------------------------------------------------------
+void FASTCALL CDrawView::DrawLine()
+{
+	if (!m_bEnable) {
+		return;
+	}
+	RequestPresent();
+}
+
+void FASTCALL CDrawView::DrawFrame()
+{
+	if (!m_bEnable) {
+		return;
+	}
+	RequestPresent();
+}
+
+BOOL FASTCALL CDrawView::SetPx68kGraphicEngineEnabled(BOOL bEnable)
+{
+	Render *pRender;
+	BOOL bActive;
+
+	m_bPx68kGraphicEngine = bEnable ? TRUE : FALSE;
+
+	pRender = m_Info.pRender;
+	if (!pRender) {
+		return m_bPx68kGraphicEngine;
+	}
+
+	bActive = pRender->UsePx68kGraphicEngine(m_bPx68kGraphicEngine);
+	m_bPx68kGraphicEngine = bActive;
+	RequestPresent();
+	return bActive;
+}
+
+BOOL FASTCALL CDrawView::IsPx68kGraphicEngineEnabled() const
+{
+	return m_bPx68kGraphicEngine;
 }
 
 //---------------------------------------------------------------------------
@@ -846,6 +891,15 @@ void FASTCALL CDrawView::Enable(BOOL bEnable)
 				m_Info.pRender->SetMixBuf(m_Info.pBits, m_Info.nBMPWidth, m_Info.nBMPHeight);
 			}
 		}
+		if (m_Info.pRender) {
+			m_Info.pRender->SetRenderTarget(this);
+			m_bPx68kGraphicEngine = m_Info.pRender->UsePx68kGraphicEngine(m_bPx68kGraphicEngine);
+		}
+	}
+	else {
+		if (m_Info.pRender) {
+			m_Info.pRender->SetRenderTarget(NULL);
+		}
 	}
 
 	// Subwindow handling
@@ -1391,6 +1445,9 @@ void FASTCALL CDrawView::ApplyCfg(const Config *pConfig)
 
 	// Shader (CRT)
 	SetShaderEnabled(pConfig->render_shader);
+
+	// Px68k graphic engine
+	SetPx68kGraphicEngineEnabled(pConfig->px68k_graphic_engine);
 
 	// Subwindow handling
 	pWnd = m_pSubWnd;

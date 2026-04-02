@@ -88,8 +88,10 @@ set SOURCES=^
   ..\vm\opmif.cpp ^
   ..\vm\ppi.cpp ^
   ..\vm\printer.cpp ^
+  ..\vm\graphic_engine.cpp ^
   ..\vm\render.cpp ^
   ..\vm\renderfast_compositor.cpp ^
+  ..\vm\x68krender.cpp ^
   ..\vm\rend_soft.cpp ^
   ..\vm\rtc.cpp ^
   ..\vm\sasi.cpp ^

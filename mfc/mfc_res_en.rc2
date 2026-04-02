@@ -141,8 +141,9 @@ BEGIN
      MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
  END
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
-        MENUITEM "Render Fast",                 IDM_RENDER_FAST
+
         MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
+        MENUITEM "Px68k Graphic Engine",        IDM_TOGGLE_PX68K_ENGINE
     END
     POPUP "&Debug"
     BEGIN
@@ -328,8 +329,9 @@ BEGIN
      MENUITEM "3.0x	2304x1536",         IDM_SCALE_300
  END
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
-            MENUITEM "Render Fast",                 IDM_RENDER_FAST
+
             MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
+            MENUITEM "Px68k Graphic Engine",        IDM_TOGGLE_PX68K_ENGINE
         END
         POPUP "&Debug"
         BEGIN

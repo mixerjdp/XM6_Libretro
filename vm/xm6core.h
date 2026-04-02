@@ -37,11 +37,6 @@ enum {
 };
 
 enum {
-  XM6CORE_RENDER_MODE_ORIGINAL = 0,
-  XM6CORE_RENDER_MODE_FAST = 1
-};
-
-enum {
   XM6CORE_AUDIO_ENGINE_XM6 = 0,
   XM6CORE_AUDIO_ENGINE_PX68K = 1,
   XM6CORE_AUDIO_ENGINE_YMFM = 2,
@@ -164,11 +159,10 @@ XM6CORE_API int XM6CORE_CALL xm6_set_legacy_dmac_cnt(XM6Handle handle, int enabl
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_speed(XM6Handle handle, int speed);
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_port(XM6Handle handle, int port);
 XM6CORE_API int XM6CORE_CALL xm6_set_mouse_swap(XM6Handle handle, int enabled);
-XM6CORE_API int XM6CORE_CALL xm6_set_render_mode(XM6Handle handle, int mode);
 XM6CORE_API int XM6CORE_CALL xm6_set_alt_raster(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_render_bg0(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_transparency_enabled(XM6Handle handle, int enabled);
-XM6CORE_API int XM6CORE_CALL xm6_get_render_mode(XM6Handle handle);
+XM6CORE_API int XM6CORE_CALL xm6_set_px68k_graphic_engine(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_midi_enabled(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_midi_read_output(
   XM6Handle handle,

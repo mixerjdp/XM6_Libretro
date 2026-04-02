@@ -37,8 +37,6 @@ public:
 	void FASTCALL Reset();
 										// Reset
 	void FASTCALL ApplyCfg(const Config *config);
-	BOOL FASTCALL SetRenderMode(int mode);
-	int FASTCALL GetRenderMode() const;
 										// Apply settings
 
 	// State save/load
