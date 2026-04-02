@@ -2370,10 +2370,10 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 
 	// ooLooo?`?F?b?N
 	use = TRUE;
-	if (next[0] == 0) {
+	if ((compositor_mode != compositor_fast) && (next[0] == 0)) {
 		use = FALSE;
 	}
-	if (next[0] >= (DWORD)(render.mixlen + 16)) {
+	if ((compositor_mode != compositor_fast) && (next[0] >= (DWORD)(render.mixlen + 16))) {
 		use = FALSE;
 	}
 	if (next[1] == 0) {

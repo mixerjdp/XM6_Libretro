@@ -11,6 +11,10 @@
 
 #define REND_COLOR0 0x80000000u
 #define REND_PX68K_IBIT 0x40000000u
+enum {
+	k_fast_line_margin = 16,
+	k_fast_line_capacity = 1024 + k_fast_line_margin
+};
 
 
 static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
@@ -408,10 +412,14 @@ void FASTCALL Render::FastDrawSpriteLinePX(int raster, int pri, DWORD *bg_line, 
 	DWORD pixel;
 	const DWORD sprite_mask = 0x4000;
 	const int bg_hadjust = CalcBGHAdjustPixels(compositor_mode, crtc, sprite);
+	int sprite_limit = render.mixlen + k_fast_line_margin;
 
 	reg = &render.spreg[127 << 2];
 	ptr = &render.spptr[127 << 9];
 	ptr += (raster & 0x1ff);
+	if (sprite_limit > k_fast_line_capacity) {
+		sprite_limit = k_fast_line_capacity;
+	}
 	for (n=127; n>=0; n--) {
 		if (render.spuse[n] && ((int)(reg[3] & 3) == pri) && *ptr) {
 			DWORD pcgno;
@@ -425,7 +433,7 @@ void FASTCALL Render::FastDrawSpriteLinePX(int raster, int pri, DWORD *bg_line, 
 			x = ((int)reg[0] + bg_hadjust) & 0x3ff;
 			for (i=0; i<16; i++) {
 				dx = x - 16 + ((reg[2] & sprite_mask) ? (15 - i) : i);
-				if ((dx < 0) || (dx >= render.mixlen)) {
+				if ((dx < 0) || (dx >= sprite_limit)) {
 					continue;
 				}
 				pixel = line[i];
@@ -550,10 +558,9 @@ void FASTCALL Render::FastDrawBGPageLinePX(int page, int raster, BOOL gd, DWORD 
 	}
 }
 
-void FASTCALL Render::FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, BOOL *active, BOOL *bg_opaq)
+void FASTCALL Render::FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active, BOOL *bg_opaq)
 {
 	int i;
-	WORD *bg_pri;
 	const BOOL sprite_visible = sprite->IsDisplay();
 	const BOOL has_bg = (BOOL)(render.bgdisp[0] || (render.bgdisp[1] && !render.bgsize));
 	const BOOL bgsp_on = render.bgspflag;
@@ -563,7 +570,6 @@ void FASTCALL Render::FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_
 	const int raster = (src_y & 0x1ff);
 	const BOOL has_sources = (BOOL)(sprite_visible || has_bg);
 
-	bg_pri = render.fast_bg_pribuf;
 	for (i=0; i<render.mixlen; i++) {
 		bg_line[i] = opaq ? base : k_render_color0;
 		bg_flag[i] = 0;
@@ -1342,16 +1348,17 @@ void FASTCALL Xm6Px68kComposeScanlineFast(DWORD *out_argb32, int len, const DWOR
 void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 {
 	DWORD *dst;
-	DWORD *grp = render.fast_grp_linebuf;
-	DWORD *grp_sp = render.fast_grp_linebuf_sp;
-	DWORD *grp_sp2 = render.fast_grp_linebuf_sp2;
-	BOOL *grp_sp_tr = render.fast_grp_linebuf_sp_tr;
-	DWORD text_line[1024];
-	DWORD *bg_line = render.fast_bg_linebuf;
-	DWORD bgtext_line[1024];
-	DWORD out[1024];
-	BYTE *bg_flag = render.fast_text_trflag;
-	BYTE tr_flag[1024];
+	DWORD grp[k_fast_line_capacity];
+	DWORD grp_sp[k_fast_line_capacity];
+	DWORD grp_sp2[k_fast_line_capacity];
+	BOOL grp_sp_tr[k_fast_line_capacity];
+	DWORD text_line[k_fast_line_capacity];
+	DWORD bg_line[k_fast_line_capacity];
+	WORD bg_pri[k_fast_line_capacity];
+	DWORD bgtext_line[k_fast_line_capacity];
+	DWORD out[k_fast_line_capacity];
+	BYTE bg_flag[k_fast_line_capacity];
+	BYTE tr_flag[k_fast_line_capacity];
 	const VC::vc_t *p;
 	int tx_pri;
 	int sp_pri;
@@ -1365,6 +1372,17 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	BOOL bg_opaq;
 	DWORD mix_stamp;
 	int i;
+	DWORD *const grp_visible = &grp[k_fast_line_margin];
+	DWORD *const grp_sp_visible = &grp_sp[k_fast_line_margin];
+	DWORD *const grp_sp2_visible = &grp_sp2[k_fast_line_margin];
+	BOOL *const grp_sp_tr_visible = &grp_sp_tr[k_fast_line_margin];
+	DWORD *const text_line_visible = &text_line[k_fast_line_margin];
+	DWORD *const bg_line_visible = &bg_line[k_fast_line_margin];
+	WORD *const bg_pri_visible = &bg_pri[k_fast_line_margin];
+	DWORD *const bgtext_line_visible = &bgtext_line[k_fast_line_margin];
+	DWORD *const out_visible = &out[k_fast_line_margin];
+	BYTE *const bg_flag_visible = &bg_flag[k_fast_line_margin];
+	BYTE *const tr_flag_visible = &tr_flag[k_fast_line_margin];
 
 	if (!render.mixbuf) {
 		return;
@@ -1390,37 +1408,49 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	gr_pri = (int)(p->gr & 3);
 	ton = render.texten;
 
-	FastMixGrp(src_y, grp, grp_sp, grp_sp2, grp_sp_tr, &gon, &tron, &pron);
+	std::memset(grp, 0, sizeof(grp));
+	std::memset(grp_sp, 0, sizeof(grp_sp));
+	std::memset(grp_sp2, 0, sizeof(grp_sp2));
+	std::memset(grp_sp_tr, 0, sizeof(grp_sp_tr));
+	std::memset(text_line, 0, sizeof(text_line));
+	std::memset(bg_line, 0, sizeof(bg_line));
+	std::memset(bg_pri, 0xff, sizeof(bg_pri));
+	std::memset(bgtext_line, 0, sizeof(bgtext_line));
+	std::memset(out, 0, sizeof(out));
+	std::memset(bg_flag, 0, sizeof(bg_flag));
+	std::memset(tr_flag, 0, sizeof(tr_flag));
+
+	FastMixGrp(src_y, grp_visible, grp_sp_visible, grp_sp2_visible, grp_sp_tr_visible, &gon, &tron, &pron);
 
 	for (i=0; i<render.mixlen; i++) {
-		// px68k does not prefill the final scanline with backdrop before layering.
-		// Start from visible black so opaq-path copies and half-fill behavior match.
-		out[i] = 0;
+		// px68k keeps a 16px guard band before the visible window.
+		// We compose into the shifted slice and later copy only the visible region.
+		out_visible[i] = 0;
 		if (ton) {
-			text_line[i] = render.textout[(((src_y + (int)render.texty) & 0x3ff) << 10) + (((int)render.textx + i) & 0x3ff)];
+			text_line_visible[i] = render.textout[(((src_y + (int)render.texty) & 0x3ff) << 10) + (((int)render.textx + i) & 0x3ff)];
 		}
 		else {
-			text_line[i] = k_render_color0;
+			text_line_visible[i] = k_render_color0;
 		}
-		bg_line[i] = k_render_color0;
-		bg_flag[i] = 0;
+		bg_line_visible[i] = k_render_color0;
+		bg_flag_visible[i] = 0;
 	}
 
 	bg_active = FALSE;
 	bg_opaq = FALSE;
-	FastBuildBGLinePX(src_y, ton, tx_pri, sp_pri, bg_line, bg_flag, &bg_active, &bg_opaq);
+	FastBuildBGLinePX(src_y, ton, tx_pri, sp_pri, bg_line_visible, bg_flag_visible, bg_pri_visible, &bg_active, &bg_opaq);
 	bgon = bg_active;
-	FastPrepareBGTextLine(bgtext_line, tr_flag, bg_flag, text_line, bg_line, render.mixlen, ton, bgon, tx_pri, sp_pri, bg_opaq);
+	FastPrepareBGTextLine(bgtext_line_visible, tr_flag_visible, bg_flag_visible, text_line_visible, bg_line_visible, render.mixlen, ton, bgon, tx_pri, sp_pri, bg_opaq);
 
 	// px68k-style 565+Ibit scanline composition (Render Fast 1:1 path)
-	Xm6Px68kComposeScanlineFast(out, render.mixlen,
-		grp, grp_sp, grp_sp2,
-		bgtext_line, tr_flag,
+	Xm6Px68kComposeScanlineFast(out_visible, render.mixlen,
+		grp_visible, grp_sp_visible, grp_sp2_visible,
+		bgtext_line_visible, tr_flag_visible,
 		gon, tron, pron, ton, bgon,
 		gr_pri, sp_pri, tx_pri,
 		p->vr2h, transparency_enabled);
 
-	RendMix01(dst, out, render.drawflag + (src_y << 6), render.mixlen);
+	RendMix01(dst, out_visible, render.drawflag + (src_y << 6), render.mixlen);
 }
 
 // ---- Fast pipeline methods moved from render.cpp ----
