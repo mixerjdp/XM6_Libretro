@@ -397,7 +397,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// GVRAM address display
 		if (addr == 0x29) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			if (data & 0x10) {
 				crtc.tmem = TRUE;
 			}
@@ -420,7 +422,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// Resolution change
 		if ((addr <= 15) || (addr == 40)) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			// Sprite connection/disconnection is done immediately (OS-9/68000)
 			if (addr == 0x28) {
 				if ((crtc.reg[0x28] & 3) >= 2) {
@@ -438,7 +442,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// Raster interrupt
 		if ((addr == 18) || (addr == 19)) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			crtc.raster_int = (crtc.reg[19] << 8) + crtc.reg[18];
 			crtc.raster_int &= 0x3ff;
 			if (g_alt_raster_timing) {
@@ -449,7 +455,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// Text scroll
 		if ((addr >= 20) && (addr <= 23)) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			crtc.text_scrlx = (crtc.reg[21] << 8) + crtc.reg[20];
 			crtc.text_scrlx &= 0x3ff;
 			crtc.text_scrly = (crtc.reg[23] << 8) + crtc.reg[22];
@@ -464,7 +472,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// Graphic scroll
 		if ((addr >= 24) && (addr <= 39)) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			reg = addr & ~3;
 			addr -= 24;
 			addr >>= 2;
@@ -485,7 +495,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		// Text VRAM
 		if ((addr >= 42) && (addr <= 47)) {
-			musashi_flush_timeslice();
+			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+				musashi_flush_timeslice();
+			}
 			TextVRAM();
 		}
 		return;
@@ -498,7 +510,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			return;
 		}
 
-		musashi_flush_timeslice();
+		if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+			musashi_flush_timeslice();
+		}
 
 		// Odd byte is raster copy, fast clear reset
 		if (data & 0x08) {

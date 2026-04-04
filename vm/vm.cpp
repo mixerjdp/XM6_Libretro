@@ -47,6 +47,7 @@
 #include "neptune.h"
 #include "filepath.h"
 #include "fileio.h"
+#include "musashi_adapter.h"
 #include <vector>
 #include <algorithm>
 
@@ -509,7 +510,11 @@ BOOL FASTCALL VM::SetRenderMode(int mode)
 	if (!render) {
 		return FALSE;
 	}
-	return render->SetCompositorMode(mode);
+	if (!render->SetCompositorMode(mode)) {
+		return FALSE;
+	}
+	musashi_set_render_mode(mode);
+	return TRUE;
 }
 
 int FASTCALL VM::GetRenderMode() const

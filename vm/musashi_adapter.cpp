@@ -97,9 +97,18 @@ static int musashi_wait_cycles = 0;
 // so we are less granular than the current immediate path.
 static int musashi_wait_pending = 0;
 
+// Render mode gate for timing behavior.
+// Original uses batching/flush tuning; Fast keeps legacy immediate timing.
+static int musashi_render_mode = 0;
+
 // Flush Musashi timeslice adjustments in small batches instead of
 // on every single Wait() call.
 static const int MUSASHI_WAIT_QUANTUM = 60;
+
+static bool UseWaitBatching(void)
+{
+	return musashi_render_mode == 0;
+}
 
 static void FlushPendingWaitTimeslice(bool force)
 {
@@ -109,7 +118,7 @@ static void FlushPendingWaitTimeslice(bool force)
 	if (musashi_wait_pending <= 0) {
 		return;
 	}
-	if (force || musashi_wait_pending >= MUSASHI_WAIT_QUANTUM) {
+	if (!UseWaitBatching() || force || musashi_wait_pending >= MUSASHI_WAIT_QUANTUM) {
 		m68k_modify_timeslice(-musashi_wait_pending);
 		musashi_wait_cycles += musashi_wait_pending;
 		musashi_wait_pending = 0;
@@ -119,6 +128,14 @@ static void FlushPendingWaitTimeslice(bool force)
 void musashi_flush_timeslice(void)
 {
 	FlushPendingWaitTimeslice(true);
+}
+
+void musashi_set_render_mode(int mode)
+{
+	musashi_render_mode = mode;
+	if (!UseWaitBatching() && musashi_executing && musashi_wait_pending > 0) {
+		FlushPendingWaitTimeslice(true);
+	}
 }
 
 
@@ -390,8 +407,14 @@ int s68000fetch(unsigned address)
 unsigned s68000wait(unsigned cycle)
 {
 	if (musashi_executing) {
-		musashi_wait_pending += (int)cycle;
-		FlushPendingWaitTimeslice(false);
+		if (UseWaitBatching()) {
+			musashi_wait_pending += (int)cycle;
+			FlushPendingWaitTimeslice(false);
+		}
+		else {
+			m68k_modify_timeslice(-(int)cycle);
+			musashi_wait_cycles += (int)cycle;
+		}
 	}
 	return 0;
 }
@@ -405,12 +428,17 @@ unsigned s68000wait(unsigned cycle)
 void musashi_adjust_timeslice(int cycles)
 {
 	if (musashi_executing) {
-		if (cycles < 0) {
-			musashi_wait_pending += (-cycles);
-			FlushPendingWaitTimeslice(false);
+		if (UseWaitBatching()) {
+			if (cycles < 0) {
+				musashi_wait_pending += (-cycles);
+				FlushPendingWaitTimeslice(false);
+			}
+			else if (cycles > 0) {
+				// Positive adjustments are rare; apply them immediately.
+				m68k_modify_timeslice(cycles);
+			}
 		}
-		else if (cycles > 0) {
-			// Positive adjustments are rare; apply them immediately.
+		else {
 			m68k_modify_timeslice(cycles);
 		}
 	}
