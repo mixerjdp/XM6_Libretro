@@ -37,10 +37,6 @@ BOOL FASTCALL IsCMOV(void);
 
 static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
 {
-	if (compositor_mode != Render::compositor_fast) {
-		return 0;
-	}
-
 	if (!sprite || !crtc) {
 		return 0;
 	}
@@ -2370,12 +2366,6 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 
 	// ooLooo?`?F?b?N
 	use = TRUE;
-	if ((compositor_mode != compositor_fast) && (next[0] == 0)) {
-		use = FALSE;
-	}
-	if ((compositor_mode != compositor_fast) && (next[0] >= (DWORD)(render.mixlen + 16))) {
-		use = FALSE;
-	}
 	if (next[1] == 0) {
 		use = FALSE;
 	}
