@@ -61,6 +61,7 @@ CScheduler::CScheduler(CFrmWnd *pFrmWnd) : CComponent(pFrmWnd)
 	m_bBackup = TRUE;
 	m_bSavedValid = FALSE;
 	m_bSavedEnable = FALSE;
+	m_bStepFrame = FALSE;
 }
 
 //---------------------------------------------------------------------------
@@ -489,6 +490,12 @@ void FASTCALL CScheduler::Run()
 		if (dwExecCount > 0) {
 			Refresh();
 			dwExecCount = 0;
+
+			// Si estamos en modo Step Frame, comprobamos si se completó el frame de pantalla principal
+			if (m_bStepFrame && m_nSubWndDisp == -1) {
+				m_bStepFrame = FALSE;
+				m_bEnable = FALSE;
+			}
 		}
 
 		// Sleep once every 8 ms if idle or the menu is open
@@ -675,6 +682,23 @@ void FASTCALL CScheduler::OnMainFramePresented()
 {
 	// Kept for compatibility. Counter and Complete
 	// are now updated in Refresh() to preserve original timing
+}
+
+//---------------------------------------------------------------------------
+//
+//	Step Frame
+//
+//---------------------------------------------------------------------------
+void FASTCALL CScheduler::StepFrame()
+{
+	ASSERT(this);
+	ASSERT_VALID(this);
+
+	// Solo avanzamos si estamos pausados
+	if (!m_bEnable) {
+		m_bStepFrame = TRUE;
+		m_bEnable = TRUE;
+	}
 }
 
 #endif	// _WIN32

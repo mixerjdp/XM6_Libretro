@@ -1607,6 +1607,7 @@
 #define IDM_SCALE_250            47003
 #define IDM_SCALE_300            47004
 #define IDM_YMFM                 47005
+#define IDM_STEP_FRAME           47006
 
 // Spanish aliases for resources
 #define IDM_ES_STDWIN	IDM_US_STDWIN

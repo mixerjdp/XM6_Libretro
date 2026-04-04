@@ -99,6 +99,7 @@ void     s68000releaseTimeslice(void);
 unsigned s68000readPC          (void);
 unsigned s68000wait            (unsigned cycle);
 void     musashi_adjust_timeslice(int cycles);
+void     musashi_flush_timeslice(void);
 
 //---------------------------------------------------------------------------
 //

@@ -196,9 +196,9 @@ protected:
 
 	afx_msg void OnSgcrUI(CCmdUI* pCmdUI);
 
-	afx_msg void OnInterrupt();
-										// Interrupt UI
-	afx_msg void OnInterruptUI(CCmdUI *pCmdUI);
+	afx_msg void OnDump();
+										// Dump UI
+	afx_msg void OnDumpUI(CCmdUI *pCmdUI);
 										// Power toggle
 	afx_msg void OnPower();
 										// Power toggle UI
@@ -466,6 +466,10 @@ protected:
 										// Stop
 	afx_msg void OnBreakUI(CCmdUI *pCmdUI);
 										// Trace
+	afx_msg void OnStepFrame();
+										// Step Frame
+	afx_msg void OnStepFrameUI(CCmdUI *pCmdUI);
+										// Step Frame UI
 	afx_msg void OnTrace();
 										// Trace
 	afx_msg void OnTraceUI(CCmdUI *pCmdUI);
