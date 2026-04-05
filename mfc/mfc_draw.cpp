@@ -1309,7 +1309,7 @@ void FASTCALL CDrawView::DrawOSD(CDC *pDC)
 	}
 
 	DWORD now = GetTickCount();
-	// Reducimos el tick de 1500ms a 32ms para ver el contador en real-time
+	// Reducimos el tick de 32ms para ver el contador en real-time
 	if ((m_dwPerfOSDLastTick == 0) || ((now - m_dwPerfOSDLastTick) >= 32)) {
 		m_dwPerfOSDLastTick = now;
 		m_nPerfFPS = (m_pScheduler) ? m_pScheduler->GetFrameRate() : 0;
@@ -1330,12 +1330,15 @@ void FASTCALL CDrawView::DrawOSD(CDC *pDC)
 		return;
 	}
 
-	if (!m_bShowOSD && !m_szOSDText[0]) {
+	BOOL bShowStatus = m_bShowOSD;
+	BOOL bShowMsg = (m_szOSDText[0] && (now <= m_dwOSDUntil));
+
+	if (!bShowStatus && !bShowMsg) {
 		return;
 	}
 
-	BOOL bShowMsg = (m_szOSDText[0] && (now <= m_dwOSDUntil));
-	CRect rect(8, 8, 320, bShowMsg ? 46 : 28);
+	int nLines = (bShowStatus ? 1 : 0) + (bShowMsg ? 1 : 0);
+	CRect rect(8, 8, 320, 8 + (nLines * 18) + 2); // 28 para 1 línea, 46 para 2 líneas
 
 	pDC->FillSolidRect(&rect, RGB(0, 0, 0));
 	int oldBk = pDC->SetBkMode(TRANSPARENT);
@@ -1345,15 +1348,16 @@ void FASTCALL CDrawView::DrawOSD(CDC *pDC)
 	lineRect.left += 4;
 	lineRect.top += 2;
 	lineRect.bottom = lineRect.top + 16;
-	pDC->DrawText(m_szPerfLine, -1, &lineRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+	if (bShowStatus) {
+		pDC->DrawText(m_szPerfLine, -1, &lineRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		lineRect.top += 18;
+		lineRect.bottom += 18;
+	}
 
 	if (bShowMsg) {
-		CRect msgRect = rect;
-		msgRect.left += 4;
-		msgRect.top = lineRect.bottom + 2;
-		msgRect.bottom = msgRect.top + 16;
 		pDC->SetTextColor(RGB(255, 220, 96));
-		pDC->DrawText(m_szOSDText, -1, &msgRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+		pDC->DrawText(m_szOSDText, -1, &lineRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
 	}
 
 	pDC->SetTextColor(oldColor);

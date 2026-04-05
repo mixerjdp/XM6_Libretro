@@ -99,6 +99,8 @@ This repository also includes third-party code and ideas from projects such as:
 
 - Musashi 68000 CPU core
 - fmgen / FM synthesis support
+- X68Sound sound synthesis (by m_u_g_e_n)
+- ymfm Yamaha FM emulation (by Aaron Giles)
 - windrv-style host/device bridging
 
 Each component keeps its own license and notice requirements. Check the source headers for details.

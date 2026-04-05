@@ -578,6 +578,8 @@ private:
 										// Load
 
 	// Command handler subwindow
+	void FASTCALL UpdateStateFileName();
+										// Update savestate file name based on loaded media
 	BOOL FASTCALL OnOpenSub(const Filepath& path);
 										// Open subwindow
 	BOOL FASTCALL OnOpenPrep(const Filepath& path, BOOL bWarning = TRUE);
