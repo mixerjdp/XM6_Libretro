@@ -37,7 +37,8 @@ This branch keeps the original XM6 code usable, easier to build, and easier to r
 | Target | Script | Output |
 | --- | --- | --- |
 | MFC Win32 | `build32.bat` | Windows desktop build |
-| Libretro Win64 | `build64.bat` | 64-bit Libretro core |
+| Libretro Win32 | `build32.bat` | `libretro\Release\xm6_libretro.dll` |
+| Libretro Win64 | `build64.bat` | `libretro\Release_x64\xm6_libretro.dll` |
 | Main MFC solution | `main\buildvs.bat` | Visual Studio Win32 solution |
 | Libretro Linux | `make -f Makefile.libretro -j4` inside `libretro/` | `xm6_libretro.so` |
 
@@ -84,12 +85,18 @@ That makes it easier to tune sound per game and per backend without forcing a si
 
 ## Releases
 
-The initial public release includes:
+Current release artifacts include:
 
 - MFC Win32 build
 - Libretro Win32 build
 - Libretro Win64 build
 - Linux Libretro `.so`
+
+The libretro binaries are produced in release form as:
+
+- `libretro/Release/xm6_libretro.dll`
+- `libretro/Release_x64/xm6_libretro.dll`
+- `libretro/xm6_libretro.so`
 
 ## License and credits
 
