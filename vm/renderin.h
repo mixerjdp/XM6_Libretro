@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001,2002 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ レンダラ(インライン) ]
+//	Copyright (C) 2001,2002 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Video (Inline functions) ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,24 +14,24 @@
 
 //---------------------------------------------------------------------------
 //
-//	パレット設定
+//	Palette set
 //
 //---------------------------------------------------------------------------
 inline void FASTCALL Render::SetPalette(int index)
 {
-	// VCの時点で比較チェックを行う
+	// Perform check at VC access point
 	render.palmod[index] = TRUE;
 	render.palette = TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	テキストVRAM変更
+//	Text VRAM change
 //
 //---------------------------------------------------------------------------
 inline void FASTCALL Render::TextMem(DWORD addr)
 {
-	// テキストVRAMの時点で比較チェックを行う
+	// Perform check at Text VRAM access point
 	addr &= 0x1ffff;
 	addr >>= 2;
 	render.textflag[addr] = TRUE;
@@ -41,20 +41,20 @@ inline void FASTCALL Render::TextMem(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	グラフィックVRAM変更
+//	Graphic VRAM change
 //
 //---------------------------------------------------------------------------
 inline void FASTCALL Render::GrpMem(DWORD addr, DWORD block)
 {
-	// グラフィックVRAMの時点で比較チェックを行う
+	// Perform check at Graphic VRAM access point
 	ASSERT(addr <= 0x7ffff);
 	ASSERT(block <= 3);
 
-	// 16dotフラグ(16dot単位、(512/16)ｘ512ｘ4 = 0x10000)
+	// 16dot flag (16dot unit, (512/16) x 512 x 4 = 0x10000)
 	addr >>= 5;
 	block <<= 14;
 	render.grpflag[addr | block] = TRUE;
-	// ラインフラグ(ライン単位、512x4 = 2048)
+	// Line flag (line unit, 512x4 = 2048)
 	addr >>= 5;
 	block >>= 5;
 	render.grpmod[addr | block] = TRUE;
@@ -62,7 +62,7 @@ inline void FASTCALL Render::GrpMem(DWORD addr, DWORD block)
 
 //---------------------------------------------------------------------------
 //
-//	グラフィックVRAM変更(全て)
+//	Graphic VRAM change (all)
 //
 //---------------------------------------------------------------------------
 inline void FASTCALL Render::GrpAll(DWORD line, DWORD block)
