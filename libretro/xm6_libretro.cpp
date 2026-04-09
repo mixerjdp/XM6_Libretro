@@ -2166,6 +2166,7 @@ static void apply_core_option_values()
           (g_system_clock == 5) ? "22mhz" : "10mhz",
           g_joy_type[0], g_joy_type[1], (g_ram_size + 1) * 2,
           g_fast_floppy ? "enabled" : "disabled",
+          g_render_fast_dummy_enabled ? "enabled" : "disabled",
           g_alt_raster_enabled ? "enabled" : "disabled",
           g_render_bg0_enabled ? "enabled" : "disabled",
            g_fm_volume, g_adpcm_volume,
