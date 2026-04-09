@@ -48,6 +48,7 @@
 #include "neptune.h"
 #include "filepath.h"
 #include "fileio.h"
+#include "musashi_adapter.h"
 #include <vector>
 #include <algorithm>
 
@@ -500,6 +501,33 @@ void FASTCALL VM::ApplyCfg(const Config *config)
 		device->ApplyCfg(config);
 		device = device->GetNextDevice();
 	}
+}
+BOOL FASTCALL VM::SetRenderMode(int mode)
+{
+	Render *render;
+
+	ASSERT(this);
+	render = (Render*)SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+	if (!render) {
+		return FALSE;
+	}
+	if (!render->SetCompositorMode(mode)) {
+		return FALSE;
+	}
+	musashi_set_render_mode(mode);
+	return TRUE;
+}
+
+int FASTCALL VM::GetRenderMode() const
+{
+	Render *render;
+
+	ASSERT(this);
+	render = (Render*)SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+	if (!render) {
+		return Render::compositor_original;
+	}
+	return render->GetCompositorMode();
 }
 //---------------------------------------------------------------------------
 //

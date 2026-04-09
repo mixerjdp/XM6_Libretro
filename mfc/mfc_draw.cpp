@@ -1363,7 +1363,8 @@ void FASTCALL CDrawView::DrawOSD(CDC *pDC)
 	}
 
 	DWORD now = GetTickCount();
-	if ((m_dwPerfOSDLastTick == 0) || ((now - m_dwPerfOSDLastTick) >= 1500)) {
+	// Reducimos el tick de 1500ms a 32ms para ver el contador en real-time
+	if ((m_dwPerfOSDLastTick == 0) || ((now - m_dwPerfOSDLastTick) >= 32)) {
 		m_dwPerfOSDLastTick = now;
 		m_nPerfFPS = (m_pScheduler) ? m_pScheduler->GetFrameRate() : 0;
 		if (m_nPerfFPS < 0) {
@@ -1371,11 +1372,12 @@ void FASTCALL CDrawView::DrawOSD(CDC *pDC)
 		}
 
 		BOOL bVSync = (m_pFrmWnd) ? m_pFrmWnd->m_bVSyncEnabled : FALSE;
-		_stprintf(m_szPerfLine, _T("%s | VSync:%s | FPS:%d.%d"),
+		_stprintf(m_szPerfLine, _T("%s | VSync:%s | FPS:%d.%d | Frame: %u"),
 			m_bUseDX9 ? _T("DirectX 9") : _T("GDI"),
 			bVSync ? _T("ON") : _T("OFF"),
 			m_nPerfFPS / 10,
-			m_nPerfFPS % 10);
+			m_nPerfFPS % 10,
+			(unsigned int)m_Info.dwDrawCount);
 	}
 
 	if (!pDC) {

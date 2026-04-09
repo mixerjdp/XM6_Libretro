@@ -28,9 +28,10 @@ class VC;
 class Render : public Device, public IVideoStateView, public IPaletteResolver
 {
 public:
-		enum compositor_mode_t {
-			compositor_original = 0,
-		};
+	enum compositor_mode_t {
+		compositor_original = 0,
+		compositor_fast = 1,
+	};
 
 	// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½fï¿½Eï¿½[ï¿½Eï¿½^ï¿½Eï¿½ï¿½Eï¿½`
 	typedef struct {
@@ -177,6 +178,8 @@ public:
 	BOOL FASTCALL IsTransparencyEnabled() const		{ return transparency_enabled; }
 	void FASTCALL SetOriginalBG0RenderEnabled(BOOL enabled)	{ original_bg0_render_enabled = enabled ? TRUE : FALSE; }
 	BOOL FASTCALL IsOriginalBG0RenderEnabled() const		{ return original_bg0_render_enabled; }
+	BOOL FASTCALL SetCompositorMode(int mode);
+	int FASTCALL GetCompositorMode() const		{ return compositor_mode; }
 	DWORD FASTCALL GetFastFallbackCount() const	{ return fast_fallback_count; }
 	BOOL FASTCALL SetRenderFastDummyEnabled(BOOL enable);
 	BOOL FASTCALL IsRenderFastDummyEnabled() const	{ return render_fast_dummy_enabled; }
@@ -307,6 +310,7 @@ private:
 	GraphicEngine *backend_original;
 	DWORD *palbuf_original;
 	DWORD *palbuf_fast;
+	int compositor_mode;
 	DWORD fast_fallback_count;
 	BOOL transparency_enabled;
 	BOOL original_bg0_render_enabled;

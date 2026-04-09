@@ -36,9 +36,23 @@ BOOL FASTCALL IsCMOV(void);
 #define REND_COLOR0		0x80000000		// ?Jo?[0?to?O(rend_asm.asmog?p)
 #define REND_FAST_IBIT	0x40000000		// Fast render Ibit marker (XRGB8888: top byte ignored)
 
-static int FASTCALL CalcBGHAdjustPixels(int, const CRTC *, const Sprite *)
+static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
 {
-	return 0;
+	if (!sprite || !crtc) {
+		return 0;
+	}
+
+	Sprite::sprite_t spr;
+	sprite->GetSprite(&spr);
+
+	const CRTC::crtc_t *const crtc_state = crtc->GetWorkAddr();
+	if (!crtc_state) {
+		return 0;
+	}
+
+	const int bg_hdisp = (int)(spr.h_disp & 0xff);
+	const int crtc_hstart = (int)(crtc_state->reg[0x04] & 0xff);
+	return (bg_hdisp - (crtc_hstart + 4)) * 8;
 }
 
 //---------------------------------------------------------------------------
@@ -66,6 +80,7 @@ Render::Render(VM *p) : Device(p)
 	fast_fallback_count = 0;
 	transparency_enabled = TRUE;
 	original_bg0_render_enabled = TRUE;
+	compositor_mode = compositor_original;
 	render_fast_dummy_enabled = FALSE;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
@@ -637,6 +652,15 @@ BOOL FASTCALL Render::SetRenderFastDummyEnabled(BOOL enable)
 	// Legacy compatibility option: keep the flag, but do not switch away from the original backend.
 	render_fast_dummy_enabled = enable ? TRUE : FALSE;
 	return render_fast_dummy_enabled;
+}
+
+BOOL FASTCALL Render::SetCompositorMode(int mode)
+{
+	if (mode != compositor_original) {
+		return FALSE;
+	}
+	compositor_mode = mode;
+	return TRUE;
 }
 
 void FASTCALL Render::ComposeVideo()
@@ -2231,12 +2255,6 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 
 	// ooLooo?`?F?b?N
 	use = TRUE;
-	if (next[0] == 0) {
-		use = FALSE;
-	}
-	if (next[0] >= (DWORD)(render.mixlen + 16)) {
-		use = FALSE;
-	}
 	if (next[1] == 0) {
 		use = FALSE;
 	}

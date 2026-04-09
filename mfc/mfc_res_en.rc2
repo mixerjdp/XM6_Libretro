@@ -12,7 +12,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Reset",                      IDM_RESET
         MENUITEM SEPARATOR
-        MENUITEM "&Interrupt",                  IDM_INTERRUPT
+        MENUITEM "&Dump",                       IDM_INTERRUPT
         MENUITEM "&Power Switch",               IDM_POWER
         MENUITEM SEPARATOR
         MENUITEM "E&xit\tAlt+F4",               IDM_EXIT
@@ -149,6 +149,7 @@ BEGIN
     BEGIN
         MENUITEM "E&xecute",                    IDM_EXEC
         MENUITEM "&Break\tAlt+F12",             IDM_BREAK
+        MENUITEM "Avanzar &Frame\tCtrl+F12",    IDM_STEP_FRAME
         MENUITEM "&Trace\tShift+F12",           IDM_TRACE
         MENUITEM SEPARATOR
         MENUITEM "&Reset",                      IDM_RESET
@@ -199,7 +200,7 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "&Reset",                      IDM_RESET
             MENUITEM SEPARATOR
-            MENUITEM "&Interrupt",                  IDM_INTERRUPT
+            MENUITEM "&Dump",                       IDM_INTERRUPT
             MENUITEM "&Power Switch",               IDM_POWER
             MENUITEM SEPARATOR
             MENUITEM "E&xit\tAlt+F4",               IDM_EXIT
@@ -337,6 +338,7 @@ BEGIN
         BEGIN
             MENUITEM "E&xecute",                    IDM_EXEC
             MENUITEM "&Break\tAlt+F12",             IDM_BREAK
+        MENUITEM "Avanzar &Frame\tCtrl+F12",    IDM_STEP_FRAME
             MENUITEM "&Trace\tShift+F12",           IDM_TRACE
             MENUITEM SEPARATOR
             MENUITEM "&Reset",                      IDM_RESET

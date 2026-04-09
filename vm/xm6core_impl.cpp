@@ -90,7 +90,7 @@ struct XM6Context {
 	unsigned int audio_rate;
 	unsigned int audio_buf_frames;
 	BOOL surround_enabled;
-	BOOL hq_adpcm_enabled;
+	int hq_adpcm_level;
 	int reverb_level;
 	int eq_sub_bass_level;
 	int eq_bass_level;
@@ -103,12 +103,10 @@ struct XM6Context {
 	Config runtime_config;
 	int surround_prev_l;
 	int surround_prev_r;
-	int hq_adpcm_prev_in_l;
-	int hq_adpcm_prev_in_r;
-	int hq_adpcm_prev2_in_l;
-	int hq_adpcm_prev2_in_r;
-	int hq_adpcm_prev_out_l;
-	int hq_adpcm_prev_out_r;
+	int hq_adpcm_hp_prev_input;
+	int hq_adpcm_hp_prev_output;
+	double hq_adpcm_envelope;
+	int hq_adpcm_last_level;
 	int x68sound_adpcm_prev_in_l;
 	int x68sound_adpcm_prev_in_r;
 	int x68sound_adpcm_prev2_in_l;
@@ -737,31 +735,16 @@ static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames)
 	ctx->eq_air_r = air_r;
 }
 
-static inline long long hq_adpcm_soft_clip(long long sample)
-{
-	const long long abs_sample = (sample < 0) ? -sample : sample;
-	const long long knee = 8192LL;
-	if (abs_sample <= knee) {
-		return sample;
-	}
-
-	const long long excess = abs_sample - knee;
-	const long long compressed = knee + ((excess * 5LL) >> 3);
-	return (sample < 0) ? -compressed : compressed;
-}
-
 static void reset_hq_adpcm_state(XM6Context *ctx)
 {
 	if (!ctx) {
 		return;
 	}
 
-	ctx->hq_adpcm_prev_in_l = 0;
-	ctx->hq_adpcm_prev_in_r = 0;
-	ctx->hq_adpcm_prev2_in_l = 0;
-	ctx->hq_adpcm_prev2_in_r = 0;
-	ctx->hq_adpcm_prev_out_l = 0;
-	ctx->hq_adpcm_prev_out_r = 0;
+	ctx->hq_adpcm_hp_prev_input = 0;
+	ctx->hq_adpcm_hp_prev_output = 0;
+	ctx->hq_adpcm_envelope = 0.0;
+	ctx->hq_adpcm_last_level = -1;
 }
 
 static void reset_x68sound_adpcm_state(XM6Context *ctx)
@@ -776,87 +759,60 @@ static void apply_x68sound_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int
 
 static void apply_hq_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames)
 {
-	if (!ctx || !buffer || frames == 0 || !ctx->hq_adpcm_enabled) {
+	if (!ctx || !buffer || frames == 0 || ctx->hq_adpcm_level <= 0 || ctx->audio_rate == 0) {
 		return;
 	}
 
-	int prev_in_l = ctx->hq_adpcm_prev_in_l;
-	int prev_in_r = ctx->hq_adpcm_prev_in_r;
-	int prev2_in_l = ctx->hq_adpcm_prev2_in_l;
-	int prev2_in_r = ctx->hq_adpcm_prev2_in_r;
-	int prev_out_l = ctx->hq_adpcm_prev_out_l;
-	int prev_out_r = ctx->hq_adpcm_prev_out_r;
-	int *samples = (int*)buffer;
+	const int level = (ctx->hq_adpcm_level > 100) ? 100 : ctx->hq_adpcm_level;
+	if (ctx->hq_adpcm_last_level != level) {
+		reset_hq_adpcm_state(ctx);
+		ctx->hq_adpcm_last_level = level;
+	}
 
-	// Push the ADPCM a little closer to the Type G-style "analog" feel:
-	// Keep the low-end lift, but leave the treble close to normal and preserve
-	// only a gentle stereo spread / room feel.
-	enum {
-		kLowNum = 1,
-		kLowDen = 32,
-		kPresenceNum = 0,
-		kPresenceDen = 16,
-		kAirNum = 0,
-		kAirDen = 64,
-		kWidthNum = 9,
-		kWidthDen = 4,
-		kWetNum = 3,
-		kWetDen = 16
-	};
+	double prev_input = static_cast<double>(ctx->hq_adpcm_hp_prev_input);
+	double prev_output = static_cast<double>(ctx->hq_adpcm_hp_prev_output);
+	double envelope = ctx->hq_adpcm_envelope;
+	int *samples = reinterpret_cast<int*>(buffer);
+
+	const double sample_rate = static_cast<double>(ctx->audio_rate);
+	const double rc = 1.0 / (2.0 * 3.14159265358979323846 * 8000.0);
+	const double dt = 1.0 / sample_rate;
+	const double alpha = rc / (rc + dt);
+	const double gain = static_cast<double>(level) / 100.0;
 
 	for (unsigned int i = 0; i < frames; i++) {
-		const int old_prev_in_l = prev_in_l;
-		const int old_prev_in_r = prev_in_r;
-		long long input_l = samples[0];
-		long long input_r = samples[1];
-		input_l = hq_adpcm_soft_clip(input_l);
-		input_r = hq_adpcm_soft_clip(input_r);
+		const double dry_l = static_cast<double>(samples[0]) / 32768.0;
+		const double dry_r = static_cast<double>(samples[1]) / 32768.0;
+		const double input = (dry_l + dry_r) * 0.5;
 
-		const long long low_l = (input_l + prev_in_l) >> 1;
-		const long long low_r = (input_r + prev_in_r) >> 1;
-		const long long presence_l = input_l - prev_in_l;
-		const long long presence_r = input_r - prev_in_r;
-		const long long air_l = input_l - ((prev_in_l << 1) - prev2_in_l);
-		const long long air_r = input_r - ((prev_in_r << 1) - prev2_in_r);
+		const double high = alpha * (prev_output + input - prev_input);
+		prev_input = input;
+		prev_output = high;
 
-		long long shaped_l = input_l
-			+ ((low_l * kLowNum) / kLowDen)
-			+ ((presence_l * kPresenceNum) / kPresenceDen)
-			+ ((air_l * kAirNum) / kAirDen);
-		long long shaped_r = input_r
-			+ ((low_r * kLowNum) / kLowDen)
-			+ ((presence_r * kPresenceNum) / kPresenceDen)
-			+ ((air_r * kAirNum) / kAirDen);
+		envelope = (envelope * 0.985) + (fabs(high) * 0.015);
+		const double drive = 1.0 + (envelope * 3.25);
+		const double shaped = tanh(high * drive);
+		const double harmonic = shaped - (high * 0.55);
+		// Keep the exciter focused up to the 3rd harmonic without pushing a lot of
+		// extra upper-octave content.
+		double boosted = ((high * 0.82) + (harmonic * 1.35)) * gain * 2.0;
 
-		// Gentle shared tail to give the ADPCM a little room.
-		const long long tail_l = (prev_out_l * 5LL + prev_out_r * 3LL) >> 3;
-		const long long tail_r = (prev_out_r * 5LL + prev_out_l * 3LL) >> 3;
-		shaped_l += (tail_l * kWetNum) / kWetDen;
-		shaped_r += (tail_r * kWetNum) / kWetDen;
+		if (boosted > 1.0) {
+			boosted = 1.0 + ((boosted - 1.0) * 0.4);
+		} else if (boosted < -1.0) {
+			boosted = -1.0 + ((boosted + 1.0) * 0.4);
+		}
 
-		long long mid = (shaped_l + shaped_r) / 2;
-		long long side = (shaped_l - shaped_r) / 2;
-		side = (side * kWidthNum) / kWidthDen;
-
-		mid = (mid * 14LL) >> 4;
-		samples[0] = clamp_sample_32(mid + side);
-		samples[1] = clamp_sample_32(mid - side);
-
-		prev2_in_l = old_prev_in_l;
-		prev2_in_r = old_prev_in_r;
-		prev_in_l = (int)input_l;
-		prev_in_r = (int)input_r;
-		prev_out_l = samples[0];
-		prev_out_r = samples[1];
+		const double out_l = dry_l + boosted;
+		const double out_r = dry_r + boosted;
+		samples[0] = clamp_sample_32(static_cast<long long>(out_l * 32768.0));
+		samples[1] = clamp_sample_32(static_cast<long long>(out_r * 32768.0));
 		samples += 2;
 	}
 
-	ctx->hq_adpcm_prev_in_l = prev_in_l;
-	ctx->hq_adpcm_prev_in_r = prev_in_r;
-	ctx->hq_adpcm_prev2_in_l = prev2_in_l;
-	ctx->hq_adpcm_prev2_in_r = prev2_in_r;
-	ctx->hq_adpcm_prev_out_l = prev_out_l;
-	ctx->hq_adpcm_prev_out_r = prev_out_r;
+	ctx->hq_adpcm_hp_prev_input = static_cast<int>(prev_input);
+	ctx->hq_adpcm_hp_prev_output = static_cast<int>(prev_output);
+	ctx->hq_adpcm_envelope = envelope;
 }
 
 static void emit_messagef(XM6Context *ctx, const char *format, ...)
@@ -2472,6 +2428,7 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 	const int fm_gain_q14 = px68k_opm_gain_q14(px68k_runtime_to_fm16(ctx->runtime_config.fm_volume));
 	const int adpcm_gain_q14 = px68k_adpcm_gain_q14(px68k_runtime_to_adpcm16(ctx->runtime_config.adpcm_volume));
 	const int px_drive_q14 = 19661; // 1.20x
+	const int px_output_boost_q14 = 22938; // 1.40x
 
 	while (frames_to_generate > 0) {
 		unsigned int batch = frames_to_generate;
@@ -2531,6 +2488,8 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 
 				left = (left * px_drive_q14) >> 14;
 				right = (right * px_drive_q14) >> 14;
+				left = (left * px_output_boost_q14) >> 14;
+				right = (right * px_output_boost_q14) >> 14;
 			}
 
 			ctx->px68k_lpf_prev_l = (ctx->px68k_lpf_prev_l * 3 + left) >> 2;

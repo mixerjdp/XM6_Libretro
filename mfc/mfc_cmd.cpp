@@ -21,6 +21,7 @@
 #include "sram.h"
 #include "memory.h"
 #include "render.h"
+#include "crtc.h"
 #include "fileio.h"
 #include "mfc_frm.h"
 #include "mfc_res.h"
@@ -39,6 +40,221 @@
 #include "mfc_rend.h"
 #include "mfc_stat.h"
 #include "mfc_tool.h"
+
+namespace {
+
+static const char *kDumpPath = "C:\\tmp\\Xm6Dump.log";
+
+static const char *DumpLevelName(Log::loglevel level)
+{
+	switch (level) {
+	case Log::Detail:  return "Detail";
+	case Log::Normal:  return "Normal";
+	case Log::Warning: return "Warning";
+	default:           return "Unknown";
+	}
+}
+
+static void DumpByteLine(FILE *fp, const char *title, const BYTE *data, size_t count)
+{
+	size_t i;
+
+	fprintf(fp, "%s\r\n", title);
+	for (i = 0; i < count; i += 16) {
+		size_t j;
+
+		fprintf(fp, "  %04u:", (unsigned)i);
+		for (j = 0; (j < 16) && (i + j < count); j++) {
+			fprintf(fp, " %02X", data[i + j]);
+		}
+		fprintf(fp, "\r\n");
+	}
+}
+
+static void DumpCPU(FILE *fp, CPU *cpu)
+{
+	CPU::cpu_t state;
+	size_t i;
+
+	memset(&state, 0, sizeof(state));
+	cpu->GetCPU(&state);
+
+	fprintf(fp, "[CPU]\r\n");
+	for (i = 0; i < 8; i++) {
+		fprintf(fp, "  D%u=%08lX A%u=%08lX\r\n",
+			(unsigned)i, (unsigned long)state.dreg[i],
+			(unsigned)i, (unsigned long)state.areg[i]);
+	}
+	fprintf(fp, "  SP=%08lX PC=%08lX SR=%04lX ODD=%08lX\r\n",
+		(unsigned long)state.sp,
+		(unsigned long)state.pc,
+		(unsigned long)state.sr,
+		(unsigned long)state.odd);
+	fprintf(fp, "  CYCLE=%08lX IOCYCLE=%08lX\r\n",
+		(unsigned long)cpu->GetCycle(),
+		(unsigned long)cpu->GetIOCycle());
+	for (i = 0; i < 8; i++) {
+		fprintf(fp, "  INTR%u=%08lX REQ=%08lX ACK=%08lX\r\n",
+			(unsigned)i,
+			(unsigned long)state.intr[i],
+			(unsigned long)state.intreq[i],
+			(unsigned long)state.intack[i]);
+	}
+}
+
+static void DumpScheduler(FILE *fp, Scheduler *scheduler)
+{
+	Scheduler::scheduler_t state;
+
+	memset(&state, 0, sizeof(state));
+	scheduler->GetScheduler(&state);
+
+	fprintf(fp, "[Scheduler]\r\n");
+	fprintf(fp, "  total=%08lX one=%08lX sound=%08lX\r\n",
+		(unsigned long)state.total,
+		(unsigned long)state.one,
+		(unsigned long)state.sound);
+	fprintf(fp, "  clock=%d speed=%08lX cycle=%d time=%08lX\r\n",
+		state.clock,
+		(unsigned long)state.speed,
+		state.cycle,
+		(unsigned long)state.time);
+	fprintf(fp, "  brk=%d check=%d exec=%d events=%d passed=%08lX\r\n",
+		state.brk,
+		state.check,
+		state.exec,
+		scheduler->GetEventNum(),
+		(unsigned long)scheduler->GetPassedTime());
+	fprintf(fp, "  first_event=%p\r\n", state.first);
+}
+
+static void DumpCRTC(FILE *fp, CRTC *crtc)
+{
+	CRTC::crtc_t state;
+
+	memset(&state, 0, sizeof(state));
+	crtc->GetCRTC(&state);
+
+	fprintf(fp, "[CRTC]\r\n");
+	fprintf(fp, "  hrl=%d lowres=%d textres=%d changed=%d\r\n",
+		state.hrl, state.lowres, state.textres, state.changed);
+	fprintf(fp, "  h_sync=%d h_pulse=%d h_back=%d h_front=%d h_dots=%d h_mul=%d hd=%d\r\n",
+		state.h_sync, state.h_pulse, state.h_back, state.h_front, state.h_dots, state.h_mul, state.hd);
+	fprintf(fp, "  v_sync=%d v_pulse=%d v_back=%d v_front=%d v_dots=%d v_mul=%d vd=%d\r\n",
+		state.v_sync, state.v_pulse, state.v_back, state.v_front, state.v_dots, state.v_mul, state.vd);
+	fprintf(fp, "  ns=%08lX hus=%08lX v_synccnt=%08lX v_blankcnt=%08lX\r\n",
+		(unsigned long)state.ns,
+		(unsigned long)state.hus,
+		(unsigned long)state.v_synccnt,
+		(unsigned long)state.v_blankcnt);
+	fprintf(fp, "  h_disp=%d v_disp=%d v_blank=%d v_count=%08lX v_scan=%d\r\n",
+		state.h_disp, state.v_disp, state.v_blank,
+		(unsigned long)state.v_count,
+		state.v_scan);
+	fprintf(fp, "  h_synctime=%d h_disptime=%d v_cycletime=%d v_blanktime=%d v_synctime=%d v_backtime=%d\r\n",
+		state.h_synctime, state.h_disptime, state.v_cycletime, state.v_blanktime, state.v_synctime, state.v_backtime);
+	fprintf(fp, "  tmem=%d gmem=%d siz=%08lX col=%08lX\r\n",
+		state.tmem, state.gmem,
+		(unsigned long)state.siz,
+		(unsigned long)state.col);
+	fprintf(fp, "  text_scrlx=%08lX text_scrly=%08lX raster_count=%d raster_int=%d raster_copy=%d raster_exec=%d fast_clr=%08lX\r\n",
+		(unsigned long)state.text_scrlx,
+		(unsigned long)state.text_scrly,
+		state.raster_count,
+		state.raster_int,
+		state.raster_copy,
+		state.raster_exec,
+		(unsigned long)state.fast_clr);
+	fprintf(fp, "  grp_scrlx=%08lX,%08lX,%08lX,%08lX\r\n",
+		(unsigned long)state.grp_scrlx[0],
+		(unsigned long)state.grp_scrlx[1],
+		(unsigned long)state.grp_scrlx[2],
+		(unsigned long)state.grp_scrlx[3]);
+	fprintf(fp, "  grp_scrly=%08lX,%08lX,%08lX,%08lX\r\n",
+		(unsigned long)state.grp_scrly[0],
+		(unsigned long)state.grp_scrly[1],
+		(unsigned long)state.grp_scrly[2],
+		(unsigned long)state.grp_scrly[3]);
+	DumpByteLine(fp, "  regs:", state.reg, sizeof(state.reg));
+}
+
+static BOOL DumpLog(FILE *fp, Log *log)
+{
+	int i;
+	int num;
+
+	fprintf(fp, "[Log]\r\n");
+	num = log->GetNum();
+	fprintf(fp, "  count=%d max=%d\r\n", num, log->GetMax());
+	for (i = 0; i < num; i++) {
+		Log::logdata_t data;
+
+		memset(&data, 0, sizeof(data));
+		if (!log->GetData(i, &data)) {
+			break;
+		}
+
+		fprintf(fp, "  [%05d] number=%08lX total=%08lX time=%08lX pc=%08lX id=%08lX level=%s text=%s\r\n",
+			i,
+			(unsigned long)data.number,
+			(unsigned long)data.total,
+			(unsigned long)data.time,
+			(unsigned long)data.pc,
+			(unsigned long)data.id,
+			DumpLevelName(data.level),
+			data.string ? data.string : "");
+		delete[] data.string;
+	}
+
+	return TRUE;
+}
+
+static BOOL DumpVMState()
+{
+	VM *vm;
+	CPU *cpu;
+	CRTC *crtc;
+	Scheduler *scheduler;
+	FILE *fp;
+	DWORD major;
+	DWORD minor;
+	SYSTEMTIME st;
+	BOOL ok;
+
+	vm = ::GetVM();
+	cpu = (CPU *)vm->SearchDevice(MAKEID('C', 'P', 'U', ' '));
+	crtc = (CRTC *)vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
+	scheduler = (Scheduler *)vm->SearchDevice(MAKEID('S', 'C', 'H', 'E'));
+	if (!cpu || !crtc || !scheduler) {
+		return FALSE;
+	}
+
+	CreateDirectoryA("C:\\tmp", NULL);
+	fp = fopen(kDumpPath, "wt");
+	if (!fp) {
+		return FALSE;
+	}
+
+	GetLocalTime(&st);
+	vm->GetVersion(major, minor);
+
+	fprintf(fp, "# XM6 Debug Dump\r\n");
+	fprintf(fp, "timestamp=%04u-%02u-%02u %02u:%02u:%02u.%03u\r\n",
+		(unsigned)st.wYear, (unsigned)st.wMonth, (unsigned)st.wDay,
+		(unsigned)st.wHour, (unsigned)st.wMinute, (unsigned)st.wSecond, (unsigned)st.wMilliseconds);
+	fprintf(fp, "version=%lu.%lu\r\n", (unsigned long)major, (unsigned long)minor);
+	fprintf(fp, "power_sw=%d power=%d\r\n", vm->IsPowerSW(), vm->IsPower());
+
+	DumpCPU(fp, cpu);
+	DumpScheduler(fp, scheduler);
+	DumpCRTC(fp, crtc);
+	DumpLog(fp, &vm->log);
+
+	ok = (fclose(fp) == 0);
+	return ok;
+}
+
+} // namespace
 
 //---------------------------------------------------------------------------
 //
@@ -822,29 +1038,31 @@ const DWORD CFrmWnd::SigTable[] = {
 //	Interrupt
 //
 //---------------------------------------------------------------------------
-void CFrmWnd::OnInterrupt()
+void CFrmWnd::OnDump()
 {
 	CString strIntr;
 
 	// Only when power is ON
 	if (::GetVM()->IsPower()) {
-		// Interrupt NMI
 		::LockVM();
-		::GetVM()->Interrupt();
+		if (DumpVMState()) {
+			strIntr = _T("Dump saved to C:\\tmp\\Xm6Dump.log");
+		}
+		else {
+			strIntr = _T("Dump failed. Check C:\\tmp\\Xm6Dump.log path.");
+		}
 		::UnlockVM();
 
-		// Set info message
-		::GetMsg(IDS_INTERRUPT, strIntr);
 		SetInfo(strIntr);
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	Interrupt UI
+//	Dump UI
 //
 //---------------------------------------------------------------------------
-void CFrmWnd::OnInterruptUI(CCmdUI *pCmdUI)
+void CFrmWnd::OnDumpUI(CCmdUI *pCmdUI)
 {
 	// Only when power is ON
 	pCmdUI->Enable(::GetVM()->IsPower());
@@ -3629,6 +3847,33 @@ void CFrmWnd::OnBreakUI(CCmdUI *pCmdUI)
 {
 	// Enable if scheduler is running
 	if (GetScheduler()->IsEnable()) {
+		pCmdUI->Enable(TRUE);
+	}
+	else {
+		pCmdUI->Enable(FALSE);
+	}
+}
+
+//---------------------------------------------------------------------------
+//
+//	Step Frame
+//
+//---------------------------------------------------------------------------
+void CFrmWnd::OnStepFrame()
+{
+	// Llamar al scheduler para avanzar un frame
+	GetScheduler()->StepFrame();
+}
+
+//---------------------------------------------------------------------------
+//
+//	Step Frame UI
+//
+//---------------------------------------------------------------------------
+void CFrmWnd::OnStepFrameUI(CCmdUI *pCmdUI)
+{
+	// Habilitar solo si el scheduler NO está corriendo y hay energía
+	if ((!GetScheduler()->IsEnable()) && ::GetVM()->IsPower()) {
 		pCmdUI->Enable(TRUE);
 	}
 	else {

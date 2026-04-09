@@ -38,6 +38,8 @@ public:
 										// Reset
 	void FASTCALL ApplyCfg(const Config *config);
 										// Apply settings
+	BOOL FASTCALL SetRenderMode(int mode);
+	int FASTCALL GetRenderMode() const;
 
 	// State save/load
 	DWORD FASTCALL OriginalSave(const Filepath& path);
