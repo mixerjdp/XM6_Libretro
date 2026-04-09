@@ -522,6 +522,9 @@ int CFrmWnd::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// Reset VM
 	::GetVM()->Reset();
 
+	// Actualizar nombre de savestate de SASI/FDD configurados por MRU en el inicio
+	// UpdateStateFileName se movio a OnKick para que los medios ya esten restaurados
+
 	// Restore frame state while startup status is non-zero
 	ASSERT(m_nStatus != 0);
 	RestoreFrameWnd(FALSE);
@@ -1482,6 +1485,9 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	if (_tcslen(lpszCommand) > 0) {
 		InitCmd(lpszCommand);
 	}
+
+	// Sincronizar nombre de savestate tras restaurar medios (INI/MRU o Parametros)
+	UpdateStateFileName();
 
 	bFullScreen = FALSE;
 	if (IsZoomed()) {

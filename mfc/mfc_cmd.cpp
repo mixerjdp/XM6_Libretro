@@ -308,6 +308,62 @@ void CFrmWnd::OnFastOpen()
 
 //---------------------------------------------------------------------------
 //
+//	Update savestate file name based on loaded media
+//
+//---------------------------------------------------------------------------
+void FASTCALL CFrmWnd::UpdateStateFileName()
+{
+	Filepath path;
+	Config config;
+	GetConfig()->GetConfig(&config);
+
+	// 1. Check FDD0
+	if (m_pFDD) {
+		m_pFDD->GetPath(0, path);
+		if (!path.IsClear()) {
+			m_strXM6FileName = path.GetFileExt();
+			return;
+		}
+	}
+
+	// 2. Check SASI MO (Removable)
+	if (m_pSASI) {
+		m_pSASI->GetPath(path);
+		if (!path.IsClear()) {
+			m_strXM6FileName = path.GetFileExt();
+			return;
+		}
+	}
+
+	// 3. Check SASI Fixed HDD 0
+	if (_tcslen(config.sasi_file[0]) > 0) {
+		path.SetPath(config.sasi_file[0]);
+		m_strXM6FileName = path.GetFileExt();
+		return;
+	}
+
+	// 4. Check SCSI CD/MO (Removable)
+	if (m_pSCSI) {
+		m_pSCSI->GetPath(path, FALSE /* mo = FALSE for HD/CD */);
+		if (!path.IsClear()) {
+			m_strXM6FileName = path.GetFileExt();
+			return;
+		}
+	}
+
+	// 5. Check SCSI Fixed HDD 0
+	if (_tcslen(config.scsi_file[0]) > 0) {
+		path.SetPath(config.scsi_file[0]);
+		m_strXM6FileName = path.GetFileExt();
+		return;
+	}
+
+	// Default fallback to empty
+	m_strXM6FileName.Empty();
+}
+
+//---------------------------------------------------------------------------
+//
 //	Open UI
 //
 //---------------------------------------------------------------------------
@@ -525,10 +581,11 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 	// Stop scheduler and sound
 	bRun = GetScheduler()->IsEnable();
 	GetScheduler()->Enable(FALSE);
-	::LockVM();
-	::UnlockVM();
 	bSound = GetSound()->IsEnable();
 	GetSound()->Enable(FALSE);
+
+	// Lock VM for the entire operation
+	::LockVM();
 
 	// Load
 	AfxGetApp()->BeginWaitCursor();
@@ -541,16 +598,42 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 
 		// Failure is dangerous due to half interrupt; always reset
 		::GetVM()->Reset();
+		::UnlockVM();
+
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
 		ResetCaption();
 
 		// LoadError
-		::GetMsg(IDS_XM6LOADERR, strMsg);
+		CString errorDetail = _T("Fallo desconocido en dispositivo interno de la VM.");
+		CFileStatus fstatus;
+		if (!CFile::GetStatus(path.GetPath(), fstatus)) {
+			errorDetail = _T("El archivo no existe o no se encontro en la ruta especificada.");
+		} else {
+			CFile f;
+			if (f.Open(path.GetPath(), CFile::modeRead)) {
+				char buf[16];
+				UINT bytesRead = f.Read(buf, 16);
+				f.Close();
+				if (bytesRead < 16) {
+					errorDetail = _T("El archivo es demasiado pequeno o esta corrupto.");
+				} else {
+					buf[9] = '\0';
+					if (strncmp(buf, "XM6 DATA ", 9) != 0) {
+						errorDetail = _T("Cabecera invalida. No es un savestate de XM6 valido.");
+					} else {
+						errorDetail = _T("El archivo existe (.xm6 valido) pero el emulador fallo al restaurar el estado interno.\n(Puede ser un estado guardado incompleto o corrupto).");
+					}
+				}
+			} else {
+				errorDetail = _T("Acceso denegado. No se pudo leer el archivo.");
+			}
+		}
+
 		CString msg;
-		msg.Format(_T("File read (VM): %u"), dwPos);
-		MessageBox(msg, NULL, MB_ICONSTOP | MB_OK);
+		msg.Format(_T("Fallo al cargar (VM: %u)\n\nArchivo:\n%s\n\nMotivo:\n%s"), dwPos, path.GetPath(), (LPCTSTR)errorDetail);
+		MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
 
 		return FALSE;
 	}
@@ -561,16 +644,21 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 
 		// Failure is dangerous due to half interrupt; always reset
 		::GetVM()->Reset();
+		::UnlockVM();
+
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
 		ResetCaption();
 
 		// LoadError
-		::GetMsg(IDS_XM6LOADERR, strMsg);
-		MessageBox("File read failed (MFC)", NULL, MB_ICONSTOP | MB_OK);
+		CString msg;
+		msg.Format(_T("Error al restaurar componentes de la interfaz grafica (MFC).\n\nArchivo:\n%s"), path.GetPath());
+		MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
 		return FALSE;
 	}
+
+	::UnlockVM();
 
 	// Load finish
 	AfxGetApp()->EndWaitCursor();
@@ -728,10 +816,11 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 	// Stop scheduler and sound
 	bRun = GetScheduler()->IsEnable();
 	GetScheduler()->Enable(FALSE);
-	::LockVM();
-	::UnlockVM();
 	bSound = GetSound()->IsEnable();
 	GetSound()->Enable(FALSE);
+
+	// Lock VM for the entire operation
+	::LockVM();
 
 	AfxGetApp()->BeginWaitCursor();
 
@@ -742,10 +831,10 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 	// Make sure to include a full filename; adjust as needed
 	dwPos = ::GetVM()->Save(path);
 
-	if (dwPos== 0) {
+	if (dwPos == 0) {
 		AfxGetApp()->EndWaitCursor();
+		::UnlockVM();
 
-		// Save failed
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
@@ -760,8 +849,8 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 	// MFC
 	if (!SaveComponent(path, dwPos)) {
 		AfxGetApp()->EndWaitCursor();
+		::UnlockVM();
 
-		// Save failed
 		GetSound()->Enable(bSound);
 		GetScheduler()->Reset();
 		GetScheduler()->Enable(bRun);
@@ -772,6 +861,8 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 		return;
 	}
+
+	::UnlockVM();
 
 	// Clear execution counter
 	m_dwExec = 0;
@@ -863,7 +954,11 @@ void CFrmWnd::OnReset()
 
 	// Reset and redraw
 	::GetVM()->Reset();
-	//OutputDebugString("\n\nExecuted GetVM->Reset\n\n");
+
+	// Update the savestate filename based on loaded images
+	// This ensures that after a reset with a new disk, F5/F7 use the correct name.
+	UpdateStateFileName();
+
 	GetView()->Refresh();
 	ResetCaption();
 
@@ -1240,6 +1335,9 @@ void FASTCALL CFrmWnd::OnFDOpen(int nDrive)
 	ResetCaption();
 	::UnlockVM();
 
+	// Sincronizar nombre de savestate tras cambio de disco
+	UpdateStateFileName();
+
 	// Add to MRU
 	GetConfig()->SetMRUFile(nDrive, szPath);
 
@@ -1264,6 +1362,9 @@ void FASTCALL CFrmWnd::OnFDEject(int nDrive)
 	::LockVM();
 	m_pFDD->Eject(nDrive, FALSE);
 	::UnlockVM();
+
+	// Sincronizar nombre de savestate tras expulsion
+	UpdateStateFileName();
 }
 
 //---------------------------------------------------------------------------
@@ -1385,6 +1486,9 @@ void FASTCALL CFrmWnd::OnFDMRU(int nDrive, int nMRU)
 
 	// VM unlock
 	::UnlockVM();
+
+	// Sincronizar nombre tras cambio de disco
+	UpdateStateFileName();
 
 	// If successful, update directory and add to MRU
 	if (bResult) {
@@ -1804,6 +1908,9 @@ void CFrmWnd::OnMOOpen()
 	ResetCaption();
 	::UnlockVM();
 
+	// Sincronizar nombre tras cambio de disco
+	UpdateStateFileName();
+
 	// Add to MRU
 	GetConfig()->SetMRUFile(2, szPath);
 }
@@ -1950,6 +2057,9 @@ void CFrmWnd::OnMOEject()
 	::LockVM();
 	m_pSASI->Eject(FALSE);
 	::UnlockVM();
+
+	// Sincronizar nombre de savestate tras expulsion
+	UpdateStateFileName();
 }
 
 //---------------------------------------------------------------------------
@@ -2101,6 +2211,9 @@ void CFrmWnd::OnMOMRU(UINT uID)
 	ResetCaption();
 	::UnlockVM();
 
+	// Sincronizar nombre tras cambio de disco
+	UpdateStateFileName();
+
 	// If successful, update directory and add to MRU
 	if (bResult) {
 		// Update default directory
@@ -2178,6 +2291,9 @@ void CFrmWnd::OnCDOpen()
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
+
+	// Sincronizar nombre tras cambio de disco
+	UpdateStateFileName();
 
 	// Add to MRU
 	GetConfig()->SetMRUFile(3, szPath);
@@ -2314,6 +2430,9 @@ void CFrmWnd::OnCDEject()
 	::LockVM();
 	m_pSCSI->Eject(FALSE, FALSE);
 	::UnlockVM();
+
+	// Sincronizar nombre de savestate tras expulsion
+	UpdateStateFileName();
 }
 
 //---------------------------------------------------------------------------
@@ -2419,6 +2538,9 @@ void CFrmWnd::OnCDMRU(UINT uID)
 	GetScheduler()->Reset();
 	ResetCaption();
 	::UnlockVM();
+
+	// Sincronizar nombre tras cambio de disco
+	UpdateStateFileName();
 
 	// If successful, update directory and add to MRU
 	if (bResult) {
