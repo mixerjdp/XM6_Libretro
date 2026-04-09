@@ -53,6 +53,9 @@ set COMMONFLAGS=/nologo /LD /O2 /MT /EHsc /std:c++14 /wd4018 /wd4244 /wd4267 /wd
 set COMMONFLAGS=%COMMONFLAGS% /Zi /FS
 set LINKFLAGS=/link /OUT:%OUT% /OPT:REF /OPT:ICF /DEBUG:FULL /PDB:%~dp0\%RELEASE_DIR%\xm6_libretro.pdb winmm.lib
 set OBJDIR=build_%ARCH%
+set PDBFILE=%OBJDIR%\xm6_libretro_%ARCH%.pdb
+
+set COMMONFLAGS=%COMMONFLAGS% /Fd"%PDBFILE%"
 
 if not exist "%OBJDIR%" mkdir "%OBJDIR%"
 
@@ -130,6 +133,10 @@ copy /Y "%OUT%" "%RELEASE_DIR%\xm6_libretro.dll" >nul
 if errorlevel 1 (
   echo Failed to copy %OUT% to %RELEASE_DIR%\xm6_libretro.dll
   exit /b 1
+)
+
+if exist "%~dp0xm6_libretro.info" (
+  copy /Y "%~dp0xm6_libretro.info" "%RELEASE_DIR%\xm6_libretro.info" >nul
 )
 
 if exist "%OUT:.dll=.pdb%" (

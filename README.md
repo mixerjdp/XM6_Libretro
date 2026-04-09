@@ -65,15 +65,22 @@ Common files used by this project include:
 
 For RetroArch, point the system directory to the folder that contains those files.
 
+RetroArch also needs the Libretro metadata file for the core to show up correctly:
+
+- `xm6_libretro.info`
+
+Place that file in RetroArch's `info/` directory alongside the core.
+
 ## Libretro usage
 
 The Libretro core is designed to run inside RetroArch and similar front ends.
 
 Typical setup:
 
-1. Copy the core to RetroArch `cores/`
-2. Put the BIOS and system files in RetroArch `system/`
-3. Load the game image or disk set from the front end
+1. Copy the core binary to RetroArch `cores/`
+2. Copy `xm6_libretro.info` to RetroArch `info/`
+3. Put the BIOS and system files in RetroArch `system/`
+4. Load the game image or disk set from the front end
 
 Where supported, the core also handles disk playlists and the usual RetroArch callbacks.
 
@@ -91,12 +98,14 @@ Current release artifacts include:
 - Libretro Win32 build
 - Libretro Win64 build
 - Linux Libretro `.so`
+- Libretro `xm6_libretro.info`
 
 The libretro binaries are produced in release form as:
 
 - `libretro/Release/xm6_libretro.dll`
 - `libretro/Release_x64/xm6_libretro.dll`
 - `libretro/xm6_libretro.so`
+- `libretro/xm6_libretro.info`
 
 ## License and credits
 
