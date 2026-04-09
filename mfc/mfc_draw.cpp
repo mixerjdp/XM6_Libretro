@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 // X68000 Emulator "XM6"
 //
@@ -81,7 +81,7 @@ CDrawView::CDrawView()
 	m_pFrmWnd = NULL;
 	m_bUseDX9 = TRUE;
 	m_lPresentPending = 0;
-	m_bPx68kGraphicEngine = FALSE;
+	m_bRenderFastDummy = FALSE;
 	m_hRenderEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hRenderExitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	m_hRenderAckEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -228,27 +228,27 @@ void FASTCALL CDrawView::DrawFrame()
 	RequestPresent();
 }
 
-BOOL FASTCALL CDrawView::SetPx68kGraphicEngineEnabled(BOOL bEnable)
+BOOL FASTCALL CDrawView::SetRenderFastDummyEnabled(BOOL bEnable)
 {
 	Render *pRender;
 	BOOL bActive;
 
-	m_bPx68kGraphicEngine = bEnable ? TRUE : FALSE;
+	m_bRenderFastDummy = bEnable ? TRUE : FALSE;
 
 	pRender = m_Info.pRender;
 	if (!pRender) {
-		return m_bPx68kGraphicEngine;
+		return m_bRenderFastDummy;
 	}
 
-	bActive = pRender->UsePx68kGraphicEngine(m_bPx68kGraphicEngine);
-	m_bPx68kGraphicEngine = bActive;
+	bActive = pRender->SetRenderFastDummyEnabled(m_bRenderFastDummy);
+	m_bRenderFastDummy = bActive;
 	RequestPresent();
 	return bActive;
 }
 
-BOOL FASTCALL CDrawView::IsPx68kGraphicEngineEnabled() const
+BOOL FASTCALL CDrawView::IsRenderFastDummyEnabled() const
 {
-	return m_bPx68kGraphicEngine;
+	return m_bRenderFastDummy;
 }
 
 //---------------------------------------------------------------------------
@@ -893,7 +893,7 @@ void FASTCALL CDrawView::Enable(BOOL bEnable)
 		}
 		if (m_Info.pRender) {
 			m_Info.pRender->SetRenderTarget(this);
-			m_bPx68kGraphicEngine = m_Info.pRender->UsePx68kGraphicEngine(m_bPx68kGraphicEngine);
+			m_bRenderFastDummy = m_Info.pRender->SetRenderFastDummyEnabled(m_bRenderFastDummy);
 		}
 	}
 	else {
@@ -1446,8 +1446,8 @@ void FASTCALL CDrawView::ApplyCfg(const Config *pConfig)
 	// Shader (CRT)
 	SetShaderEnabled(pConfig->render_shader);
 
-	// Px68k graphic engine
-	SetPx68kGraphicEngineEnabled(pConfig->px68k_graphic_engine);
+	// Render fast dummy
+	SetRenderFastDummyEnabled(pConfig->render_fast_dummy);
 
 	// Subwindow handling
 	pWnd = m_pSubWnd;
@@ -2317,3 +2317,4 @@ LPCTSTR FASTCALL CDrawView::GetWndClassName() const
 }
 
 #endif	// _WIN32
+

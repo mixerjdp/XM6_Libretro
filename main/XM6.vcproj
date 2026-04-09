@@ -293,7 +293,6 @@
 					RelativePath="..\vm\render.cpp">
 				</File>
 				<File
-					RelativePath="..\vm\renderfast_compositor.cpp">
 				</File>
 				<File
 					RelativePath="..\vm\graphic_engine.cpp">

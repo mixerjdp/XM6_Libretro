@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 //	X68000 EMULATOR "XM6"
 //
@@ -336,8 +336,8 @@ BEGIN_MESSAGE_MAP(CFrmWnd, CFrameWnd)
 	ON_COMMAND(IDM_YMFM, OnYmfm)
 	ON_UPDATE_COMMAND_UI(IDM_YMFM, OnYmfmUI)
 	ON_COMMAND(IDM_TOGGLE_RENDERER, OnToggleRenderer)
-	ON_COMMAND(IDM_TOGGLE_PX68K_ENGINE, OnTogglePx68kGraphicEngine)
-	ON_UPDATE_COMMAND_UI(IDM_TOGGLE_PX68K_ENGINE, OnTogglePx68kGraphicEngineUI)
+	ON_COMMAND(IDM_TOGGLE_RENDER_FAST_DUMMY, OnToggleRenderFastDummy)
+	ON_UPDATE_COMMAND_UI(IDM_TOGGLE_RENDER_FAST_DUMMY, OnToggleRenderFastDummyUI)
 	ON_COMMAND(IDM_TOGGLE_OSD, OnToggleOSD)
 	ON_COMMAND(IDM_TOGGLE_VSYNC, OnToggleVSync)
 	ON_COMMAND(IDM_TOGGLE_SHADER, OnToggleShader)
@@ -554,7 +554,7 @@ BOOL FASTCALL CFrmWnd::InitChild()
 	else {
 		// Early startup path: config component is not created yet.
 		config.render_shader = FALSE;
-		config.px68k_graphic_engine = FALSE;
+		config.render_fast_dummy = FALSE;
 	}
 
 	// Create view with the initial shader state
@@ -1848,7 +1848,7 @@ void CFrmWnd::SaveFrameWnd()
 	// Shader state
 	if (m_pDrawView) {
 		config.render_shader = m_pDrawView->IsShaderEnabled();
-		config.px68k_graphic_engine = m_pDrawView->IsPx68kGraphicEngineEnabled();
+		config.render_fast_dummy = m_pDrawView->IsRenderFastDummyEnabled();
 	}
 
 	// Store updated config
@@ -3372,27 +3372,27 @@ void CFrmWnd::OnToggleRenderer()
 	}
 }
 
-void CFrmWnd::OnTogglePx68kGraphicEngine()
+void CFrmWnd::OnToggleRenderFastDummy()
 {
 	if (!m_pDrawView) {
 		return;
 	}
 
 	::LockVM();
-	BOOL bEnabled = m_pDrawView->SetPx68kGraphicEngineEnabled(!m_pDrawView->IsPx68kGraphicEngineEnabled());
+	BOOL bEnabled = m_pDrawView->SetRenderFastDummyEnabled(!m_pDrawView->IsRenderFastDummyEnabled());
 	::UnlockVM();
 
 	Config config;
 	GetConfig()->GetConfig(&config);
-	config.px68k_graphic_engine = bEnabled;
+	config.render_fast_dummy = bEnabled;
 	GetConfig()->SetConfig(&config);
 
 	CString info;
-	info.Format(_T("Px68k Graphic Engine: %s"), bEnabled ? _T("ON") : _T("OFF"));
+	info.Format(_T("Render Fast (Dummy) (dummy): %s"), bEnabled ? _T("ON") : _T("OFF"));
 	SetInfo(info);
 }
 
-void CFrmWnd::OnTogglePx68kGraphicEngineUI(CCmdUI *pCmdUI)
+void CFrmWnd::OnToggleRenderFastDummyUI(CCmdUI *pCmdUI)
 {
 	if (!pCmdUI) {
 		return;
@@ -3400,7 +3400,7 @@ void CFrmWnd::OnTogglePx68kGraphicEngineUI(CCmdUI *pCmdUI)
 
 	if (m_pDrawView) {
 		pCmdUI->Enable(TRUE);
-		pCmdUI->SetCheck(m_pDrawView->IsPx68kGraphicEngineEnabled() ? 1 : 0);
+		pCmdUI->SetCheck(m_pDrawView->IsRenderFastDummyEnabled() ? 1 : 0);
 	}
 	else {
 		pCmdUI->Enable(FALSE);
@@ -3514,3 +3514,4 @@ void CFrmWnd::OnToggleShaderUI(CCmdUI *pCmdUI)
 		}
 	}
 }
+

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 // X68000 Emulator "XM6"
 //
@@ -13,7 +13,7 @@
 #define mfc_draw_h
 
 #include "mfc_dx9.h"
-#include "px68k_render_interfaces.h"
+#include "render_interfaces.h"
 
 //===========================================================================
 //
@@ -96,10 +96,10 @@ public:
 	void FASTCALL DrawLine() override;
 	void FASTCALL DrawFrame() override;
 										// Render target callbacks
-	BOOL FASTCALL SetPx68kGraphicEngineEnabled(BOOL bEnable);
-										// Switch px68k graphic engine
-	BOOL FASTCALL IsPx68kGraphicEngineEnabled() const;
-										// Get px68k graphic engine state
+	BOOL FASTCALL SetRenderFastDummyEnabled(BOOL bEnable);
+										// Switch render fast dummy flag
+	BOOL FASTCALL IsRenderFastDummyEnabled() const;
+										// Get render fast dummy state
 	void FASTCALL ShowRenderStatusOSD(BOOL bVSync);
 										// Show active renderer and VSync state
 	void FASTCALL ApplyCfg(const Config *pConfig);
@@ -196,7 +196,7 @@ private:
 	CDX9Renderer m_DX9Renderer;
 	BOOL m_bUseDX9;
 	volatile LONG m_lPresentPending;
-	BOOL m_bPx68kGraphicEngine;
+	BOOL m_bRenderFastDummy;
 
 	// Variables for the dedicated rendering thread
 	HANDLE m_hRenderEvent;
@@ -239,3 +239,4 @@ private:
 
 #endif	// mfc_draw_h
 #endif	// _WIN32
+

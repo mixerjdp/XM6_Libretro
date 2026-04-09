@@ -2,7 +2,7 @@
 //
 //	X68000 Emulator "XM6"
 //
-//	Px68k graphic engine abstraction.
+//	Video engine abstraction.
 //
 //---------------------------------------------------------------------------
 
@@ -40,21 +40,6 @@ public:
 	virtual void FASTCALL SetVC(Render *owner);
 	virtual void FASTCALL Video(Render *owner);
 	virtual void FASTCALL Process(Render *owner);
-};
-
-class Px68kGraphicEngine : public GraphicEngine
-{
-public:
-	virtual void FASTCALL StartFrame(Render *owner);
-	virtual void FASTCALL EndFrame(Render *owner);
-	virtual void FASTCALL HSync(Render *owner, int raster);
-	virtual void FASTCALL SetCRTC(Render *owner);
-	virtual void FASTCALL SetVC(Render *owner);
-	virtual void FASTCALL Video(Render *owner);
-	virtual void FASTCALL Process(Render *owner);
-
-private:
-	void FASTCALL ComposeLine(Render *owner, int y);
 };
 
 #endif	// graphic_engine_h

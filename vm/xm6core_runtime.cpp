@@ -1,4 +1,4 @@
-#include "os.h"
+﻿#include "os.h"
 #include "xm6.h"
 #include "xm6core.h"
 #include "vm.h"
@@ -618,7 +618,7 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_transparency_enabled(XM6Handle h
 	return XM6CORE_OK;
 }
 
-extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_px68k_graphic_engine(XM6Handle handle, int enabled)
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_fast_dummy(XM6Handle handle, int enabled)
 {
 	if (!handle) {
 		return XM6CORE_ERR_INVALID_HANDLE;
@@ -636,9 +636,8 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_px68k_graphic_engine(XM6Handle h
 	}
 
 	if (render) {
-		render->UsePx68kGraphicEngine(enabled ? TRUE : FALSE);
-		render->ForceRecompose();
-		render->Complete();
+		// Legacy dummy option: preserve the flag for compatibility, but do not change the active backend.
+		render->SetRenderFastDummyEnabled(enabled ? TRUE : FALSE);
 	}
 
 	return XM6CORE_OK;
@@ -750,4 +749,5 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_midi_write_input(
 	midi->SetRecvData((const BYTE*)bytes, (DWORD)count);
 	return XM6CORE_OK;
 }
+
 

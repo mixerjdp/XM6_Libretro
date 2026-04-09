@@ -182,7 +182,6 @@
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
     <ClCompile Include="..\vm\render.cpp" />
-    <ClCompile Include="..\vm\renderfast_compositor.cpp" />
     <ClCompile Include="..\vm\graphic_engine.cpp" />
     <ClCompile Include="..\vm\x68krender.cpp" />
     <ClCompile Include="..\vm\rend_soft.cpp" />

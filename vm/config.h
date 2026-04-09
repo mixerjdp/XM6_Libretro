@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 //	X68000 EMULATOR "XM6"
 //
@@ -155,7 +155,7 @@ public:
 
 	// Display
 	BOOL caption_info;					// Caption information display
-	BOOL px68k_graphic_engine;			// Px68k graphic engine (TRUE=ON)
+	BOOL render_fast_dummy;			// Render fast dummy (TRUE=ON)
 
 	// Display
 	BOOL caption;						// Caption
@@ -178,3 +178,4 @@ public:
 };
 
 #endif	// config_h
+

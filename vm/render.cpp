@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 //	X68000 EMULATOR "XM6"
 //
@@ -34,7 +34,7 @@ BOOL FASTCALL IsCMOV(void);
 //
 //---------------------------------------------------------------------------
 #define REND_COLOR0		0x80000000		// ?Jo?[0?to?O(rend_asm.asmog?p)
-#define REND_PX68K_IBIT	0x40000000		// px68k Ibit marker (XRGB8888: top byte ignored)
+#define REND_FAST_IBIT	0x40000000		// Fast render Ibit marker (XRGB8888: top byte ignored)
 
 static int FASTCALL CalcBGHAdjustPixels(int, const CRTC *, const Sprite *)
 {
@@ -60,14 +60,13 @@ Render::Render(VM *p) : Device(p)
 	sprite = NULL;
 	backend = NULL;
 	backend_original = NULL;
-	backend_px68k = NULL;
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	render_target = NULL;
 	fast_fallback_count = 0;
 	transparency_enabled = TRUE;
 	original_bg0_render_enabled = TRUE;
-	px68k_graphic_engine_enabled = FALSE;
+	render_fast_dummy_enabled = FALSE;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
@@ -144,11 +143,11 @@ BOOL FASTCALL Render::Init()
 		return FALSE;
 	}
 
-	// CRTC?�E��E�
+	// CRTC?ï¿½Eï¿½ï¿½Eï¿½
 	crtc = (CRTC*)vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
 	ASSERT(crtc);
 
-	// VC?�E��E�
+	// VC?ï¿½Eï¿½ï¿½Eï¿½
 	vc = (VC*)vm->SearchDevice(MAKEID('V', 'C', ' ', ' '));
 	ASSERT(vc);
 
@@ -159,7 +158,7 @@ BOOL FASTCALL Render::Init()
 	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(sprite);
 
-	// ?po?b?g?o?b?t?@?mo(4MB x2: original + px68k-safe for fast)
+	// ?po?b?g?o?b?t?@?mo(4MB x2: original + fast render compatible)
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	try {
@@ -311,24 +310,15 @@ BOOL FASTCALL Render::Init()
 
 	try {
 		backend_original = new OriginalGraphicEngine();
-		backend_px68k = new Px68kGraphicEngine();
 	}
 	catch (...) {
 		if (backend_original) {
 			delete backend_original;
 			backend_original = NULL;
 		}
-		if (backend_px68k) {
-			delete backend_px68k;
-			backend_px68k = NULL;
-		}
 		return FALSE;
 	}
 	if (!backend_original) {
-		if (backend_px68k) {
-			delete backend_px68k;
-			backend_px68k = NULL;
-		}
 		return FALSE;
 	}
 	backend = backend_original;
@@ -351,12 +341,8 @@ void FASTCALL Render::Cleanup()
 		delete backend_original;
 		backend_original = NULL;
 	}
-	if (backend_px68k) {
-		delete backend_px68k;
-		backend_px68k = NULL;
-	}
 	backend = NULL;
-	px68k_graphic_engine_enabled = FALSE;
+	render_fast_dummy_enabled = FALSE;
 
 	// ?`oto?O
 	if (render.drawflag) {
@@ -454,21 +440,21 @@ void FASTCALL Render::Reset()
 	ASSERT(this);
 	LOG0(Log::Normal, "???Z?b?g");
 
-	// ?r?f?I?Ro?go?[oo?|?Co?^?�E��E�
+	// ?r?f?I?Ro?go?[oo?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 	ASSERT(vc);
 	render.palvc = (const WORD*)vc->GetPalette();
 
-	// ?e?L?X?gVRAMo?|?Co?^?�E��E�
+	// ?e?L?X?gVRAMo?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 	tvram = (TVRAM*)vm->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
 	ASSERT(tvram);
 	render.texttv = tvram->GetTVRAM();
 
-	// ?Oo?t?B?b?NVRAMo?|?Co?^?�E��E�
+	// ?Oo?t?B?b?NVRAMo?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 	gvram = (GVRAM*)vm->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
 	ASSERT(gvram);
 	render.grpgv = gvram->GetGVRAM();
 
-	// ?X?vo?C?g?Ro?go?[oo?|?Co?^?�E��E�
+	// ?X?vo?C?g?Ro?go?[oo?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
 	ASSERT(sprite);
 	render.sprmem = sprite->GetPCG() - 0x8000;
@@ -643,19 +629,14 @@ void FASTCALL Render::ApplyCfg(const Config *config)
 
 //---------------------------------------------------------------------------
 //
-//	Px68k graphic engine switch
+//	Render fast dummy switch
 //
 //---------------------------------------------------------------------------
-BOOL FASTCALL Render::UsePx68kGraphicEngine(BOOL enable)
+BOOL FASTCALL Render::SetRenderFastDummyEnabled(BOOL enable)
 {
-	GraphicEngine *pBackend = (enable && backend_px68k) ? backend_px68k : backend_original;
-	if (backend != pBackend) {
-		backend = pBackend;
-		InvalidateAll();
-	}
-
-	px68k_graphic_engine_enabled = (backend == backend_px68k);
-	return px68k_graphic_engine_enabled;
+	// Legacy compatibility option: keep the flag, but do not switch away from the original backend.
+	render_fast_dummy_enabled = enable ? TRUE : FALSE;
+	return render_fast_dummy_enabled;
 }
 
 void FASTCALL Render::ComposeVideo()
@@ -797,7 +778,7 @@ void FASTCALL Render::StartFrameOriginal()
 		LOG0(Log::Normal, "CRTC????");
 #endif	// REND_LOG
 
-		// ?f?[?^?�E��E�
+		// ?f?[?^?ï¿½Eï¿½ï¿½Eï¿½
 		crtc->GetCRTC(&crtcdata);
 
 		// h_dots?Av_dotso0oo?
@@ -843,7 +824,7 @@ void FASTCALL Render::EndFrameOriginal()
 {
 	ASSERT(this);
 
-	// ooo�E��E�ooo
+	// oooï¿½Eï¿½ï¿½Eï¿½ooo
 	if (!render.act) {
 		return;
 	}
@@ -953,7 +934,7 @@ void FASTCALL Render::Video()
 		render.mix[i] = TRUE;
 	}
 
-	// VC?f?[?^?ACRTC?f?[?^o�E��E�
+	// VC?f?[?^?ACRTC?f?[?^oï¿½Eï¿½ï¿½Eï¿½
 	p = vc->GetWorkAddr();
 	q = crtc->GetWorkAddr();
 
@@ -1067,7 +1048,7 @@ void FASTCALL Render::Video()
 		}
 	}
 
-	// ?Doo?�E��E�
+	// ?Doo?ï¿½Eï¿½ï¿½Eï¿½
 	tx = p->tx;
 	sp = p->sp;
 	gr = p->gr;
@@ -1417,7 +1398,7 @@ void FASTCALL Render::SetContrast(int cont)
 
 //---------------------------------------------------------------------------
 //
-//	?Ro?go?X?g?�E��E�
+//	?Ro?go?X?g?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 int FASTCALL Render::GetContrast() const
@@ -1529,14 +1510,14 @@ DWORD FASTCALL Render::ConvPalette(int color, int ratio)
 
 	DWORD out = (DWORD)(r | g | b);
 	if (color & 1) {
-		out |= REND_PX68K_IBIT;
+		out |= REND_FAST_IBIT;
 	}
 	return out;
 }
 
 //---------------------------------------------------------------------------
 //
-//	?po?b?g?�E��E�
+//	?po?b?g?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPalette() const
@@ -1714,7 +1695,7 @@ void FASTCALL Render::TextCopy(DWORD src, DWORD dst, DWORD plane)
 
 //---------------------------------------------------------------------------
 //
-//	?e?L?X?g?o?b?t?@?�E��E�
+//	?e?L?X?g?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetTextBuf() const
@@ -1741,7 +1722,7 @@ void FASTCALL Render::Text(int raster)
 	ASSERT(render.textbuf);
 	ASSERT(render.palbuf);
 
-	// ?f?B?Z?[?uoo�E��E�ooo
+	// ?f?B?Z?[?uooï¿½Eï¿½ï¿½Eï¿½ooo
 	if (!render.texten) {
 		return;
 	}
@@ -1787,7 +1768,7 @@ void FASTCALL Render::Text(int raster)
 
 //---------------------------------------------------------------------------
 //
-//	?Oo?t?B?b?N?o?b?t?@?�E��E�
+//	?Oo?t?B?b?N?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetGrpBuf(int index) const
@@ -2266,7 +2247,7 @@ void FASTCALL Render::SpriteReg(DWORD addr, DWORD data)
 		use = FALSE;
 	}
 
-	// ooooo?Aoooooo�E��E�ooo
+	// ooooo?Aooooooï¿½Eï¿½ï¿½Eï¿½ooo
 	if (!render.spuse[index]) {
 		if (!use) {
 			return;
@@ -2358,12 +2339,12 @@ void FASTCALL Render::BGScrl(int page, DWORD x, DWORD y)
 	render.bgx[page] = x;
 	render.bgy[page] = y;
 
-	// 768?~512o�E�po?
+	// 768?~512oï¿½Eï¿½po?
 	if (!render.bgspflag) {
 		return;
 	}
 
-	// ?\ooo?ABGSPMODo�E�Oo
+	// ?\ooo?ABGSPMODoï¿½Eï¿½Oo
 	flag = FALSE;
 	if (render.bgdisp[0]) {
 		flag = TRUE;
@@ -2505,7 +2486,7 @@ void FASTCALL Render::BGCtrl(int index, BOOL flag)
 		}
 	}
 
-	// ooXo?A768?~512oOo?bgspmodo�E�Oo
+	// ooXo?A768?~512oOo?bgspmodoï¿½Eï¿½Oo
 	if (render.bgspflag) {
 		for (i=0; i<512; i++) {
 			render.bgspmod[i] = TRUE;
@@ -2546,7 +2527,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?Co?f?b?N?X(<64x64)?Ao?W?X?^?|?Co?^?�E��E�
+		// ?Co?f?b?N?X(<64x64)?Ao?W?X?^?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 		index = (int)(addr & 0x1fff);
 		index >>= 1;
 		ASSERT((index >= 0) && (index < 64*64));
@@ -2580,7 +2561,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			render.bgreg[i][index] = (DWORD)(low | mid | high);
 		}
 
-		// bgallo�E�Oo
+		// bgalloï¿½Eï¿½Oo
 		render.bgall[i][index >> 6] = TRUE;
 
 		// ?\ooooo?Io?Bbgsize=1oy?[?W1oo?Io
@@ -2591,7 +2572,7 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 			continue;
 		}
 
-		// ?X?No?[oouoov?Zo?Abgspmodo�E�Oo
+		// ?X?No?[oouoov?Zo?Abgspmodoï¿½Eï¿½Oo
 		index >>= 6;
 		if (render.bgsize) {
 			// 16x16
@@ -2657,7 +2638,7 @@ void FASTCALL Render::PCGMem(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	PCG?o?b?t?@?�E��E�
+//	PCG?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetPCGBuf() const
@@ -2670,7 +2651,7 @@ const DWORD* FASTCALL Render::GetPCGBuf() const
 
 //---------------------------------------------------------------------------
 //
-//	BG/?X?vo?C?g?o?b?t?@?�E��E�
+//	BG/?X?vo?C?g?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetBGSpBuf() const
@@ -2968,7 +2949,7 @@ void FASTCALL Render::BGBlock(int page, int y)
 
 	// o?[?v
 	for (i=0; i<64; i++) {
-		// ?�E��E�
+		// ?ï¿½Eï¿½ï¿½Eï¿½
 		bgdata = reg[i];
 
 		// $10000ooooooOK
@@ -3345,7 +3326,7 @@ void FASTCALL Render::MixGrp(int y, DWORD *buf)
 
 //---------------------------------------------------------------------------
 //
-//	oo?o?b?t?@?�E��E�
+//	oo?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½
 //
 //---------------------------------------------------------------------------
 const DWORD* FASTCALL Render::GetMixBuf() const
@@ -3423,7 +3404,7 @@ void FASTCALL Render::Process()
 
 	// oox2o?
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/Ooog?�E��E�ooA?cooooooooo
+		// I/Ooog?ï¿½Eï¿½ï¿½Eï¿½ooA?cooooooooo
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				Text(i >> 1);
@@ -3478,6 +3459,7 @@ void FASTCALL Render::Process()
 	// ?X?V
 	render.first = render.last;
 }
+
 
 
 

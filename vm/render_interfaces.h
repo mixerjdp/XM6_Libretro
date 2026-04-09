@@ -1,13 +1,13 @@
-//--------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 //
 //	X68000 EMULATOR "XM6"
 //
 //	Reusable render interfaces for the video pipeline.
 //
-//--------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
-#if !defined(px68k_render_interfaces_h)
-#define px68k_render_interfaces_h
+#if !defined(render_interfaces_h)
+#define render_interfaces_h
 
 #include "os.h"
 
@@ -47,4 +47,4 @@ public:
 	virtual const DWORD* FASTCALL GetMixBuf() const = 0;
 };
 
-#endif	// px68k_render_interfaces_h
+#endif	// render_interfaces_h

@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 //
 // X68000 Emulator "XM6"
 //
@@ -85,8 +85,8 @@ public:
 	void OnYmfm();
 	void OnYmfmUI(CCmdUI *pCmdUI);
 	void OnToggleRenderer();
-	void OnTogglePx68kGraphicEngine();
-	void OnTogglePx68kGraphicEngineUI(CCmdUI *pCmdUI);
+	void OnToggleRenderFastDummy();
+	void OnToggleRenderFastDummyUI(CCmdUI *pCmdUI);
 	void OnToggleVSync();
 	void OnToggleOSD();
 	void OnToggleShader();
@@ -717,3 +717,4 @@ private:
 
 #endif	// mfc_frm_h
 #endif	// _WIN32
+

@@ -143,7 +143,7 @@ BEGIN
         MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
 
         MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
-        MENUITEM "Px68k Graphic Engine",        IDM_TOGGLE_PX68K_ENGINE
+        MENUITEM "Render Fast (Dummy)",        IDM_TOGGLE_RENDER_FAST_DUMMY
     END
     POPUP "&Debug"
     BEGIN
@@ -331,7 +331,7 @@ BEGIN
             MENUITEM "F&ull Screen\tAlt+Enter",     IDM_FULLSCREEN
 
             MENUITEM "&CRT Shader\tF9",             IDM_TOGGLE_SHADER
-            MENUITEM "Px68k Graphic Engine",        IDM_TOGGLE_PX68K_ENGINE
+            MENUITEM "Render Fast (Dummy)",        IDM_TOGGLE_RENDER_FAST_DUMMY
         END
         POPUP "&Debug"
         BEGIN
@@ -1744,3 +1744,4 @@ BEGIN
     IDS_US_SAVECLOSE        "%s is updated. Save?"
     IDS_US_PROCESSOR        "This processor is not supported.\nMMX and CMOV instructions are required."
 END
+
