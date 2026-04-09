@@ -30,7 +30,7 @@ struct XM6ContextRuntimeShim {
 	unsigned int audio_rate;
 	unsigned int audio_buf_frames;
 	BOOL surround_enabled;
-	BOOL hq_adpcm_enabled;
+	int hq_adpcm_level;
 	int reverb_level;
 	int eq_sub_bass_level;
 	int eq_bass_level;
@@ -276,7 +276,7 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_surround_enabled(XM6Handle handl
 	return XM6CORE_OK;
 }
 
-extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_enabled(XM6Handle handle, int enabled)
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_level(XM6Handle handle, int level)
 {
 	if (!handle) {
 		return XM6CORE_ERR_INVALID_HANDLE;
@@ -287,7 +287,13 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_enabled(XM6Handle handl
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
 
-	ctx->hq_adpcm_enabled = enabled ? TRUE : FALSE;
+	if (level < 0) {
+		level = 0;
+	} else if (level > 100) {
+		level = 100;
+	}
+
+	ctx->hq_adpcm_level = level;
 	return XM6CORE_OK;
 }
 
