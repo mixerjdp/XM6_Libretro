@@ -12,6 +12,7 @@
 
 #include "device.h"
 #include "graphic_engine.h"
+#include "px68k_crtc_port.h"
 #include "render_interfaces.h"
 
 class CRTC;
@@ -19,6 +20,7 @@ class GVRAM;
 class Sprite;
 class TVRAM;
 class VC;
+class XmVideoSnapshotAdapter;
 
 //===========================================================================
 //
@@ -185,8 +187,13 @@ public:
 	BOOL FASTCALL IsRenderFastDummyEnabled() const	{ return render_fast_dummy_enabled; }
 	const IVideoStateView* FASTCALL GetVideoStateView() const { return this; }
 	const IPaletteResolver* FASTCALL GetPaletteResolver() const { return this; }
+	const Px68kCrtcHost* FASTCALL GetPx68kCrtcHost() const;
+	void FASTCALL CachePx68kStateView(const Px68kCrtcStateView *view);
 	void FASTCALL SetRenderTarget(IRenderTarget *target) { render_target = target; }
 	IRenderTarget* FASTCALL GetRenderTarget() const { return render_target; }
+	void FASTCALL BeginVideoSnapshotFrame();
+	void FASTCALL CaptureVideoSnapshotLine(int raster);
+	void FASTCALL EndVideoSnapshotFrame();
 	void FASTCALL ComposeVideo();
 	virtual void FASTCALL StartFrame();
 										// ï¿½Eï¿½tï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½[ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½Jï¿½Eï¿½n(V-DISP)
@@ -197,6 +204,7 @@ public:
 	void FASTCALL SetMixBuf(DWORD *buf, int width, int height);
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½oï¿½Eï¿½bï¿½Eï¿½tï¿½Eï¿½@ï¿½Eï¿½wï¿½Eï¿½ï¿½Eï¿½
 	render_t* FASTCALL GetWorkAddr() 	{ return &render; }
+	const render_t* FASTCALL GetWorkAddr() const { return &render; }
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½[ï¿½Eï¿½Nï¿½Eï¿½Aï¿½Eï¿½hï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½Xï¿½Eï¿½æ“¾
 
 	// ï¿½Eï¿½Oï¿½Eï¿½ï¿½Eï¿½API(ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½)
@@ -204,6 +212,8 @@ public:
 										// CRTCï¿½Eï¿½Zï¿½Eï¿½bï¿½Eï¿½g
 	virtual void FASTCALL SetVC();
 										// VCï¿½Eï¿½Zï¿½Eï¿½bï¿½Eï¿½g
+	void FASTCALL ApplyPendingCompositorMode();
+	void FASTCALL ApplyCompositorMode(int mode);
 	void FASTCALL ForceRecompose();
 	void FASTCALL SetContrast(int cont);
 										// ï¿½Eï¿½Rï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½gï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½Xï¿½Eï¿½gï¿½Eï¿½Ý’ï¿½
@@ -310,13 +320,18 @@ private:
 	GraphicEngine *backend;
 	GraphicEngine *backend_original;
 	GraphicEngine *backend_px68k;
+	XmVideoSnapshotAdapter *video_snapshot_adapter;
 	DWORD *palbuf_original;
 	DWORD *palbuf_fast;
 	int compositor_mode;
+	int compositor_mode_pending;
+	BOOL compositor_mode_switch_pending;
 	DWORD fast_fallback_count;
 	BOOL transparency_enabled;
 	BOOL original_bg0_render_enabled;
 	BOOL render_fast_dummy_enabled;
+	Px68kCrtcHost px68k_crtc_host;
+	Px68kCrtcStateView px68k_crtc_state_cache;
 	IRenderTarget *render_target;
 	render_t render;
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½fï¿½Eï¿½[ï¿½Eï¿½^

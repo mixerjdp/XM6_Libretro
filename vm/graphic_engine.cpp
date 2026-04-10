@@ -54,6 +54,7 @@ void FASTCALL GraphicEngine::ProcessCommon(Render *owner)
 	if ((owner->render.v_mul == 2) && !owner->render.lowres) {
 		for (i = owner->render.first; i < owner->render.last; i++) {
 			if ((i & 1) == 0) {
+				owner->CaptureVideoSnapshotLine(i >> 1);
 				owner->Text(i >> 1);
 				owner->Grp(0, i >> 1);
 				owner->Grp(1, i >> 1);
@@ -69,7 +70,9 @@ void FASTCALL GraphicEngine::ProcessCommon(Render *owner)
 
 	if ((owner->render.v_mul == 0) && owner->render.lowres) {
 		for (i = owner->render.first; i < owner->render.last; i++) {
+			owner->CaptureVideoSnapshotLine(i << 1);
 			owner->Text((i << 1) + 0);
+			owner->CaptureVideoSnapshotLine((i << 1) + 1);
 			owner->Text((i << 1) + 1);
 			owner->Grp(0, (i << 1) + 0);
 			owner->Grp(0, (i << 1) + 1);
@@ -89,6 +92,7 @@ void FASTCALL GraphicEngine::ProcessCommon(Render *owner)
 	}
 
 	for (i = owner->render.first; i < owner->render.last; i++) {
+		owner->CaptureVideoSnapshotLine(i);
 		owner->Text(i);
 		owner->Grp(0, i);
 		owner->Grp(1, i);

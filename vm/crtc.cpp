@@ -21,6 +21,7 @@
 #include "printer.h"
 #include "fileio.h"
 #include "crtc.h"
+#include "px68k_crtc_port.h"
 #include "config.h"
 
 //===========================================================================
@@ -32,6 +33,12 @@
 
 namespace {
 BOOL g_alt_raster_timing = FALSE;
+const WORD kFastClearMask[16] = {
+	0xffff, 0xfff0, 0xff0f, 0xff00,
+	0xf0ff, 0xf0f0, 0xf00f, 0xf000,
+	0x0fff, 0x0ff0, 0x0f0f, 0x0f00,
+	0x00ff, 0x00f0, 0x000f, 0x0000
+};
 }
 
 //---------------------------------------------------------------------------
@@ -56,6 +63,7 @@ CRTC::CRTC(VM *p) : MemDevice(p)
 	mfp = NULL;
 	render = NULL;
 	printer = NULL;
+	memset(&px68k_state_view, 0, sizeof(px68k_state_view));
 }
 
 //---------------------------------------------------------------------------
@@ -205,6 +213,12 @@ void FASTCALL CRTC::Reset()
 
 	// H-Sync event setup (31.5us)
 	event.SetTime(63);
+	NotifyTextScrollChanged(crtc.text_scrlx, crtc.text_scrly);
+	NotifyGrpScrollChanged(0, crtc.grp_scrlx[0], crtc.grp_scrly[0]);
+	NotifyGrpScrollChanged(1, crtc.grp_scrlx[1], crtc.grp_scrly[1]);
+	NotifyGrpScrollChanged(2, crtc.grp_scrlx[2], crtc.grp_scrly[2]);
+	NotifyGrpScrollChanged(3, crtc.grp_scrlx[3], crtc.grp_scrly[3]);
+	SyncPx68kState();
 }
 
 //---------------------------------------------------------------------------
@@ -283,12 +297,14 @@ BOOL FASTCALL CRTC::Load(Fileio *fio, int ver)
 	}
 
 	// Notify renderer
-	render->TextScrl(crtc.text_scrlx, crtc.text_scrly);
-	render->GrpScrl(0, crtc.grp_scrlx[0], crtc.grp_scrly[0]);
-	render->GrpScrl(1, crtc.grp_scrlx[1], crtc.grp_scrly[1]);
-	render->GrpScrl(2, crtc.grp_scrlx[2], crtc.grp_scrly[2]);
-	render->GrpScrl(3, crtc.grp_scrlx[3], crtc.grp_scrly[3]);
-	render->SetCRTC();
+	NotifyTextScrollChanged(crtc.text_scrlx, crtc.text_scrly);
+	NotifyGrpScrollChanged(0, crtc.grp_scrlx[0], crtc.grp_scrly[0]);
+	NotifyGrpScrollChanged(1, crtc.grp_scrlx[1], crtc.grp_scrly[1]);
+	NotifyGrpScrollChanged(2, crtc.grp_scrlx[2], crtc.grp_scrly[2]);
+	NotifyGrpScrollChanged(3, crtc.grp_scrlx[3], crtc.grp_scrly[3]);
+	NotifyScreenChanged();
+	NotifyPx68kStateView();
+	SyncPx68kState();
 
 	return TRUE;
 }
@@ -394,6 +410,7 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			return;
 		}
 		crtc.reg[addr] = (BYTE)data;
+		NotifyMarkAllTextDirty();
 
 		// GVRAM address display
 		if (addr == 0x29) {
@@ -417,6 +434,10 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 			// Notify graphic VRAM
 			gvram->SetType(data & 0x0f);
+			NotifyModeChanged((BYTE)(crtc.reg[0x29] & 0x1f));
+			NotifyGeometryChanged();
+			NotifyTimingChanged();
+			SyncPx68kState();
 			return;
 		}
 
@@ -437,6 +458,8 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 			// Recalc at next timing
 			crtc.changed = TRUE;
+			NotifyGeometryChanged();
+			SyncPx68kState();
 			return;
 		}
 
@@ -450,6 +473,7 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			if (g_alt_raster_timing) {
 				CheckRaster();
 			}
+			SyncPx68kState();
 			return;
 		}
 
@@ -462,7 +486,8 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			crtc.text_scrlx &= 0x3ff;
 			crtc.text_scrly = (crtc.reg[23] << 8) + crtc.reg[22];
 			crtc.text_scrly &= 0x3ff;
-			render->TextScrl(crtc.text_scrlx, crtc.text_scrly);
+			NotifyTextScrollChanged(crtc.text_scrlx, crtc.text_scrly);
+			SyncPx68kState();
 
 #if defined(CRTC_LOG)
 			LOG2(Log::Normal, "Text scroll x=%d y=%d", crtc.text_scrlx, crtc.text_scrly);
@@ -489,7 +514,8 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 				crtc.grp_scrlx[addr] &= 0x1ff;
 				crtc.grp_scrly[addr] &= 0x1ff;
 			}
-			render->GrpScrl(addr, crtc.grp_scrlx[addr], crtc.grp_scrly[addr]);
+			NotifyGrpScrollChanged(addr, crtc.grp_scrlx[addr], crtc.grp_scrly[addr]);
+			SyncPx68kState();
 			return;
 		}
 
@@ -499,7 +525,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 				musashi_flush_timeslice();
 			}
 			TextVRAM();
+			SyncPx68kState();
 		}
+		SyncPx68kState();
 		return;
 	}
 
@@ -535,11 +563,13 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			}
 #endif	//CRTC_LOG
 		}
+		SyncPx68kState();
 		return;
 	}
 
 	LOG2(Log::Warning, "Illegal address write $%06X <- $%02X",
 							memdev.first + addr, data);
+	SyncPx68kState();
 }
 
 //---------------------------------------------------------------------------
@@ -619,6 +649,7 @@ BOOL FASTCALL CRTC::Callback(Event* /*ev*/)
 	else {
 		HDisp();
 	}
+	SyncPx68kState();
 
 	return TRUE;
 }
@@ -696,6 +727,7 @@ void FASTCALL CRTC::HSync()
 	if (g_alt_raster_timing) {
 		crtc.raster_count++;
 	}
+	SyncPx68kState();
 }
 
 //---------------------------------------------------------------------------
@@ -736,6 +768,7 @@ void FASTCALL CRTC::HDisp()
 
 	// Raster copy start
 	crtc.raster_exec = TRUE;
+	SyncPx68kState();
 }
 
 //---------------------------------------------------------------------------
@@ -894,6 +927,7 @@ void FASTCALL CRTC::ReCalc()
 
 	// Clear flag
 	crtc.changed = FALSE;
+	SyncPx68kState();
 }
 
 
@@ -930,6 +964,7 @@ void FASTCALL CRTC::VBlank()
 		// Renderer display end
 		render->EndFrame();
 		crtc.v_scan = crtc.v_dots + 1;
+		SyncPx68kState();
 		return;
 	}
 
@@ -958,6 +993,7 @@ void FASTCALL CRTC::VBlank()
 	crtc.v_scan = 0;
 	render->StartFrame();
 	crtc.v_count++;
+	SyncPx68kState();
 }
 
 //---------------------------------------------------------------------------
@@ -1048,6 +1084,9 @@ void FASTCALL CRTC::SetHRL(BOOL flag)
 		// Recalc at next timing
 		crtc.hrl = flag;
 		crtc.changed = TRUE;
+		NotifyGeometryChanged();
+		NotifyTimingChanged();
+		SyncPx68kState();
 	}
 }
 
@@ -1128,4 +1167,266 @@ void FASTCALL CRTC::TextVRAM()
 	// Raster copy
 	tvram->SetCopyRaster((DWORD)crtc.reg[45], (DWORD)crtc.reg[44],
 						(DWORD)(crtc.reg[42] & 0x0f));
+	NotifyMarkAllTextDirty();
+	SyncPx68kState();
+}
+
+const Px68kCrtcHost* FASTCALL CRTC::GetPx68kHost() const
+{
+	if (!render) {
+		return NULL;
+	}
+	return render->GetPx68kCrtcHost();
+}
+
+void FASTCALL CRTC::NotifyPx68kStateView()
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->ApplyStateView) {
+		host->ApplyStateView(host->ctx, &px68k_state_view);
+	}
+}
+
+void FASTCALL CRTC::NotifyMarkAllTextDirty()
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+	Render::render_t *work;
+	int i;
+
+	if (host && host->MarkAllTextDirty) {
+		host->MarkAllTextDirty(host->ctx);
+		return;
+	}
+
+	if (!render) {
+		return;
+	}
+
+	work = render->GetWorkAddr();
+	if (!work) {
+		return;
+	}
+
+	if (work->textmod) {
+		for (i = 0; i < 1024; i++) {
+			work->textmod[i] = TRUE;
+			work->mix[i] = TRUE;
+			work->draw[i] = TRUE;
+		}
+	}
+	if (work->textflag) {
+		for (i = 0; i < 1024 * 32; i++) {
+			work->textflag[i] = TRUE;
+		}
+	}
+	work->palette = TRUE;
+	work->vc = TRUE;
+	work->crtc = TRUE;
+}
+
+void FASTCALL CRTC::NotifyMarkTextDirtyLine(DWORD line)
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+	Render::render_t *work;
+
+	line &= 0x3ff;
+	if (host && host->MarkTextDirtyLine) {
+		host->MarkTextDirtyLine(host->ctx, line);
+		return;
+	}
+
+	if (!render) {
+		return;
+	}
+
+	work = render->GetWorkAddr();
+	if (!work) {
+		return;
+	}
+
+	work->textmod[line] = TRUE;
+	work->mix[line] = TRUE;
+	work->draw[line] = TRUE;
+}
+
+void FASTCALL CRTC::NotifyTextScrollChanged(DWORD x, DWORD y)
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->TextScrollChanged) {
+		host->TextScrollChanged(host->ctx, x, y);
+		return;
+	}
+
+	if (render) {
+		render->TextScrl(x, y);
+	}
+}
+
+void FASTCALL CRTC::NotifyGrpScrollChanged(int block, DWORD x, DWORD y)
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->GrpScrollChanged) {
+		host->GrpScrollChanged(host->ctx, block, x, y);
+		return;
+	}
+
+	if (render) {
+		render->GrpScrl(block, x, y);
+	}
+}
+
+void FASTCALL CRTC::NotifyScreenChanged()
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->ScreenChanged) {
+		host->ScreenChanged(host->ctx);
+		return;
+	}
+
+	if (render) {
+		render->SetCRTC();
+	}
+}
+
+void FASTCALL CRTC::NotifyGeometryChanged()
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->GeometryChanged) {
+		host->GeometryChanged(host->ctx);
+		return;
+	}
+
+	NotifyScreenChanged();
+}
+
+void FASTCALL CRTC::NotifyTimingChanged()
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->TimingChanged) {
+		host->TimingChanged(host->ctx);
+		return;
+	}
+
+	if (render) {
+		render->SetVC();
+	}
+}
+
+void FASTCALL CRTC::NotifyModeChanged(BYTE mode)
+{
+	const Px68kCrtcHost *host = GetPx68kHost();
+
+	if (host && host->ModeChanged) {
+		host->ModeChanged(host->ctx, mode);
+		return;
+	}
+
+	NotifyScreenChanged();
+}
+
+void FASTCALL CRTC::SyncPx68kState()
+{
+	int i;
+
+	memset(&px68k_state_view, 0, sizeof(px68k_state_view));
+
+	for (i = 0; i < 48; i++) {
+		px68k_state_view.state.regs[i] = crtc.reg[i];
+	}
+
+	px68k_state_view.state.mode = (BYTE)(crtc.reg[0x29] & 0x1f);
+	px68k_state_view.state.hrl = crtc.hrl;
+	px68k_state_view.state.lowres = crtc.lowres;
+	px68k_state_view.state.textres = crtc.textres;
+	px68k_state_view.state.changed = crtc.changed;
+	px68k_state_view.state.h_disp = crtc.h_disp;
+	px68k_state_view.state.v_disp = crtc.v_disp;
+	px68k_state_view.state.v_blank = crtc.v_blank;
+	px68k_state_view.state.v_count = crtc.v_count;
+	px68k_state_view.state.raster_count = crtc.raster_count;
+	px68k_state_view.state.textdotx = (DWORD)(((crtc.reg[0x06] << 8) | crtc.reg[0x07]) & 1023);
+	if (px68k_state_view.state.textdotx > (((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023)) {
+		px68k_state_view.state.textdotx = (px68k_state_view.state.textdotx - ((((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023))) * 8;
+	}
+	else {
+		px68k_state_view.state.textdotx = 0;
+	}
+	px68k_state_view.state.textdoty = (DWORD)(((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) & 1023);
+	if (px68k_state_view.state.textdoty > (((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]) & 1023)) {
+		px68k_state_view.state.textdoty -= (((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]) & 1023);
+		if ((crtc.reg[0x29] & 0x14) == 0x10) {
+			px68k_state_view.state.textdoty >>= 1;
+		}
+		else if ((crtc.reg[0x29] & 0x14) == 0x04) {
+			px68k_state_view.state.textdoty <<= 1;
+		}
+	}
+	else {
+		px68k_state_view.state.textdoty = 0;
+	}
+	px68k_state_view.state.vstart = (WORD)(((WORD)crtc.reg[0x0c] << 8) | crtc.reg[0x0d]);
+	px68k_state_view.state.vend = (WORD)(((WORD)crtc.reg[0x0e] << 8) | crtc.reg[0x0f]);
+	px68k_state_view.state.hstart = (WORD)(((WORD)crtc.reg[0x04] << 8) | crtc.reg[0x05]);
+	px68k_state_view.state.hend = (WORD)(((WORD)crtc.reg[0x06] << 8) | crtc.reg[0x07]);
+	px68k_state_view.state.h_sync = (DWORD)crtc.h_sync;
+	px68k_state_view.state.h_pulse = (DWORD)crtc.h_pulse;
+	px68k_state_view.state.h_back = (DWORD)crtc.h_back;
+	px68k_state_view.state.h_front = (DWORD)crtc.h_front;
+	px68k_state_view.state.v_sync = (DWORD)crtc.v_sync;
+	px68k_state_view.state.v_pulse = (DWORD)crtc.v_pulse;
+	px68k_state_view.state.v_back = (DWORD)crtc.v_back;
+	px68k_state_view.state.v_front = (DWORD)crtc.v_front;
+	px68k_state_view.state.ns = crtc.ns;
+	px68k_state_view.state.hus = crtc.hus;
+	px68k_state_view.state.v_synccnt = crtc.v_synccnt;
+	px68k_state_view.state.v_blankcnt = crtc.v_blankcnt;
+	px68k_state_view.state.textscrollx = crtc.text_scrlx;
+	px68k_state_view.state.textscrolly = crtc.text_scrly;
+	for (i = 0; i < 4; i++) {
+		px68k_state_view.state.grphscrollx[i] = crtc.grp_scrlx[i];
+		px68k_state_view.state.grphscrolly[i] = crtc.grp_scrly[i];
+	}
+	px68k_state_view.state.fastclr = (BYTE)crtc.fast_clr;
+	px68k_state_view.state.dispscan = (BYTE)((crtc.v_scan >= 0) ? crtc.v_scan : 0);
+	px68k_state_view.state.fastclrline = (DWORD)((crtc.fast_clr != 0) ? crtc.v_scan : 0);
+	px68k_state_view.state.fastclrmask = kFastClearMask[crtc.reg[0x2b] & 15];
+	px68k_state_view.state.intline = (WORD)crtc.raster_int;
+	if ((crtc.reg[0x29] & 0x14) == 0x10) {
+		px68k_state_view.state.vstep = 1;
+	}
+	else if ((crtc.reg[0x29] & 0x14) == 0x04) {
+		px68k_state_view.state.vstep = 4;
+	}
+	else {
+		px68k_state_view.state.vstep = 2;
+	}
+	px68k_state_view.state.hsync_clk = crtc.h_sync;
+	px68k_state_view.state.hd = crtc.hd;
+	px68k_state_view.state.vd = crtc.vd;
+	px68k_state_view.state.rcflag[0] = crtc.raster_copy ? 1 : 0;
+	px68k_state_view.state.rcflag[1] = crtc.raster_exec ? 1 : 0;
+	px68k_state_view.state.vcreg0[0] = crtc.reg[0x28];
+	px68k_state_view.state.vcreg0[1] = crtc.reg[0x29];
+	px68k_state_view.state.vcreg1[0] = crtc.reg[0x2a];
+	px68k_state_view.state.vcreg1[1] = crtc.reg[0x2b];
+	px68k_state_view.state.vcreg2[0] = crtc.reg[0x2c];
+	px68k_state_view.state.vcreg2[1] = crtc.reg[0x2d];
+
+	px68k_state_view.timing_view.valid = 1;
+	px68k_state_view.timing_view.crtc_vsync_high = (crtc.reg[0x29] & 0x10) ? 1 : 0;
+	px68k_state_view.timing_view.crtc_vline_total = (DWORD)crtc.v_sync;
+	px68k_state_view.timing_view.crtc_vstart = px68k_state_view.state.vstart;
+	px68k_state_view.timing_view.crtc_vend = px68k_state_view.state.vend;
+	px68k_state_view.timing_view.crtc_intline = px68k_state_view.state.intline;
+	px68k_state_view.timing_view.crtc_vstep = px68k_state_view.state.vstep;
+	px68k_state_view.timing_view.crtc_mode = px68k_state_view.state.mode;
+	px68k_state_view.timing_view.crtc_fastclr = px68k_state_view.state.fastclr;
+
+	NotifyPx68kStateView();
 }

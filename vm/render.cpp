@@ -39,6 +39,7 @@ BOOL FASTCALL IsCMOV(void);
 
 static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
 {
+	(void)compositor_mode;
 	if (!sprite || !crtc) {
 		return 0;
 	}
@@ -55,6 +56,387 @@ static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, c
 	const int crtc_hstart = (int)(crtc_state->reg[0x04] & 0xff);
 	return (bg_hdisp - (crtc_hstart + 4)) * 8;
 }
+
+static void FASTCALL Px68kCrtcHostApplyStateView(void *ctx, const Px68kCrtcStateView *view)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner || !view) {
+		return;
+	}
+
+	owner->CachePx68kStateView(view);
+}
+
+static void FASTCALL Px68kCrtcHostMarkAllTextDirty(void *ctx)
+{
+	Render *owner = (Render*)ctx;
+	Render::render_t *work;
+	int i;
+
+	if (!owner) {
+		return;
+	}
+
+	work = owner->GetWorkAddr();
+	if (!work) {
+		return;
+	}
+
+	if (work->textmod) {
+		for (i = 0; i < 1024; i++) {
+			work->textmod[i] = TRUE;
+			work->mix[i] = TRUE;
+			work->draw[i] = TRUE;
+		}
+	}
+	if (work->textflag) {
+		for (i = 0; i < 1024 * 32; i++) {
+			work->textflag[i] = TRUE;
+		}
+	}
+	work->palette = TRUE;
+	work->vc = TRUE;
+	work->crtc = TRUE;
+}
+
+static void FASTCALL Px68kCrtcHostMarkTextDirtyLine(void *ctx, DWORD line)
+{
+	Render *owner = (Render*)ctx;
+	Render::render_t *work;
+
+	if (!owner) {
+		return;
+	}
+
+	work = owner->GetWorkAddr();
+	if (!work) {
+		return;
+	}
+
+	line &= 0x3ff;
+	work->textmod[line] = TRUE;
+	work->mix[line] = TRUE;
+	work->draw[line] = TRUE;
+}
+
+static void FASTCALL Px68kCrtcHostScreenChanged(void *ctx)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->SetCRTC();
+}
+
+static void FASTCALL Px68kCrtcHostGeometryChanged(void *ctx)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->SetCRTC();
+}
+
+static void FASTCALL Px68kCrtcHostTimingChanged(void *ctx)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->SetVC();
+}
+
+static void FASTCALL Px68kCrtcHostModeChanged(void *ctx, BYTE /*mode*/)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->SetCRTC();
+}
+
+static void FASTCALL Px68kCrtcHostTextScrollChanged(void *ctx, DWORD x, DWORD y)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->TextScrl(x, y);
+}
+
+static void FASTCALL Px68kCrtcHostGrpScrollChanged(void *ctx, int block, DWORD x, DWORD y)
+{
+	Render *owner = (Render*)ctx;
+
+	if (!owner) {
+		return;
+	}
+
+	owner->GrpScrl(block, x, y);
+}
+
+class XmVideoSnapshotAdapter
+{
+public:
+	struct frame_t {
+		CRTC::crtc_t crtc_storage;
+		Px68kCrtcStateView px68k_crtc_storage;
+		VC::vc_t vc_storage;
+		Sprite::sprite_t sprite_storage;
+		DWORD palette_storage[0x200];
+		const Render::render_t *work;
+		const CRTC::crtc_t *crtc_work;
+		const Px68kCrtcStateView *px68k_crtc;
+		const VC::vc_t *vc_work;
+		const Sprite::sprite_t *sprite_work;
+		const DWORD *palette;
+		const DWORD *text_buf;
+		const DWORD *grp_buf[4];
+		const DWORD *bgsp_buf;
+		const DWORD *mix_buf;
+		unsigned frame_index;
+		int compositor_mode;
+		BOOL render_fast_dummy_enabled;
+		BOOL render_active;
+		BOOL render_enabled;
+		BOOL render_ready;
+		BOOL render_vc_dirty;
+		BOOL render_crtc_dirty;
+		BOOL render_palette_dirty;
+		BOOL render_text_enabled;
+		BOOL render_bgsp_enabled;
+		int first;
+		int last;
+		int width;
+		int height;
+		int h_mul;
+		int v_mul;
+		int mixlen;
+		int mixtype;
+		int mixpage;
+		DWORD textx;
+		DWORD texty;
+		DWORD grpx[4];
+		DWORD grpy[4];
+		DWORD bgx[2];
+		DWORD bgy[2];
+	};
+
+	struct line_t {
+		const CRTC::crtc_t *crtc_work;
+		const Px68kCrtcStateView *px68k_crtc;
+		const VC::vc_t *vc_work;
+		const Sprite::sprite_t *sprite_work;
+		unsigned frame_index;
+		int raster;
+		BOOL valid;
+		BOOL mix_dirty;
+		BOOL draw_dirty;
+		BOOL render_vc_dirty;
+		BOOL render_crtc_dirty;
+		BOOL render_palette_dirty;
+		BOOL render_text_enabled;
+		BOOL render_bgsp_enabled;
+		int first;
+		int last;
+		int mixlen;
+		int mixtype;
+		int mixpage;
+	};
+
+	XmVideoSnapshotAdapter()
+	{
+		Reset();
+	}
+
+	void Reset()
+	{
+		memset(&frame, 0, sizeof(frame));
+		memset(&line, 0, sizeof(line));
+		memset(&frame.crtc_storage, 0, sizeof(frame.crtc_storage));
+		memset(&frame.px68k_crtc_storage, 0, sizeof(frame.px68k_crtc_storage));
+		memset(&frame.vc_storage, 0, sizeof(frame.vc_storage));
+		memset(&frame.sprite_storage, 0, sizeof(frame.sprite_storage));
+		memset(&frame.palette_storage, 0, sizeof(frame.palette_storage));
+		frame.crtc_work = NULL;
+		frame.px68k_crtc = NULL;
+		frame.vc_work = NULL;
+		frame.sprite_work = NULL;
+		frame.palette = NULL;
+		frame.text_buf = NULL;
+		frame.bgsp_buf = NULL;
+		frame.mix_buf = NULL;
+		for (int i = 0; i < 4; i++) {
+			frame.grp_buf[i] = NULL;
+			frame.grpx[i] = 0;
+			frame.grpy[i] = 0;
+		}
+		for (int i = 0; i < 2; i++) {
+			frame.bgx[i] = 0;
+			frame.bgy[i] = 0;
+		}
+		frame.frame_index = 0;
+		line.frame_index = 0;
+		line.raster = -1;
+		line.crtc_work = NULL;
+		line.px68k_crtc = NULL;
+		line.vc_work = NULL;
+		line.sprite_work = NULL;
+		frame_index = 0;
+		frame_valid = FALSE;
+		line_valid = FALSE;
+	}
+
+	void BeginFrame(const Render *owner)
+	{
+		const Render::render_t *work;
+		const CRTC *crtc;
+		const VC *vc;
+		const Sprite *sprite;
+
+		if (!owner) {
+			return;
+		}
+
+		work = owner->GetWorkAddr();
+		crtc = owner->GetCRTCDevice();
+		vc = owner->GetVCDevice();
+		sprite = owner->GetSpriteDevice();
+		memset(&frame, 0, sizeof(frame));
+		memset(&frame.crtc_storage, 0, sizeof(frame.crtc_storage));
+		memset(&frame.px68k_crtc_storage, 0, sizeof(frame.px68k_crtc_storage));
+		memset(&frame.vc_storage, 0, sizeof(frame.vc_storage));
+		memset(&frame.sprite_storage, 0, sizeof(frame.sprite_storage));
+		memset(&frame.palette_storage, 0, sizeof(frame.palette_storage));
+		frame.work = work;
+		if (crtc) {
+			frame.crtc_storage = *crtc->GetWorkAddr();
+			frame.px68k_crtc_storage = *crtc->GetPx68kStateView();
+			frame.crtc_work = &frame.crtc_storage;
+			frame.px68k_crtc = &frame.px68k_crtc_storage;
+		}
+		else {
+			frame.crtc_work = NULL;
+			frame.px68k_crtc = NULL;
+		}
+		if (vc) {
+			frame.vc_storage = *vc->GetWorkAddr();
+			frame.vc_work = &frame.vc_storage;
+		}
+		else {
+			frame.vc_work = NULL;
+		}
+		if (owner->GetPalette()) {
+			memcpy(frame.palette_storage, owner->GetPalette(), sizeof(frame.palette_storage));
+			frame.palette = frame.palette_storage;
+		}
+		else {
+			frame.palette = NULL;
+		}
+		if (sprite) {
+			sprite->GetSprite(&frame.sprite_storage);
+			frame.sprite_work = &frame.sprite_storage;
+		}
+		else {
+			memset(&frame.sprite_storage, 0, sizeof(frame.sprite_storage));
+			frame.sprite_work = NULL;
+		}
+		frame.text_buf = owner->GetTextBuf();
+		for (int i = 0; i < 4; i++) {
+			frame.grp_buf[i] = owner->GetGrpBuf(i);
+		}
+		frame.bgsp_buf = owner->GetBGSpBuf();
+		frame.mix_buf = owner->GetMixBuf();
+		frame.frame_index = ++frame_index;
+		frame.compositor_mode = owner->GetCompositorMode();
+		frame.render_fast_dummy_enabled = owner->IsRenderFastDummyEnabled();
+		frame.render_active = owner->IsActive();
+		frame.render_enabled = work ? work->enable : FALSE;
+		frame.render_ready = work ? (work->count > 0) : FALSE;
+		frame.render_vc_dirty = work ? work->vc : FALSE;
+		frame.render_crtc_dirty = work ? work->crtc : FALSE;
+		frame.render_palette_dirty = work ? work->palette : FALSE;
+		frame.render_text_enabled = work ? work->texten : FALSE;
+		frame.render_bgsp_enabled = work ? work->bgspflag : FALSE;
+		frame.first = work ? work->first : 0;
+		frame.last = work ? work->last : 0;
+		frame.width = work ? work->width : 0;
+		frame.height = work ? work->height : 0;
+		frame.h_mul = work ? work->h_mul : 1;
+		frame.v_mul = work ? work->v_mul : 1;
+		frame.mixlen = work ? work->mixlen : 0;
+		frame.mixtype = work ? work->mixtype : 0;
+		frame.mixpage = work ? work->mixpage : 0;
+		frame.textx = work ? work->textx : 0;
+		frame.texty = work ? work->texty : 0;
+		for (int i = 0; i < 4; i++) {
+			frame.grpx[i] = work ? work->grpx[i] : 0;
+			frame.grpy[i] = work ? work->grpy[i] : 0;
+		}
+		for (int i = 0; i < 2; i++) {
+			frame.bgx[i] = work ? work->bgx[i] : 0;
+			frame.bgy[i] = work ? work->bgy[i] : 0;
+		}
+		frame_valid = TRUE;
+		line_valid = FALSE;
+	}
+
+	void CaptureLine(const Render *owner, int raster)
+	{
+		const Render::render_t *work;
+
+		if (!owner) {
+			return;
+		}
+		if (!frame_valid) {
+			BeginFrame(owner);
+		}
+		work = owner->GetWorkAddr();
+		line.frame_index = frame.frame_index;
+		line.raster = raster;
+		line.crtc_work = frame.crtc_work;
+		line.px68k_crtc = frame.px68k_crtc;
+		line.vc_work = frame.vc_work;
+		line.sprite_work = frame.sprite_work;
+		line.valid = TRUE;
+		line.mix_dirty = (work && (raster >= 0) && (raster < 1024)) ? work->mix[raster] : FALSE;
+		line.draw_dirty = (work && (raster >= 0) && (raster < 1024)) ? work->draw[raster] : FALSE;
+		line.render_vc_dirty = work ? work->vc : FALSE;
+		line.render_crtc_dirty = work ? work->crtc : FALSE;
+		line.render_palette_dirty = work ? work->palette : FALSE;
+		line.render_text_enabled = work ? work->texten : FALSE;
+		line.render_bgsp_enabled = work ? work->bgspflag : FALSE;
+		line.first = work ? work->first : 0;
+		line.last = work ? work->last : 0;
+		line.mixlen = work ? work->mixlen : 0;
+		line.mixtype = work ? work->mixtype : 0;
+		line.mixpage = work ? work->mixpage : 0;
+		line_valid = TRUE;
+	}
+
+	void EndFrame()
+	{
+		line_valid = FALSE;
+	}
+
+private:
+	frame_t frame;
+	line_t line;
+	unsigned frame_index;
+	BOOL frame_valid;
+	BOOL line_valid;
+};
 
 //---------------------------------------------------------------------------
 //
@@ -76,6 +458,7 @@ Render::Render(VM *p) : Device(p)
 	backend = NULL;
 	backend_original = NULL;
 	backend_px68k = NULL;
+	video_snapshot_adapter = NULL;
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	render_target = NULL;
@@ -83,7 +466,21 @@ Render::Render(VM *p) : Device(p)
 	transparency_enabled = TRUE;
 	original_bg0_render_enabled = TRUE;
 	compositor_mode = compositor_original;
+	compositor_mode_pending = compositor_original;
+	compositor_mode_switch_pending = FALSE;
 	render_fast_dummy_enabled = FALSE;
+	memset(&px68k_crtc_host, 0, sizeof(px68k_crtc_host));
+	memset(&px68k_crtc_state_cache, 0, sizeof(px68k_crtc_state_cache));
+	px68k_crtc_host.ctx = this;
+	px68k_crtc_host.ApplyStateView = Px68kCrtcHostApplyStateView;
+	px68k_crtc_host.MarkAllTextDirty = Px68kCrtcHostMarkAllTextDirty;
+	px68k_crtc_host.MarkTextDirtyLine = Px68kCrtcHostMarkTextDirtyLine;
+	px68k_crtc_host.ScreenChanged = Px68kCrtcHostScreenChanged;
+	px68k_crtc_host.GeometryChanged = Px68kCrtcHostGeometryChanged;
+	px68k_crtc_host.TimingChanged = Px68kCrtcHostTimingChanged;
+	px68k_crtc_host.ModeChanged = Px68kCrtcHostModeChanged;
+	px68k_crtc_host.TextScrollChanged = Px68kCrtcHostTextScrollChanged;
+	px68k_crtc_host.GrpScrollChanged = Px68kCrtcHostGrpScrollChanged;
 	render.fast_stamp_counter = 1;
 	memset(render.fast_mix_stamp, 0, sizeof(render.fast_mix_stamp));
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
@@ -328,6 +725,7 @@ BOOL FASTCALL Render::Init()
 	try {
 		backend_original = new OriginalGraphicEngine();
 		backend_px68k = new Px68kGraphicEngine();
+		video_snapshot_adapter = new XmVideoSnapshotAdapter();
 	}
 	catch (...) {
 		if (backend_original) {
@@ -338,12 +736,19 @@ BOOL FASTCALL Render::Init()
 			delete backend_px68k;
 			backend_px68k = NULL;
 		}
+		if (video_snapshot_adapter) {
+			delete video_snapshot_adapter;
+			video_snapshot_adapter = NULL;
+		}
 		return FALSE;
 	}
 	if (!backend_original) {
 		return FALSE;
 	}
 	if (!backend_px68k) {
+		return FALSE;
+	}
+	if (!video_snapshot_adapter) {
 		return FALSE;
 	}
 	if (!SetCompositorMode(render_fast_dummy_enabled ? compositor_fast : compositor_original)) {
@@ -372,8 +777,14 @@ void FASTCALL Render::Cleanup()
 		delete backend_px68k;
 		backend_px68k = NULL;
 	}
+	if (video_snapshot_adapter) {
+		delete video_snapshot_adapter;
+		video_snapshot_adapter = NULL;
+	}
 	backend = NULL;
+	memset(&px68k_crtc_host, 0, sizeof(px68k_crtc_host));
 	render_fast_dummy_enabled = FALSE;
+	compositor_mode_switch_pending = FALSE;
 
 	// ?`oto?O
 	if (render.drawflag) {
@@ -511,6 +922,11 @@ void FASTCALL Render::Reset()
 	memset(render.fast_mix_done, 0, sizeof(render.fast_mix_done));
 	memset(render.fast_bg_stamp, 0, sizeof(render.fast_bg_stamp));
 	memset(render.fast_bg_done, 0, sizeof(render.fast_bg_done));
+	compositor_mode_switch_pending = FALSE;
+	compositor_mode_pending = compositor_mode;
+	if (video_snapshot_adapter) {
+		video_snapshot_adapter->Reset();
+	}
 
 	if (render.mixbuf && (render.mixwidth > 0) && (render.mixheight > 0)) {
 		memset(render.mixbuf, 0, sizeof(DWORD) * render.mixwidth * render.mixheight);
@@ -676,27 +1092,90 @@ BOOL FASTCALL Render::SetRenderFastDummyEnabled(BOOL enable)
 
 BOOL FASTCALL Render::SetCompositorMode(int mode)
 {
+	if ((mode != compositor_original) && (mode != compositor_fast)) {
+		return FALSE;
+	}
+	if ((mode == compositor_original) && !backend_original) {
+		return FALSE;
+	}
+	if ((mode == compositor_fast) && !backend_px68k) {
+		return FALSE;
+	}
+
+	render_fast_dummy_enabled = (mode == compositor_fast);
+	if (mode == compositor_mode) {
+		compositor_mode_pending = mode;
+		compositor_mode_switch_pending = FALSE;
+		return TRUE;
+	}
+	if (!render.act) {
+		ApplyCompositorMode(mode);
+		return TRUE;
+	}
+
+	compositor_mode_pending = mode;
+	compositor_mode_switch_pending = TRUE;
+	return TRUE;
+}
+
+void FASTCALL Render::ApplyCompositorMode(int mode)
+{
 	switch (mode) {
 	case compositor_original:
+		ASSERT(backend_original);
 		if (!backend_original) {
-			return FALSE;
+			return;
 		}
-		compositor_mode = mode;
 		backend = backend_original;
+		compositor_mode = mode;
 		render_fast_dummy_enabled = FALSE;
-		return TRUE;
+		break;
 
 	case compositor_fast:
+		ASSERT(backend_px68k);
 		if (!backend_px68k) {
-			return FALSE;
+			return;
 		}
-		compositor_mode = mode;
 		backend = backend_px68k;
+		compositor_mode = mode;
 		render_fast_dummy_enabled = TRUE;
-		return TRUE;
+		break;
 
 	default:
-		return FALSE;
+		return;
+	}
+
+	compositor_mode_pending = compositor_mode;
+	compositor_mode_switch_pending = FALSE;
+	InvalidateAll();
+}
+
+void FASTCALL Render::ApplyPendingCompositorMode()
+{
+	if (!compositor_mode_switch_pending) {
+		return;
+	}
+	ApplyCompositorMode(compositor_mode_pending);
+}
+
+void FASTCALL Render::BeginVideoSnapshotFrame()
+{
+	if (video_snapshot_adapter) {
+		video_snapshot_adapter->BeginFrame(this);
+	}
+}
+
+void FASTCALL Render::CaptureVideoSnapshotLine(int raster)
+{
+	if (video_snapshot_adapter) {
+		video_snapshot_adapter->CaptureLine(this, raster);
+	}
+}
+
+void FASTCALL Render::EndVideoSnapshotFrame()
+{
+	if (video_snapshot_adapter) {
+		video_snapshot_adapter->EndFrame();
 	}
 }
 
@@ -819,6 +1298,7 @@ void FASTCALL Render::StartFrameOriginal()
 	int i;
 
 	ASSERT(this);
+	ApplyPendingCompositorMode();
 
 	// ooto?[ooX?L?b?voo
 	if ((render.count != 0) || !render.enable) {
@@ -874,6 +1354,8 @@ void FASTCALL Render::StartFrameOriginal()
 		// ?I?t
 		render.crtc = FALSE;
 	}
+
+	BeginVideoSnapshotFrame();
 }
 
 //---------------------------------------------------------------------------
@@ -903,6 +1385,7 @@ void FASTCALL Render::EndFrameOriginal()
 
 	// ?J?Eo?gUp
 	render.count++;
+	EndVideoSnapshotFrame();
 
 	// ooo
 	render.act = FALSE;
@@ -1587,6 +2070,37 @@ const DWORD* FASTCALL Render::GetPalette() const
 	ASSERT(render.paldata);
 
 	return render.paldata;
+}
+
+//---------------------------------------------------------------------------
+//
+//	PX68k CRTC host bridge
+//
+//---------------------------------------------------------------------------
+const Px68kCrtcHost* FASTCALL Render::GetPx68kCrtcHost() const
+{
+	ASSERT(this);
+
+	if (compositor_mode != compositor_fast) {
+		return NULL;
+	}
+
+	return &px68k_crtc_host;
+}
+
+//---------------------------------------------------------------------------
+//
+//	PX68k CRTC state cache
+//
+//---------------------------------------------------------------------------
+void FASTCALL Render::CachePx68kStateView(const Px68kCrtcStateView *view)
+{
+	ASSERT(this);
+	if (!view) {
+		return;
+	}
+
+	memcpy(&px68k_crtc_state_cache, view, sizeof(px68k_crtc_state_cache));
 }
 
 //---------------------------------------------------------------------------

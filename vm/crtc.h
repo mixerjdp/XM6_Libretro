@@ -12,6 +12,7 @@
 
 #include "device.h"
 #include "event.h"
+#include "px68k_crtc_port.h"
 
 //===========================================================================
 //
@@ -120,6 +121,8 @@ public:
 										// Get display counter
 	const crtc_t* FASTCALL GetWorkAddr() const { return &crtc; }
 										// Get work address
+	const Px68kCrtcStateView* FASTCALL GetPx68kStateView() const { return &px68k_state_view; }
+										// Get PX68k-compatible state mirror
 
 private:
 	void FASTCALL ReCalc();
@@ -140,6 +143,28 @@ private:
 										// Raster interrupt check
 	void FASTCALL TextVRAM();
 										// Text VRAM setup
+	void FASTCALL SyncPx68kState();
+										// Keep PX68k-compatible state mirror updated
+	const Px68kCrtcHost* FASTCALL GetPx68kHost() const;
+										// Get active PX68k host bridge
+	void FASTCALL NotifyPx68kStateView();
+										// Push mirrored state to host
+	void FASTCALL NotifyMarkAllTextDirty();
+										// Notify text cache invalidation
+	void FASTCALL NotifyMarkTextDirtyLine(DWORD line);
+										// Notify text line invalidation
+	void FASTCALL NotifyTextScrollChanged(DWORD x, DWORD y);
+										// Notify text scroll change
+	void FASTCALL NotifyGrpScrollChanged(int block, DWORD x, DWORD y);
+										// Notify graphic scroll change
+	void FASTCALL NotifyScreenChanged();
+										// Notify screen geometry change
+	void FASTCALL NotifyGeometryChanged();
+										// Notify geometry change
+	void FASTCALL NotifyTimingChanged();
+										// Notify timing change
+	void FASTCALL NotifyModeChanged(BYTE mode);
+										// Notify mode change
 	int FASTCALL Get8DotClock() const;
 										// Get 8 dot clock
 	static const int DotClockTable[16];
@@ -162,6 +187,8 @@ private:
 										// Renderer
 	Printer *printer;
 										// Printer
+	Px68kCrtcStateView px68k_state_view;
+										// PX68k-compatible state mirror
 };
 
 #endif	// crtc_h
