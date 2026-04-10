@@ -134,3 +134,38 @@ void FASTCALL OriginalGraphicEngine::Process(Render *owner)
 {
 	ProcessCommon(owner);
 }
+
+void FASTCALL Px68kGraphicEngine::StartFrame(Render *owner)
+{
+	owner->StartFrameOriginal();
+}
+
+void FASTCALL Px68kGraphicEngine::EndFrame(Render *owner)
+{
+	owner->EndFrameOriginal();
+}
+
+void FASTCALL Px68kGraphicEngine::HSync(Render *owner, int raster)
+{
+	owner->HSyncOriginal(raster);
+}
+
+void FASTCALL Px68kGraphicEngine::SetCRTC(Render *owner)
+{
+	owner->SetCRTCOriginal();
+}
+
+void FASTCALL Px68kGraphicEngine::SetVC(Render *owner)
+{
+	owner->SetVCOriginal();
+}
+
+void FASTCALL Px68kGraphicEngine::Video(Render *owner)
+{
+	owner->Video();
+}
+
+void FASTCALL Px68kGraphicEngine::Process(Render *owner)
+{
+	ProcessCommon(owner);
+}

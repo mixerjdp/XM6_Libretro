@@ -1743,7 +1743,7 @@ static void apply_runtime_core_options()
   }
   if (g_xm6.set_render_fast_dummy) {
     g_xm6.set_render_fast_dummy(g_xm6_handle, g_render_fast_dummy_enabled ? 1 : 0);
-    core_log(RETRO_LOG_INFO, "[xm6-libretro] Render Fast legacy dummy option set: %s (no backend change)",
+    core_log(RETRO_LOG_INFO, "[xm6-libretro] PX68k Video Engine %s",
              g_render_fast_dummy_enabled ? "enabled" : "disabled");
   }
   if (g_xm6.set_master_volume) {
@@ -1952,9 +1952,14 @@ static void apply_core_option_values()
     g_transparency_enabled = (std::strcmp(var.value, "disabled") != 0);
   }
 
-  var.key = "xm6_render_fast_dummy";
+  var.key = "xm6_render_px68k";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_render_fast_dummy_enabled = (std::strcmp(var.value, "enabled") == 0);
+  } else {
+    var.key = "xm6_render_fast_dummy";
+    if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+      g_render_fast_dummy_enabled = (std::strcmp(var.value, "enabled") == 0);
+    }
   }
 
   var.key = "xm6_fm_volume";
@@ -2155,7 +2160,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s video_engine=%s alt_raster=%s render_bg0=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2344,10 +2349,10 @@ static void register_core_options()
         "enabled"
       },
       {
-        "xm6_render_fast_dummy",
-        "Render Fast",
+        "xm6_render_px68k",
+        "PX68k Video Engine",
         nullptr,
-        "Legacy dummy option; kept for compatibility and does not change the active video backend.",
+        "Legacy compatibility alias for the PX68k video engine backend.",
         nullptr,
         "video",
         {
@@ -2802,8 +2807,10 @@ static void register_core_options()
   static const retro_variable vars[] = {
     { "xm6_audio_engine",
       "Audio engine (legacy); XM6|PX68k|YMFM|X68Sound" },
+    { "xm6_render_px68k",
+      "PX68k Video Engine; disabled|enabled" },
     { "xm6_render_fast_dummy",
-      "Render Fast (dummy); disabled|enabled" },
+      "PX68k Video Engine (legacy alias); disabled|enabled" },
     { nullptr, nullptr }
   };
   g_environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, const_cast<retro_variable *>(vars));
@@ -4032,7 +4039,7 @@ void retro_run(void)
 	      }
       if (old_render_fast_dummy_enabled != g_render_fast_dummy_enabled) {
         apply_runtime_core_options();
-        core_log(RETRO_LOG_INFO, "[xm6-libretro] Render Fast legacy dummy option %s",
+        core_log(RETRO_LOG_INFO, "[xm6-libretro] PX68k Video Engine %s",
                  g_render_fast_dummy_enabled ? "enabled" : "disabled");
       }
       if (old_audio_engine != g_audio_engine) {

@@ -155,7 +155,7 @@ public:
 
 	// Display
 	BOOL caption_info;					// Caption information display
-	BOOL render_fast_dummy;			// Render fast dummy (TRUE=ON)
+	BOOL render_fast_dummy;			// PX68k Video Engine / legacy Render Fast Dummy (TRUE=ON)
 
 	// Display
 	BOOL caption;						// Caption

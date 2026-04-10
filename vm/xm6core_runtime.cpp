@@ -642,7 +642,6 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_fast_dummy(XM6Handle hand
 	}
 
 	if (render) {
-		// Legacy dummy option: preserve the flag for compatibility, but do not change the active backend.
 		render->SetRenderFastDummyEnabled(enabled ? TRUE : FALSE);
 	}
 

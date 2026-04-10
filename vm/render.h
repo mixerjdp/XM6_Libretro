@@ -256,6 +256,7 @@ public:
 private:
 	friend class GraphicEngine;
 	friend class OriginalGraphicEngine;
+	friend class Px68kGraphicEngine;
 	void FASTCALL StartFrameOriginal();
 	void FASTCALL EndFrameOriginal();
 	void FASTCALL HSyncOriginal(int raster);
@@ -308,6 +309,7 @@ private:
 	GVRAM *gvram;
 	GraphicEngine *backend;
 	GraphicEngine *backend_original;
+	GraphicEngine *backend_px68k;
 	DWORD *palbuf_original;
 	DWORD *palbuf_fast;
 	int compositor_mode;

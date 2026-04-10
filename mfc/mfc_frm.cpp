@@ -3396,7 +3396,7 @@ void CFrmWnd::OnToggleRenderFastDummy()
 	GetConfig()->SetConfig(&config);
 
 	CString info;
-	info.Format(_T("Render Fast (Dummy) (dummy): %s"), bEnabled ? _T("ON") : _T("OFF"));
+	info.Format(_T("PX68k Video Engine (legacy alias): %s"), bEnabled ? _T("ON") : _T("OFF"));
 	SetInfo(info);
 }
 

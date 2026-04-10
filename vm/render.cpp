@@ -9,6 +9,7 @@
 
 #include "os.h"
 #include "xm6.h"
+#include "config.h"
 #include "vm.h"
 #include "crtc.h"
 #include "vc.h"
@@ -74,6 +75,7 @@ Render::Render(VM *p) : Device(p)
 	sprite = NULL;
 	backend = NULL;
 	backend_original = NULL;
+	backend_px68k = NULL;
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	render_target = NULL;
@@ -325,18 +327,28 @@ BOOL FASTCALL Render::Init()
 
 	try {
 		backend_original = new OriginalGraphicEngine();
+		backend_px68k = new Px68kGraphicEngine();
 	}
 	catch (...) {
 		if (backend_original) {
 			delete backend_original;
 			backend_original = NULL;
 		}
+		if (backend_px68k) {
+			delete backend_px68k;
+			backend_px68k = NULL;
+		}
 		return FALSE;
 	}
 	if (!backend_original) {
 		return FALSE;
 	}
-	backend = backend_original;
+	if (!backend_px68k) {
+		return FALSE;
+	}
+	if (!SetCompositorMode(render_fast_dummy_enabled ? compositor_fast : compositor_original)) {
+		return FALSE;
+	}
 
 	return TRUE;
 }
@@ -355,6 +367,10 @@ void FASTCALL Render::Cleanup()
 	if (backend_original) {
 		delete backend_original;
 		backend_original = NULL;
+	}
+	if (backend_px68k) {
+		delete backend_px68k;
+		backend_px68k = NULL;
 	}
 	backend = NULL;
 	render_fast_dummy_enabled = FALSE;
@@ -640,27 +656,48 @@ void FASTCALL Render::ApplyCfg(const Config *config)
 {
 	ASSERT(config);
 	LOG0(Log::Normal, "???K?p");
+
+	SetRenderFastDummyEnabled(config->render_fast_dummy);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Render fast dummy switch
+//	PX68k Video Engine switch
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Render::SetRenderFastDummyEnabled(BOOL enable)
 {
-	// Legacy compatibility option: keep the flag, but do not switch away from the original backend.
 	render_fast_dummy_enabled = enable ? TRUE : FALSE;
+	if (!SetCompositorMode(render_fast_dummy_enabled ? compositor_fast : compositor_original)) {
+		return FALSE;
+	}
 	return render_fast_dummy_enabled;
 }
 
 BOOL FASTCALL Render::SetCompositorMode(int mode)
 {
-	if (mode != compositor_original) {
+	switch (mode) {
+	case compositor_original:
+		if (!backend_original) {
+			return FALSE;
+		}
+		compositor_mode = mode;
+		backend = backend_original;
+		render_fast_dummy_enabled = FALSE;
+		return TRUE;
+
+	case compositor_fast:
+		if (!backend_px68k) {
+			return FALSE;
+		}
+		compositor_mode = mode;
+		backend = backend_px68k;
+		render_fast_dummy_enabled = TRUE;
+		return TRUE;
+
+	default:
 		return FALSE;
 	}
-	compositor_mode = mode;
-	return TRUE;
 }
 
 void FASTCALL Render::ComposeVideo()
