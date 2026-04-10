@@ -2,6 +2,7 @@
 #include "xm6.h"
 #include "xm6core.h"
 #include "vm.h"
+#include "crtc.h"
 #include "render.h"
 #include "opm.h"
 #include "adpcm.h"
@@ -567,7 +568,11 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_alt_raster(XM6Handle handle, int
 	}
 
 	ctx->runtime_config.alt_raster = enabled ? TRUE : FALSE;
-	ctx->vm->ApplyCfg(&ctx->runtime_config);
+	CRTC *crtc = (CRTC*)ctx->vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
+	if (!crtc) {
+		return XM6CORE_ERR_NOT_READY;
+	}
+	crtc->ApplyCfg(&ctx->runtime_config);
 	return XM6CORE_OK;
 }
 
@@ -642,6 +647,7 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_fast_dummy(XM6Handle hand
 	}
 
 	if (render) {
+		ctx->runtime_config.render_fast_dummy = enabled ? TRUE : FALSE;
 		render->SetRenderFastDummyEnabled(enabled ? TRUE : FALSE);
 	}
 
