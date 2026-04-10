@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ �X�v���C�g(CYNTHIA) ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Sprite (CYNTHIA) ]
 //
 //---------------------------------------------------------------------------
 
@@ -18,27 +18,27 @@
 
 //===========================================================================
 //
-//	�X�v���C�g
+//	Sprite
 //
 //===========================================================================
 //#define SPRITE_LOG
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 Sprite::Sprite(VM *p) : MemDevice(p)
 {
-	// �f�o�C�XID��������
+	// Device ID initialization
 	dev.id = MAKEID('S', 'P', 'R', ' ');
 	dev.desc = "Sprite (CYNTHIA)";
 
-	// �J�n�A�h���X�A�I���A�h���X
+	// Start address, end address
 	memdev.first = 0xeb0000;
 	memdev.last = 0xebffff;
 
-	// ���̑�
+	// Others
 	sprite = NULL;
 	render = NULL;
 	spr.mem = NULL;
@@ -47,19 +47,19 @@ Sprite::Sprite(VM *p) : MemDevice(p)
 
 //---------------------------------------------------------------------------
 //
-//	������
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Sprite::Init()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// ��{�N���X
+	// Base class
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// �������m�ہA�N���A
+	// Memory allocation, initialization
 	try {
 		sprite = new BYTE[ 0x10000 ];
 	}
@@ -70,31 +70,31 @@ BOOL FASTCALL Sprite::Init()
 		return FALSE;
 	}
 
-	// EB0400-EB07FF, EB0812-EB7FFF��Reserved(FF)
+	// EB0400-EB07FF, EB0812-EB7FFF Reserved(FF)
 	memset(sprite, 0, 0x10000);
 	memset(&sprite[0x400], 0xff, 0x400);
 	memset(&sprite[0x812], 0xff, 0x77ee);
 
-	// ���[�N������
+	// Structure initialization
 	memset(&spr, 0, sizeof(spr));
 	spr.mem = &sprite[0x0000];
 	spr.pcg = &sprite[0x8000];
 
-	// �����_���擾
+	// Render get
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	ASSERT(render);
+ASSERT(render);
 
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�N���[���A�b�v
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::Cleanup()
 {
-	// ���������
+	// Memory release
 	if (sprite) {
 		delete[] sprite;
 		sprite = NULL;
@@ -102,27 +102,27 @@ void FASTCALL Sprite::Cleanup()
 		spr.pcg = NULL;
 	}
 
-	// ��{�N���X��
+	// Base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::Reset()
 {
 	int i;
 
-	ASSERT(this);
-	LOG0(Log::Normal, "���Z�b�g");
+ASSERT(this);
+LOG0(Log::Normal, "Reset");
 
-	// ���W�X�^�ݒ�
+	// Register setting
 	spr.connect = FALSE;
 	spr.disp = FALSE;
 
-	// BG�y�[�W������
+	// BG page initialize
 	for (i=0; i<2; i++) {
 		spr.bg_on[i] = FALSE;
 		spr.bg_area[i] = 0;
@@ -130,10 +130,10 @@ void FASTCALL Sprite::Reset()
 		spr.bg_scrly[i] = 0;
 	}
 
-	// BG�T�C�Y������
+	// BG size initialize
 	spr.bg_size = FALSE;
 
-	// �^�C�~���O������
+	// Timer initialize
 	spr.h_total = 0;
 	spr.h_disp = 0;
 	spr.v_disp = 0;
@@ -144,31 +144,31 @@ void FASTCALL Sprite::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Sprite::Save(Fileio *fio, int /*ver*/)
 {
 	size_t sz;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT(spr.mem);
+ASSERT(this);
+ASSERT(fio);
+ASSERT(spr.mem);
 
-	LOG0(Log::Normal, "�Z�[�u");
+LOG0(Log::Normal, "Save");
 
-	// �T�C�Y���Z�[�u
+	// Structure size save
 	sz = sizeof(sprite_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// ���̂��Z�[�u
+	// Data save
 	if (!fio->Write(&spr, (int)sz)) {
 		return FALSE;
 	}
 
-	// ���������Z�[�u
+	// Memory save
 	if (!fio->Write(sprite, 0x10000)) {
 		return FALSE;
 	}
@@ -178,7 +178,7 @@ BOOL FASTCALL Sprite::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
@@ -188,13 +188,13 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 	DWORD addr;
 	DWORD data;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT(spr.mem);
+ASSERT(this);
+ASSERT(fio);
+ASSERT(spr.mem);
 
-	LOG0(Log::Normal, "���[�h");
+LOG0(Log::Normal, "Load");
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Structure size load, compare
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -202,24 +202,24 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 		return FALSE;
 	}
 
-	// ���̂����[�h
+	// Data load
 	if (!fio->Read(&spr, (int)sz)) {
 		return FALSE;
 	}
 
-	// �����������[�h
+	// Memory load
 	if (!fio->Read(sprite, 0x10000)) {
 		return FALSE;
 	}
 
-	// �|�C���^���㏑��
+	// Pointer update
 	spr.mem = &sprite[0x0000];
 	spr.pcg = &sprite[0x8000];
 
-	// �����_���֒ʒm(���W�X�^)
+	// Render register notify (register)
 	render->BGCtrl(4, spr.bg_size);
 	for (i=0; i<2; i++) {
-		// BG�f�[�^�G���A
+		// BG data area
 		if (spr.bg_area[i] & 1) {
 			render->BGCtrl(i + 2, TRUE);
 		}
@@ -227,14 +227,14 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 			render->BGCtrl(i + 2, FALSE);
 		}
 
-		// BG�\��ON/OFF
+		// BG display ON/OFF
 		render->BGCtrl(i, spr.bg_on[i]);
 
-		// BG�X�N���[��
+		// BG scroll
 		render->BGScrl(i, spr.bg_scrlx[i], spr.bg_scrly[i]);
 	}
 
-	// �����_���֒ʒm(������:�����A�h���X�̂�)
+	// Render register notify (memory: only address)
 	for (addr=0; addr<0x10000; addr+=2) {
 		if (addr < 0x400) {
 			data = *(WORD*)(&sprite[addr]);
@@ -256,41 +256,41 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	�ݒ�K�p
+//	Apply configuration
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::ApplyCfg(const Config *config)
 {
-	ASSERT(config);
-	LOG0(Log::Normal, "�ݒ�K�p");
-	printf("%p", (const void*)config);
+ASSERT(config);
+LOG0(Log::Normal, "Apply configuration");
+printf("%p", (const void*)config);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g�ǂݍ���
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL Sprite::ReadByte(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// �I�t�Z�b�g�Z�o
+	// Offset calculate
 	addr &= 0xffff;
 
-	// 0800�`7FFF�̓o�X�G���[�̉e�����󂯂Ȃ�
+	// 0800~7FFF is not affected by bus error
 	if ((addr >= 0x800) && (addr < 0x8000)) {
 		return sprite[addr ^ 1];
 	}
 
-	// �ڑ��`�F�b�N
+	// Connect check
 	if (!IsConnect()) {
 		cpu->BusErr(memdev.first + addr, TRUE);
 		return 0xff;
 	}
 
-	// �E�F�C�g(�G�g���[���v�����Z�X)
+	// Wait (bus access time)
 	if (addr & 1) {
 		if (spr.disp) {
 			scheduler->Wait(4);
@@ -300,36 +300,36 @@ DWORD FASTCALL Sprite::ReadByte(DWORD addr)
 		}
 	}
 
-	// �G���f�B�A���𔽓]�����ēǂݍ���
+	// Endian convert and read
 	return sprite[addr ^ 1];
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h�ǂݍ���
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL Sprite::ReadWord(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
 
-	// �I�t�Z�b�g�Z�o
+	// Offset calculate
 	addr &= 0xffff;
 
-	// 0800�`7FFF�̓o�X�G���[�̉e�����󂯂Ȃ�
+	// 0800~7FFF is not affected by bus error
 	if ((addr >= 0x800) && (addr < 0x8000)) {
 		return *(WORD *)(&sprite[addr]);
 	}
 
-	// �ڑ��`�F�b�N
+	// Connect check
 	if (!IsConnect()) {
 		cpu->BusErr(memdev.first + addr, TRUE);
 		return 0xff;
 	}
 
-	// �E�F�C�g(�G�g���[���v�����Z�X)
+	// Wait (bus access time)
 	if (spr.disp) {
 		scheduler->Wait(4);
 	}
@@ -337,45 +337,45 @@ DWORD FASTCALL Sprite::ReadWord(DWORD addr)
 		scheduler->Wait(2);
 	}
 
-	// �ǂݍ���
+	// Read
 	return *(WORD *)(&sprite[addr]);
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g��������
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 {
 	DWORD ctrl;
 
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(data < 0x100);
 
-	// �I�t�Z�b�g�Z�o
+	// Offset calculate
 	addr &= 0xffff;
 
-	// ��v�`�F�b�N
+	// Equal check
 	if (sprite[addr ^ 1] == data) {
 		return;
 	}
 
-	// 800�`811�̓R���g���[�����W�X�^
+	// 800~811 is control register
 	if ((addr >= 0x800) && (addr < 0x812)) {
-		// �f�[�^��������
+		// Data set
 		sprite[addr ^ 1] = (BYTE)data;
 
 		if (addr & 1) {
-			// ���ʏ������݁B��ʂƂ��킹�ăR���g���[��
+			// Odd access. Align with even and call control
 			ctrl = (DWORD)sprite[addr];
 			ctrl <<= 8;
 			ctrl |= data;
 			Control((DWORD)(addr & 0xfffe), ctrl);
 		}
 		else {
-			// ��ʏ������݁B���ʂƂ��킹�ăR���g���[��
+			// Even access. Align with odd and call control
 			ctrl = data;
 			ctrl <<= 8;
 			ctrl |= (DWORD)sprite[addr];
@@ -384,18 +384,18 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// 0812-7FFF�̓��U�[�u(�o�X�G���[�̉e�����󂯂Ȃ�)
+	// 0812-7FFF is unused (not affected by bus error)
 	if ((addr >= 0x812) && (addr < 0x8000)) {
 		return;
 	}
 
-	// �ڑ��`�F�b�N
+	// Connect check
 	if (!IsConnect()) {
 		cpu->BusErr(memdev.first + addr, FALSE);
 		return;
 	}
 
-	// �E�F�C�g(�G�g���[���v�����Z�X)
+	// Wait (bus access time)
 	if (addr & 1) {
 		if (spr.disp) {
 			scheduler->Wait(4);
@@ -405,15 +405,15 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 		}
 	}
 
-	// 0400-07FF�̓��U�[�u(�o�X�G���[�̉e�����󂯂�)
+	// 0400-07FF is unused (not affected by bus error)
 	if ((addr >= 0x400) && (addr < 0x800)) {
 		return;
 	}
 
-	// ��������
+	// Memory set
 	sprite[addr ^ 1] = (BYTE)data;
 
-	// �����_������
+	// Render notify
 	addr &= 0xfffe;
 	if (addr < 0x400) {
 		ctrl = *(WORD*)(&sprite[addr]);
@@ -431,36 +431,36 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h��������
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT(data < 0x10000);
 
-	// �I�t�Z�b�g�Z�o
+	// Offset calculate
 	addr &= 0xfffe;
 
-	// ��v�`�F�b�N
+	// Equal check
 	if (*(WORD *)(&sprite[addr]) == data) {
 		return;
 	}
 
-	// 800�`811�̓R���g���[�����W�X�^
+	// 800~811 is control register
 	if ((addr >= 0x800) && (addr < 0x812)) {
 		*(WORD *)(&sprite[addr]) = (WORD)data;
 		Control(addr, data);
 		return;
 	}
-	// 0812-7FFF�̓��U�[�u(�o�X�G���[�̉e�����󂯂Ȃ�)
+	// 0812-7FFF is unused (not affected by bus error)
 	if ((addr >= 0x812) && (addr < 0x8000)) {
 		return;
 	}
 
-	// �E�F�C�g(�G�g���[���v�����Z�X)
+	// Wait (bus access time)
 	if (spr.disp) {
 		scheduler->Wait(4);
 	}
@@ -468,15 +468,15 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 		scheduler->Wait(2);
 	}
 
-	// 0400-07FF�̓��U�[�u(�o�X�G���[�̉e�����󂯂�)
+	// 0400-07FF is unused (not affected by bus error)
 	if ((addr >= 0x400) && (addr < 0x800)) {
 		return;
 	}
 
-	// ��������
+	// Memory set
 	*(WORD *)(&sprite[addr]) = (WORD)data;
 
-	// �����_��
+	// Render notify
 	if (addr < 0x400) {
 		render->SpriteReg(addr, data);
 		return;
@@ -491,65 +491,65 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	�ǂݍ��݂̂�
+//	Read only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL Sprite::ReadOnly(DWORD addr) const
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// �I�t�Z�b�g�Z�o
+	// Offset calculate
 	addr &= 0xffff;
 
-	// �G���f�B�A���𔽓]�����ēǂݍ���
+	// Endian convert and read
 	return sprite[addr ^ 1];
 }
 
 //---------------------------------------------------------------------------
 //
-//	�R���g���[��
+//	Control
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 {
-	ASSERT((addr >= 0x800) && (addr < 0x812));
-	ASSERT((addr & 1) == 0);
-	ASSERT(data < 0x10000);
+ASSERT((addr >= 0x800) && (addr < 0x812));
+ASSERT((addr & 1) == 0);
+ASSERT(data < 0x10000);
 
-	// �A�h���X�𐮗�
+	// Address convert
 	addr -= 0x800;
 	addr >>= 1;
 
 	switch (addr) {
-		// BG0�X�N���[��X
+		// BG0 scroll X
 		case 0:
 			spr.bg_scrlx[0] = data & 0x3ff;
 			render->BGScrl(0, spr.bg_scrlx[0], spr.bg_scrly[0]);
 			break;
 
-		// BG0�X�N���[��Y
+		// BG0 scroll Y
 		case 1:
 			spr.bg_scrly[0] = data & 0x3ff;
 			render->BGScrl(0, spr.bg_scrlx[0], spr.bg_scrly[0]);
 			break;
 
-		// BG1�X�N���[��X
+		// BG1 scroll X
 		case 2:
 			spr.bg_scrlx[1] = data & 0x3ff;
 			render->BGScrl(1, spr.bg_scrlx[1], spr.bg_scrly[1]);
 			break;
 
-		// BG1�X�N���[��Y
+		// BG1 scroll Y
 		case 3:
 			spr.bg_scrly[1] = data & 0x3ff;
 			render->BGScrl(1, spr.bg_scrlx[1], spr.bg_scrly[1]);
 			break;
 
-		// BG�R���g���[��
+		// BG control
 		case 4:
 #if defined(SPRITE_LOG)
-			LOG1(Log::Normal, "BG�R���g���[�� $%04X", data);
+			LOG1(Log::Normal, "BG control $%04X", data);
 #endif	// SPRITE_LOG
 			// bit17 : DISP
 			if (data & 0x0200) {
@@ -562,7 +562,7 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			// BG1
 			spr.bg_area[1] = (data >> 4) & 0x03;
 			if (spr.bg_area[1] & 2) {
-				LOG1(Log::Warning, "BG1�f�[�^�G���A����` $%02X", spr.bg_area[1]);
+				LOG1(Log::Warning, "BG1 data area undefined $%02X", spr.bg_area[1]);
 			}
 			if (spr.bg_area[1] & 1) {
 				render->BGCtrl(3, TRUE);
@@ -581,7 +581,7 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			// BG0
 			spr.bg_area[0] = (data >> 1) & 0x03;
 			if (spr.bg_area[0] & 2) {
-				LOG1(Log::Warning, "BG0�f�[�^�G���A����` $%02X", spr.bg_area[0]);
+				LOG1(Log::Warning, "BG0 data area undefined $%02X", spr.bg_area[0]);
 			}
 			if (spr.bg_area[0] & 1) {
 				render->BGCtrl(2, TRUE);
@@ -598,22 +598,22 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			render->BGCtrl(0, spr.bg_on[0]);
 			break;
 
-		// �����g�[�^��
+		// Horizontal total
 		case 5:
 			spr.h_total = data & 0xff;
 			break;
 
-		// �����\��
+		// Horizontal display
 		case 6:
 			spr.h_disp = data & 0x3f;
 			break;
 
-		// �����\��
+		// Vertical display
 		case 7:
 			spr.v_disp = data & 0xff;
 			break;
 
-		// ��ʃ��[�h
+		// Display mode
 		case 8:
 			spr.h_res = data & 0x03;
 			spr.v_res = (data >> 2) & 0x03;
@@ -626,7 +626,7 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 				spr.lowres = TRUE;
 			}
 
-			// BG�T�C�Y
+			// BG size
 			if (spr.h_res == 0) {
 				// 8x8
 				spr.bg_size = FALSE;
@@ -637,11 +637,11 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			}
 			render->BGCtrl(4, spr.bg_size);
 			if (spr.h_res & 2) {
-				LOG1(Log::Warning, "BG/�X�v���C�g H-Res����` %d", spr.h_res);
+				LOG1(Log::Warning, "BG/Sprite H-Resolution undefined %d", spr.h_res);
 			}
 			break;
 
-		// ���̑�
+		// Others
 		default:
 			ASSERT(FALSE);
 			break;
@@ -650,40 +650,40 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	�����f�[�^�擾
+//	Get sprite data
 //
 //---------------------------------------------------------------------------
 void FASTCALL Sprite::GetSprite(sprite_t *buffer) const
 {
-	ASSERT(this);
-	ASSERT(buffer);
+ASSERT(this);
+ASSERT(buffer);
 
-	// �������[�N���R�s�[
+	// Structure copy
 	*buffer = spr;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�������G���A�擾
+//	Get BG area
 //
 //---------------------------------------------------------------------------
 const BYTE* FASTCALL Sprite::GetMem() const
 {
-	ASSERT(this);
-	ASSERT(spr.mem);
+ASSERT(this);
+ASSERT(spr.mem);
 
 	return spr.mem;
 }
 
 //---------------------------------------------------------------------------
 //
-//	PCG�G���A�擾
+//	Get PCG area
 //
 //---------------------------------------------------------------------------
 const BYTE* FASTCALL Sprite::GetPCG() const
 {
-	ASSERT(this);
-	ASSERT(spr.pcg);
+ASSERT(this);
+ASSERT(spr.pcg);
 
 	return spr.pcg;
 }

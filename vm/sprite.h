@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2004 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ スプライト(CYNTHIA) ]
+//	Copyright (C) 2001-2004 Takashi Tanaka (ytanaka@ipc-tokai.or.jp)
+//	[ Sprite (CYNTHIA) ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,85 +14,85 @@
 
 //===========================================================================
 //
-//	スプライト
+//	Sprite
 //
 //===========================================================================
 class Sprite : public MemDevice
 {
 public:
-	// 内部データ定義
+	// Sprite data structure
 	typedef struct {
-		BOOL connect;					// アクセス可能フラグ
-		BOOL disp;						// 表示(ウェイト)フラグ
-		BYTE *mem;						// スプライトメモリ
-		BYTE *pcg;						// スプライトPCGエリア
+		BOOL connect;					// Access enable flag
+		BOOL disp;						// Display (wait) flag
+		BYTE *mem;						// Sprite memory area
+		BYTE *pcg;						// Sprite PCG area
 
-		BOOL bg_on[2];					// BG表示ON
-		DWORD bg_area[2];				// BGデータエリア
-		DWORD bg_scrlx[2];				// BGスクロールX
-		DWORD bg_scrly[2];				// BGスクロールY
-		BOOL bg_size;					// BGサイズ
+		BOOL bg_on[2];					// BG display ON
+		DWORD bg_area[2];				// BG data area
+		DWORD bg_scrlx[2];				// BG scroll X
+		DWORD bg_scrly[2];				// BG scroll Y
+		BOOL bg_size;					// BG size
 
-		DWORD h_total;					// 水平トータル期間
-		DWORD h_disp;					// 水平表示期間
-		DWORD v_disp;					// 垂直表示期間
-		BOOL lowres;					// 15kHzモード
-		DWORD h_res;					// 水平解像度
-		DWORD v_res;					// 垂直解像度
+		DWORD h_total;					// Horizontal total
+		DWORD h_disp;					// Horizontal display
+		DWORD v_disp;					// Vertical display
+		BOOL lowres;					// 15kHz mode
+		DWORD h_res;					// Horizontal resolution
+		DWORD v_res;					// Vertical resolution
 	} sprite_t;
 
 public:
-	// 基本ファンクション
+	// Constructor
 	Sprite(VM *p);
-										// コンストラクタ
+										// Initialization
 	BOOL FASTCALL Init();
-										// 初期化
+										// Cleanup
 	void FASTCALL Cleanup();
-										// クリーンアップ
+										// Reset
 	void FASTCALL Reset();
-										// リセット
+										// Save
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// セーブ
+										// Load
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// ロード
-	void FASTCALL ApplyCfg(const Config *config);
-										// 設定適用
+										// Apply configuration
+	void FASTCALL ApplyCfg(const Config* config);
 
-	// メモリデバイス
+
+	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// バイト読み込み
+										// Byte read
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// ワード読み込み
+										// Word read
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// 読み込みのみ
+										// Read only
 
-	// 外部API
+	// External API
 	void FASTCALL Connect(BOOL con)		{ spr.connect = con; }
-										// 接続
+										// Connect
 	BOOL FASTCALL IsConnect() const		{ return spr.connect; }
-										// 接続状況取得
+										// Connect status get
 	BOOL FASTCALL IsDisplay() const		{ return spr.disp; }
-										// 表示状況取得
+										// Display status get
 	void FASTCALL GetSprite(sprite_t *buffer) const;
-										// 内部データ取得
+										// Sprite data get
 	const BYTE* FASTCALL GetMem() const;
-										// メモリエリア取得
+										// BG area get
 	const BYTE* FASTCALL GetPCG() const;
-										// PCGエリア取得 
+										// PCG area get
 
 private:
 	void FASTCALL Control(DWORD addr, DWORD ctrl);
-										// コントロール
+										// Control
 	sprite_t spr;
-										// 内部データ
+										// Sprite data
 	Render *render;
-										// レンダラ
+										// Render
 	BYTE *sprite;
-										// スプライトRAM(64KB)
+										// Sprite RAM (64KB)
 };
 
 #endif	// sprite_h

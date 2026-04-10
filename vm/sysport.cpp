@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ システムポート ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ System Port ]
 //
 //---------------------------------------------------------------------------
 
@@ -23,30 +23,30 @@
 
 //===========================================================================
 //
-//	システムポート
+//	System Port
 //
 //===========================================================================
 //#define SYSPORT_LOG
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 SysPort::SysPort(VM *p) : MemDevice(p)
 {
-	// デバイスIDを初期化
+	// Device ID initialization
 	dev.id = MAKEID('S', 'Y', 'S', 'P');
 	dev.desc = "System (MESSIAH)";
 
-	// 開始アドレス、終了アドレス
+	// Start address, end address
 	memdev.first = 0xe8e000;
 	memdev.last = 0xe8ffff;
 
-	// すべてクリア
+	// All clear
 	memset(&sysport, 0, sizeof(sysport));
 
-	// オブジェクト
+	// Objects
 	memory = NULL;
 	sram = NULL;
 	keyboard = NULL;
@@ -56,72 +56,72 @@ SysPort::SysPort(VM *p) : MemDevice(p)
 
 //---------------------------------------------------------------------------
 //
-//	初期化
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SysPort::Init()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// 基本クラス
+	// Base class
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// メモリ取得
-	ASSERT(!memory);
+	// Memory get
+ASSERT(!memory);
 	memory = (Memory*)vm->SearchDevice(MAKEID('M', 'E', 'M', ' '));
-	ASSERT(memory);
+ASSERT(memory);
 
-	// SRAM取得
-	ASSERT(!sram);
+	// SRAM get
+ASSERT(!sram);
 	sram = (SRAM*)vm->SearchDevice(MAKEID('S', 'R', 'A', 'M'));
-	ASSERT(sram);
+ASSERT(sram);
 
-	// キーボード取得
-	ASSERT(!keyboard);
+	// Keyboard get
+ASSERT(!keyboard);
 	keyboard = (Keyboard*)vm->SearchDevice(MAKEID('K', 'E', 'Y', 'B'));
-	ASSERT(keyboard);
+ASSERT(keyboard);
 
-	// CRTC取得
-	ASSERT(!crtc);
+	// CRTC get
+ASSERT(!crtc);
 	crtc = (CRTC*)vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
-	ASSERT(crtc);
+ASSERT(crtc);
 
-	// レンダラ取得
-	ASSERT(!render);
+	// Render get
+ASSERT(!render);
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	ASSERT(render);
+ASSERT(render);
 
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	クリーンアップ
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::Cleanup()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// 基本クラスへ
+	// Base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	リセット
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::Reset()
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "リセット");
+	LOG0(Log::Normal, "Reset");
 
-	// 設定値をリセット
+	// Setting value reset
 	sysport.contrast = 0;
 	sysport.scope_3d = 0;
 	sysport.image_unit = 0;
@@ -131,26 +131,26 @@ void FASTCALL SysPort::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	セーブ
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SysPort::Save(Fileio *fio, int /*ver*/)
 {
 	size_t sz;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(fio);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "セーブ");
+	LOG0(Log::Normal, "Save");
 
-	// サイズをセーブ
+	// Size save
 	sz = sizeof(sysport_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// 実体をセーブ
+	// Data save
 	if (!fio->Write(&sysport, (int)sz)) {
 		return FALSE;
 	}
@@ -160,20 +160,20 @@ BOOL FASTCALL SysPort::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	ロード
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL SysPort::Load(Fileio *fio, int /*ver*/)
 {
 	size_t sz;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(fio);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "ロード");
+	LOG0(Log::Normal, "Load");
 
-	// サイズをロード、照合
+	// Size load, compare
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -181,12 +181,12 @@ BOOL FASTCALL SysPort::Load(Fileio *fio, int /*ver*/)
 		return FALSE;
 	}
 
-	// 実体をロード
+	// Data load
 	if (!fio->Read(&sysport, (int)sz)) {
 		return FALSE;
 	}
 
-	// レンダラへ通知
+	// Render notify
 	render->SetContrast(sysport.contrast);
 
 	return TRUE;
@@ -194,91 +194,91 @@ BOOL FASTCALL SysPort::Load(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	設定適用
+//	Apply configuration
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::ApplyCfg(const Config* /*config*/)
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "設定適用");
+	LOG0(Log::Normal, "Apply configuration");
 }
 
 #if !defined(NDEBUG)
 //---------------------------------------------------------------------------
 //
-//	診断
+//	Assert
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::AssertDiag() const
 {
-	// 基本クラス
+	// Base class
 	MemDevice::AssertDiag();
 
-	ASSERT(this);
-	ASSERT(GetID() == MAKEID('S', 'Y', 'S', 'P'));
-	ASSERT(memdev.first == 0xe8e000);
-	ASSERT(memdev.last == 0xe8ffff);
-	ASSERT(memory);
-	ASSERT(memory->GetID() == MAKEID('M', 'E', 'M', ' '));
-	ASSERT(sram);
-	ASSERT(sram->GetID() == MAKEID('S', 'R', 'A', 'M'));
-	ASSERT(keyboard);
-	ASSERT(keyboard->GetID() == MAKEID('K', 'E', 'Y', 'B'));
-	ASSERT(crtc);
-	ASSERT(crtc->GetID() == MAKEID('C', 'R', 'T', 'C'));
-	ASSERT(sysport.contrast <= 0x0f);
-	ASSERT(sysport.scope_3d <= 0x03);
-	ASSERT(sysport.image_unit <= 0x1f);
-	ASSERT(sysport.power_count <= 0x03);
-	ASSERT(sysport.ver_count <= 0x03);
+ASSERT(this);
+ASSERT(GetID() == MAKEID('S', 'Y', 'S', 'P'));
+ASSERT(memdev.first == 0xe8e000);
+ASSERT(memdev.last == 0xe8ffff);
+ASSERT(memory);
+ASSERT(memory->GetID() == MAKEID('M', 'E', 'M', ' '));
+ASSERT(sram);
+ASSERT(sram->GetID() == MAKEID('S', 'R', 'A', 'M'));
+ASSERT(keyboard);
+ASSERT(keyboard->GetID() == MAKEID('K', 'E', 'Y', 'B'));
+ASSERT(crtc);
+ASSERT(crtc->GetID() == MAKEID('C', 'R', 'T', 'C'));
+ASSERT(sysport.contrast <= 0x0f);
+ASSERT(sysport.scope_3d <= 0x03);
+ASSERT(sysport.image_unit <= 0x1f);
+ASSERT(sysport.power_count <= 0x03);
+ASSERT(sysport.ver_count <= 0x03);
 }
 #endif	// NDEBUG
 
 //---------------------------------------------------------------------------
 //
-//	バイト読み込み
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL SysPort::ReadByte(DWORD addr)
 {
 	DWORD data;
 
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT_DIAG();
 
-	// 4bitのみデコード
+	// 4bit only decode
 	addr &= 0x0f;
 
-	// 奇数バイトのみデコード
+	// Even byte only decode
 	if ((addr & 1) == 0) {
 		return 0xff;
 	}
 	addr >>= 1;
 
-	// ウェイト
+	// Wait
 	scheduler->Wait(1);
 
 	switch (addr) {
-		// コントラスト
+		// Contrast
 		case 0:
 			data = 0xf0;
 			data |= sysport.contrast;
 			return data;
 
-		// ディスプレイ制御信号・3Dスコープ
+		// Baud rate receive and 3D shift
 		case 1:
 			data = 0xf8;
 			data |= sysport.scope_3d;
 			return data;
 
-		// イメージユニット制御
+		// Image unit select
 		case 2:
 			return 0xff;
 
-		// キー制御・NMIリセット・HRL
+		// Keyboard connect ENMI reset and HRL
 		case 3:
 			data = 0xf0;
 			if (keyboard->IsConnect()) {
@@ -289,24 +289,24 @@ DWORD FASTCALL SysPort::ReadByte(DWORD addr)
 			}
 			return data;
 
-		// ROM/DRAMウェイト制御(X68030)
+		// ROM/DRAM wait (X68030)
 		case 4:
 			return 0xff;
 
-		// MPU種別・クロック
+		// MPU mode selection
 		case 5:
 			switch (memory->GetMemType()) {
-				// 初代/ACE/EXPERT/PRO/SUPER
+				// SASI/SCSI
 				case Memory::SASI:
 				case Memory::SCSIInt:
 				case Memory::SCSIExt:
-					// 未定義ポートであったので、0xffが読み出せる
+					// SASI port so return 0xff
 					return 0xff;
 
 				// XVI/Compact
 				case Memory::XVI:
 				case Memory::Compact:
-					// 逆転の発想で、下位4bitを動作クロックに割り当てた
+					// Real machine, so 4bit assign to clock
 					// 1111:10MHz
 					// 1110:16MHz
 					// 1101:20MHz
@@ -318,116 +318,116 @@ DWORD FASTCALL SysPort::ReadByte(DWORD addr)
 
 				// X68030
 				case Memory::X68030:
-					// さらに、上位4bitをMPU種別に割り当てた
+					// Real, so 4bit assign to MPU mode
 					// 1111:68000
 					// 1110:68020
 					// 1101:68030
 					// 1100:68040
 					return 0xdc;
 
-				// その他(ありえない)
+				// Others (invalid)
 				default:
 					ASSERT(FALSE);
 					break;
 			}
 			return 0xff;
 
-		// SRAM書き込み許可
+		// SRAM write enable
 		case 6:
-			// バージョン情報(XM6拡張)
+			// Version register (XM6 original)
 			if (sysport.ver_count != 0) {
 				return GetVR();
 			}
 			return 0xff;
 
-		// POWER制御
+		// POWER monitor
 		case 7:
 			return 0xff;
 	}
 
-	// 通常、ここにはこない
-	ASSERT(FALSE);
+	// Normal, other does not exist
+ASSERT(FALSE);
 	return 0xff;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ワード読み込み
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL SysPort::ReadWord(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT_DIAG();
 
 	return (0xff00 | ReadByte(addr + 1));
 }
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT(data < 0x100);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(data < 0x100);
+ASSERT_DIAG();
 
-	// 4bitのみデコード
+	// 4bit only decode
 	addr &= 0x0f;
 
-	// 奇数バイトのみデコード
+	// Even byte only decode
 	if ((addr & 1) == 0) {
 		return;
 	}
 	addr >>= 1;
 
-	// ウェイト
+	// Wait
 	scheduler->Wait(1);
 
 	switch (addr) {
-		// コントラスト
+		// Contrast
 		case 0:
 			data &= 0x0f;
 			if (sysport.contrast != data) {
 #if defined(SYSPORT_LOG)
-				LOG1(Log::Normal, "コントラスト設定 %d", data);
+				LOG1(Log::Normal, "Contrast setting %d", data);
 #endif	// SYSPORT_LOG
 
-				// 違っていたら設定
+				// Changed setting
 				sysport.contrast = data;
 				render->SetContrast(data);
 			}
 			return;
 
-		// ディスプレイ制御信号・3Dスコープ
+		// Baud rate and 3D shift
 		case 1:
 			data &= 3;
 			if (sysport.scope_3d != data) {
 #if defined(SYSPORT_LOG)
-				LOG1(Log::Normal, "3Dスコープ設定 %d", data);
+				LOG1(Log::Normal, "3D shift setting %d", data);
 #endif	// SYSPORT_LOG
 
-				// 違っていたら設定
+				// Changed setting
 				sysport.scope_3d = data;
 			}
 			return;
 
-		// キー制御・NMIリセット・HRL
+		// Keyboard connect ENMI reset and HRL
 		case 3:
 			if (data & 0x08) {
 #if defined(SYSPORT_LOG)
-				LOG0(Log::Normal, "キーボード許可");
+				LOG0(Log::Normal, "Keyboard connect");
 #endif	// SYSPORT_LOG
 				keyboard->SendWait(FALSE);
 			}
 			else {
 #if defined(SYSPORT_LOG)
-				LOG0(Log::Normal, "キーボード禁止");
+				LOG0(Log::Normal, "Keyboard disconnect");
 #endif	// SYSPORT_LOG
 				keyboard->SendWait(TRUE);
 			}
@@ -445,31 +445,31 @@ void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// イメージユニット制御
+		// Image unit select
 		case 4:
 #if defined(SYSPORT_LOG)
-			LOG1(Log::Normal, "イメージユニット制御 $%02X", data & 0x1f);
+			LOG1(Log::Normal, "Image unit select $%02X", data & 0x1f);
 #endif	// SYSPORT_LOG
 			sysport.image_unit = data & 0x1f;
 			return;
 
-		// ROM/DRAMウェイト制御
+		// ROM/DRAM wait
 		case 5:
 			return;
 
-		// SRAM書き込み許可
+		// SRAM write enable
 		case 6:
-			// SRAM書き込み
+			// SRAM write enable
 			if (data == 0x31) {
 				sram->WriteEnable(TRUE);
 			}
 			else {
 				sram->WriteEnable(FALSE);
 			}
-			// バージョン判別(XM6拡張)
+			// Version register (XM6 original)
 			if (data == 'X') {
 #if defined(SYSPORT_LOG)
-				LOG0(Log::Normal, "XM6バージョン取得開始");
+				LOG0(Log::Normal, "XM6 version read start");
 #endif	// SYSPORT_LOG
 				sysport.ver_count = 1;
 			}
@@ -478,11 +478,11 @@ void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// 電源制御(00, 0F, 0Fの順で落ちる)
+		// Power save (00, 0F, 0F sequence to finish)
 		case 7:
 			data &= 0x0f;
 			switch (sysport.power_count) {
-				// アクセスなし
+				// Access none
 				case 0:
 					if (data == 0x00) {
 						sysport.power_count++;
@@ -492,7 +492,7 @@ void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 					}
 					break;
 
-				// 00あり
+				// 00 received
 				case 1:
 					if (data == 0x0f) {
 						sysport.power_count++;
@@ -502,11 +502,11 @@ void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 					}
 					break;
 
-				// 00,0Fあり
+				// 00,0F received
 				case 2:
 					if (data == 0x0f) {
 						sysport.power_count++;
-						LOG0(Log::Normal, "電源OFF");
+						LOG0(Log::Normal, "Power OFF");
 						vm->SetPower(FALSE);
 					}
 					else {
@@ -524,66 +524,66 @@ void FASTCALL SysPort::WriteByte(DWORD addr, DWORD data)
 			break;
 	}
 
-	// 通常、ここにはこない
-	ASSERT(FALSE);
+	// Normal, other does not exist
+ASSERT(FALSE);
 	return;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL SysPort::WriteWord(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT(data < 0x10000);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT(data < 0x10000);
+ASSERT_DIAG();
 
 	WriteByte(addr + 1, (BYTE)data);
 }
 
 //---------------------------------------------------------------------------
 //
-//	読み込みのみ
+//	Read only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL SysPort::ReadOnly(DWORD addr) const
 {
 	DWORD data;
 
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT_DIAG();
 
-	// 4bitのみデコード
+	// 4bit only decode
 	addr &= 0x0f;
 
-	// 奇数バイトのみデコード
+	// Even byte only decode
 	if ((addr & 1) == 0) {
 		return 0xff;
 	}
 
 	switch (addr) {
-		// コントラスト
+		// Contrast
 		case 0:
 			data = 0xf0;
 			data |= sysport.contrast;
 			return data;
 
-		// ディスプレイ制御信号・3Dスコープ
+		// Baud rate receive and 3D shift
 		case 1:
 			data = 0xf8;
 			data |= sysport.scope_3d;
 			return data;
 
-		// イメージユニット制御
+		// Image unit select
 		case 2:
 			return 0xff;
 
-		// キー制御・NMIリセット・HRL
+		// Keyboard connect ENMI reset and HRL
 		case 3:
 			data = 0xf0;
 			if (keyboard->IsConnect()) {
@@ -594,24 +594,24 @@ DWORD FASTCALL SysPort::ReadOnly(DWORD addr) const
 			}
 			return data;
 
-		// ROM/DRAMウェイト制御(X68030)
+		// ROM/DRAM wait (X68030)
 		case 4:
 			return 0xff;
 
-		// MPU種別・クロック
+		// MPU mode selection
 		case 5:
 			switch (memory->GetMemType()) {
-				// 初代/ACE/EXPERT/PRO/SUPER
+				// SASI/SCSI
 				case Memory::SASI:
 				case Memory::SCSIInt:
 				case Memory::SCSIExt:
-					// 未定義ポートであったので、0xffが読み出せる
+					// SASI port so return 0xff
 					return 0xff;
 
 				// XVI/Compact
 				case Memory::XVI:
 				case Memory::Compact:
-					// 逆転の発想で、下位4bitを動作クロックに割り当てた
+					// Real machine, so 4bit assign to clock
 					// 1111:10MHz
 					// 1110:16MHz
 					// 1101:20MHz
@@ -623,25 +623,25 @@ DWORD FASTCALL SysPort::ReadOnly(DWORD addr) const
 
 				// X68030
 				case Memory::X68030:
-					// さらに、上位4bitをMPU種別に割り当てた
+					// Real, so 4bit assign to MPU mode
 					// 1111:68000
 					// 1110:68020
 					// 1101:68030
 					// 1100:68040
 					return 0xdc;
 
-				// その他(ありえない)
+				// Others (invalid)
 				default:
 					ASSERT(FALSE);
 					break;
 			}
 			return 0xff;
 
-		// SRAM書き込み許可
+		// SRAM write enable
 		case 6:
 			return 0xff;
 
-		// POWER制御
+		// POWER monitor
 		case 7:
 			return 0xff;
 	}
@@ -651,7 +651,7 @@ DWORD FASTCALL SysPort::ReadOnly(DWORD addr) const
 
 //---------------------------------------------------------------------------
 //
-//	バージョン情報読み出し
+//	Version register read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL SysPort::GetVR()
@@ -659,28 +659,28 @@ DWORD FASTCALL SysPort::GetVR()
 	DWORD major;
 	DWORD minor;
 
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
 	switch (sysport.ver_count) {
-		// 'X'書き込み直後
+		// 'X' write enable
 		case 1:
 			sysport.ver_count++;
 			return '6';
 
-		// メジャーバージョン
+		// Major version
 		case 2:
 			vm->GetVersion(major, minor);
 			sysport.ver_count++;
 			return major;
 
-		// マイナーバージョン
+		// Minor version
 		case 3:
 			vm->GetVersion(major, minor);
 			sysport.ver_count = 0;
 			return minor;
 
-		// その他(ありえない)
+		// Others (invalid)
 		default:
 			ASSERT(FALSE);
 			break;

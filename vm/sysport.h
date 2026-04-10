@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ システムポート ]
+//	Copyright (C) 2001-2006 Takashi Tanaka (ytanaka@ipc-tokai.or.jp)
+//	[ System Port ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,69 +14,68 @@
 
 //===========================================================================
 //
-//	システムポート
+//	System Port
 //
 //===========================================================================
 class SysPort : public MemDevice
 {
 public:
-	// 内部データ定義
+	// System data structure
 	typedef struct {
-		DWORD contrast;					// コントラスト
-		DWORD scope_3d;					// 3Dスコープ制御
-		DWORD image_unit;				// イメージユニット制御
-		DWORD power_count;				// 電源制御カウンタ
-		DWORD ver_count;				// バージョン管理カウンタ
+		DWORD contrast;					// Contrast
+		DWORD scope_3d;					// 3D shift
+		DWORD image_unit;				// Image unit select
+		DWORD power_count;				// Power save counter
+		DWORD ver_count;				// Version control counter
 	} sysport_t;
 
 public:
-	// 基本ファンクション
+	// Constructor
 	SysPort(VM *p);
-										// コンストラクタ
+										// Initialization
 	BOOL FASTCALL Init();
-										// 初期化
+										// Cleanup
 	void FASTCALL Cleanup();
-										// クリーンアップ
+										// Reset
 	void FASTCALL Reset();
-										// リセット
+										// Save
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// セーブ
+										// Load
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// ロード
+										// Apply configuration
 	void FASTCALL ApplyCfg(const Config *config);
-										// 設定適用
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// 診断
+										// Assert
 #endif	// NDEBUG
 
-	// メモリデバイス
+	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// バイト読み込み
+										// Byte read
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// ワード読み込み
+										// Word read
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// 読み込みのみ
+										// Read only
 
 private:
 	DWORD FASTCALL GetVR();
-										// バージョンレジスタ読み出し
+										// Version register read
 	sysport_t sysport;
-										// 内部ワーク
+										// Structure
 	Memory *memory;
-										// メモリ
+										// Memory
 	SRAM *sram;
-										// スタティックRAM
+										// SRAM
 	Keyboard *keyboard;
-										// キーボード
+										// Keyboard
 	CRTC *crtc;
 										// CRTC
 	Render *render;
-										// レンダラ
+										// Render
 };
 
 #endif	// sysport_h
