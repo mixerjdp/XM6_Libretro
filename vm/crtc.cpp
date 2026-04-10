@@ -64,6 +64,8 @@ CRTC::CRTC(VM *p) : MemDevice(p)
 	render = NULL;
 	printer = NULL;
 	memset(&px68k_state_view, 0, sizeof(px68k_state_view));
+	px68k_fastclrline = 0;
+	px68k_fastclrmask = 0;
 }
 
 //---------------------------------------------------------------------------
@@ -159,6 +161,8 @@ void FASTCALL CRTC::Reset()
 	crtc.raster_copy = FALSE;
 	crtc.raster_exec = FALSE;
 	crtc.fast_clr = 0;
+	px68k_fastclrline = 0;
+	px68k_fastclrmask = 0;
 
 	// Horizontal
 	crtc.h_sync = 31745;
@@ -302,6 +306,13 @@ BOOL FASTCALL CRTC::Load(Fileio *fio, int ver)
 	NotifyGrpScrollChanged(1, crtc.grp_scrlx[1], crtc.grp_scrly[1]);
 	NotifyGrpScrollChanged(2, crtc.grp_scrlx[2], crtc.grp_scrly[2]);
 	NotifyGrpScrollChanged(3, crtc.grp_scrlx[3], crtc.grp_scrly[3]);
+	if (UsePx68kRasterTiming() && (crtc.fast_clr != 0)) {
+		BeginPx68kFastClear();
+	}
+	else {
+		px68k_fastclrline = 0;
+		px68k_fastclrmask = 0;
+	}
 	NotifyScreenChanged();
 	NotifyPx68kStateView();
 	SyncPx68kState();
@@ -320,6 +331,21 @@ void FASTCALL CRTC::ApplyCfg(const Config *config)
 	ASSERT(config);
 	g_alt_raster_timing = config->alt_raster;
 	LOG0(Log::Normal, "Apply configuration");
+}
+
+BOOL FASTCALL CRTC::IsPx68kVideoEngine() const
+{
+	return (render && (render->GetCompositorMode() == Render::compositor_fast));
+}
+
+BOOL FASTCALL CRTC::UseAlternateRasterTiming() const
+{
+	return (!IsPx68kVideoEngine() && g_alt_raster_timing);
+}
+
+BOOL FASTCALL CRTC::UsePx68kRasterTiming() const
+{
+	return IsPx68kVideoEngine();
 }
 
 //---------------------------------------------------------------------------
@@ -412,10 +438,10 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 		crtc.reg[addr] = (BYTE)data;
 		NotifyMarkAllTextDirty();
 
-		// GVRAM address display
-		if (addr == 0x29) {
-			if (render && (render->GetCompositorMode() == Render::compositor_original)) {
-				musashi_flush_timeslice();
+	// GVRAM address display
+	if (addr == 0x29) {
+		if (render && (render->GetCompositorMode() == Render::compositor_original)) {
+			musashi_flush_timeslice();
 			}
 			if (data & 0x10) {
 				crtc.tmem = TRUE;
@@ -458,7 +484,14 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 			// Recalc at next timing
 			crtc.changed = TRUE;
-			NotifyGeometryChanged();
+			if ((addr == 4) || (addr == 5) || (addr == 6) || (addr == 7) ||
+				(addr == 12) || (addr == 13) || (addr == 14) || (addr == 15) ||
+				(addr == 40)) {
+				NotifyGeometryChanged();
+			}
+			if ((addr == 8) || (addr == 9)) {
+				NotifyTimingChanged();
+			}
 			SyncPx68kState();
 			return;
 		}
@@ -470,7 +503,7 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			}
 			crtc.raster_int = (crtc.reg[19] << 8) + crtc.reg[18];
 			crtc.raster_int &= 0x3ff;
-			if (g_alt_raster_timing) {
+			if (UseAlternateRasterTiming() || UsePx68kRasterTiming()) {
 				CheckRaster();
 			}
 			SyncPx68kState();
@@ -545,6 +578,12 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 		// Odd byte is raster copy, fast clear reset
 		if (data & 0x08) {
 			crtc.raster_copy = TRUE;
+			if (UsePx68kRasterTiming()) {
+				TextVRAM();
+				tvram->RasterCopy();
+				crtc.raster_copy = FALSE;
+				crtc.raster_exec = FALSE;
+			}
 		}
 		else {
 			crtc.raster_copy = FALSE;
@@ -556,6 +595,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 				LOG0(Log::Normal, "Graphic clear fast enable");
 #endif	// CRTC_LOG
 				crtc.fast_clr = 1;
+				if (UsePx68kRasterTiming()) {
+					BeginPx68kFastClear();
+				}
 			}
 #if defined(CRTC_LOG)
 			else {
@@ -702,7 +744,11 @@ void FASTCALL CRTC::HSync()
 	mfp->SetGPIP(7, 1);
 
 	// Raster interrupt (Alt timing)
-	if (g_alt_raster_timing) {
+	if (UsePx68kRasterTiming()) {
+		crtc.raster_count = (crtc.v_scan >= 0) ? (crtc.v_scan & 0x3ff) : 0;
+		CheckRaster();
+	}
+	else if (UseAlternateRasterTiming()) {
 		CheckRaster();
 	}
 
@@ -724,7 +770,10 @@ void FASTCALL CRTC::HSync()
 		gvram->FastClr(&crtc);
 	}
 
-	if (g_alt_raster_timing) {
+	if (UsePx68kRasterTiming()) {
+		// PX68k timing follows the scanline index directly.
+	}
+	else if (UseAlternateRasterTiming()) {
 		crtc.raster_count++;
 	}
 	SyncPx68kState();
@@ -743,7 +792,10 @@ void FASTCALL CRTC::HDisp()
 	ASSERT(this);
 
 	// Raster interrupt (Original timing)
-	if (!g_alt_raster_timing) {
+	if (UsePx68kRasterTiming()) {
+		// PX68k timing checks on the scanline transition in HSync.
+	}
+	else if (!UseAlternateRasterTiming()) {
 		CheckRaster();
 		crtc.raster_count++;
 	}
@@ -959,6 +1011,8 @@ void FASTCALL CRTC::VBlank()
 			LOG0(Log::Normal, "Graphic clear end");
 #endif	// CRTC_LOG
 			crtc.fast_clr = 0;
+			px68k_fastclrline = 0;
+			px68k_fastclrmask = 0;
 		}
 
 		// Renderer display end
@@ -1110,12 +1164,7 @@ void FASTCALL CRTC::CheckRaster()
 {
 	BOOL hit;
 
-	if (g_alt_raster_timing) {
-		hit = (crtc.raster_count == crtc.raster_int);
-	}
-	else {
-		hit = (crtc.raster_count == crtc.raster_int);
-	}
+	hit = (((DWORD)crtc.raster_count & 0x3ff) == ((DWORD)crtc.raster_int & 0x3ff));
 
 	if (hit) {
 		// Match
@@ -1167,6 +1216,11 @@ void FASTCALL CRTC::TextVRAM()
 	// Raster copy
 	tvram->SetCopyRaster((DWORD)crtc.reg[45], (DWORD)crtc.reg[44],
 						(DWORD)(crtc.reg[42] & 0x0f));
+	if (UsePx68kRasterTiming() && crtc.raster_copy && crtc.raster_exec) {
+		tvram->RasterCopy();
+		crtc.raster_copy = FALSE;
+		crtc.raster_exec = FALSE;
+	}
 	NotifyMarkAllTextDirty();
 	SyncPx68kState();
 }
@@ -1357,18 +1411,15 @@ void FASTCALL CRTC::SyncPx68kState()
 	else {
 		px68k_state_view.state.textdotx = 0;
 	}
-	px68k_state_view.state.textdoty = (DWORD)(((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) & 1023);
-	if (px68k_state_view.state.textdoty > (((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]) & 1023)) {
-		px68k_state_view.state.textdoty -= (((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]) & 1023);
+	px68k_state_view.state.textdoty = 0;
+	if (((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) > ((crtc.reg[0x0c] << 8) | crtc.reg[0x0d])) {
+		px68k_state_view.state.textdoty = (DWORD)(((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) - ((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]));
 		if ((crtc.reg[0x29] & 0x14) == 0x10) {
 			px68k_state_view.state.textdoty >>= 1;
 		}
 		else if ((crtc.reg[0x29] & 0x14) == 0x04) {
 			px68k_state_view.state.textdoty <<= 1;
 		}
-	}
-	else {
-		px68k_state_view.state.textdoty = 0;
 	}
 	px68k_state_view.state.vstart = (WORD)(((WORD)crtc.reg[0x0c] << 8) | crtc.reg[0x0d]);
 	px68k_state_view.state.vend = (WORD)(((WORD)crtc.reg[0x0e] << 8) | crtc.reg[0x0f]);
@@ -1394,8 +1445,8 @@ void FASTCALL CRTC::SyncPx68kState()
 	}
 	px68k_state_view.state.fastclr = (BYTE)crtc.fast_clr;
 	px68k_state_view.state.dispscan = (BYTE)((crtc.v_scan >= 0) ? crtc.v_scan : 0);
-	px68k_state_view.state.fastclrline = (DWORD)((crtc.fast_clr != 0) ? crtc.v_scan : 0);
-	px68k_state_view.state.fastclrmask = kFastClearMask[crtc.reg[0x2b] & 15];
+	px68k_state_view.state.fastclrline = (DWORD)px68k_fastclrline;
+	px68k_state_view.state.fastclrmask = px68k_fastclrmask;
 	px68k_state_view.state.intline = (WORD)crtc.raster_int;
 	if ((crtc.reg[0x29] & 0x14) == 0x10) {
 		px68k_state_view.state.vstep = 1;
@@ -1429,4 +1480,10 @@ void FASTCALL CRTC::SyncPx68kState()
 	px68k_state_view.timing_view.crtc_fastclr = px68k_state_view.state.fastclr;
 
 	NotifyPx68kStateView();
+}
+
+void FASTCALL CRTC::BeginPx68kFastClear()
+{
+	px68k_fastclrline = (DWORD)((crtc.v_scan >= 0) ? crtc.v_scan : 0);
+	px68k_fastclrmask = kFastClearMask[crtc.reg[0x2b] & 15];
 }

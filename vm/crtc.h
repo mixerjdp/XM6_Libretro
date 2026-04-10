@@ -141,10 +141,18 @@ private:
 										// 0.5us to ns conversion
 	void FASTCALL CheckRaster();
 										// Raster interrupt check
+	BOOL FASTCALL IsPx68kVideoEngine() const;
+										// PX68k video backend active
+	BOOL FASTCALL UseAlternateRasterTiming() const;
+										// Alternate raster timing policy by backend
+	BOOL FASTCALL UsePx68kRasterTiming() const;
+										// PX68k raster timing policy
 	void FASTCALL TextVRAM();
 										// Text VRAM setup
 	void FASTCALL SyncPx68kState();
 										// Keep PX68k-compatible state mirror updated
+	void FASTCALL BeginPx68kFastClear();
+										// Capture px68k fast clear start state
 	const Px68kCrtcHost* FASTCALL GetPx68kHost() const;
 										// Get active PX68k host bridge
 	void FASTCALL NotifyPx68kStateView();
@@ -189,6 +197,10 @@ private:
 										// Printer
 	Px68kCrtcStateView px68k_state_view;
 										// PX68k-compatible state mirror
+	DWORD px68k_fastclrline;
+										// PX68k fast clear start line
+	WORD px68k_fastclrmask;
+										// PX68k fast clear mask
 };
 
 #endif	// crtc_h
