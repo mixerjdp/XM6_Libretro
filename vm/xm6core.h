@@ -151,6 +151,7 @@ XM6CORE_API int XM6CORE_CALL xm6_set_fm_volume(XM6Handle handle, int volume);
 XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_volume(XM6Handle handle, int volume);
 XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_interp(XM6Handle handle, int enabled);
 XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_level(XM6Handle handle, int level);
+XM6CORE_API int XM6CORE_CALL xm6_set_bass_enhancer_level(XM6Handle handle, int level);
 XM6CORE_API int XM6CORE_CALL xm6_set_reverb_level(XM6Handle handle, int level);
 XM6CORE_API int XM6CORE_CALL xm6_set_eq_bass2_level(XM6Handle handle, int level);
 XM6CORE_API int XM6CORE_CALL xm6_set_eq_bass_level(XM6Handle handle, int level);

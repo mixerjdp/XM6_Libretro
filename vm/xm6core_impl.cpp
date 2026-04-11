@@ -91,6 +91,7 @@ struct XM6Context {
 	unsigned int audio_buf_frames;
 	BOOL surround_enabled;
 	int hq_adpcm_level;
+	int bass_enhancer_level;
 	int reverb_level;
 	int eq_sub_bass_level;
 	int eq_bass_level;
@@ -107,6 +108,16 @@ struct XM6Context {
 	int hq_adpcm_hp_prev_output;
 	double hq_adpcm_envelope;
 	int hq_adpcm_last_level;
+	double bass_enhancer_low_pass;
+	double bass_enhancer_envelope;
+	double bass_enhancer_period_samples;
+	double bass_enhancer_sub_phase;
+	double bass_enhancer_sub_phase2;
+	double bass_enhancer_hp_prev_input;
+	double bass_enhancer_hp_prev_output;
+	double bass_enhancer_prev_low_pass;
+	int bass_enhancer_samples_since_zero_cross;
+	int bass_enhancer_last_level;
 	int x68sound_adpcm_prev_in_l;
 	int x68sound_adpcm_prev_in_r;
 	int x68sound_adpcm_prev2_in_l;
@@ -183,12 +194,14 @@ static inline bool ctx_valid(XM6Context *ctx)
 
 static void reset_px68k_audio_state(XM6Context *ctx);
 static void reset_hq_adpcm_state(XM6Context *ctx);
+static void reset_bass_enhancer_state(XM6Context *ctx);
 static void reset_x68sound_adpcm_state(XM6Context *ctx);
 static void apply_x68sound_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames);
 static void reset_reverb_state(XM6Context *ctx);
 static void reset_eq_state(XM6Context *ctx);
 static void sync_x68sound_state(XM6Context *ctx);
 static void apply_reverb_fx(XM6Context *ctx, short *buffer, unsigned int frames);
+static void apply_bass_enhancer_fx(XM6Context *ctx, short *buffer, unsigned int frames);
 static void configure_eq_filters(XM6Context *ctx, unsigned int sample_rate);
 static void apply_eq_fx(XM6Context *ctx, short *buffer, unsigned int frames);
 static bool ensure_px68k_audio_ring(XM6Context *ctx);
@@ -745,6 +758,25 @@ static void reset_hq_adpcm_state(XM6Context *ctx)
 	ctx->hq_adpcm_hp_prev_output = 0;
 	ctx->hq_adpcm_envelope = 0.0;
 	ctx->hq_adpcm_last_level = -1;
+	reset_bass_enhancer_state(ctx);
+}
+
+static void reset_bass_enhancer_state(XM6Context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	ctx->bass_enhancer_low_pass = 0.0;
+	ctx->bass_enhancer_envelope = 0.0;
+	ctx->bass_enhancer_period_samples = 0.0;
+	ctx->bass_enhancer_sub_phase = 0.0;
+	ctx->bass_enhancer_sub_phase2 = 0.0;
+	ctx->bass_enhancer_hp_prev_input = 0.0;
+	ctx->bass_enhancer_hp_prev_output = 0.0;
+	ctx->bass_enhancer_prev_low_pass = 0.0;
+	ctx->bass_enhancer_samples_since_zero_cross = 0;
+	ctx->bass_enhancer_last_level = -1;
 }
 
 static void reset_x68sound_adpcm_state(XM6Context *ctx)
@@ -813,6 +845,112 @@ static void apply_hq_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frame
 	ctx->hq_adpcm_hp_prev_input = static_cast<int>(prev_input);
 	ctx->hq_adpcm_hp_prev_output = static_cast<int>(prev_output);
 	ctx->hq_adpcm_envelope = envelope;
+}
+
+static void apply_bass_enhancer_fx(XM6Context *ctx, short *buffer, unsigned int frames)
+{
+	if (!ctx || !buffer || frames == 0 || ctx->bass_enhancer_level <= 0 || ctx->audio_rate == 0) {
+		return;
+	}
+
+	const int level = (ctx->bass_enhancer_level > 100) ? 100 : ctx->bass_enhancer_level;
+	if (ctx->bass_enhancer_last_level != level) {
+		reset_bass_enhancer_state(ctx);
+		ctx->bass_enhancer_last_level = level;
+	}
+
+	double low_pass = ctx->bass_enhancer_low_pass;
+	double envelope = ctx->bass_enhancer_envelope;
+	double period_samples = ctx->bass_enhancer_period_samples;
+	double sub_phase = ctx->bass_enhancer_sub_phase;
+	double sub_phase2 = ctx->bass_enhancer_sub_phase2;
+	double hp_prev_input = ctx->bass_enhancer_hp_prev_input;
+	double hp_prev_output = ctx->bass_enhancer_hp_prev_output;
+	double prev_low_pass = ctx->bass_enhancer_prev_low_pass;
+	int samples_since_zero_cross = ctx->bass_enhancer_samples_since_zero_cross;
+
+	const double sample_rate = static_cast<double>(ctx->audio_rate);
+	const double alpha = exp((-2.0 * 3.14159265358979323846 * 140.0) / sample_rate);
+	const double gain = static_cast<double>(level) / 100.0;
+	const double hp_rc = 1.0 / (2.0 * 3.14159265358979323846 * 25.0);
+	const double hp_dt = 1.0 / sample_rate;
+	const double hp_alpha = hp_rc / (hp_rc + hp_dt);
+
+	short *samples = buffer;
+	for (unsigned int i = 0; i < frames; i++) {
+		const double dry_l = static_cast<double>(samples[0]) / 32768.0;
+		const double dry_r = static_cast<double>(samples[1]) / 32768.0;
+		const double input = (dry_l + dry_r) * 0.5;
+
+		low_pass = (low_pass * alpha) + (input * (1.0 - alpha));
+		envelope = (envelope * 0.985) + (fabs(low_pass) * 0.015);
+
+		samples_since_zero_cross++;
+		if ((prev_low_pass <= 0.0) && (0.0 < low_pass)) {
+			const int min_period = (sample_rate > 120.0) ? (int)(sample_rate / 120.0) : 1;
+			if (min_period <= samples_since_zero_cross) {
+				const double detected_period = (double)samples_since_zero_cross;
+				if (period_samples <= 0.0) {
+					period_samples = detected_period;
+				} else {
+					period_samples = (period_samples * 0.85) + (detected_period * 0.15);
+				}
+			}
+			samples_since_zero_cross = 0;
+		}
+		prev_low_pass = low_pass;
+
+		double sub1 = 0.0;
+		double sub2 = 0.0;
+		if (period_samples > 0.0) {
+			const double sub_period1 = (period_samples * 2.0 < 4.0) ? 4.0 : (period_samples * 2.0);
+			const double sub_period2 = (period_samples * 4.0 < 8.0) ? 8.0 : (period_samples * 4.0);
+
+			sub_phase += (2.0 * 3.14159265358979323846) / sub_period1;
+			if (sub_phase > (2.0 * 3.14159265358979323846)) {
+				sub_phase -= (2.0 * 3.14159265358979323846);
+			}
+
+			sub_phase2 += (2.0 * 3.14159265358979323846) / sub_period2;
+			if (sub_phase2 > (2.0 * 3.14159265358979323846)) {
+				sub_phase2 -= (2.0 * 3.14159265358979323846);
+			}
+
+			sub1 = sin(sub_phase);
+			sub2 = sin(sub_phase2);
+		}
+
+		const double raw_enhanced =
+			((low_pass * 0.55) +
+			 (sub1 * envelope * 1.26) +
+			 (sub2 * envelope * 1.578)) * gain * 2.25;
+
+		double enhanced = hp_alpha * (hp_prev_output + raw_enhanced - hp_prev_input);
+		hp_prev_input = raw_enhanced;
+		hp_prev_output = enhanced;
+
+		if (enhanced > 1.0) {
+			enhanced = 1.0 + ((enhanced - 1.0) * 0.4);
+		} else if (enhanced < -1.0) {
+			enhanced = -1.0 + ((enhanced + 1.0) * 0.4);
+		}
+
+		const double out_l = dry_l + enhanced;
+		const double out_r = dry_r + enhanced;
+		samples[0] = saturate_s16((int)(out_l * 32768.0));
+		samples[1] = saturate_s16((int)(out_r * 32768.0));
+		samples += 2;
+	}
+
+	ctx->bass_enhancer_low_pass = low_pass;
+	ctx->bass_enhancer_envelope = envelope;
+	ctx->bass_enhancer_period_samples = period_samples;
+	ctx->bass_enhancer_sub_phase = sub_phase;
+	ctx->bass_enhancer_sub_phase2 = sub_phase2;
+	ctx->bass_enhancer_hp_prev_input = hp_prev_input;
+	ctx->bass_enhancer_hp_prev_output = hp_prev_output;
+	ctx->bass_enhancer_prev_low_pass = prev_low_pass;
+	ctx->bass_enhancer_samples_since_zero_cross = samples_since_zero_cross;
 }
 
 static void emit_messagef(XM6Context *ctx, const char *format, ...)
@@ -1393,6 +1531,7 @@ XM6CORE_API XM6Handle XM6CORE_CALL xm6_create(void)
 	ctx->ppi       = (PPI*)ctx->vm->SearchDevice(MAKEID('P', 'P', 'I', ' '));
 	ctx->audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
 	ctx->reverb_level = 0;
+	ctx->bass_enhancer_level = 0;
 	ctx->eq_sub_bass_level = 50;
 	ctx->eq_bass_level = 50;
 	ctx->eq_mid_level = 50;
@@ -2643,6 +2782,7 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 	}
 
 	const bool use_reverb = (ctx->reverb_level > 0);
+	const bool use_bass_enhancer = (ctx->bass_enhancer_level > 0);
 	const bool use_eq = !(ctx->eq_sub_bass_level == 50 &&
 	                      ctx->eq_bass_level == 50 &&
 	                      ctx->eq_mid_level == 50 &&
@@ -2677,6 +2817,9 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 			out_interleaved_stereo[(i * 2) + 1] = saturate_s16(ctx->px68k_last_out_r);
 		}
 
+		if (use_bass_enhancer) {
+			apply_bass_enhancer_fx(ctx, out_interleaved_stereo, frames);
+		}
 		if (use_reverb) {
 			apply_reverb_fx(ctx, out_interleaved_stereo, frames);
 		}
@@ -2740,6 +2883,9 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 		if (ctx->surround_enabled) {
 			apply_surround_fx_s16(ctx, out_interleaved_stereo, frames);
+		}
+		if (use_bass_enhancer) {
+			apply_bass_enhancer_fx(ctx, out_interleaved_stereo, frames);
 		}
 		if (use_reverb) {
 			apply_reverb_fx(ctx, out_interleaved_stereo, frames);
@@ -2814,6 +2960,9 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		out_interleaved_stereo[(i * 2) + 1] = saturate_s16(mixed_r);
 	}
 
+	if (use_bass_enhancer) {
+		apply_bass_enhancer_fx(ctx, out_interleaved_stereo, frames);
+	}
 	if (use_reverb) {
 		apply_reverb_fx(ctx, out_interleaved_stereo, frames);
 	}

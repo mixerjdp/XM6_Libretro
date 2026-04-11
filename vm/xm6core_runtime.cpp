@@ -31,6 +31,7 @@ struct XM6ContextRuntimeShim {
 	unsigned int audio_buf_frames;
 	BOOL surround_enabled;
 	int hq_adpcm_level;
+	int bass_enhancer_level;
 	int reverb_level;
 	int eq_sub_bass_level;
 	int eq_bass_level;
@@ -294,6 +295,27 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_hq_adpcm_level(XM6Handle handle,
 	}
 
 	ctx->hq_adpcm_level = level;
+	return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_bass_enhancer_level(XM6Handle handle, int level)
+{
+	if (!handle) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+	if (!ctx->vm) {
+		return XM6CORE_ERR_INVALID_HANDLE;
+	}
+
+	if (level < 0) {
+		level = 0;
+	} else if (level > 100) {
+		level = 100;
+	}
+
+	ctx->bass_enhancer_level = level;
 	return XM6CORE_OK;
 }
 
