@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ テキストVRAM ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Text VRAM ]
 //
 //---------------------------------------------------------------------------
 
@@ -19,25 +19,25 @@
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ
+//	Text VRAM handler
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAMHandler::TVRAMHandler(Render *rend, BYTE *mem)
 {
-	ASSERT(rend);
-	ASSERT(mem);
+ASSERT(rend);
+ASSERT(mem);
 
-	// 記憶
+	// Reference
 	render = rend;
 	tvram = mem;
 
-	// ワークを初期化
+	// Structure initialization
 	multi = 0;
 	mask = 0;
 	rev = 0;
@@ -47,13 +47,13 @@ TVRAMHandler::TVRAMHandler(Render *rend, BYTE *mem)
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(ノーマル)
+//	Text VRAM handler (normal)
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAMNormal::TVRAMNormal(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
@@ -62,14 +62,14 @@ TVRAMNormal::TVRAMNormal(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMNormal::WriteByte(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x100);
 
 	if (tvram[addr] != data) {
 		tvram[addr] = (BYTE)data;
@@ -79,14 +79,14 @@ void FASTCALL TVRAMNormal::WriteByte(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMNormal::WriteWord(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x10000);
 
 	if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
 		*(WORD*)(&tvram[addr]) = (WORD)data;
@@ -96,13 +96,13 @@ void FASTCALL TVRAMNormal::WriteWord(DWORD addr, DWORD data)
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(マスク)
+//	Text VRAM handler (mask)
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAMMask::TVRAMMask(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
@@ -111,34 +111,34 @@ TVRAMMask::TVRAMMask(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMMask::WriteByte(DWORD addr, DWORD data)
 {
 	DWORD mem;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x100);
 
-	// maskで1は変更しない、0は変更する
+	// mask is 1 does not change, 0 changes
 	mem = (DWORD)tvram[addr];
 	if (addr & 1) {
-		// 68000では偶数アドレス→b15-b8を使う
+		// At 68000, odd address uses b15-b8
 		mem &= maskh;
 		data &= revh;
 	}
 	else {
-		// 68000では奇数アドレス→b7-b0を使う
+		// At 68000, even address uses b7-b0
 		mem &= mask;
 		data &= rev;
 	}
 
-	// 合成
+	// Merge
 	data |= mem;
 
-	// 書き込み
+	// Write
 	if (tvram[addr] != data) {
 		tvram[addr] = (BYTE)data;
 		render->TextMem(addr);
@@ -147,23 +147,23 @@ void FASTCALL TVRAMMask::WriteByte(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMMask::WriteWord(DWORD addr, DWORD data)
 {
 	DWORD mem;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x10000);
 
-	// maskで1は変更しない、0は変更する
+	// mask is 1 does not change, 0 changes
 	mem = (DWORD)*(WORD*)(&tvram[addr]);
 	mem &= mask;
 	data &= rev;
 
-	// 合成
+	// Merge
 	data |= mem;
 
 	if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
@@ -174,13 +174,13 @@ void FASTCALL TVRAMMask::WriteWord(DWORD addr, DWORD data)
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(マルチ)
+//	Text VRAM handler (multi)
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAMMulti::TVRAMMulti(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
@@ -189,22 +189,22 @@ TVRAMMulti::TVRAMMulti(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 {
 	BOOL flag;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x100);
 
-	// 初期化
+	// Address mask
 	addr &= 0x1ffff;
 	flag = FALSE;
 
-	// プレーンB
+	// Plane B
 	if (multi & 1) {
 		if (tvram[addr] != data) {
 			tvram[addr] = (BYTE)data;
@@ -213,7 +213,7 @@ void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンG
+	// Plane G
 	if (multi & 2) {
 		if (tvram[addr] != data) {
 			tvram[addr] = (BYTE)data;
@@ -222,7 +222,7 @@ void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンR
+	// Plane R
 	if (multi & 4) {
 		if (tvram[addr] != data) {
 			tvram[addr] = (BYTE)data;
@@ -231,7 +231,7 @@ void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンI
+	// Plane I
 	if (multi & 8) {
 		if (tvram[addr] != data) {
 			tvram[addr] = (BYTE)data;
@@ -239,7 +239,7 @@ void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 		}
 	}
 
-	// レンダラへ通知
+	// Render notify
 	if (flag) {
 		render->TextMem(addr);
 	}
@@ -247,22 +247,22 @@ void FASTCALL TVRAMMulti::WriteByte(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 {
 	BOOL flag;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x10000);
 
-	// 初期化
+	// Address mask
 	addr &= 0x1fffe;
 	flag = FALSE;
 
-	// プレーンB
+	// Plane B
 	if (multi & 1) {
 		if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
 			*(WORD*)(&tvram[addr]) = (WORD)data;
@@ -271,7 +271,7 @@ void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンG
+	// Plane G
 	if (multi & 2) {
 		if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
 			*(WORD*)(&tvram[addr]) = (WORD)data;
@@ -280,7 +280,7 @@ void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンR
+	// Plane R
 	if (multi & 4) {
 		if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
 			*(WORD*)(&tvram[addr]) = (WORD)data;
@@ -289,7 +289,7 @@ void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンI
+	// Plane I
 	if (multi & 8) {
 		if ((DWORD)*(WORD*)(&tvram[addr]) != data) {
 			*(WORD*)(&tvram[addr]) = (WORD)data;
@@ -297,7 +297,7 @@ void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 		}
 	}
 
-	// レンダラへ通知
+	// Render notify
 	if (flag) {
 		render->TextMem(addr);
 	}
@@ -305,13 +305,13 @@ void FASTCALL TVRAMMulti::WriteWord(DWORD addr, DWORD data)
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(両方)
+//	Text VRAM handler (both)
 //
 //===========================================================================
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAMBoth::TVRAMBoth(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
@@ -320,7 +320,7 @@ TVRAMBoth::TVRAMBoth(Render *rend, BYTE *mem) : TVRAMHandler(rend, mem)
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
@@ -329,11 +329,11 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 	DWORD maskhl;
 	BOOL flag;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x100);
 
-	// 偶数・奇数の判定は先に済ませる
+	// Odd/even difference is same as mask
 	if (addr & 1) {
 		maskhl = maskh;
 		data &= revh;
@@ -343,11 +343,11 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 		data &= rev;
 	}
 
-	// 初期化
+	// Address mask
 	addr &= 0x1ffff;
 	flag = FALSE;
 
-	// プレーンB
+	// Plane B
 	if (multi & 1) {
 		mem = (DWORD)tvram[addr];
 		mem &= maskhl;
@@ -360,7 +360,7 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンG
+	// Plane G
 	if (multi & 2) {
 		mem = (DWORD)tvram[addr];
 		mem &= maskhl;
@@ -373,7 +373,7 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンR
+	// Plane R
 	if (multi & 4) {
 		mem = (DWORD)tvram[addr];
 		mem &= maskhl;
@@ -386,7 +386,7 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンI
+	// Plane I
 	if (multi & 8) {
 		mem = (DWORD)tvram[addr];
 		mem &= maskhl;
@@ -398,7 +398,7 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 		}
 	}
 
-	// レンダラへ通知
+	// Render notify
 	if (flag) {
 		render->TextMem(addr);
 	}
@@ -406,7 +406,7 @@ void FASTCALL TVRAMBoth::WriteByte(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
@@ -414,18 +414,18 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 	DWORD mem;
 	BOOL flag;
 
-	ASSERT(this);
-	ASSERT(addr < 0x80000);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT(addr < 0x80000);
+ASSERT(data < 0x10000);
 
-	// データは先にマスクしておく
+	// Data is masked
 	data &= rev;
 
-	// 初期化
+	// Address mask
 	addr &= 0x1fffe;
 	flag = FALSE;
 
-	// プレーンB
+	// Plane B
 	if (multi & 1) {
 		mem = (DWORD)*(WORD*)(&tvram[addr]);
 		mem &= mask;
@@ -438,7 +438,7 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンG
+	// Plane G
 	if (multi & 2) {
 		mem = (DWORD)*(WORD*)(&tvram[addr]);
 		mem &= mask;
@@ -451,7 +451,7 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンR
+	// Plane R
 	if (multi & 4) {
 		mem = (DWORD)*(WORD*)(&tvram[addr]);
 		mem &= mask;
@@ -464,7 +464,7 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 	}
 	addr += 0x20000;
 
-	// プレーンI
+	// Plane I
 	if (multi & 8) {
 		mem = (DWORD)*(WORD*)(&tvram[addr]);
 		mem &= mask;
@@ -476,7 +476,7 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 		}
 	}
 
-	// レンダラへ通知
+	// Render notify
 	if (flag) {
 		render->TextMem(addr);
 	}
@@ -484,56 +484,56 @@ void FASTCALL TVRAMBoth::WriteWord(DWORD addr, DWORD data)
 
 //===========================================================================
 //
-//	テキストVRAM
+//	Text VRAM
 //
 //===========================================================================
 //#define TVRAM_LOG
 
 //---------------------------------------------------------------------------
 //
-//	コンストラクタ
+//	Constructor
 //
 //---------------------------------------------------------------------------
 TVRAM::TVRAM(VM *p) : MemDevice(p)
 {
-	// デバイスIDを初期化
+	// Device ID initialization
 	dev.id = MAKEID('T', 'V', 'R', 'M');
 	dev.desc = "Text VRAM";
 
-	// 開始アドレス、終了アドレス
+	// Start address, end address
 	memdev.first = 0xe00000;
 	memdev.last = 0xe7ffff;
 
-	// ハンドラ
+	// Handlers
 	normal = NULL;
 	mask = NULL;
 	multi = NULL;
 	both = NULL;
 
-	// その他
+	// Others
 	render = NULL;
 	tvram = NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	初期化
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL TVRAM::Init()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// 基本クラス
+	// Base class
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// レンダラ取得
+	// Render get
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	ASSERT(render);
+ASSERT(render);
 
-	// メモリ確保、クリア
+	// Memory allocation, initialization
 	try {
 		tvram = new BYTE[ 0x80000 ];
 	}
@@ -545,14 +545,14 @@ BOOL FASTCALL TVRAM::Init()
 	}
 	memset(tvram, 0, 0x80000);
 
-	// ハンドラ作成
+	// Handler create
 	normal = new TVRAMNormal(render, tvram);
 	mask = new TVRAMMask(render, tvram);
 	multi = new TVRAMMulti(render, tvram);
 	both = new TVRAMBoth(render, tvram);
 	handler = normal;
 
-	// ワークエリア初期化
+	// Structure initialization
 	tvdata.multi = 0;
 	tvdata.mask = 0;
 	tvdata.rev = 0xffffffff;
@@ -568,14 +568,14 @@ BOOL FASTCALL TVRAM::Init()
 
 //---------------------------------------------------------------------------
 //
-//	クリーンアップ
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::Cleanup()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// ハンドラ削除
+	// Handler delete
 	if (both) {
 		delete both;
 		both = NULL;
@@ -594,27 +594,27 @@ void FASTCALL TVRAM::Cleanup()
 	}
 	handler = NULL;
 
-	// メモリ解放
+	// Memory release
 	delete[] tvram;
 	tvram = NULL;
 
-	// 基本クラスへ
+	// Base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	リセット
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::Reset()
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "リセット");
+	LOG0(Log::Normal, "Reset");
 
-	// ワークエリア初期化
+	// Structure initialization
 	tvdata.multi = 0;
 	tvdata.mask = 0;
 	tvdata.rev = 0xffffffff;
@@ -624,46 +624,46 @@ void FASTCALL TVRAM::Reset()
 	tvdata.dst = 0;
 	tvdata.plane = 0;
 
-	// アクセスカウント0
+	// Access count 0
 	tvcount = 0;
 
-	// ハンドラはノーマル
+	// Handler is normal
 	handler = normal;
-	ASSERT(handler);
+ASSERT(handler);
 }
 
 //---------------------------------------------------------------------------
 //
-//	セーブ
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL TVRAM::Save(Fileio *fio, int /*ver*/)
 {
 	size_t sz;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(fio);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "セーブ");
+	LOG0(Log::Normal, "Save");
 
-	// メモリをセーブ
+	// Memory save
 	if (!fio->Write(tvram, 0x80000)) {
 		return FALSE;
 	}
 
-	// サイズをセーブ
+	// Size save
 	sz = sizeof(tvram_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// 実体をセーブ
+	// Data save
 	if (!fio->Write(&tvdata, (int)sz)) {
 		return FALSE;
 	}
 
-	// tvcount(version2.04で追加)
+	// tvcount (added in version 2.04)
 	if (!fio->Write(&tvcount, sizeof(tvcount))) {
 		return FALSE;
 	}
@@ -673,7 +673,7 @@ BOOL FASTCALL TVRAM::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	ロード
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
@@ -681,19 +681,19 @@ BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
 	size_t sz;
 	DWORD addr;
 
-	ASSERT(this);
-	ASSERT(fio);
-	ASSERT(ver >= 0x0200);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(fio);
+ASSERT(ver >= 0x0200);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "ロード");
+	LOG0(Log::Normal, "Load");
 
-	// メモリをロード
+	// Memory load
 	if (!fio->Read(tvram, 0x80000)) {
 		return FALSE;
 	}
 
-	// サイズをロード、照合
+	// Size load, compare
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -701,12 +701,12 @@ BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// 実体をロード
+	// Data load
 	if (!fio->Read(&tvdata, (int)sz)) {
 		return FALSE;
 	}
 
-	// tvcount(version2.04で追加)
+	// tvcount (added in version 2.04)
 	tvcount = 0;
 	if (ver >= 0x0204) {
 		if (!fio->Read(&tvcount, sizeof(tvcount))) {
@@ -714,12 +714,12 @@ BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
 		}
 	}
 
-	// レンダラへ通知
+	// Render notify
 	for(addr=0; addr<0x20000; addr++) {
 		render->TextMem(addr);
 	}
 
-	// ハンドラ設定
+	// Handler setting
 	SelectHandler();
 
 	return TRUE;
@@ -727,259 +727,259 @@ BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	設定適用
+//	Apply configuration
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::ApplyCfg(const Config* /*config*/)
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
-	LOG0(Log::Normal, "設定適用");
+	LOG0(Log::Normal, "Apply configuration");
 }
 
 #if !defined(NDEBUG)
 //---------------------------------------------------------------------------
 //
-//	診断
+//	Assert
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::AssertDiag() const
 {
-	// 基本クラス
+	// Base class
 	MemDevice::AssertDiag();
 
-	ASSERT(this);
-	ASSERT(GetID() == MAKEID('T', 'V', 'R', 'M'));
-	ASSERT(memdev.first == 0xe00000);
-	ASSERT(memdev.last == 0xe7ffff);
-	ASSERT(tvram);
-	ASSERT(normal);
-	ASSERT(mask);
-	ASSERT(multi);
-	ASSERT(both);
-	ASSERT(handler);
-	ASSERT(tvdata.multi <= 0x1f);
-	ASSERT(tvdata.mask < 0x10000);
-	ASSERT(tvdata.rev >= 0xffff0000);
-	ASSERT(tvdata.maskh < 0x100);
-	ASSERT(tvdata.revh >= 0xffffff00);
-	ASSERT(tvdata.src < 0x100);
-	ASSERT(tvdata.dst < 0x100);
-	ASSERT(tvdata.plane <= 0x0f);
+ASSERT(this);
+ASSERT(GetID() == MAKEID('T', 'V', 'R', 'M'));
+ASSERT(memdev.first == 0xe00000);
+ASSERT(memdev.last == 0xe7ffff);
+ASSERT(tvram);
+ASSERT(normal);
+ASSERT(mask);
+ASSERT(multi);
+ASSERT(both);
+ASSERT(handler);
+ASSERT(tvdata.multi <= 0x1f);
+ASSERT(tvdata.mask < 0x10000);
+ASSERT(tvdata.rev >= 0xffff0000);
+ASSERT(tvdata.maskh < 0x100);
+ASSERT(tvdata.revh >= 0xffffff00);
+ASSERT(tvdata.src < 0x100);
+ASSERT(tvdata.dst < 0x100);
+ASSERT(tvdata.plane <= 0x0f);
 }
 #endif	// NDEBUG
 
 //---------------------------------------------------------------------------
 //
-//	バイト読み込み
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL TVRAM::ReadByte(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT_DIAG();
 
-	// ウェイト(0.75ウェイト)
+	// Wait (0.75 wait)
 	tvcount++;
 	if (tvcount & 3) {
 		scheduler->Wait(1);
 	}
 
-	// エンディアンを反転させて読み込み
+	// Endian convert and read
 	return (DWORD)tvram[(addr & 0x7ffff) ^ 1];
 }
 
 //---------------------------------------------------------------------------
 //
-//	ワード読み込み
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL TVRAM::ReadWord(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT_DIAG();
 
-	// ウェイト(0.75ウェイト)
+	// Wait (0.75 wait)
 	tvcount++;
 	if (tvcount & 3) {
 		scheduler->Wait(1);
 	}
 
-	// 読み込み
+	// Read
 	return (DWORD)*(WORD *)(&tvram[addr & 0x7ffff]);
 }
 
 //---------------------------------------------------------------------------
 //
-//	バイト書き込み
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::WriteByte(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT(data < 0x100);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(data < 0x100);
+ASSERT_DIAG();
 
-	// ウェイト(0.75ウェイト)
+	// Wait (0.75 wait)
 	tvcount++;
 	if (tvcount & 3) {
 		scheduler->Wait(1);
 	}
 
-	// 書き込み
+	// Write
 	handler->WriteByte((addr & 0x7ffff) ^ 1, data);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ワード書き込み
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::WriteWord(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT(data < 0x10000);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT(data < 0x10000);
+ASSERT_DIAG();
 
-	// ウェイト(0.75ウェイト)
+	// Wait (0.75 wait)
 	tvcount++;
 	if (tvcount & 3) {
 		scheduler->Wait(1);
 	}
 
-	// 書き込み
+	// Write
 	handler->WriteWord(addr & 0x7ffff, data);
 }
 
 //---------------------------------------------------------------------------
 //
-//	読み込みのみ
+//	Read only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL TVRAM::ReadOnly(DWORD addr) const
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT_DIAG();
 
-	// エンディアンを反転させて読み込み
+	// Endian convert and read
 	return tvram[(addr & 0x7ffff) ^ 1];
 }
 
 //---------------------------------------------------------------------------
 //
-//	TVRAM取得
+//	Get TVRAM
 //
 //---------------------------------------------------------------------------
 const BYTE* FASTCALL TVRAM::GetTVRAM() const
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
 	return tvram;
 }
 
 //---------------------------------------------------------------------------
 //
-//	同時書き込み設定
+//	Multi access setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::SetMulti(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data <= 0x1f);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(data <= 0x1f);
+ASSERT_DIAG();
 
-	// 一致チェック
+	// Equal check
 	if (tvdata.multi == data) {
 		return;
 	}
 
-	// データをコピー
+	// Data copy
 	tvdata.multi = data;
 
-	// ハンドラ選択
+	// Handler select
 	SelectHandler();
 }
 
 //---------------------------------------------------------------------------
 //
-//	アクセスマスク設定
+//	Access mask setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::SetMask(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data < 0x10000);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(data < 0x10000);
+ASSERT_DIAG();
 
-	// 一致チェック
+	// Equal check
 	if (tvdata.mask == data) {
 		return;
 	}
 
-	// データをコピー
+	// Data copy
 	tvdata.mask = data;
 	tvdata.rev = ~tvdata.mask;
 	tvdata.maskh = tvdata.mask >> 8;
 	tvdata.revh = ~tvdata.maskh;
 
-	// ハンドラ選択
+	// Handler select
 	SelectHandler();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ハンドラ選択
+//	Handler select
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::SelectHandler()
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 
-	// 通常
+	// Normal
 	handler = normal;
 
-	// マルチチェック
+	// Multi check
 	if (tvdata.multi != 0) {
-		// マスクと併用か
+		// Mask and multi
 		if (tvdata.mask != 0) {
-			// 両方
+			// Both
 			handler = both;
 
-			// マルチデータを設定
+			// Multi data set
 			handler->multi = tvdata.multi;
 
-			// マスクデータを設定
+			// Mask data set
 			handler->mask = tvdata.mask;
 			handler->rev = tvdata.rev;
 			handler->maskh = tvdata.maskh;
 			handler->revh = tvdata.revh;
 		}
 		else {
-			// マルチ
+			// Multi
 			handler = multi;
 
-			// マルチデータを設定
+			// Multi data set
 			handler->multi = tvdata.multi;
 		}
 		return;
 	}
 
-	// マスクチェック
+	// Mask check
 	if (tvdata.mask != 0) {
-		// マスク
+		// Mask
 		handler = mask;
 
-		// マスクデータを設定
+		// Mask data set
 		handler->mask = tvdata.mask;
 		handler->rev = tvdata.rev;
 		handler->maskh = tvdata.maskh;
@@ -989,16 +989,16 @@ void FASTCALL TVRAM::SelectHandler()
 
 //---------------------------------------------------------------------------
 //
-//	ラスタコピー設定
+//	Raster copy setting
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::SetCopyRaster(DWORD src, DWORD dst, DWORD plane)
 {
-	ASSERT(this);
-	ASSERT(src < 0x100);
-	ASSERT(dst < 0x100);
-	ASSERT(plane <= 0x0f);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT(src < 0x100);
+ASSERT(dst < 0x100);
+ASSERT(plane <= 0x0f);
+ASSERT_DIAG();
 
 	tvdata.src = src;
 	tvdata.dst = dst;
@@ -1007,13 +1007,13 @@ void FASTCALL TVRAM::SetCopyRaster(DWORD src, DWORD dst, DWORD plane)
 
 //---------------------------------------------------------------------------
 //
-//	ラスタコピー実行
+//	Raster copy execution
 //
 //---------------------------------------------------------------------------
 void FASTCALL TVRAM::RasterCopy()
 {
-	ASSERT(this);
-	ASSERT_DIAG();
+ASSERT(this);
+ASSERT_DIAG();
 #if 0
 	DWORD *p;
 	DWORD *q;
@@ -1021,12 +1021,12 @@ void FASTCALL TVRAM::RasterCopy()
 	int j;
 	DWORD plane;
 
-	// ポインタ、プレーンを初期化
+	// Pointer, virtual address convert
 	p = (DWORD*)&tvram[tvdata.src << 9];
 	q = (DWORD*)&tvram[tvdata.dst << 9];
 	plane = tvdata.plane;
 
-	// プレーン別に行う
+	// Plane copy
 	for (i=0; i<4; i++) {
 		if (plane & 1) {
 			for (j=7; j>=0; j--) {
@@ -1057,14 +1057,14 @@ void FASTCALL TVRAM::RasterCopy()
 		plane >>= 1;
 	}
 
-	// レンダラに、コピー先のエリアが置き換わったことを通知
+	// To render, copy area notify to start rendering when finished
 	plane = tvdata.dst;
 	plane <<= 9;
 	for (i=0; i<0x200; i++) {
 		render->TextMem(plane + i);
 	}
 #endif
-	// レンダラを呼ぶ
+	// Render notify
 	if (tvdata.plane != 0) {
 		render->TextCopy(tvdata.src, tvdata.dst, tvdata.plane);
 	}

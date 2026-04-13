@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ テキストVRAM ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Text VRAM ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,188 +14,187 @@
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ
+//	Text VRAM handler
 //
 //===========================================================================
 class TVRAMHandler
 {
 public:
 	TVRAMHandler(Render *rend, BYTE *mem);
-										// コンストラクタ
+										// Constructor
 	virtual void FASTCALL WriteByte(DWORD addr, DWORD data) = 0;
-										// バイト書き込み
+										// Byte write
 	virtual void FASTCALL WriteWord(DWORD addr, DWORD data) = 0;
-										// ワード書き込み
+										// Word write
 
-	// TVRAMワークのコピー
+	// TVRAM structure copy
 	DWORD multi;
-										// 同時アクセス(bit0-bit3)
+										// Multi access (bit0-bit3)
 	DWORD mask;
-										// アクセスマスク(1で変更なし)
+										// Access mask (1 does not change)
 	DWORD rev;
-										// アクセスマスク反転
+										// Access mask reverse
 	DWORD maskh;
-										// アクセスマスク上位バイト
+										// Access mask high byte
 	DWORD revh;
-										// アクセスマスク上位反転
+										// Access mask high reverse
 
 protected:
 	Render *render;
-										// レンダラ
+										// Render
 	BYTE *tvram;
-										// テキストVRAM
+										// Text VRAM
 };
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(通常)
+//	Text VRAM handler (normal)
 //
 //===========================================================================
 class TVRAMNormal : public TVRAMHandler
 {
 public:
 	TVRAMNormal(Render *rend, BYTE *mem);
-										// コンストラクタ
+										// Constructor
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 };
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(マスク)
+//	Text VRAM handler (mask)
 //
 //===========================================================================
 class TVRAMMask : public TVRAMHandler
 {
 public:
 	TVRAMMask(Render *rend, BYTE *mem);
-										// コンストラクタ
+										// Constructor
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 };
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(マルチ)
+//	Text VRAM handler (multi)
 //
 //===========================================================================
 class TVRAMMulti : public TVRAMHandler
 {
 public:
 	TVRAMMulti(Render *rend, BYTE *mem);
-										// コンストラクタ
+										// Constructor
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 };
 
 //===========================================================================
 //
-//	テキストVRAMハンドラ(マスク＋マルチ)
+//	Text VRAM handler (mask+multi)
 //
 //===========================================================================
 class TVRAMBoth : public TVRAMHandler
 {
 public:
 	TVRAMBoth(Render *rend, BYTE *mem);
-										// コンストラクタ
+										// Constructor
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 };
 
 //===========================================================================
 //
-//	テキストVRAM
+//	Text VRAM
 //
 //===========================================================================
 class TVRAM : public MemDevice
 {
 public:
-	// 内部データ定義
+	// TVRAM data structure
 	typedef struct {
-		DWORD multi;					// 同時アクセス(bit0-bit3)
-		DWORD mask;						// アクセスマスク(1で変更なし)
-		DWORD rev;						// アクセスマスク反転
-		DWORD maskh;					// アクセスマスク上位バイト
-		DWORD revh;						// アクセスマスク上位反転
-		DWORD src;						// ラスタコピー 元ラスタ
-		DWORD dst;						// ラスタコピー 先ラスタ
-		DWORD plane;					// ラスタコピー 対象プレーン
+		DWORD multi;					// Multi access (bit0-bit3)
+		DWORD mask;						// Access mask (1 does not change)
+		DWORD rev;						// Access mask reverse
+		DWORD maskh;					// Access mask high byte
+		DWORD revh;						// Access mask high reverse
+		DWORD src;						// Raster copy source
+		DWORD dst;						// Raster copy dest
+		DWORD plane;					// Raster copy plane
 	} tvram_t;
 
 public:
-	// 基本ファンクション
+	// Constructor
 	TVRAM(VM *p);
-										// コンストラクタ
+										// Initialization
 	BOOL FASTCALL Init();
-										// 初期化
+										// Cleanup
 	void FASTCALL Cleanup();
-										// クリーンアップ
+										// Reset
 	void FASTCALL Reset();
-										// リセット
+										// Save
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// セーブ
+										// Load
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// ロード
+										// Apply configuration
 	void FASTCALL ApplyCfg(const Config *config);
-										// 設定適用
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// 診断
+										// Assert
 #endif	// NDEBUG
 
-	// メモリデバイス
+	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// バイト読み込み
+										// Byte read
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// ワード読み込み
+										// Word read
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// 読み込みのみ
+										// Read only
 
-	// 外部API
+	// External API
 	const BYTE* FASTCALL GetTVRAM() const;
-										// TVRAM取得
+										// Get TVRAM
 	void FASTCALL SetMulti(DWORD data);
-										// 同時書き込み設定
+										// Multi access setting
 	void FASTCALL SetMask(DWORD data);
-										// アクセスマスク設定
+										// Access mask setting
 	void FASTCALL SetCopyRaster(DWORD src, DWORD dst, DWORD plane);
-										// コピーラスタ指定
+										// Raster copy setting
 	void FASTCALL RasterCopy();
-										// ラスタコピー動作
+										// Raster copy execute
 
 private:
 	void FASTCALL SelectHandler();
-										// ハンドラ選択
+										// Handler select
 	TVRAMNormal *normal;
-										// ハンドラ(通常)
+										// Handler (normal)
 	TVRAMMask *mask;
-										// ハンドラ(マスク)
+										// Handler (mask)
 	TVRAMMulti *multi;
-										// ハンドラ(マルチ)
+										// Handler (multi)
 	TVRAMBoth *both;
-										// ハンドラ(両方)
+										// Handler (both)
 	TVRAMHandler *handler;
-										// ハンドラ(現在選択中)
+										// Handler (current select)
 	Render *render;
-										// レンダラ
+										// Render
 	BYTE *tvram;
-										// テキストVRAM (512KB)
+										// Text VRAM (512KB)
 	tvram_t tvdata;
-										// 内部データ
+										// VRAM data
 	DWORD tvcount;
-										// TVRAMアクセスカウント(version2.04以降)
+										// VRAM access count (version 2.04+)
 };
 
 #endif	// tvram_h

@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 �o�h�D(ytanaka@ipc-tokai.or.jp)
-//	[ �r�f�I�R���g���[��(CATHY & VIPS) ]
+//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Video Controller (CATHY & VIPS) ]
 //
 //---------------------------------------------------------------------------
 
@@ -19,49 +19,49 @@
 
 //===========================================================================
 //
-//	�r�f�I�R���g���[��
+//	Video Controller
 //
 //===========================================================================
 //#define VC_LOG
 
 //---------------------------------------------------------------------------
 //
-//	�R���X�g���N�^
+//	Constructor
 //
 //---------------------------------------------------------------------------
 VC::VC(VM *p) : MemDevice(p)
 {
-	// �f�o�C�XID��������
+	// Device ID initialization
 	dev.id = MAKEID('V', 'C', ' ', ' ');
 	dev.desc = "VC (CATHY & VIPS)";
 
-	// �J�n�A�h���X�A�I���A�h���X
+	// Start address, end address
 	memdev.first = 0xe82000;
 	memdev.last = 0xe83fff;
 
-	// ���̑�
+	// Others
 	render = NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	������
+//	Initialization
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Init()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// ��{�N���X
+	// Base class
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// �����_���擾
+	// Render get
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
-	ASSERT(render);
+ASSERT(render);
 
-	// �p���b�g���[�N���N���A
+	// Palette initialize
 	memset(palette, 0, sizeof(palette));
 
 	return TRUE;
@@ -69,31 +69,31 @@ BOOL FASTCALL VC::Init()
 
 //---------------------------------------------------------------------------
 //
-//	�N���[���A�b�v
+//	Cleanup
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::Cleanup()
 {
-	ASSERT(this);
+ASSERT(this);
 
-	// ��{�N���X��
+	// Base class
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	���Z�b�g
+//	Reset
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::Reset()
 {
-	ASSERT(this);
-	LOG0(Log::Normal, "���Z�b�g");
+ASSERT(this);
+LOG0(Log::Normal, "Reset");
 
-	// �r�f�I���[�N���N���A
+	// Video controller initialize
 	memset(&vc, 0, sizeof(vc));
 
-	// �L���p���[�N���m���ɔ��]������
+	// Palette register initialized to default
 	vc.vr1h = 0xff;
 	vc.vr1l = 0xff;
 	vc.vr2h = 0xff;
@@ -102,30 +102,30 @@ void FASTCALL VC::Reset()
 
 //---------------------------------------------------------------------------
 //
-//	�Z�[�u
+//	Save
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
 {
 	size_t sz;
 
-	ASSERT(this);
-	ASSERT(fio);
+ASSERT(this);
+ASSERT(fio);
 
-	LOG0(Log::Normal, "�Z�[�u");
+LOG0(Log::Normal, "Save");
 
-	// �T�C�Y���Z�[�u
+	// Size save
 	sz = sizeof(vc_t);
 	if (!fio->Write(&sz, (int)sizeof(sz))) {
 		return FALSE;
 	}
 
-	// ���̂��Z�[�u
+	// Data save
 	if (!fio->Write(&vc, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p���b�g���Z�[�u
+	// Palette save
 	if (!fio->Write(palette, sizeof(palette))) {
 		return FALSE;
 	}
@@ -135,7 +135,7 @@ BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	���[�h
+//	Load
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
@@ -143,12 +143,12 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 	size_t sz;
 	DWORD addr;
 
-	ASSERT(this);
-	ASSERT(fio);
+ASSERT(this);
+ASSERT(fio);
 
-	LOG0(Log::Normal, "���[�h");
+LOG0(Log::Normal, "Load");
 
-	// �T�C�Y�����[�h�A�ƍ�
+	// Size load, compare
 	if (!fio->Read(&sz, (int)sizeof(sz))) {
 		return FALSE;
 	}
@@ -156,17 +156,17 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 		return FALSE;
 	}
 
-	// ���̂����[�h
+	// Data load
 	if (!fio->Read(&vc, (int)sz)) {
 		return FALSE;
 	}
 
-	// �p���b�g�����[�h
+	// Palette load
 	if (!fio->Read(palette, sizeof(palette))) {
 		return FALSE;
 	}
 
-	// �����_���֒ʒm
+	// Render notify
 	render->SetVC();
 	for (addr=0; addr<0x200; addr++) {
 		render->SetPalette(addr);
@@ -177,38 +177,38 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	�ݒ�K�p
+//	Apply configuration
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::ApplyCfg(const Config *config)
 {
-	ASSERT(config);
-	printf("%p", (const void*)config);
-	LOG0(Log::Normal, "�ݒ�K�p");
+ASSERT(config);
+printf("%p", (const void*)config);
+LOG0(Log::Normal, "Apply configuration");
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g�ǂݍ���
+//	Byte read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadByte(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// $1000�P�ʂŃ��[�v
+	// $1000 unit loop
 	addr &= 0xfff;
 
-	// �f�R�[�h
+	// Decode
 	if (addr < 0x400) {
-		// �p���b�g�G���A
+		// Palette area
 		scheduler->Wait(1);
 		addr ^= 1;
 		return palette[addr];
 	}
 
-	// �r�f�I�R���g���[�����W�X�^
+	// Video controller register address
 	if (addr < 0x500) {
 		if (addr & 1) {
 			return (BYTE)GetVR0();
@@ -234,32 +234,32 @@ DWORD FASTCALL VC::ReadByte(DWORD addr)
 		}
 	}
 
-	// �f�R�[�h����Ă��Ȃ��G���A��0
+	// Decode other area returns 0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h�ǂݍ���
+//	Word read
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadWord(DWORD addr)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
 
-	// $1000�P�ʂŃ��[�v
+	// $1000 unit loop
 	addr &= 0xfff;
 
-	// �f�R�[�h
+	// Decode
 	if (addr < 0x400) {
-		// �p���b�g
+		// Palette
 		scheduler->Wait(1);
 		return *(WORD *)(&palette[addr]);
 	}
 
-	// �r�f�I�R���g���[�����W�X�^
+	// Video controller register address
 	if (addr < 0x500) {
 		return GetVR0();
 	}
@@ -270,47 +270,47 @@ DWORD FASTCALL VC::ReadWord(DWORD addr)
 		return GetVR2();
 	}
 
-	// �f�R�[�h����Ă��Ȃ��G���A��0
+	// Decode other area returns 0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�o�C�g��������
+//	Byte write
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(data < 0x100);
 
 #if defined(VC_LOG)
 	if ((addr & 0xfff) >= 0x400) {
-		LOG2(Log::Normal, "VC�������� %08X <- %02X", addr, data);
+		LOG2(Log::Normal, "VC write %08X <- %02X", addr, data);
 	}
 #endif	// VC_LOG
 
-	// $1000�P�ʂŃ��[�v
+	// $1000 unit loop
 	addr &= 0xfff;
 
-	// �f�R�[�h
+	// Decode
 	if (addr < 0x400) {
-		// �p���b�g�G���A
+		// Palette area
 		scheduler->Wait(1);
 		addr ^= 1;
 
-		// ��r
+		// Equality
 		if (palette[addr] != data) {
 			palette[addr] = (BYTE)data;
 
-			// �����_���֒ʒm
+			// Render notify
 			render->SetPalette(addr >> 1);
 		}
 		return;
 	}
 
-	// �r�f�I�R���g���[�����W�X�^
+	// Video controller register address
 	if (addr < 0x500) {
 		if (addr & 1) {
 			SetVR0L(data);
@@ -336,46 +336,46 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// ����ȊO�̓f�R�[�h����Ă��Ȃ�
+	// Other does not decode
 }
 
 //---------------------------------------------------------------------------
 //
-//	���[�h��������
+//	Word write
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
-	ASSERT((addr & 1) == 0);
-	ASSERT(data < 0x10000);
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT((addr & 1) == 0);
+ASSERT(data < 0x10000);
 
 #if defined(VC_LOG)
 	if ((addr & 0xfff) >= 0x400) {
-		LOG2(Log::Normal, "VC�������� %08X <- %04X", addr, data);
+		LOG2(Log::Normal, "VC write %08X <- %04X", addr, data);
 	}
 #endif	// VC_LOG
 
-	// $1000�P�ʂŃ��[�v
+	// $1000 unit loop
 	addr &= 0xfff;
 
-	// �f�R�[�h
+	// Decode
 	if (addr < 0x400) {
-		// �p���b�g�G���A
+		// Palette area
 		scheduler->Wait(1);
 
-		// ��r
+		// Equality
 		if (data != *(WORD*)(&palette[addr])) {
 			*(WORD *)(&palette[addr]) = (WORD)data;
 
-			// �����_���֒ʒm
+			// Render notify
 			render->SetPalette(addr >> 1);
 		}
 		return;
 	}
 
-	// �r�f�I�R���g���[�����W�X�^
+	// Video controller register address
 	if (addr < 0x500) {
 		SetVR0L((BYTE)data);
 		return;
@@ -391,30 +391,30 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 
-	// ����ȊO�̓f�R�[�h����Ă��Ȃ�
+	// Other does not decode
 }
 
 //---------------------------------------------------------------------------
 //
-//	�ǂݍ��݂̂�
+//	Read only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadOnly(DWORD addr) const
 {
-	ASSERT(this);
-	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+ASSERT(this);
+ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// $1000�P�ʂŃ��[�v
+	// $1000 unit loop
 	addr &= 0xfff;
 
-	// �f�R�[�h
+	// Decode
 	if (addr < 0x400) {
-		// �p���b�g�G���A
+		// Palette area
 		addr ^= 1;
 		return palette[addr];
 	}
 
-	// �r�f�I�R���g���[�����W�X�^
+	// Video controller register address
 	if (addr < 0x500) {
 		if (addr & 1) {
 			return (BYTE)GetVR0();
@@ -440,27 +440,27 @@ DWORD FASTCALL VC::ReadOnly(DWORD addr) const
 		}
 	}
 
-	// �f�R�[�h����Ă��Ȃ��G���A��0
+	// Decode other area returns 0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�����f�[�^�擾
+//	Get video data
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::GetVC(vc_t *buffer)
 {
-	ASSERT(this);
-	ASSERT(buffer);
+ASSERT(this);
+ASSERT(buffer);
 
-	// �������[�N���R�s�[
+	// Structure copy
 	*buffer = vc;
 }
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^0(L)�ݒ�
+//	Video register 0 (L) set
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR0L(DWORD data)
@@ -468,14 +468,14 @@ void FASTCALL VC::SetVR0L(DWORD data)
 	BOOL siz;
 	DWORD col;
 
-	ASSERT(this);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(data < 0x100);
 
-	// �L��
+	// Save
 	siz = vc.siz;
 	col = vc.col;
 
-	// �ݒ�
+	// Set
 	if (data & 4) {
 		vc.siz = TRUE;
 	}
@@ -484,7 +484,7 @@ void FASTCALL VC::SetVR0L(DWORD data)
 	}
 	vc.col = (data & 3);
 
-	// ��r
+	// Equality
 	if ((vc.siz != siz) || (vc.col != col)) {
 		render->SetVC();
 	}
@@ -492,14 +492,14 @@ void FASTCALL VC::SetVR0L(DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^0�擾
+//	Video register 0 get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR0() const
 {
 	DWORD data;
 
-	ASSERT(this);
+ASSERT(this);
 
 	data = 0;
 	if (vc.siz) {
@@ -512,17 +512,17 @@ DWORD FASTCALL VC::GetVR0() const
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^1(H)�ݒ�
+//	Video register 1 (H) set
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR1H(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(data < 0x100);
 
 	data &= 0x3f;
 
-	// ��r
+	// Equality
 	if (vc.vr1h == data) {
 		return;
 	}
@@ -534,21 +534,21 @@ void FASTCALL VC::SetVR1H(DWORD data)
 	data >>= 2;
 	vc.sp = data;
 
-	// �ʒm
+	// Notify
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^1(L)�ݒ�
+//	Video register 1 (L) set
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR1L(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(data < 0x100);
 
-	// ��r
+	// Equality
 	if (vc.vr1l == data) {
 		return;
 	}
@@ -562,20 +562,20 @@ void FASTCALL VC::SetVR1L(DWORD data)
 	data >>= 2;
 	vc.gp[3] = (data & 3);
 
-	// �ʒm
+	// Notify
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^1�擾
+//	Video register 1 get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR1() const
 {
 	DWORD data;
 
-	ASSERT(this);
+ASSERT(this);
 
 	data = vc.sp;
 	data <<= 2;
@@ -596,15 +596,15 @@ DWORD FASTCALL VC::GetVR1() const
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^2(H)�ݒ�
+//	Video register 2 (H) set
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR2H(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(data < 0x100);
 
-	// �f�[�^��r
+	// Data equality
 	if (vc.vr2h == data) {
 		return;
 	}
@@ -674,21 +674,21 @@ void FASTCALL VC::SetVR2H(DWORD data)
 		vc.gt = FALSE;
 	}
 
-	// �ʒm
+	// Notify
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^2(L)�ݒ�
+//	Video register 2 (L) set
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR2L(DWORD data)
 {
-	ASSERT(this);
-	ASSERT(data < 0x100);
+ASSERT(this);
+ASSERT(data < 0x100);
 
-	// ��r
+	// Equality
 	if (vc.vr2l == data) {
 		return;
 	}
@@ -758,20 +758,20 @@ void FASTCALL VC::SetVR2L(DWORD data)
 		vc.gs[0] = FALSE;
 	}
 
-	// �ʒm
+	// Notify
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	�r�f�I���W�X�^2�擾
+//	Video register 2 get
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR2() const
 {
 	DWORD data;
 
-	ASSERT(this);
+ASSERT(this);
 
 	data = 0;
 	if (vc.ys) {

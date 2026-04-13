@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 ＰＩ．(ytanaka@ipc-tokai.or.jp)
-//	[ ビデオコントローラ(CATHY & VIPS) ]
+//	Copyright (C) 2001-2005 PI (ytanaka@ipc-tokai.or.jp)
+//	[ Video Controller (CATHY & VIPS) ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,102 +14,102 @@
 
 //===========================================================================
 //
-//	ビデオコントローラ
+//	Video Controller
 //
 //===========================================================================
 class VC : public MemDevice
 {
 public:
-	// 内部データ定義
+	// Video data structure
 	typedef struct {
-		DWORD vr1h;						// VR1(H)バックアップ
-		DWORD vr1l;						// VR1(H)バックアップ
-		DWORD vr2h;						// VR2(H)バックアップ
-		DWORD vr2l;						// VR2(H)バックアップ
-		BOOL siz;						// 実画面サイズ
-		DWORD col;						// 色モード
-		DWORD sp;						// スプライトプライオリティ
-		DWORD tx;						// テキストプライオリティ
-		DWORD gr;						// グラフィックプライオリティ(1024)
-		DWORD gp[4];					// グラフィックプライオリティ(512)
-		BOOL ys;						// Ys信号
-		BOOL ah;						// テキストパレット半透明
-		BOOL vht;						// 外部ビデオ半透明
-		BOOL exon;						// 特殊プライオリティ・半透明
-		BOOL hp;						// 半透明
-		BOOL bp;						// 最下位ビット半透明フラグ
-		BOOL gg;						// グラフィック半透明
-		BOOL gt;						// テキスト半透明
-		BOOL bcon;						// シャープ予約
-		BOOL son;						// スプライトON
-		BOOL ton;						// テキストON
-		BOOL gon;						// グラフィックON(実画面1024時)
-		BOOL gs[4];						// グラフィックON(実画面512時)
+		DWORD vr1h;						// VR1(H) backup
+		DWORD vr1l;						// VR1(L) backup
+		DWORD vr2h;						// VR2(H) backup
+		DWORD vr2l;						// VR2(L) backup
+		BOOL siz;						// Screen size
+		DWORD col;						// Color mode
+		DWORD sp;						// Sprite priority
+		DWORD tx;						// Text priority
+		DWORD gr;						// Graphic priority (1024)
+		DWORD gp[4];					// Graphic priority (512)
+		BOOL ys;						// Ys output
+		BOOL ah;						// Text palette disable
+		BOOL vht;						// External sync
+		BOOL exon;						// Sprite priority ext
+		BOOL hp;						// Priority
+		BOOL bp;						// Sprite priority bit flag
+		BOOL gg;						// Graphic disable
+		BOOL gt;						// Text disable
+		BOOL bcon;						// VBLANK display
+		BOOL son;						// Sprite ON
+		BOOL ton;						// Text ON
+		BOOL gon;						// Graphic ON (layer 1024)
+		BOOL gs[4];					// Graphic ON (layer 512)
 	} vc_t;
 
 public:
-	// 基本ファンクション
+	// Constructor
 	VC(VM *p);
-										// コンストラクタ
+										// Initialization
 	BOOL FASTCALL Init();
-										// 初期化
+										// Cleanup
 	void FASTCALL Cleanup();
-										// クリーンアップ
+										// Reset
 	void FASTCALL Reset();
-										// リセット
+										// Save
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// セーブ
+										// Load
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// ロード
+										// Apply configuration
 	void FASTCALL ApplyCfg(const Config *config);
-										// 設定適用
 
-	// メモリデバイス
+
+	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// バイト読み込み
+										// Byte read
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// ワード読み込み
+										// Word read
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// バイト書き込み
+										// Byte write
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// ワード書き込み
+										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// 読み込みのみ
+										// Read only
 
-	// 外部API
+	// External API
 	void FASTCALL GetVC(vc_t *buffer);
-										// 内部データ取得
+										// Get video data
 	const BYTE* FASTCALL GetPalette() const	{ return palette; }
-										// パレットRAM取得
+										// Get palette RAM
 	const vc_t* FASTCALL GetWorkAddr() const{ return &vc; }
-										// ワークアドレス取得
+										// Get work address
 
 private:
-	// レジスタアクセス
+	// Register access
 	void FASTCALL SetVR0L(DWORD data);
-										// レジスタ0(L)設定
+										// Register 0 (L) set
 	DWORD FASTCALL GetVR0() const;
-										// レジスタ0取得
+										// Register 0 get
 	void FASTCALL SetVR1H(DWORD data);
-										// レジスタ1(H)設定
+										// Register 1 (H) set
 	void FASTCALL SetVR1L(DWORD data);
-										// レジスタ1(L)設定
+										// Register 1 (L) set
 	DWORD FASTCALL GetVR1() const;
-										// レジスタ1取得
+										// Register 1 get
 	void FASTCALL SetVR2H(DWORD data);
-										// レジスタ2(H)設定
+										// Register 2 (H) set
 	void FASTCALL SetVR2L(DWORD data);
-										// レジスタ2(L)設定
+										// Register 2 (L) set
 	DWORD FASTCALL GetVR2() const;
-										// レジスタ2取得
+										// Register 2 get
 
-	// データ
+	// Data
 	Render *render;
-										// レンダラ
+										// Render
 	vc_t vc;
-										// 内部データ
+										// Video data
 	BYTE palette[0x400];
-										// パレットRAM
+										// Palette RAM
 };
 
 #endif	// vc_h
