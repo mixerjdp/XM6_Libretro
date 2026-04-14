@@ -45,6 +45,61 @@ namespace {
 static const DWORD k_render_color0 = 0x80000000u;
 static const DWORD k_px68k_ibit_marker = 0x40000000u;
 
+static int FASTCALL FastGetVerticalAdjust(const Render::render_t *work, const CRTC::crtc_t *c)
+{
+	if (!work || !c) {
+		return 0;
+	}
+
+	if ((work->width != 512) || (work->height != 512) ||
+		(work->h_mul != 1) || (work->v_mul != 1) || work->lowres) {
+		return 0;
+	}
+
+	if (work->grptype != 2) {
+		return 0;
+	}
+
+	const int vstart = (int)((((DWORD)c->reg[0x0c] << 8) + c->reg[0x0d]) & 0x3ff);
+	const int scroll_y = (int)(work->grpy[0] & 0x3ff);
+	const int divisor = ((c->reg[0x29] & 0x1c) == 0x1c) ? 1 : 2;
+	const int adjust = (scroll_y - vstart) / divisor;
+
+	return -adjust;
+}
+
+static BOOL FASTCALL FastNeedsDeflektorVerticalSplit(const Render::render_t *work, const VC::vc_t *v, const CRTC::crtc_t *c)
+{
+	if (!work || !v || !c) {
+		return FALSE;
+	}
+
+	// Deflektor uses a mixed 512-line graphic page plus 256-line sprite timing
+	// in Render Fast; keep this split narrow so other games stay on the normal path.
+	if ((work->width != 512) || (work->height != 512) ||
+		(work->h_mul != 1) || (work->v_mul != 1) || work->lowres) {
+		return FALSE;
+	}
+
+	if ((work->grptype != 2) || (work->mixpage != 1) || (work->mixtype != 7)) {
+		return FALSE;
+	}
+
+	if (!work->bgspflag) {
+		return FALSE;
+	}
+
+	if (c->reg[0x29] != 0x01) {
+		return FALSE;
+	}
+
+	if (!((v->vr2l == 0x73) || (v->vr2l == 0x7C))) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static inline WORD pack_rgb565i(DWORD pixel)
 {
 	if (pixel & k_render_color0) {
@@ -558,17 +613,32 @@ void FASTCALL Render::FastDrawBGPageLinePX(int page, int raster, BOOL gd, DWORD 
 	}
 }
 
-void FASTCALL Render::FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active, BOOL *bg_opaq)
+void FASTCALL Render::FastBuildBGLinePX(int sprite_raster, int bg_raster, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active, BOOL *bg_opaq)
 {
 	int i;
+	const VC::vc_t *p;
+	const CRTC::crtc_t *c;
+	BOOL deflektor_split;
+	int sprite_line;
+	int bg_line_raster;
 	const BOOL sprite_visible = sprite->IsDisplay();
 	const BOOL has_bg = (BOOL)(render.bgdisp[0] || (render.bgdisp[1] && !render.bgsize));
 	const BOOL bgsp_on = render.bgspflag;
 	const BOOL gd = (BOOL)(sp_pri >= tx_pri);
 	const BOOL opaq = gd ? TRUE : (BOOL)!ton;
 	const DWORD base = (render.paldata[0x100] & ~k_render_color0);
-	const int raster = (src_y & 0x1ff);
 	const BOOL has_sources = (BOOL)(sprite_visible || has_bg);
+
+	p = vc->GetWorkAddr();
+	c = crtc->GetWorkAddr();
+	deflektor_split = FastNeedsDeflektorVerticalSplit(&render, p, c);
+	if (deflektor_split) {
+		sprite_line = sprite_raster & 0x1ff;
+		bg_line_raster = bg_raster & 0x1ff;
+	}
+	else {
+		sprite_line = bg_line_raster = (bg_raster & 0x1ff);
+	}
 
 	for (i=0; i<render.mixlen; i++) {
 		bg_line[i] = opaq ? base : k_render_color0;
@@ -585,19 +655,19 @@ void FASTCALL Render::FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_
 
 	*active = has_sources;
 	if (sprite_visible) {
-		FastDrawSpriteLinePX(raster, 1, bg_line, bg_flag, bg_pri, active);
+		FastDrawSpriteLinePX(sprite_line, 1, bg_line, bg_flag, bg_pri, active);
 	}
 	if (render.bgdisp[1] && !render.bgsize) {
-		FastDrawBGPageLinePX(1, raster, gd, bg_line, bg_flag, bg_pri, active);
+		FastDrawBGPageLinePX(1, bg_line_raster, gd, bg_line, bg_flag, bg_pri, active);
 	}
 	if (sprite_visible) {
-		FastDrawSpriteLinePX(raster, 2, bg_line, bg_flag, bg_pri, active);
+		FastDrawSpriteLinePX(sprite_line, 2, bg_line, bg_flag, bg_pri, active);
 	}
 	if (render.bgdisp[0]) {
-		FastDrawBGPageLinePX(0, raster, gd, bg_line, bg_flag, bg_pri, active);
+		FastDrawBGPageLinePX(0, bg_line_raster, gd, bg_line, bg_flag, bg_pri, active);
 	}
 	if (sprite_visible) {
-		FastDrawSpriteLinePX(raster, 3, bg_line, bg_flag, bg_pri, active);
+		FastDrawSpriteLinePX(sprite_line, 3, bg_line, bg_flag, bg_pri, active);
 	}
 
 	if (bg_opaq) {
@@ -1360,6 +1430,7 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	BYTE bg_flag[k_fast_line_capacity];
 	BYTE tr_flag[k_fast_line_capacity];
 	const VC::vc_t *p;
+	const CRTC::crtc_t *c;
 	int tx_pri;
 	int sp_pri;
 	int gr_pri;
@@ -1383,6 +1454,10 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	DWORD *const out_visible = &out[k_fast_line_margin];
 	BYTE *const bg_flag_visible = &bg_flag[k_fast_line_margin];
 	BYTE *const tr_flag_visible = &tr_flag[k_fast_line_margin];
+	BOOL deflektor_split;
+	int v_adjust;
+	int sprite_raster;
+	int bg_raster;
 
 	if (!render.mixbuf) {
 		return;
@@ -1403,6 +1478,19 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	render.fast_mix_done[src_y] = mix_stamp;
 	dst = &render.mixbuf[render.mixwidth * dst_y];
 	p = vc->GetWorkAddr();
+	c = crtc->GetWorkAddr();
+	deflektor_split = FastNeedsDeflektorVerticalSplit(&render, p, c);
+	if (deflektor_split) {
+		// Deflektor's 512x512 menu/game field needs a 512-line BG raster,
+		// but sprite timing still follows the 256-line path.
+		v_adjust = FastGetVerticalAdjust(&render, c);
+		sprite_raster = ((src_y / 2) + v_adjust) & 0x3ff;
+		bg_raster = (src_y + v_adjust) & 0x3ff;
+	}
+	else {
+		sprite_raster = src_y;
+		bg_raster = src_y;
+	}
 	tx_pri = (int)(p->tx & 3);
 	sp_pri = (int)(p->sp & 3);
 	gr_pri = (int)(p->gr & 3);
@@ -1420,14 +1508,14 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	std::memset(bg_flag, 0, sizeof(bg_flag));
 	std::memset(tr_flag, 0, sizeof(tr_flag));
 
-	FastMixGrp(src_y, grp_visible, grp_sp_visible, grp_sp2_visible, grp_sp_tr_visible, &gon, &tron, &pron);
+	FastMixGrp(bg_raster, grp_visible, grp_sp_visible, grp_sp2_visible, grp_sp_tr_visible, &gon, &tron, &pron);
 
 	for (i=0; i<render.mixlen; i++) {
 		// px68k keeps a 16px guard band before the visible window.
 		// We compose into the shifted slice and later copy only the visible region.
 		out_visible[i] = 0;
 		if (ton) {
-			text_line_visible[i] = render.textout[(((src_y + (int)render.texty) & 0x3ff) << 10) + (((int)render.textx + i) & 0x3ff)];
+			text_line_visible[i] = render.textout[(((bg_raster + (int)render.texty) & 0x3ff) << 10) + (((int)render.textx + i) & 0x3ff)];
 		}
 		else {
 			text_line_visible[i] = k_render_color0;
@@ -1438,7 +1526,7 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 
 	bg_active = FALSE;
 	bg_opaq = FALSE;
-	FastBuildBGLinePX(src_y, ton, tx_pri, sp_pri, bg_line_visible, bg_flag_visible, bg_pri_visible, &bg_active, &bg_opaq);
+	FastBuildBGLinePX(sprite_raster, bg_raster, ton, tx_pri, sp_pri, bg_line_visible, bg_flag_visible, bg_pri_visible, &bg_active, &bg_opaq);
 	bgon = bg_active;
 	FastPrepareBGTextLine(bgtext_line_visible, tr_flag_visible, bg_flag_visible, text_line_visible, bg_line_visible, render.mixlen, ton, bgon, tx_pri, sp_pri, bg_opaq);
 
