@@ -57,6 +57,110 @@ static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, c
 	return (bg_hdisp - (crtc_hstart + 4)) * 8;
 }
 
+struct Px68kLayerTiming {
+	BOOL split;
+	int sprite_raster;
+	int bg_raster;
+};
+
+static BOOL FASTCALL NeedsPx68kLayerTiming(const Render *owner)
+{
+	const Render::render_t *work;
+	const CRTC *crtc;
+	const VC *vc;
+	const CRTC::crtc_t *c;
+	const VC::vc_t *v;
+
+	if (!owner) {
+		return FALSE;
+	}
+	if (owner->GetCompositorMode() != Render::compositor_fast) {
+		return FALSE;
+	}
+
+	work = owner->GetWorkAddr();
+	crtc = owner->GetCRTCDevice();
+	vc = owner->GetVCDevice();
+	if (!work || !crtc || !vc) {
+		return FALSE;
+	}
+
+	c = crtc->GetWorkAddr();
+	v = vc->GetWorkAddr();
+	if (!c || !v) {
+		return FALSE;
+	}
+
+	// px68k-style mixed 512x512 8-bit fields need separate per-layer line origins:
+	// BG/text stay on the full 512-line origin while sprites follow the 256-line path.
+	if ((work->width != 512) || (work->height != 512) ||
+		(work->h_mul != 1) || (work->v_mul != 1) || work->lowres) {
+		return FALSE;
+	}
+	if ((work->grptype != 2) || (work->mixpage != 1) || (work->mixtype != 7)) {
+		return FALSE;
+	}
+	if (!work->bgspflag) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static int FASTCALL GetPx68kLayerVerticalAdjust(const Render *owner)
+{
+	const Render::render_t *work;
+	const CRTC *crtc;
+	const CRTC::crtc_t *c;
+	const Px68kCrtcStateView *view;
+	int divisor;
+	int vstart;
+	int scroll_y;
+
+	if (!owner) {
+		return 0;
+	}
+
+	work = owner->GetWorkAddr();
+	crtc = owner->GetCRTCDevice();
+	if (!work || !crtc) {
+		return 0;
+	}
+
+	c = crtc->GetWorkAddr();
+	view = crtc->GetPx68kStateView();
+	if (!c || !view) {
+		return 0;
+	}
+
+	vstart = (int)(view->state.vstart & 0x3ff);
+	scroll_y = (int)(view->state.grphscrolly[0] & 0x3ff);
+	divisor = ((c->reg[0x29] & 0x1c) == 0x1c) ? 1 : 2;
+
+	(void)work;
+	return -((scroll_y - vstart) / divisor);
+}
+
+static Px68kLayerTiming FASTCALL GetPx68kLayerTiming(const Render *owner, int raster)
+{
+	Px68kLayerTiming timing;
+	int adjust;
+
+	timing.split = FALSE;
+	timing.sprite_raster = raster;
+	timing.bg_raster = raster;
+
+	if (!NeedsPx68kLayerTiming(owner)) {
+		return timing;
+	}
+
+	adjust = GetPx68kLayerVerticalAdjust(owner);
+	timing.split = TRUE;
+	timing.sprite_raster = ((raster / 2) + adjust) & 0x3ff;
+	timing.bg_raster = (raster + adjust) & 0x3ff;
+	return timing;
+}
+
 static void FASTCALL Px68kCrtcHostApplyStateView(void *ctx, const Px68kCrtcStateView *view)
 {
 	Render *owner = (Render*)ctx;
@@ -3246,10 +3350,12 @@ void FASTCALL Render::BGSprite(int raster)
 	DWORD stamp;
 	const int bg_hadjust = CalcBGHAdjustPixels(0, crtc, sprite);
 	const BOOL sprite_visible = sprite->IsDisplay();
+	Px68kLayerTiming timing;
 
 	if (raster >= 512) return;
 	if (render.mixlen > 512) return;
 
+	timing = GetPx68kLayerTiming(this, raster);
 	stamp = render.fast_bg_stamp[raster];
 	if (!render.bgspmod[raster] && (render.fast_bg_done[raster] == stamp)) {
 		return;
@@ -3266,7 +3372,7 @@ void FASTCALL Render::BGSprite(int raster)
 	if (sprite_visible) {
 		reg = &render.spreg[127 << 2];
 		ptr = &render.spptr[127 << 9];
-		ptr += raster;
+		ptr += timing.sprite_raster;
 		for (i=127; i>=0; i--) {
 			if (render.spuse[i] && (reg[3] == 1) && *ptr) {
 				pcgno = reg[2] & 0xfff;
@@ -3289,13 +3395,13 @@ void FASTCALL Render::BGSprite(int raster)
 	}
 
 	if (render.bgdisp[1] && !render.bgsize) {
-		BG(1, raster, buf);
+		BG(1, timing.bg_raster, buf);
 	}
 
 	if (sprite_visible) {
 		reg = &render.spreg[127 << 2];
 		ptr = &render.spptr[127 << 9];
-		ptr += raster;
+		ptr += timing.sprite_raster;
 		for (i=127; i>=0; i--) {
 			if (render.spuse[i] && (reg[3] == 2) && *ptr) {
 				pcgno = reg[2] & 0xfff;
@@ -3318,13 +3424,13 @@ void FASTCALL Render::BGSprite(int raster)
 	}
 
 	if (render.bgdisp[0]) {
-		BG(0, raster, buf);
+		BG(0, timing.bg_raster, buf);
 	}
 
 	if (sprite_visible) {
 		reg = &render.spreg[127 << 2];
 		ptr = &render.spptr[127 << 9];
-		ptr += raster;
+		ptr += timing.sprite_raster;
 		for (i=127; i>=0; i--) {
 			if (render.spuse[i] && (reg[3] == 3) && *ptr) {
 				pcgno = reg[2] & 0xfff;
