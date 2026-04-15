@@ -101,7 +101,7 @@ BOOL FASTCALL Scheduler::Init()
 	// CPU search
 	ASSERT(!cpu);
 	cpu = (CPU*)vm->SearchDevice(MAKEID('C', 'P', 'U', ' '));
-	ASSERT(!cpu);
+	ASSERT(cpu);
 	
 	// DMAC search
 	ASSERT(!dmac);

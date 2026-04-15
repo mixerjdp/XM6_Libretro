@@ -126,5 +126,6 @@ Each component keeps its own license and notice requirements. Check the source h
 This repository focuses on keeping the classic XM6 codebase practical to build while adding modern Libretro support and cleaner release packaging.
 
 Some rendering, timing, and libretro integration ideas were informed by the
-codebase in `C:\sw\px68k-libretro-master`, especially the work originally
-credited to hissorii, with c68k updates referenced there from kenyahiro.
+[px68k-libretro](https://github.com/libretro/px68k-libretro) project, especially
+the work originally credited to hissorii, with c68k updates referenced there
+from kenyahiro.
