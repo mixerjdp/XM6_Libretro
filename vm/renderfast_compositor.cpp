@@ -20,6 +20,8 @@ static unsigned int g_vertical_probe_last_width = 0u;
 static unsigned int g_vertical_probe_last_height = 0u;
 static Render::fast_vertical_probe_snapshot_t g_vertical_probe_snapshot;
 static BOOL g_vertical_probe_snapshot_armed = FALSE;
+static int g_sprite_fine_probe_count = 0;
+extern void xm6_debug_message(const char *format, ...);
 
 static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
 {
@@ -592,6 +594,9 @@ void FASTCALL Render::FastDrawSpriteLinePX(int layer_raster, int pri, DWORD *bg_
 	const int sprite_limit = render.mixlen;
 
 	reg = &render.spreg[127 << 2];
+	if (layer_raster == 0) {
+		g_sprite_fine_probe_count = 0;
+	}
 	for (n=127; n>=0; n--) {
 		if (render.spuse[n] && ((int)(reg[3] & 3) == pri)) {
 			DWORD pcgno;
@@ -604,6 +609,11 @@ void FASTCALL Render::FastDrawSpriteLinePX(int layer_raster, int pri, DWORD *bg_
 			if ((row < 0) || (row > 15)) {
 				reg -= 4;
 				continue;
+			}
+			if (g_sprite_fine_probe_count < 8) {
+				xm6_debug_message("[sprite-probe] core=xm6 pri=%d n=%d layer=%d spy=%u row=%d ctrl=%04X x=%d bg_hadj=%d",
+					pri, n, (layer_raster & 0x3ff), (unsigned)(reg[1] & 0x3ff), row, (unsigned)(reg[2] & 0xffff), (int)reg[0], bg_hadjust);
+				++g_sprite_fine_probe_count;
 			}
 
 			pcgno = reg[2] & 0xfff;
