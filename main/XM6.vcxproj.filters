@@ -123,6 +123,9 @@
     <ClCompile Include="..\vm\render.cpp">
       <Filter>VM</Filter>
     </ClCompile>
+    <ClCompile Include="..\vm\renderfast_compositor.cpp">
+      <Filter>VM</Filter>
+    </ClCompile>
     <ClCompile Include="..\vm\graphic_engine.cpp">
       <Filter>VM</Filter>
     </ClCompile>

@@ -268,27 +268,36 @@ private:
 	friend class OriginalGraphicEngine;
 	friend class Px68kGraphicEngine;
 	void FASTCALL StartFrameOriginal();
+	void FASTCALL StartFrameFast();
 	void FASTCALL EndFrameOriginal();
+	void FASTCALL EndFrameFast();
 	void FASTCALL HSyncOriginal(int raster);
+	void FASTCALL HSyncFast(int raster);
 	void FASTCALL SetCRTCOriginal();
+	void FASTCALL SetCRTCFast();
 	void FASTCALL SetVCOriginal();
+	void FASTCALL SetVCFast();
 	void FASTCALL InvalidateFrame();
 	void FASTCALL InvalidateAll();
 	void FASTCALL Process();
+	void FASTCALL ProcessFast();
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½_ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½O
 	void FASTCALL Video();
+	void FASTCALL VideoFastPX68K();
 										// VCï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½
 	void FASTCALL SetupGrp(int first);
 										// ï¿½Eï¿½Oï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½tï¿½Eï¿½Bï¿½Eï¿½bï¿½Eï¿½Nï¿½Eï¿½Zï¿½Eï¿½bï¿½Eï¿½gï¿½Eï¿½Aï¿½Eï¿½bï¿½Eï¿½v
 	void FASTCALL Contrast();
 										// ï¿½Eï¿½Rï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½gï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½Xï¿½Eï¿½gï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½
 	void FASTCALL Palette();
+	void FASTCALL PaletteFastPX68K();
 										// ï¿½Eï¿½pï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½bï¿½Eï¿½gï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½
 	void FASTCALL MakePalette();
 										// ï¿½Eï¿½pï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½bï¿½Eï¿½gï¿½Eï¿½ï¿½Eï¿½
 	DWORD FASTCALL ConvPalette(int color, int ratio);
 										// ï¿½Eï¿½Fï¿½Eï¿½ÏŠï¿½
 	void FASTCALL Text(int raster);
+	void FASTCALL TextFastPX68K(int raster);
 										// ï¿½Eï¿½eï¿½Eï¿½Lï¿½Eï¿½Xï¿½Eï¿½g
 	void FASTCALL Grp(int block, int raster);
 										// ï¿½Eï¿½Oï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½tï¿½Eï¿½Bï¿½Eï¿½bï¿½Eï¿½N
@@ -301,12 +310,14 @@ private:
 	void FASTCALL BGBlock(int page, int y);
 										// BG(ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½uï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½bï¿½Eï¿½N)
 	void FASTCALL Mix(int offset);
+	void FASTCALL MixFast(int y);
+	void FASTCALL MixFastLine(int dst_y, int src_y);
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½
 	void FASTCALL MixGrp(int y, DWORD *buf);
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½(ï¿½Eï¿½Oï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½tï¿½Eï¿½Bï¿½Eï¿½bï¿½Eï¿½N)
 	void FASTCALL FastDrawSpriteLinePX(int raster, int pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
 	void FASTCALL FastDrawBGPageLinePX(int page, int raster, BOOL gd, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active);
-	void FASTCALL FastBuildBGLinePX(int src_y, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, BOOL *active, BOOL *bg_opaq);
+	void FASTCALL FastBuildBGLinePX(int sprite_raster, int bg_raster, BOOL ton, int tx_pri, int sp_pri, DWORD *bg_line, BYTE *bg_flag, WORD *bg_pri, BOOL *active, BOOL *bg_opaq);
 	void FASTCALL FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp2,
 		BOOL *grp_sp_tr, BOOL *gon, BOOL *tron, BOOL *pron);
 	CRTC *crtc;
