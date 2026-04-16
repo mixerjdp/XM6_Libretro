@@ -932,6 +932,7 @@ static void hdd_manual_reset_cold_style()
 
   g_xm6.set_power(g_xm6_handle, 0);
   g_xm6.set_power(g_xm6_handle, 1);
+  apply_runtime_core_options();
   begin_hdd_boot_warmup("manual reset (HDD full cold-style)");
   g_game_loaded = true;
 }
@@ -2992,17 +2993,14 @@ static void compute_video_scale_factors(const xm6_video_layout_t &layout,
                                         unsigned int *out_h_scale,
                                         unsigned int *out_v_scale)
 {
+  (void)layout;
+  (void)frame_width;
+  (void)frame_height;
+
+  // Px68k keeps the framebuffer at its native size and only exposes
+  // timing/aspect metadata to the frontend. XM6 should do the same here.
   unsigned int h_scale = 1;
   unsigned int v_scale = 1;
-
-  if (layout.valid) {
-    if (layout.h_mul > 0) {
-      h_scale = layout.h_mul;
-    }
-    v_scale = vertical_scale_from_layout(layout, frame_height);
-  } else if (frame_width > 0 && frame_width <= 320) {
-    h_scale = 2;
-  }
 
   if (out_h_scale) {
     *out_h_scale = h_scale;
@@ -3152,71 +3150,12 @@ static bool build_scaled_video_frame(
     return false;
   }
 
-  unsigned int h_factor = 1;
-  unsigned int v_factor = 1;
-  compute_video_scale_factors(layout, frame.width, frame.height, &h_factor, &v_factor);
-
-  const bool use_native_double_height =
-    layout.valid && layout.lowres == 1 && layout.v_mul == 0;
-
-  if (h_factor == 1 && v_factor == 1 && !use_native_double_height) {
-    *out_pixels = frame.pixels_argb32;
-    *out_width = frame.width;
-    *out_height = frame.height;
-    *out_stride_pixels = frame.stride_pixels;
-    return true;
-  }
-
-  const unsigned src_w = frame.width;
-  const unsigned src_h = frame.height;
-  const unsigned dst_w = src_w * h_factor;
-  const unsigned dst_h = use_native_double_height ? (src_h * 2) : (src_h * v_factor);
-  if (dst_w == 0 || dst_h == 0 || dst_w > 4096 || dst_h > 4096) {
-    return false;
-  }
-
-  g_video_buffer.resize(static_cast<size_t>(dst_w) * static_cast<size_t>(dst_h));
-  if (use_native_double_height) {
-    for (unsigned y = 0; y < dst_h; ++y) {
-      const unsigned int *src = reinterpret_cast<const unsigned int*>(frame.pixels_argb32) +
-                                static_cast<size_t>(y) * static_cast<size_t>(frame.stride_pixels);
-      unsigned int *dst = g_video_buffer.data() + static_cast<size_t>(y) * static_cast<size_t>(dst_w);
-      if (h_factor == 1) {
-        std::memcpy(dst, src, static_cast<size_t>(src_w) * sizeof(unsigned int));
-      } else {
-        for (unsigned x = 0; x < src_w; ++x) {
-          const unsigned int pixel = src[x];
-          for (unsigned hx = 0; hx < h_factor; ++hx) {
-            dst[x * h_factor + hx] = pixel;
-          }
-        }
-      }
-    }
-  } else {
-    for (unsigned y = 0; y < src_h; ++y) {
-      const unsigned int *src = reinterpret_cast<const unsigned int*>(frame.pixels_argb32) +
-                                static_cast<size_t>(y) * static_cast<size_t>(frame.stride_pixels);
-      for (unsigned vy = 0; vy < v_factor; ++vy) {
-        unsigned int *dst = g_video_buffer.data() +
-                            static_cast<size_t>(y * v_factor + vy) * static_cast<size_t>(dst_w);
-        if (h_factor == 1) {
-          std::memcpy(dst, src, static_cast<size_t>(src_w) * sizeof(unsigned int));
-        } else {
-          for (unsigned x = 0; x < src_w; ++x) {
-            const unsigned int pixel = src[x];
-            for (unsigned hx = 0; hx < h_factor; ++hx) {
-              dst[x * h_factor + hx] = pixel;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  *out_pixels = g_video_buffer.data();
-  *out_width = dst_w;
-  *out_height = dst_h;
-  *out_stride_pixels = dst_w;
+  // Keep the framebuffer native: px68k reports the same raw dimensions and
+  // lets the frontend scale presentation separately.
+  *out_pixels = frame.pixels_argb32;
+  *out_width = frame.width;
+  *out_height = frame.height;
+  *out_stride_pixels = frame.stride_pixels;
   return true;
 }
 
@@ -3908,6 +3847,7 @@ bool retro_load_game(const struct retro_game_info *info)
     // HDF boot is more reliable with a full power cycle, not just a soft reset.
     g_xm6.set_power(g_xm6_handle, 0);
     g_xm6.set_power(g_xm6_handle, 1);
+    apply_runtime_core_options();
     apply_joy_type_options();
     begin_hdd_boot_warmup("HDD");
   } else {

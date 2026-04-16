@@ -81,6 +81,7 @@ typedef struct Px68kCrtcState {
 	WORD fastclrmask;
 	WORD intline;
 	BYTE vstep;
+	DWORD visible_vline;
 	int hsync_clk;
 	int hd;
 	int vd;

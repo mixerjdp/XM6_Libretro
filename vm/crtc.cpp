@@ -1455,7 +1455,12 @@ void FASTCALL CRTC::SyncPx68kState()
 		px68k_state_view.state.vstep = 4;
 	}
 	else {
-		px68k_state_view.state.vstep = 2;
+	px68k_state_view.state.vstep = 2;
+	}
+	px68k_state_view.state.visible_vline = 0xffffffffu;
+	if ((crtc.v_scan >= 0) && (crtc.v_scan <= crtc.v_dots)) {
+		const DWORD line = (DWORD)((crtc.v_scan > 0) ? (crtc.v_scan - 1) : 0);
+		px68k_state_view.state.visible_vline = (DWORD)((line * (DWORD)px68k_state_view.state.vstep) / 2);
 	}
 	px68k_state_view.state.hsync_clk = crtc.h_sync;
 	px68k_state_view.state.hd = crtc.hd;

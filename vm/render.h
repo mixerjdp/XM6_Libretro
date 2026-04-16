@@ -35,6 +35,54 @@ public:
 		compositor_fast = 1,
 	};
 
+	typedef struct {
+		BOOL valid;
+		int dst_y;
+		int src_y;
+		DWORD px68k_vline;
+		int sprite_raster;
+		int bg_raster;
+		int layer_raster;
+		int bg_vline;
+		int vline_bg;
+		BOOL visible;
+		BOOL bg_on;
+		BOOL bg_opaq;
+		BOOL sprite_enabled;
+		BOOL bgspflag;
+		BOOL bgspdisp;
+		BOOL gon;
+		BOOL tron;
+		BOOL pron;
+		BOOL ton;
+		BYTE vr2h;
+		BYTE vr2l;
+		int vscan;
+		int vdots;
+		DWORD vcount;
+		BOOL vblank;
+		int rcount;
+		int vstep;
+		int mixlen;
+		BOOL lowres;
+		int vmul;
+	} fast_vertical_probe_sample_t;
+
+	typedef struct {
+		BOOL valid;
+		int width;
+		int height;
+		int mixwidth;
+		int mixheight;
+		int mixpage;
+		int mixtype;
+		BOOL lowres;
+		BOOL bgspflag;
+		BOOL bgspdisp;
+		int sample_count;
+		fast_vertical_probe_sample_t samples[6];
+	} fast_vertical_probe_snapshot_t;
+
 	// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½fï¿½Eï¿½[ï¿½Eï¿½^ï¿½Eï¿½ï¿½Eï¿½`
 	typedef struct {
 		// ï¿½Eï¿½Sï¿½Eï¿½Ìï¿½ï¿½Eï¿½ï¿½Eï¿½
@@ -183,6 +231,7 @@ public:
 	BOOL FASTCALL SetCompositorMode(int mode);
 	int FASTCALL GetCompositorMode() const		{ return compositor_mode; }
 	DWORD FASTCALL GetFastFallbackCount() const	{ return fast_fallback_count; }
+	void FASTCALL GetFastVerticalProbeSnapshot(fast_vertical_probe_snapshot_t *out) const;
 	BOOL FASTCALL SetRenderFastDummyEnabled(BOOL enable);
 	BOOL FASTCALL IsRenderFastDummyEnabled() const	{ return render_fast_dummy_enabled; }
 	const IVideoStateView* FASTCALL GetVideoStateView() const { return this; }
