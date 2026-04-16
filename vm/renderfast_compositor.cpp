@@ -85,7 +85,7 @@ static BOOL FASTCALL FastUsePx68kBGSpriteTiming(const VC::vc_t *vc_state, const 
 	return (BOOL)((vc_state->vr2l & 0x40) && (bg_ctrl & 0x02) && !(bg_mode & 0x02));
 }
 
-static Px68kVerticalTiming FASTCALL FastGetVerticalTiming(const VC::vc_t *vc_state, const CRTC::crtc_t *c, const Sprite::sprite_t *spr, BOOL sprite_display, int raster)
+static Px68kVerticalTiming FASTCALL FastGetVerticalTiming(const VC::vc_t *vc_state, const CRTC::crtc_t *c, const Sprite::sprite_t *spr, BOOL sprite_display, int raster, const Px68kCrtcState *crtc_state)
 {
 	Px68kVerticalTiming timing;
 	BYTE bg_mode;
@@ -94,7 +94,6 @@ static Px68kVerticalTiming FASTCALL FastGetVerticalTiming(const VC::vc_t *vc_sta
 	int s1;
 	int s2;
 	int vline_bg;
-
 	timing.bg_vline = 0;
 	timing.vline_bg = raster & 0x3ff;
 	timing.layer_raster = raster & 0x3ff;
@@ -109,16 +108,25 @@ static Px68kVerticalTiming FASTCALL FastGetVerticalTiming(const VC::vc_t *vc_sta
 
 	bg_mode = FastReadBGRegByte(spr, 0x11);
 	bg_vdisp = FastReadBGRegByte(spr, 0x0f);
-	crtc_vstart = (((int)c->reg[0x0c] << 8) | (int)c->reg[0x0d]) & 0x3ff;
+	if (crtc_state) {
+		crtc_vstart = (int)crtc_state->vstart & 0x3ff;
+	}
+	else {
+		crtc_vstart = (((int)c->reg[0x0c] << 8) | (int)c->reg[0x0d]) & 0x3ff;
+	}
 	s1 = ((bg_mode & 0x04) ? 2 : 1) - ((bg_mode & 0x10) ? 1 : 0);
 	s2 = ((c->reg[0x29] & 0x04) ? 2 : 1) - ((c->reg[0x29] & 0x10) ? 1 : 0);
 	timing.bg_vline = ((int)bg_vdisp - crtc_vstart) / ((bg_mode & 0x04) ? 1 : 2);
+	if (crtc_state && (crtc_state->vstart <= 2u) && (crtc_state->vend <= 2u) && (timing.bg_vline >= 20)) {
+		timing.bg_vline -= 20;
+	}
 
 	vline_bg = raster & 0x3ff;
 	vline_bg <<= s1;
 	vline_bg >>= s2;
 	if (!(bg_mode & 0x10)) {
-		vline_bg -= (((int)bg_vdisp >> s1) - ((int)c->reg[0x0d] >> s2));
+		const int crtc_vstart_low = crtc_state ? (int)(crtc_state->vstart & 0xffu) : (int)c->reg[0x0d];
+		vline_bg -= (((int)bg_vdisp >> s1) - (crtc_vstart_low >> s2));
 	}
 
 	timing.vline_bg = vline_bg & 0x3ff;
@@ -1610,7 +1618,7 @@ void FASTCALL Render::MixFastLine(int dst_y, int src_y)
 	if (px68k_vline == 0xffffffffu) {
 		px68k_vline = (DWORD)src_y;
 	}
-	timing = FastGetVerticalTiming(p, c, &spr, sprite_enabled, px68k_vline);
+	timing = FastGetVerticalTiming(p, c, &spr, sprite_enabled, px68k_vline, &px68k_crtc_state_cache.state);
 	// px68k derives the BG/sprite lookup from VLINEBG - BG_VLINE while
 	// GRP/TEXT continue to use the output scanline path that XM6 already has
 	// prepared for this compositor.
@@ -2549,7 +2557,7 @@ void FASTCALL Render::ProcessFast()
 	}
 
 	if ((render.v_mul == 2) && !render.lowres) {
-		// I/Ooog??E??E?ooA?cooooooooo
+		// Preserve the px68k-style 2x vertical timing path for 256x256 modes.
 		for (i=render.first; i<render.last; i++) {
 			if ((i & 1) == 0) {
 				src = (i >> 1);
@@ -2562,7 +2570,6 @@ void FASTCALL Render::ProcessFast()
 				MixFastLine(src, src);
 			}
 		}
-		// ?X?V
 		render.first = render.last;
 		return;
 	}

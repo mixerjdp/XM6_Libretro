@@ -368,3 +368,4 @@ FodyWeavers.xsd
 *.exe
 *.lastbuildstate
 /nul
+/.codex_tmp

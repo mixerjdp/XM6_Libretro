@@ -55,8 +55,8 @@ static const unsigned k_ymfm_sample_rate = 62500;
 static const unsigned k_default_width = 768;
 static const unsigned k_default_height = 512;
 static const unsigned k_savestate_guard_frames_default = 300;
-static const unsigned k_savestate_guard_frames_floppy_load = 420;
-static const unsigned k_savestate_guard_frames_hdd_load = 720;
+static const unsigned k_savestate_guard_frames_floppy_load = 50;
+static const unsigned k_savestate_guard_frames_hdd_load = 50;
 static const unsigned k_savestate_guard_frames_post_load = 180;
 static const unsigned k_video_probe_frames_after_mode_change = 12;
 

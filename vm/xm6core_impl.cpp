@@ -1051,8 +1051,10 @@ static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r
 			sprite_dev = static_cast<const Sprite*>(dev);
 		}
 	}
-	const unsigned int vstart = crtc_work ? ((((unsigned int)crtc_work->reg[0x0c] << 8) | (unsigned int)crtc_work->reg[0x0d]) & 0x3ffu) : 0u;
-	const unsigned int vend = crtc_work ? ((((unsigned int)crtc_work->reg[0x0e] << 8) | (unsigned int)crtc_work->reg[0x0f]) & 0x3ffu) : 0u;
+	const unsigned int vstart = crtc_view ? (unsigned int)(crtc_view->state.vstart & 0x3ffu)
+		: (crtc_work ? ((((unsigned int)crtc_work->reg[0x0c] << 8) | (unsigned int)crtc_work->reg[0x0d]) & 0x3ffu) : 0u);
+	const unsigned int vend = crtc_view ? (unsigned int)(crtc_view->state.vend & 0x3ffu)
+		: (crtc_work ? ((((unsigned int)crtc_work->reg[0x0e] << 8) | (unsigned int)crtc_work->reg[0x0f]) & 0x3ffu) : 0u);
 	const unsigned int vstep = crtc_work ? (((crtc_work->reg[0x29] & 0x14) == 0x10) ? 1u : (((crtc_work->reg[0x29] & 0x14) == 0x04) ? 4u : 2u)) : 0u;
 	const unsigned int vscan = crtc_work ? (unsigned int)((crtc_work->v_scan >= 0) ? crtc_work->v_scan : 0) : 0u;
 	const unsigned int vdots = crtc_work ? (unsigned int)((crtc_work->v_dots >= 0) ? crtc_work->v_dots : 0) : 0u;
@@ -1066,8 +1068,7 @@ static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r
 	const unsigned int crtc_vstep = crtc_view ? (unsigned int)crtc_view->timing_view.crtc_vstep : 0u;
 	const unsigned int crtc_mode = crtc_view ? (unsigned int)crtc_view->timing_view.crtc_mode : 0u;
 	const unsigned int crtc_fastclr = crtc_view ? (unsigned int)crtc_view->timing_view.crtc_fastclr : 0u;
-	const unsigned int visible_vline = (crtc_work && (crtc_work->v_scan >= 0) && (crtc_work->v_scan <= crtc_work->v_dots) &&
-		((unsigned int)crtc_work->v_scan >= vstart) && ((unsigned int)crtc_work->v_scan < vend))
+	const unsigned int visible_vline = (crtc_work && (crtc_work->v_scan >= 0) && (crtc_work->v_scan <= crtc_work->v_dots))
 		? (unsigned int)((((unsigned int)((crtc_work->v_scan > 0) ? (crtc_work->v_scan - 1) : 0)) * vstep) / 2u)
 		: 0xffffffffu;
 	const unsigned int textdoty = (vend > vstart) ? (((vend - vstart) * vstep) / 2u) : 0u;
@@ -1100,6 +1101,9 @@ static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r
 		if (crtc_work) {
 			const unsigned int div = ((bg_reg_11 & 0x04u) != 0u) ? 1u : 2u;
 			bg_vline = (bg_reg_0f >= vstart) ? ((bg_reg_0f - vstart) / div) : 0u;
+			if ((vstart <= 2u) && (vend <= 2u) && (bg_vline >= 20u)) {
+				bg_vline -= 20u;
+			}
 		}
 	}
 	const char *mode_name = ctx->render->IsRenderFastDummyEnabled() ? "px68k" : "original";
@@ -2418,11 +2422,8 @@ XM6CORE_API int XM6CORE_CALL xm6_get_video_layout(
 		return XM6CORE_ERR_NOT_READY;
 	}
 
-	unsigned int h_mul = (r->h_mul > 0) ? (unsigned int)r->h_mul : 1u;
+	unsigned int h_mul = 1u;
 	unsigned int v_mul = 1u;
-	if (r->v_mul == 0 || r->v_mul == 1 || r->v_mul == 2) {
-		v_mul = (unsigned int)r->v_mul;
-	}
 
 	*out_width = (unsigned int)r->width;
 	*out_height = (unsigned int)r->height;
