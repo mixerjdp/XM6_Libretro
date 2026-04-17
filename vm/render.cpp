@@ -19,6 +19,7 @@
 #include "rend_soft.h"
 #include "graphic_engine.h"
 #include "render.h"
+#include "px68k_render_adapter.h"
 
 BOOL FASTCALL IsCMOV(void);
 
@@ -36,6 +37,22 @@ BOOL FASTCALL IsCMOV(void);
 //---------------------------------------------------------------------------
 #define REND_COLOR0		0x80000000		// ?Jo?[0?to?O(rend_asm.asmog?p)
 #define REND_FAST_IBIT	0x40000000		// Fast render Ibit marker (XRGB8888: top byte ignored)
+
+static DWORD FASTCALL ConvFast565IToXrgb8888(WORD color)
+{
+	const DWORD r5 = (DWORD)((color >> 11) & 0x1f);
+	const DWORD g5 = (DWORD)((color >> 6) & 0x1f);
+	const DWORD b5 = (DWORD)(color & 0x1f);
+	const DWORD r8 = (r5 << 3) | (r5 >> 2);
+	const DWORD g8 = (g5 << 3) | (g5 >> 2);
+	const DWORD b8 = (b5 << 3) | (b5 >> 2);
+	DWORD out = (r8 << 16) | (g8 << 8) | b8;
+
+	if (color & 0x20) {
+		out |= REND_FAST_IBIT;
+	}
+	return out;
+}
 
 static int FASTCALL CalcBGHAdjustPixels(int compositor_mode, const CRTC *crtc, const Sprite *sprite)
 {
@@ -459,6 +476,7 @@ Render::Render(VM *p) : Device(p)
 	backend_original = NULL;
 	backend_px68k = NULL;
 	video_snapshot_adapter = NULL;
+	px68k_adapter = NULL;
 	palbuf_original = NULL;
 	palbuf_fast = NULL;
 	render_target = NULL;
@@ -726,6 +744,7 @@ BOOL FASTCALL Render::Init()
 		backend_original = new OriginalGraphicEngine();
 		backend_px68k = new Px68kGraphicEngine();
 		video_snapshot_adapter = new XmVideoSnapshotAdapter();
+		px68k_adapter = new Px68kRenderAdapter();
 	}
 	catch (...) {
 		if (backend_original) {
@@ -740,6 +759,10 @@ BOOL FASTCALL Render::Init()
 			delete video_snapshot_adapter;
 			video_snapshot_adapter = NULL;
 		}
+		if (px68k_adapter) {
+			delete px68k_adapter;
+			px68k_adapter = NULL;
+		}
 		return FALSE;
 	}
 	if (!backend_original) {
@@ -749,6 +772,14 @@ BOOL FASTCALL Render::Init()
 		return FALSE;
 	}
 	if (!video_snapshot_adapter) {
+		return FALSE;
+	}
+	if (!px68k_adapter) {
+		return FALSE;
+	}
+	if (!px68k_adapter->Init()) {
+		delete px68k_adapter;
+		px68k_adapter = NULL;
 		return FALSE;
 	}
 	if (!SetCompositorMode(render_fast_dummy_enabled ? compositor_fast : compositor_original)) {
@@ -780,6 +811,11 @@ void FASTCALL Render::Cleanup()
 	if (video_snapshot_adapter) {
 		delete video_snapshot_adapter;
 		video_snapshot_adapter = NULL;
+	}
+	if (px68k_adapter) {
+		px68k_adapter->Cleanup();
+		delete px68k_adapter;
+		px68k_adapter = NULL;
 	}
 	backend = NULL;
 	memset(&px68k_crtc_host, 0, sizeof(px68k_crtc_host));
@@ -1196,6 +1232,8 @@ void FASTCALL Render::ComposeVideo()
 //---------------------------------------------------------------------------
 void FASTCALL Render::StartFrame()
 {
+	ApplyPendingCompositorMode();
+
 	if (backend) {
 		backend->StartFrame(this);
 		return;
@@ -1298,7 +1336,6 @@ void FASTCALL Render::StartFrameOriginal()
 	int i;
 
 	ASSERT(this);
-	ApplyPendingCompositorMode();
 
 	// ooto?[ooX?L?b?voo
 	if ((render.count != 0) || !render.enable) {
@@ -4029,6 +4066,273 @@ void FASTCALL Render::Process()
 	render.first = render.last;
 }
 
+//===========================================================================
+//
+//	PX68k Video Engine Fast Pipeline Methods
+//
+//===========================================================================
+
+void FASTCALL Render::StartFrameFast()
+{
+	CRTC::crtc_t crtcdata;
+	BOOL geometry_synced = FALSE;
+
+	ASSERT(this);
+
+	// Skip if not ready
+	if ((render.count != 0) || !render.enable) {
+		render.act = FALSE;
+		return;
+	}
+
+	// Mark frame as active
+	render.act = TRUE;
+	render.first = 0;
+	render.last = -1;
+
+	// Keep geometry in sync with active CRTC mode.
+	if (crtc) {
+		crtc->GetCRTC(&crtcdata);
+		if ((crtcdata.h_dots > 0) && (crtcdata.v_dots > 0)) {
+			render.width = crtcdata.h_dots;
+			render.h_mul = crtcdata.h_mul;
+			render.height = crtcdata.v_dots;
+			render.v_mul = crtcdata.v_mul;
+			render.lowres = crtcdata.lowres;
+			if ((render.v_mul == 2) && !render.lowres) {
+				render.height >>= 1;
+			}
+			render.mixlen = render.width;
+			if (render.mixwidth < render.width) {
+				render.mixlen = render.mixwidth;
+			}
+			render.crtc = FALSE;
+			geometry_synced = TRUE;
+		}
+	}
+
+	// Don't stall frame production on transient CRTC geometry glitches.
+	if (!geometry_synced) {
+		if ((render.width <= 0) || (render.height <= 0)) {
+			render.act = FALSE;
+			fast_fallback_count++;
+			return;
+		}
+		render.mixlen = render.width;
+		if (render.mixwidth < render.width) {
+			render.mixlen = render.mixwidth;
+		}
+	}
+
+	// Initialize PX68k adapter if available
+	if (px68k_adapter) {
+		px68k_adapter->StartFrame(this);
+	}
+
+	BeginVideoSnapshotFrame();
+}
+
+void FASTCALL Render::EndFrameFast()
+{
+	int copy_w;
+	int copy_h;
+	int y;
+
+	ASSERT(this);
+
+	if (!render.act) {
+		return;
+	}
+
+	// Process remaining scanlines
+	if (render.last > 0) {
+		render.last = render.height;
+		ProcessFast();
+	}
+
+	// End frame in adapter
+	if (px68k_adapter) {
+		px68k_adapter->EndFrame(this);
+	}
+
+	// Copy PX68k 565I output into the canonical 32-bit mix buffer expected
+	// by xm6_video_poll/libretro.
+	if (px68k_adapter && render.mixbuf && (render.mixwidth > 0) && (render.mixheight > 0)) {
+		const WORD *src = px68k_adapter->GetScreenBuffer();
+		const int src_w = (int)px68k_adapter->GetScreenWidth();
+		const int src_h = (int)px68k_adapter->GetScreenHeight();
+
+		if (src && (src_w > 0) && (src_h > 0)) {
+			render.width = src_w;
+			render.height = src_h;
+			render.mixlen = render.width;
+			if (render.mixwidth < render.width) {
+				render.mixlen = render.mixwidth;
+			}
+
+			copy_w = src_w;
+			if (copy_w > render.mixwidth) {
+				copy_w = render.mixwidth;
+			}
+			copy_h = src_h;
+			if (copy_h > render.mixheight) {
+				copy_h = render.mixheight;
+			}
+
+			for (y = 0; y < copy_h; y++) {
+				const WORD *src_row = &src[y * PX68K_FULLSCREEN_WIDTH];
+				DWORD *dst_row = &render.mixbuf[y * render.mixwidth];
+				int x;
+				for (x = 0; x < copy_w; x++) {
+					dst_row[x] = ConvFast565IToXrgb8888(src_row[x]);
+				}
+				if (copy_w < render.mixwidth) {
+					memset(&dst_row[copy_w], 0, (size_t)(render.mixwidth - copy_w) * sizeof(DWORD));
+				}
+				if (y < 1024) {
+					render.mix[y] = FALSE;
+				}
+			}
+			for (; y < render.mixheight; y++) {
+				memset(&render.mixbuf[y * render.mixwidth], 0, (size_t)render.mixwidth * sizeof(DWORD));
+				if (y < 1024) {
+					render.mix[y] = FALSE;
+				}
+			}
+		}
+		else {
+			fast_fallback_count++;
+		}
+	}
+
+	render.count++;
+	EndVideoSnapshotFrame();
+	render.act = FALSE;
+}
+
+void FASTCALL Render::HSyncFast(int raster)
+{
+	ASSERT(this);
+
+	render.last = raster;
+
+	if (!render.act) {
+		return;
+	}
+
+	// Process through adapter
+	if (px68k_adapter) {
+		px68k_adapter->HSync(this, raster);
+	}
+}
+
+void FASTCALL Render::SetCRTCFast()
+{
+	ASSERT(this);
+
+	render.crtc = TRUE;
+	render.vc = TRUE;
+
+	if (px68k_adapter) {
+		px68k_adapter->SetCRTC(this);
+	}
+}
+
+void FASTCALL Render::SetVCFast()
+{
+	ASSERT(this);
+
+	render.vc = TRUE;
+
+	if (px68k_adapter) {
+		px68k_adapter->SetVC(this);
+	}
+}
+
+void FASTCALL Render::VideoFastPX68K()
+{
+	ASSERT(this);
+
+	// Clear VC dirty flag
+	render.vc = FALSE;
+
+	// Mark all lines dirty
+	for (int i = 0; i < 1024; i++) {
+		render.mix[i] = TRUE;
+	}
+
+	// Sync state through adapter
+	if (px68k_adapter) {
+		px68k_adapter->SetVC(this);
+	}
+}
+
+void FASTCALL Render::PaletteFastPX68K()
+{
+	ASSERT(this);
+
+	// Process palette through adapter
+	// The adapter handles palette conversion internally
+}
+
+void FASTCALL Render::TextFastPX68K(int raster)
+{
+	ASSERT(this);
+	ASSERT((raster >= 0) && (raster < 1024));
+
+	// Text rendering is handled by the adapter during HSync
+	(void)raster;
+}
+
+void FASTCALL Render::ProcessFast()
+{
+	ASSERT(this);
+
+	if (render.first >= render.last) {
+		return;
+	}
+
+	// Process through adapter
+	if (px68k_adapter) {
+		px68k_adapter->Process(this);
+	}
+
+	render.first = render.last;
+}
+
+void FASTCALL Render::MixFast(int y)
+{
+	ASSERT(this);
+	ASSERT((y >= 0) && (y < render.mixheight));
+
+	// Mixing is handled by the adapter
+	(void)y;
+}
+
+void FASTCALL Render::MixFastLine(int dst_y, int src_y)
+{
+	ASSERT(this);
+
+	// Line mixing is handled by the adapter
+	(void)dst_y;
+	(void)src_y;
+}
+
+void FASTCALL Render::FastMixGrp(int y, DWORD *grp, DWORD *grp_sp, DWORD *grp_sp2,
+	BOOL *grp_sp_tr, BOOL *gon, BOOL *tron, BOOL *pron)
+{
+	ASSERT(this);
+
+	// Fast graphic mixing - handled by adapter
+	(void)y;
+	(void)grp;
+	(void)grp_sp;
+	(void)grp_sp2;
+	(void)grp_sp_tr;
+	(void)gon;
+	(void)tron;
+	(void)pron;
+}
 
 
 
@@ -4036,5 +4340,30 @@ void FASTCALL Render::Process()
 
 
 
+//===========================================================================
+//
+//	Fast Vertical Probe Snapshot
+//
+//===========================================================================
 
+void FASTCALL Render::GetFastVerticalProbeSnapshot(fast_vertical_probe_snapshot_t *out) const
+{
+	if (!out) {
+		return;
+	}
 
+	// Return a zeroed/empty snapshot as a stub
+	// The full implementation would capture vertical timing state
+	memset(out, 0, sizeof(fast_vertical_probe_snapshot_t));
+	out->valid = FALSE;
+	out->width = render.width;
+	out->height = render.height;
+	out->mixwidth = render.mixwidth;
+	out->mixheight = render.mixheight;
+	out->mixpage = render.mixpage;
+	out->mixtype = render.mixtype;
+	out->lowres = render.lowres ? TRUE : FALSE;
+	out->bgspflag = render.bgspflag ? TRUE : FALSE;
+	out->bgspdisp = render.bgspdisp ? TRUE : FALSE;
+	out->sample_count = 0;
+}

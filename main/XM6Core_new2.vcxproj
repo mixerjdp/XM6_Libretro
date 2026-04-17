@@ -17,6 +17,7 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ClCompile Include="..\vm\px68k_render_adapter.cpp" xmlns="" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
@@ -238,7 +239,7 @@
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
     <ClCompile Include="..\vm\render.cpp" />
-    <ClCompile Include="..\vm\px68k_video_engine.cpp" />
+    <ClCompile Include="..\vm\renderfast_compositor.cpp" />
     <ClCompile Include="..\vm\graphic_engine.cpp" />
     <ClCompile Include="..\vm\x68krender.cpp" />
     <ClCompile Include="..\vm\rend_soft.cpp" />
@@ -351,7 +352,6 @@
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">CompileAsCpp</CompileAs>
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">CompileAsCpp</CompileAs>
     </ClCompile>
-    <ClCompile Include="..\vm\px68k_render_adapter.cpp" />
   </ItemGroup>
   <!-- Public API and browse headers -->
   <ItemGroup>
@@ -455,8 +455,6 @@
     <ClInclude Include="..\vm\windrv.h" />
     <ClInclude Include="..\vm\xm6.h" />
     <ClInclude Include="..\vm\xm6core.h" />
-    <ClInclude Include="..\vm\px68k_video_engine.h" />
-    <ClInclude Include="..\vm\px68k_render_adapter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

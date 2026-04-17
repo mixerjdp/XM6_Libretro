@@ -21,6 +21,7 @@ class Sprite;
 class TVRAM;
 class VC;
 class XmVideoSnapshotAdapter;
+class Px68kRenderAdapter;
 
 //===========================================================================
 //
@@ -393,6 +394,7 @@ private:
 	Px68kCrtcHost px68k_crtc_host;
 	Px68kCrtcStateView px68k_crtc_state_cache;
 	IRenderTarget *render_target;
+	Px68kRenderAdapter *px68k_adapter;
 	render_t render;
 										// ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½ï¿½Eï¿½fï¿½Eï¿½[ï¿½Eï¿½^
 	BOOL cmov;

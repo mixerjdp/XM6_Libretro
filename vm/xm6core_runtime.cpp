@@ -649,6 +649,10 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_render_fast_dummy(XM6Handle hand
 	if (render) {
 		ctx->runtime_config.render_fast_dummy = enabled ? TRUE : FALSE;
 		render->SetRenderFastDummyEnabled(enabled ? TRUE : FALSE);
+		// Keep runtime toggle behavior consistent with other video options:
+		// force a full recomposition and clear "ready" so the next frame is fresh.
+		render->ForceRecompose();
+		render->Complete();
 	}
 
 	return XM6CORE_OK;

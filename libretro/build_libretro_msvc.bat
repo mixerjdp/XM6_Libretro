@@ -92,7 +92,8 @@ set SOURCES=^
   ..\vm\printer.cpp ^
   ..\vm\graphic_engine.cpp ^
   ..\vm\render.cpp ^
-  ..\vm\renderfast_compositor.cpp ^
+  ..\vm\px68k_video_engine.cpp ^
+  ..\vm\px68k_render_adapter.cpp ^
   ..\vm\x68krender.cpp ^
   ..\vm\rend_soft.cpp ^
   ..\vm\rtc.cpp ^
