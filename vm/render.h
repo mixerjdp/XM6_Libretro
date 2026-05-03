@@ -235,6 +235,8 @@ public:
 	void FASTCALL GetFastVerticalProbeSnapshot(fast_vertical_probe_snapshot_t *out) const;
 	BOOL FASTCALL SetRenderFastDummyEnabled(BOOL enable);
 	BOOL FASTCALL IsRenderFastDummyEnabled() const	{ return render_fast_dummy_enabled; }
+	BOOL FASTCALL EnsurePx68kFrame();
+	BOOL FASTCALL GetPx68kScreen(const WORD **out_pixels, int *out_width, int *out_height, int *out_stride) const;
 	const IVideoStateView* FASTCALL GetVideoStateView() const { return this; }
 	const IPaletteResolver* FASTCALL GetPaletteResolver() const { return this; }
 	const Px68kCrtcHost* FASTCALL GetPx68kCrtcHost() const;

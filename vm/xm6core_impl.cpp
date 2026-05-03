@@ -24,6 +24,8 @@
 #include "render.h"
 #include "crtc.h"
 #include "vc.h"
+#include "tvram.h"
+#include "gvram.h"
 #include "sprite.h"
 #include "keyboard.h"
 #include "mouse.h"
@@ -163,6 +165,11 @@ struct XM6Context {
 	int px68k_lpf_prev_r;
 	int px68k_last_out_l;
 	int px68k_last_out_r;
+	unsigned int *px68k_video_xrgb;
+	unsigned int px68k_video_xrgb_capacity;
+	unsigned int px68k_video_probe_signature;
+	BOOL px68k_video_probe_has_signature;
+	unsigned int px68k_watchdog_frame_count;
 };
 
 #include "x68sound_adpcm_core.h"
@@ -196,6 +203,216 @@ static bool ensure_px68k_audio_ring(XM6Context *ctx);
 static void produce_px68k_audio(XM6Context *ctx, DWORD hus);
 static int configure_audio_backend(XM6Context *ctx, unsigned int sample_rate);
 static inline short saturate_s16(int value);
+static unsigned int hash_u32(unsigned int h, unsigned int v);
+static void emit_messagef(XM6Context *ctx, const char *format, ...);
+
+static inline unsigned int px68k_rgb565_to_xrgb8888(WORD color)
+{
+	const unsigned int r5 = (unsigned int)((color >> 11) & 0x1f);
+	const unsigned int g5 = (unsigned int)((color >> 6) & 0x1f);
+	const unsigned int b5 = (unsigned int)(color & 0x1f);
+	const unsigned int r8 = (r5 << 3) | (r5 >> 2);
+	const unsigned int g8 = (g5 << 3) | (g5 >> 2);
+	const unsigned int b8 = (b5 << 3) | (b5 >> 2);
+	return (r8 << 16) | (g8 << 8) | b8;
+}
+
+static bool ensure_px68k_video_xrgb_buffer(XM6Context *ctx, unsigned int pixels)
+{
+	unsigned int *new_buf;
+
+	if (!ctx || pixels == 0) {
+		return false;
+	}
+	if (ctx->px68k_video_xrgb && ctx->px68k_video_xrgb_capacity >= pixels) {
+		return true;
+	}
+
+	new_buf = new (std::nothrow) unsigned int[pixels];
+	if (!new_buf) {
+		return false;
+	}
+
+	delete[] ctx->px68k_video_xrgb;
+	ctx->px68k_video_xrgb = new_buf;
+	ctx->px68k_video_xrgb_capacity = pixels;
+	return true;
+}
+
+static unsigned int px68k_frame_signature(const WORD *src, unsigned int width, unsigned int height, unsigned int stride, unsigned int *out_nonzero)
+{
+	unsigned int signature = 2166136261u;
+	unsigned int nonzero = 0;
+
+	if (!src || width == 0 || height == 0 || stride < width) {
+		if (out_nonzero) {
+			*out_nonzero = 0;
+		}
+		return 0;
+	}
+
+	for (unsigned int y = 0; y < height; y += 16) {
+		const WORD *row = src + ((size_t)y * (size_t)stride);
+		for (unsigned int x = 0; x < width; x += 16) {
+			const unsigned int v = (unsigned int)row[x];
+			if (v != 0) {
+				nonzero++;
+			}
+			signature = hash_u32(signature, v);
+		}
+	}
+
+	signature = hash_u32(signature, width);
+	signature = hash_u32(signature, height);
+	signature = hash_u32(signature, nonzero);
+	if (out_nonzero) {
+		*out_nonzero = nonzero;
+	}
+	return signature;
+}
+
+static unsigned int sampled_byte_stats(const BYTE *src, unsigned int size, unsigned int step, unsigned int *out_nonzero)
+{
+	unsigned int signature = 2166136261u;
+	unsigned int nonzero = 0;
+
+	if (!src || size == 0) {
+		if (out_nonzero) {
+			*out_nonzero = 0;
+		}
+		return 0;
+	}
+	if (step == 0) {
+		step = 1;
+	}
+
+	for (unsigned int i = 0; i < size; i += step) {
+		const unsigned int v = (unsigned int)src[i];
+		if (v != 0) {
+			nonzero++;
+		}
+		signature = hash_u32(signature, v);
+	}
+
+	if (out_nonzero) {
+		*out_nonzero = nonzero;
+	}
+	return signature;
+}
+
+static unsigned int sampled_word_stats(const WORD *src, unsigned int count, unsigned int step, unsigned int *out_nonzero)
+{
+	unsigned int signature = 2166136261u;
+	unsigned int nonzero = 0;
+
+	if (!src || count == 0) {
+		if (out_nonzero) {
+			*out_nonzero = 0;
+		}
+		return 0;
+	}
+	if (step == 0) {
+		step = 1;
+	}
+
+	for (unsigned int i = 0; i < count; i += step) {
+		const unsigned int v = (unsigned int)src[i];
+		if (v != 0) {
+			nonzero++;
+		}
+		signature = hash_u32(signature, v);
+	}
+
+	if (out_nonzero) {
+		*out_nonzero = nonzero;
+	}
+	return signature;
+}
+
+static void emit_px68k_watchdog(
+	XM6Context *ctx,
+	const WORD *framebuffer,
+	unsigned int width,
+	unsigned int height,
+	unsigned int stride,
+	unsigned int fb_nonzero,
+	unsigned int fb_signature)
+{
+	const VC::vc_t *vc_state = NULL;
+	const CRTC::crtc_t *crtc_state = NULL;
+	const Px68kCrtcStateView *crtc_view = NULL;
+	const BYTE *tvram_bytes = NULL;
+	const BYTE *gvram_bytes = NULL;
+	const WORD *palette_words = NULL;
+	unsigned int tv_nonzero = 0;
+	unsigned int gv_nonzero = 0;
+	unsigned int pal_nonzero = 0;
+	unsigned int tv_sig = 0;
+	unsigned int gv_sig = 0;
+	unsigned int pal_sig = 0;
+
+	if (!ctx || !ctx->vm) {
+		return;
+	}
+
+	Device *dev = ctx->vm->SearchDevice(MAKEID('V', 'C', ' ', ' '));
+	if (dev && dev->GetID() == MAKEID('V', 'C', ' ', ' ')) {
+		VC *vc = static_cast<VC*>(dev);
+		vc_state = vc->GetWorkAddr();
+		palette_words = (const WORD*)vc->GetPalette();
+	}
+
+	dev = ctx->vm->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
+	if (dev && dev->GetID() == MAKEID('C', 'R', 'T', 'C')) {
+		CRTC *crtc = static_cast<CRTC*>(dev);
+		crtc_state = crtc->GetWorkAddr();
+		crtc_view = crtc->GetPx68kStateView();
+	}
+
+	dev = ctx->vm->SearchDevice(MAKEID('T', 'V', 'R', 'M'));
+	if (dev && dev->GetID() == MAKEID('T', 'V', 'R', 'M')) {
+		TVRAM *tvram = static_cast<TVRAM*>(dev);
+		tvram_bytes = tvram->GetTVRAM();
+	}
+
+	dev = ctx->vm->SearchDevice(MAKEID('G', 'V', 'R', 'M'));
+	if (dev && dev->GetID() == MAKEID('G', 'V', 'R', 'M')) {
+		GVRAM *gvram = static_cast<GVRAM*>(dev);
+		gvram_bytes = gvram->GetGVRAM();
+	}
+
+	tv_sig = sampled_byte_stats(tvram_bytes, 0x80000u, 257u, &tv_nonzero);
+	gv_sig = sampled_byte_stats(gvram_bytes, 0x80000u, 509u, &gv_nonzero);
+	pal_sig = sampled_word_stats(palette_words, 512u, 1u, &pal_nonzero);
+
+	emit_messagef(ctx,
+		"[xm6-core] PX68k watchdog fb=%ux%u stride=%u fb_nonzero=%u fb_sig=%08X "
+		"vc0=%02X vc1=%02X%02X vc2=%02X%02X ton=%u gon=%u son=%u gs=%u%u%u%u "
+		"crtc=%dx%d v=%d/%d mode=%02X view=%ux%u vv=%u "
+		"tv_nonzero=%u tv_sig=%08X gv_nonzero=%u gv_sig=%08X pal_nonzero=%u pal_sig=%08X",
+		width, height, stride, fb_nonzero, fb_signature,
+		vc_state ? (unsigned int)(((vc_state->siz ? 0x04u : 0x00u) | (vc_state->col & 0x03u)) & 0xffu) : 0u,
+		vc_state ? (unsigned int)(vc_state->vr1h & 0xffu) : 0u,
+		vc_state ? (unsigned int)(vc_state->vr1l & 0xffu) : 0u,
+		vc_state ? (unsigned int)(vc_state->vr2h & 0xffu) : 0u,
+		vc_state ? (unsigned int)(vc_state->vr2l & 0xffu) : 0u,
+		(vc_state && vc_state->ton) ? 1u : 0u,
+		(vc_state && vc_state->gon) ? 1u : 0u,
+		(vc_state && vc_state->son) ? 1u : 0u,
+		(vc_state && vc_state->gs[3]) ? 1u : 0u,
+		(vc_state && vc_state->gs[2]) ? 1u : 0u,
+		(vc_state && vc_state->gs[1]) ? 1u : 0u,
+		(vc_state && vc_state->gs[0]) ? 1u : 0u,
+		crtc_state ? crtc_state->h_dots : 0,
+		crtc_state ? crtc_state->v_dots : 0,
+		crtc_state ? crtc_state->v_scan : 0,
+		crtc_state ? crtc_state->v_count : 0,
+		crtc_view ? (unsigned int)(crtc_view->state.mode & 0xffu) : 0u,
+		crtc_view ? (unsigned int)crtc_view->state.textdotx : 0u,
+		crtc_view ? (unsigned int)crtc_view->state.textdoty : 0u,
+		crtc_view ? (unsigned int)crtc_view->state.visible_vline : 0xffffffffu,
+		tv_nonzero, tv_sig, gv_nonzero, gv_sig, pal_nonzero, pal_sig);
+}
 
 static const unsigned int k_opm_clock_hz = 4000000u;
 
@@ -1660,6 +1877,11 @@ XM6CORE_API void XM6CORE_CALL xm6_destroy(XM6Handle handle)
 	delete[] ctx->px68k_ring;
 	ctx->px68k_ring = NULL;
 	ctx->px68k_ring_frames = 0;
+	delete[] ctx->px68k_video_xrgb;
+	ctx->px68k_video_xrgb = NULL;
+	ctx->px68k_video_xrgb_capacity = 0;
+	ctx->px68k_video_probe_signature = 0;
+	ctx->px68k_video_probe_has_signature = FALSE;
 
 	if (g_message_ctx == ctx) {
 		 g_message_ctx = NULL;
@@ -2293,6 +2515,72 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 
 	if (!ctx->render || !out_frame) {
 		return XM6CORE_ERR_INVALID_ARGUMENT;
+	}
+
+	if (ctx->render->IsRenderFastDummyEnabled()) {
+		const WORD *src = NULL;
+		int src_w = 0;
+		int src_h = 0;
+		int src_stride = 0;
+
+		ctx->render->EnsurePx68kFrame();
+		if (ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride) &&
+			src && (src_w > 0) && (src_h > 0) && (src_stride >= src_w)) {
+			const unsigned int visible_w = (unsigned int)src_w;
+			const unsigned int visible_h = (unsigned int)src_h;
+			const unsigned int pixels = visible_w * visible_h;
+			unsigned int nonzero = 0;
+			const unsigned int signature = px68k_frame_signature(src, visible_w, visible_h, (unsigned int)src_stride, &nonzero);
+
+			if (!ensure_px68k_video_xrgb_buffer(ctx, pixels)) {
+				return XM6CORE_ERR_NOT_READY;
+			}
+
+			for (unsigned int y = 0; y < visible_h; y++) {
+				const WORD *src_row = src + ((size_t)y * (size_t)src_stride);
+				unsigned int *dst_row = ctx->px68k_video_xrgb + ((size_t)y * (size_t)visible_w);
+				for (unsigned int x = 0; x < visible_w; x++) {
+					dst_row[x] = px68k_rgb565_to_xrgb8888(src_row[x]);
+				}
+			}
+
+			out_frame->pixels_argb32 = ctx->px68k_video_xrgb;
+			out_frame->width = visible_w;
+			out_frame->height = visible_h;
+			out_frame->stride_pixels = visible_w;
+			if (!ctx->px68k_video_probe_has_signature) {
+				ctx->px68k_video_probe_has_signature = TRUE;
+				ctx->px68k_video_probe_signature = signature;
+				emit_messagef(ctx,
+					"[xm6-core] PX68k framebuffer %ux%u stride=%d sampled_nonzero=%u signature=%08X",
+					visible_w, visible_h, src_stride, nonzero, signature);
+			}
+			ctx->px68k_watchdog_frame_count++;
+			if ((ctx->px68k_watchdog_frame_count == 1u) || (ctx->px68k_watchdog_frame_count >= 300u)) {
+				ctx->px68k_watchdog_frame_count = 1u;
+				emit_px68k_watchdog(ctx, src, visible_w, visible_h, (unsigned int)src_stride, nonzero, signature);
+			}
+			return XM6CORE_OK;
+		}
+		if (ensure_px68k_video_xrgb_buffer(ctx, 768u * 512u)) {
+			std::memset(ctx->px68k_video_xrgb, 0, (size_t)768u * 512u * sizeof(unsigned int));
+			out_frame->pixels_argb32 = ctx->px68k_video_xrgb;
+			out_frame->width = 768u;
+			out_frame->height = 512u;
+			out_frame->stride_pixels = 768u;
+			if (!ctx->px68k_video_probe_has_signature || ctx->px68k_video_probe_signature != 0u) {
+				ctx->px68k_video_probe_has_signature = TRUE;
+				ctx->px68k_video_probe_signature = 0u;
+				emit_messagef(ctx, "[xm6-core] PX68k framebuffer unavailable; returning black diagnostic frame");
+			}
+			ctx->px68k_watchdog_frame_count++;
+			if ((ctx->px68k_watchdog_frame_count == 1u) || (ctx->px68k_watchdog_frame_count >= 300u)) {
+				ctx->px68k_watchdog_frame_count = 1u;
+				emit_px68k_watchdog(ctx, NULL, 768u, 512u, 768u, 0u, 0u);
+			}
+			return XM6CORE_OK;
+		}
+		return XM6CORE_ERR_NOT_READY;
 	}
 
 	// Verificar si el Render tiene un frame listo

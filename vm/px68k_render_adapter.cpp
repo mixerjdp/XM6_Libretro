@@ -191,6 +191,7 @@ Px68kRenderAdapter::Px68kRenderAdapter()
 	debug_grp_ = TRUE;
 	debug_sp_ = TRUE;
 	current_raster_ = 0;
+	drawn_lines_ = 0;
 	crtc_dirty_ = TRUE;
 	vc_dirty_ = TRUE;
 	palette_dirty_ = TRUE;
@@ -313,10 +314,8 @@ void Px68kRenderAdapter::SyncVCState(const VC *vc)
 
 	Px68kVideoEngineState *es = engine_->GetState();
 
-	// VCReg0 in px68k is sourced from the CRTC 0x28/0x29 register pair.
-	// Using the exact register image keeps mode/priority selection 1:1.
-	es->vc.vcreg0[0] = es->crtc.regs[0x28];
-	es->vc.vcreg0[1] = es->crtc.regs[0x29];
+	es->vc.vcreg0[0] = 0;
+	es->vc.vcreg0[1] = (BYTE)((state->siz ? 0x04 : 0x00) | (state->col & 0x03));
 	es->vc.vcreg1[0] = (BYTE)(state->vr1h & 0xff);
 	es->vc.vcreg1[1] = (BYTE)(state->vr1l & 0xff);
 	es->vc.vcreg2[0] = (BYTE)(state->vr2h & 0xff);
@@ -461,12 +460,18 @@ void Px68kRenderAdapter::StartFrame(Render *owner)
 	SyncAllState(owner);
 	engine_->StartFrame();
 	current_raster_ = 0;
+	drawn_lines_ = 0;
 }
 
 void Px68kRenderAdapter::EndFrame(Render *owner)
 {
 	if (!engine_) return;
-	(void)owner;
+
+	if (drawn_lines_ == 0 && owner) {
+		SyncAllState(owner);
+		engine_->TVRAMSetAllDirty();
+		engine_->DrawFrame();
+	}
 
 	engine_->EndFrame();
 }
@@ -485,29 +490,37 @@ void Px68kRenderAdapter::HSync(Render *owner, int raster)
 	}
 
 	current_raster_ = raster;
-
-	DWORD px68k_vline = (DWORD)-1;
-
-	// Prefer CRTC's px68k-accurate visible line mapping.
-	if (crtc_) {
-		const Px68kCrtcStateView *view = crtc_->GetPx68kStateView();
-		if (view) {
-			px68k_vline = view->state.visible_vline;
-		}
+	int line = raster - 1;
+	if (line < 0) {
+		return;
 	}
 
-	// Fallback to local reconstruction if the view is unavailable.
-	if (px68k_vline == (DWORD)-1) {
-		const Px68kVideoEngineState *state = engine_->GetState();
-		const DWORD vstart = state->crtc.vstart;
-		const DWORD vend = state->crtc.vend;
-		const BYTE vstep = state->crtc.vstep;
-		if ((raster >= (int)vstart) && (raster < (int)vend)) {
-			px68k_vline = (DWORD)(((DWORD)(raster - (int)vstart) * (DWORD)vstep) / 2u);
+	Render::render_t *work = owner ? owner->GetWorkAddr() : NULL;
+	if (work && (work->v_mul == 2) && !work->lowres) {
+		if (line & 1) {
+			return;
 		}
+		DrawScanline(line >> 1);
 	}
+	else if (work && (work->v_mul == 0) && work->lowres) {
+		DrawScanline((line << 1) + 0);
+		DrawScanline((line << 1) + 1);
+	}
+	else {
+		DrawScanline(line);
+	}
+}
 
-	DrawScanline((int)px68k_vline);
+void Px68kRenderAdapter::DrawFrame(Render *owner)
+{
+	if (!engine_) return;
+
+	if (owner) {
+		SyncAllState(owner);
+	}
+	engine_->TVRAMSetAllDirty();
+	engine_->DrawFrame();
+	drawn_lines_ = (int)PX68K_FULLSCREEN_HEIGHT;
 }
 
 void Px68kRenderAdapter::SetCRTC(Render *owner)
@@ -546,6 +559,7 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 	engine_->SetVLine((DWORD)visible_vline);
 	if ((visible_vline >= 0) && (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
 		engine_->WinDrawDrawLine();
+		drawn_lines_++;
 	}
 }
 

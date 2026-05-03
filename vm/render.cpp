@@ -1126,6 +1126,60 @@ BOOL FASTCALL Render::SetRenderFastDummyEnabled(BOOL enable)
 	return render_fast_dummy_enabled;
 }
 
+BOOL FASTCALL Render::EnsurePx68kFrame()
+{
+	if (!render_fast_dummy_enabled || !px68k_adapter || render.act) {
+		return FALSE;
+	}
+
+	px68k_adapter->StartFrame(this);
+	px68k_adapter->DrawFrame(this);
+	px68k_adapter->EndFrame(this);
+	return TRUE;
+}
+
+BOOL FASTCALL Render::GetPx68kScreen(const WORD **out_pixels, int *out_width, int *out_height, int *out_stride) const
+{
+	const WORD *pixels;
+	int width;
+	int height;
+
+	if (!render_fast_dummy_enabled || !px68k_adapter || !out_pixels || !out_width || !out_height || !out_stride) {
+		return FALSE;
+	}
+
+	pixels = px68k_adapter->GetScreenBuffer();
+	width = (int)px68k_adapter->GetScreenWidth();
+	height = (int)px68k_adapter->GetScreenHeight();
+	if (!pixels) {
+		return FALSE;
+	}
+	if (width <= 0) {
+		width = render.width;
+	}
+	if (height <= 0) {
+		height = render.height;
+	}
+	if (width <= 0) {
+		width = 768;
+	}
+	if (height <= 0) {
+		height = 512;
+	}
+	if (width > PX68K_FULLSCREEN_WIDTH) {
+		width = PX68K_FULLSCREEN_WIDTH;
+	}
+	if (height > PX68K_FULLSCREEN_HEIGHT) {
+		height = PX68K_FULLSCREEN_HEIGHT;
+	}
+
+	*out_pixels = pixels;
+	*out_width = width;
+	*out_height = height;
+	*out_stride = PX68K_FULLSCREEN_WIDTH;
+	return TRUE;
+}
+
 BOOL FASTCALL Render::SetCompositorMode(int mode)
 {
 	if ((mode != compositor_original) && (mode != compositor_fast)) {

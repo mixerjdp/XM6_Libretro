@@ -1404,12 +1404,16 @@ void FASTCALL CRTC::SyncPx68kState()
 	px68k_state_view.state.v_blank = crtc.v_blank;
 	px68k_state_view.state.v_count = crtc.v_count;
 	px68k_state_view.state.raster_count = crtc.raster_count;
-	px68k_state_view.state.textdotx = (DWORD)(((crtc.reg[0x06] << 8) | crtc.reg[0x07]) & 1023);
-	if (px68k_state_view.state.textdotx > (((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023)) {
-		px68k_state_view.state.textdotx = (px68k_state_view.state.textdotx - ((((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023))) * 8;
+	const DWORD px68k_hstart = (DWORD)(((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023);
+	const DWORD px68k_hend = (DWORD)(((crtc.reg[0x06] << 8) | crtc.reg[0x07]) & 1023);
+	if (px68k_hend > px68k_hstart) {
+		px68k_state_view.state.textdotx = (px68k_hend - px68k_hstart) * 8;
 	}
-	else {
-		px68k_state_view.state.textdotx = 0;
+	else if (crtc.h_dots > 0) {
+		// px68k keeps the previous TextDotX when an intermediate CRTC write
+		// produces HEND <= HSTART. Use XM6's resolved visible width instead
+		// of exposing a zero-width frame to the px68k compositor.
+		px68k_state_view.state.textdotx = (DWORD)crtc.h_dots;
 	}
 	px68k_state_view.state.textdoty = 0;
 	if (((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) > ((crtc.reg[0x0c] << 8) | crtc.reg[0x0d])) {

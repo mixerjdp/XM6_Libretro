@@ -42,6 +42,7 @@ public:
 	void StartFrame(Render *owner);
 	void EndFrame(Render *owner);
 	void HSync(Render *owner, int raster);
+	void DrawFrame(Render *owner);
 	void SetCRTC(Render *owner);
 	void SetVC(Render *owner);
 	void Process(Render *owner);
@@ -87,6 +88,7 @@ private:
 
 	// Current scanline
 	int current_raster_;
+	int drawn_lines_;
 
 	// Dirty flags
 	BOOL crtc_dirty_;
