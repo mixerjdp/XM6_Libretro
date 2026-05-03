@@ -302,6 +302,7 @@ void Px68kRenderAdapter::SyncCRTCState(const CRTC *crtc)
 		es->changeav_timing = TRUE;
 	}
 
+	RebuildBGDerivedState(es);
 	crtc_dirty_ = FALSE;
 }
 
@@ -490,25 +491,17 @@ void Px68kRenderAdapter::HSync(Render *owner, int raster)
 	}
 
 	current_raster_ = raster;
-	int line = raster - 1;
-	if (line < 0) {
+	const Px68kCrtcStateView *view = crtc_ ? crtc_->GetPx68kStateView() : NULL;
+	if (!view) {
 		return;
 	}
 
-	Render::render_t *work = owner ? owner->GetWorkAddr() : NULL;
-	if (work && (work->v_mul == 2) && !work->lowres) {
-		if (line & 1) {
-			return;
-		}
-		DrawScanline(line >> 1);
+	const DWORD visible_vline = view->state.visible_vline;
+	if (visible_vline == 0xffffffffu) {
+		return;
 	}
-	else if (work && (work->v_mul == 0) && work->lowres) {
-		DrawScanline((line << 1) + 0);
-		DrawScanline((line << 1) + 1);
-	}
-	else {
-		DrawScanline(line);
-	}
+
+	DrawScanline((int)visible_vline);
 }
 
 void Px68kRenderAdapter::DrawFrame(Render *owner)
