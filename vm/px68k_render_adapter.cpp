@@ -167,7 +167,8 @@ static void FASTCALL RebuildBGDerivedState(Px68kVideoEngineState *state)
 	}
 
 	state->bgsprite.bg_hadjust = ((int)state->bgsprite.bg_regs[0x0d] - (state->crtc.hstart + 4)) * 8;
-	state->bgsprite.bg_vline = ((int)state->bgsprite.bg_regs[0x0f] - (int)state->crtc.vstart) /
+	const int crtc_vstart = (int)((((WORD)state->crtc.regs[0x0c] << 8) | state->crtc.regs[0x0d]) & 1023);
+	state->bgsprite.bg_vline = ((int)state->bgsprite.bg_regs[0x0f] - crtc_vstart) /
 		((state->bgsprite.bg_regs[0x11] & 4) ? 1 : 2);
 }
 
@@ -501,6 +502,20 @@ void Px68kRenderAdapter::HSync(Render *owner, int raster)
 		return;
 	}
 
+	if (view->state.vstep == 1) {
+		if ((raster & 1) == 0) {
+			return;
+		}
+		DrawScanline((int)visible_vline);
+		return;
+	}
+
+	if (view->state.vstep == 4) {
+		DrawScanline((int)visible_vline);
+		DrawScanline((int)(visible_vline + 1));
+		return;
+	}
+
 	DrawScanline((int)visible_vline);
 }
 
@@ -550,7 +565,9 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 	if (!engine_) return;
 
 	engine_->SetVLine((DWORD)visible_vline);
-	if ((visible_vline >= 0) && (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
+	if ((visible_vline >= 0) &&
+	    (visible_vline < (int)engine_->GetTextDotY()) &&
+	    (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
 		engine_->WinDrawDrawLine();
 		drawn_lines_++;
 	}

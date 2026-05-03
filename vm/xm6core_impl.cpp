@@ -2523,7 +2523,9 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 		int src_h = 0;
 		int src_stride = 0;
 
-		ctx->render->EnsurePx68kFrame();
+		if (!ctx->render->IsReady()) {
+			return XM6CORE_ERR_NOT_READY;
+		}
 		if (ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride) &&
 			src && (src_w > 0) && (src_h > 0) && (src_stride >= src_w)) {
 			const unsigned int visible_w = (unsigned int)src_w;
