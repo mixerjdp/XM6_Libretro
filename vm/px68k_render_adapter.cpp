@@ -568,8 +568,15 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 	if ((visible_vline >= 0) &&
 	    (visible_vline < (int)engine_->GetTextDotY()) &&
 	    (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
-		engine_->WinDrawDrawLine();
-		drawn_lines_++;
+		int lps = (engine_->GetState()->crtc.regs[0x29] & 0x10) ? 2 : 1;
+		int hardware_vline = (engine_->GetState()->crtc.vstart * lps) + visible_vline;
+		engine_->SetVLine((DWORD)hardware_vline);
+		if ((hardware_vline >= 0) &&
+		    (hardware_vline < (int)(engine_->GetState()->crtc.vend * lps)) &&
+		    (hardware_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
+			engine_->WinDrawDrawLine();
+			drawn_lines_++;
+		}
 	}
 }
 
@@ -588,11 +595,11 @@ WORD* Px68kRenderAdapter::GetScreenBuffer() const
 DWORD Px68kRenderAdapter::GetScreenWidth() const
 {
 	if (!engine_) return 0;
-	return engine_->GetTextDotX();
+	return PX68K_FULLSCREEN_WIDTH;
 }
 
 DWORD Px68kRenderAdapter::GetScreenHeight() const
 {
 	if (!engine_) return 0;
-	return engine_->GetTextDotY();
+	return PX68K_FULLSCREEN_HEIGHT;
 }

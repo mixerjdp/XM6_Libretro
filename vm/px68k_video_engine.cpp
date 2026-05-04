@@ -2842,11 +2842,32 @@ void Px68kVideoEngine::DrawLine(int vline)
 void Px68kVideoEngine::DrawFrame()
 {
 	DWORD y;
-
+	DWORD adr = 0;
+	
 	StartFrame();
 
-	for (y = 0; y < state_.crtc.textdoty; y++) {
-		DrawLine(y);
+	int lps = (state_.crtc.regs[0x29] & 0x10) ? 2 : 1;
+	DWORD vend = state_.crtc.vend * lps;
+	if (vend > PX68K_FULLSCREEN_HEIGHT) {
+		vend = PX68K_FULLSCREEN_HEIGHT;
+	}
+	DWORD vstart_scaled = state_.crtc.vstart * lps;
+
+	if (vstart_scaled < vend) {
+		for (y = 0; y < vstart_scaled; y++, adr += PX68K_FULLSCREEN_WIDTH) {
+			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
+		}
+		for (; y < vend; y++) {
+			DrawLine(y / lps);
+		}
+		adr = vend * PX68K_FULLSCREEN_WIDTH;
+		for (; y < PX68K_FULLSCREEN_HEIGHT; y++, adr += PX68K_FULLSCREEN_WIDTH) {
+			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
+		}
+	} else {
+		for (y = 0; y < PX68K_FULLSCREEN_HEIGHT; y++, adr += PX68K_FULLSCREEN_WIDTH) {
+			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
+		}
 	}
 
 	EndFrame();
