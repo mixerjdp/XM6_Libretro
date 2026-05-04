@@ -4325,8 +4325,10 @@ void FASTCALL Render::PaletteFastPX68K()
 {
 	ASSERT(this);
 
-	// Process palette through adapter
-	// The adapter handles palette conversion internally
+	if (px68k_adapter) {
+		px68k_adapter->SetVC(this);
+	}
+	render.palette = FALSE;
 }
 
 void FASTCALL Render::TextFastPX68K(int raster)

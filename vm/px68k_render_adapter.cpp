@@ -196,6 +196,8 @@ Px68kRenderAdapter::Px68kRenderAdapter()
 	crtc_dirty_ = TRUE;
 	vc_dirty_ = TRUE;
 	palette_dirty_ = TRUE;
+	full_sync_pending_ = TRUE;
+	contrast_synced_ = -1;
 }
 
 Px68kRenderAdapter::~Px68kRenderAdapter()
@@ -242,6 +244,8 @@ void Px68kRenderAdapter::Reset()
 	crtc_dirty_ = TRUE;
 	vc_dirty_ = TRUE;
 	palette_dirty_ = TRUE;
+	full_sync_pending_ = TRUE;
+	contrast_synced_ = -1;
 }
 
 //===========================================================================
@@ -391,8 +395,23 @@ void Px68kRenderAdapter::SyncPaletteState(const VC *vc)
 		es->palette.regs[i * 2 + 1] = (BYTE)(w & 0xff);
 	}
 	engine_->PalSetColor();
+	if (contrast_synced_ >= 0) {
+		engine_->PalChangeContrast(contrast_synced_);
+	}
 	RebuildPaletteLookup(es);
 	palette_dirty_ = FALSE;
+}
+
+void Px68kRenderAdapter::SyncPaletteContrast(Render *owner)
+{
+	if (!owner || !engine_) {
+		return;
+	}
+
+	Px68kVideoEngineState *es = engine_->GetState();
+	contrast_synced_ = owner->GetContrast();
+	engine_->PalChangeContrast(contrast_synced_);
+	RebuildPaletteLookup(es);
 }
 
 void Px68kRenderAdapter::SyncAllState(Render *owner)
@@ -413,6 +432,7 @@ void Px68kRenderAdapter::SyncAllState(Render *owner)
 	SyncGVRAMState(gvram_);
 	SyncTVRAMState(tvram_);
 	SyncSpriteState(sprite_);
+	full_sync_pending_ = FALSE;
 }
 
 void Px68kRenderAdapter::SyncDynamicState(Render *owner)
@@ -433,6 +453,10 @@ void Px68kRenderAdapter::SyncDynamicState(Render *owner)
 	if (work->palette || palette_dirty_) {
 		SyncPaletteState(vc_);
 		work->palette = FALSE;
+	}
+	if (work->contrast) {
+		SyncPaletteContrast(owner);
+		work->contrast = FALSE;
 	}
 	if (HasAnyTrue(work->textmod, 1024)) {
 		SyncTVRAMState(tvram_);
@@ -459,7 +483,17 @@ void Px68kRenderAdapter::StartFrame(Render *owner)
 {
 	if (!engine_) return;
 
-	SyncAllState(owner);
+	if (full_sync_pending_) {
+		SyncAllState(owner);
+	}
+	else if (owner) {
+		crtc_ = owner->GetCRTCDevice();
+		vc_ = owner->GetVCDevice();
+		gvram_ = owner->GetGVRAMDevice();
+		tvram_ = owner->GetTVRAMDevice();
+		sprite_ = owner->GetSpriteDevice();
+		SyncDynamicState(owner);
+	}
 	engine_->StartFrame();
 	current_raster_ = 0;
 	drawn_lines_ = 0;
@@ -528,7 +562,7 @@ void Px68kRenderAdapter::DrawFrame(Render *owner)
 	}
 	engine_->TVRAMSetAllDirty();
 	engine_->DrawFrame();
-	drawn_lines_ = (int)PX68K_FULLSCREEN_HEIGHT;
+	drawn_lines_ = (int)engine_->GetTextDotY();
 }
 
 void Px68kRenderAdapter::SetCRTC(Render *owner)
@@ -568,15 +602,8 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 	if ((visible_vline >= 0) &&
 	    (visible_vline < (int)engine_->GetTextDotY()) &&
 	    (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
-		int lps = (engine_->GetState()->crtc.regs[0x29] & 0x10) ? 2 : 1;
-		int hardware_vline = (engine_->GetState()->crtc.vstart * lps) + visible_vline;
-		engine_->SetVLine((DWORD)hardware_vline);
-		if ((hardware_vline >= 0) &&
-		    (hardware_vline < (int)(engine_->GetState()->crtc.vend * lps)) &&
-		    (hardware_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
-			engine_->WinDrawDrawLine();
-			drawn_lines_++;
-		}
+		engine_->WinDrawDrawLine();
+		drawn_lines_++;
 	}
 }
 
@@ -595,11 +622,11 @@ WORD* Px68kRenderAdapter::GetScreenBuffer() const
 DWORD Px68kRenderAdapter::GetScreenWidth() const
 {
 	if (!engine_) return 0;
-	return PX68K_FULLSCREEN_WIDTH;
+	return engine_->GetTextDotX();
 }
 
 DWORD Px68kRenderAdapter::GetScreenHeight() const
 {
 	if (!engine_) return 0;
-	return PX68K_FULLSCREEN_HEIGHT;
+	return engine_->GetTextDotY();
 }

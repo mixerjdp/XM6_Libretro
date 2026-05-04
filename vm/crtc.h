@@ -201,6 +201,8 @@ private:
 										// PX68k fast clear start line
 	WORD px68k_fastclrmask;
 										// PX68k fast clear mask
+	BYTE px68k_crtc_mode;
+										// PX68k operation port state ($e80481)
 };
 
 #endif	// crtc_h

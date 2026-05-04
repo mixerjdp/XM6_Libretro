@@ -163,6 +163,7 @@ void FASTCALL CRTC::Reset()
 	crtc.fast_clr = 0;
 	px68k_fastclrline = 0;
 	px68k_fastclrmask = 0;
+	px68k_crtc_mode = 0;
 
 	// Horizontal
 	crtc.h_sync = 31745;
@@ -313,6 +314,7 @@ BOOL FASTCALL CRTC::Load(Fileio *fio, int ver)
 		px68k_fastclrline = 0;
 		px68k_fastclrmask = 0;
 	}
+	px68k_crtc_mode = 0;
 	NotifyScreenChanged();
 	NotifyPx68kStateView();
 	SyncPx68kState();
@@ -388,6 +390,17 @@ DWORD FASTCALL CRTC::ReadByte(DWORD addr)
 		// Even bytes are 0
 		if ((addr & 1) == 0) {
 			return 0;
+		}
+
+		if (UsePx68kRasterTiming()) {
+			data = px68k_crtc_mode;
+			if (crtc.fast_clr) {
+				data |= 0x02;
+			}
+			else {
+				data &= 0xfd;
+			}
+			return data;
 		}
 
 		// Odd byte is raster copy, graphic clear reset
@@ -558,6 +571,11 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 				musashi_flush_timeslice();
 			}
 			TextVRAM();
+			if (UsePx68kRasterTiming() && (px68k_crtc_mode & 0x08) && (addr == 45)) {
+				tvram->RasterCopy();
+				crtc.raster_copy = FALSE;
+				crtc.raster_exec = FALSE;
+			}
 			SyncPx68kState();
 		}
 		SyncPx68kState();
@@ -573,6 +591,25 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		if (render && (render->GetCompositorMode() == Render::compositor_original)) {
 			musashi_flush_timeslice();
+		}
+
+		if (UsePx68kRasterTiming()) {
+			px68k_crtc_mode = (BYTE)(data | (px68k_crtc_mode & 0x02));
+			if (px68k_crtc_mode & 0x08) {
+				crtc.raster_copy = TRUE;
+				TextVRAM();
+				tvram->RasterCopy();
+				crtc.raster_copy = FALSE;
+				crtc.raster_exec = FALSE;
+			}
+			else {
+				crtc.raster_copy = FALSE;
+			}
+			if (px68k_crtc_mode & 0x02) {
+				BeginPx68kFastClear();
+			}
+			SyncPx68kState();
+			return;
 		}
 
 		// Odd byte is raster copy, fast clear reset
@@ -646,6 +683,17 @@ DWORD FASTCALL CRTC::ReadOnly(DWORD addr) const
 		// Even bytes are 0
 		if ((addr & 1) == 0) {
 			return 0;
+		}
+
+		if (UsePx68kRasterTiming()) {
+			data = px68k_crtc_mode;
+			if (crtc.fast_clr) {
+				data |= 0x02;
+			}
+			else {
+				data &= 0xfd;
+			}
+			return data;
 		}
 
 		// Odd byte is raster copy, graphic clear reset
@@ -760,13 +808,13 @@ void FASTCALL CRTC::HSync()
 	}
 
 	// Text screen raster copy
-	if (crtc.raster_copy && crtc.raster_exec) {
+	if (!UsePx68kRasterTiming() && crtc.raster_copy && crtc.raster_exec) {
 		tvram->RasterCopy();
 		crtc.raster_exec = FALSE;
 	}
 
 	// Graphic screen fast clear
-	if (crtc.fast_clr == 2) {
+	if (!UsePx68kRasterTiming() && crtc.fast_clr == 2) {
 		gvram->FastClr(&crtc);
 	}
 
@@ -1006,7 +1054,24 @@ void FASTCALL CRTC::VBlank()
 		mfp->SetGPIP(4, 0);
 
 		// Graphic clear
-		if (crtc.fast_clr == 2) {
+		if (UsePx68kRasterTiming()) {
+			if (px68k_crtc_mode & 0x02) {
+				if (crtc.fast_clr) {
+					crtc.fast_clr--;
+					if (!crtc.fast_clr) {
+						px68k_crtc_mode &= 0xfd;
+						px68k_fastclrline = 0;
+						px68k_fastclrmask = 0;
+					}
+				}
+				else {
+					crtc.fast_clr = (crtc.reg[0x29] & 0x10) ? 1 : 2;
+					gvram->FastSet((DWORD)crtc.reg[42]);
+					gvram->FastClr(&crtc);
+				}
+			}
+		}
+		else if (crtc.fast_clr == 2) {
 #if defined(CRTC_LOG)
 			LOG0(Log::Normal, "Graphic clear end");
 #endif	// CRTC_LOG
@@ -1034,7 +1099,7 @@ void FASTCALL CRTC::VBlank()
 	mfp->SetGPIP(4, 1);
 
 	// Graphic clear start
-	if (crtc.fast_clr == 1) {
+	if (!UsePx68kRasterTiming() && crtc.fast_clr == 1) {
 #if defined(CRTC_LOG)
 		LOG1(Log::Normal, "Graphic clear start data=%02X", crtc.reg[42]);
 #endif	// CRTC_LOG
@@ -1387,6 +1452,10 @@ void FASTCALL CRTC::NotifyModeChanged(BYTE mode)
 void FASTCALL CRTC::SyncPx68kState()
 {
 	int i;
+	const DWORD px68k_hstart = (DWORD)(((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023);
+	const DWORD px68k_hend = (DWORD)(((crtc.reg[0x06] << 8) | crtc.reg[0x07]) & 1023);
+	DWORD px68k_vstart = (DWORD)(((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]) & 1023);
+	DWORD px68k_vend = (DWORD)(((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) & 1023);
 
 	memset(&px68k_state_view, 0, sizeof(px68k_state_view));
 
@@ -1394,7 +1463,7 @@ void FASTCALL CRTC::SyncPx68kState()
 		px68k_state_view.state.regs[i] = crtc.reg[i];
 	}
 
-	px68k_state_view.state.mode = (BYTE)(crtc.reg[0x29] & 0x1f);
+	px68k_state_view.state.mode = px68k_crtc_mode;
 	px68k_state_view.state.hrl = crtc.hrl;
 	px68k_state_view.state.lowres = crtc.lowres;
 	px68k_state_view.state.textres = crtc.textres;
@@ -1404,8 +1473,6 @@ void FASTCALL CRTC::SyncPx68kState()
 	px68k_state_view.state.v_blank = crtc.v_blank;
 	px68k_state_view.state.v_count = crtc.v_count;
 	px68k_state_view.state.raster_count = crtc.raster_count;
-	const DWORD px68k_hstart = (DWORD)(((crtc.reg[0x04] << 8) | crtc.reg[0x05]) & 1023);
-	const DWORD px68k_hend = (DWORD)(((crtc.reg[0x06] << 8) | crtc.reg[0x07]) & 1023);
 	if (px68k_hend > px68k_hstart) {
 		px68k_state_view.state.textdotx = (px68k_hend - px68k_hstart) * 8;
 	}
@@ -1416,8 +1483,8 @@ void FASTCALL CRTC::SyncPx68kState()
 		px68k_state_view.state.textdotx = (DWORD)crtc.h_dots;
 	}
 	px68k_state_view.state.textdoty = 0;
-	if (((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) > ((crtc.reg[0x0c] << 8) | crtc.reg[0x0d])) {
-		px68k_state_view.state.textdoty = (DWORD)(((crtc.reg[0x0e] << 8) | crtc.reg[0x0f]) - ((crtc.reg[0x0c] << 8) | crtc.reg[0x0d]));
+	if (px68k_vend > px68k_vstart) {
+		px68k_state_view.state.textdoty = (DWORD)(px68k_vend - px68k_vstart);
 		if ((crtc.reg[0x29] & 0x14) == 0x10) {
 			px68k_state_view.state.textdoty >>= 1;
 		}
@@ -1425,17 +1492,19 @@ void FASTCALL CRTC::SyncPx68kState()
 			px68k_state_view.state.textdoty <<= 1;
 		}
 	}
-	px68k_state_view.state.vstart = (WORD)(((WORD)crtc.reg[0x0c] << 8) | crtc.reg[0x0d]);
-	px68k_state_view.state.vend = (WORD)(((WORD)crtc.reg[0x0e] << 8) | crtc.reg[0x0f]);
+	px68k_state_view.state.vstart = (WORD)px68k_vstart;
+	px68k_state_view.state.vend = (WORD)px68k_vend;
 	if ((crtc.v_mul == 2) && !crtc.lowres && (crtc.v_dots > 0)) {
 		const WORD effective_vstart = (WORD)((crtc.v_back + 5) & 0x3ffu);
 		const WORD effective_vend = (WORD)((effective_vstart + crtc.v_dots) & 0x3ffu);
 		px68k_state_view.state.vstart = effective_vstart;
 		px68k_state_view.state.vend = effective_vend;
 		px68k_state_view.state.textdoty = (DWORD)(crtc.v_dots >> 1);
+		px68k_vstart = effective_vstart;
+		px68k_vend = effective_vend;
 	}
-	px68k_state_view.state.hstart = (WORD)(((WORD)crtc.reg[0x04] << 8) | crtc.reg[0x05]);
-	px68k_state_view.state.hend = (WORD)(((WORD)crtc.reg[0x06] << 8) | crtc.reg[0x07]);
+	px68k_state_view.state.hstart = (WORD)px68k_hstart;
+	px68k_state_view.state.hend = (WORD)px68k_hend;
 	px68k_state_view.state.h_sync = (DWORD)crtc.h_sync;
 	px68k_state_view.state.h_pulse = (DWORD)crtc.h_pulse;
 	px68k_state_view.state.h_back = (DWORD)crtc.h_back;

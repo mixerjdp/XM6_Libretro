@@ -70,6 +70,7 @@ private:
 	void SyncAllState(Render *owner);
 	void DrawScanline(int visible_vline);
 	void SyncDynamicState(Render *owner);
+	void SyncPaletteContrast(Render *owner);
 
 	// The actual PX68k video engine
 	Px68kVideoEngine *engine_;
@@ -94,6 +95,8 @@ private:
 	BOOL crtc_dirty_;
 	BOOL vc_dirty_;
 	BOOL palette_dirty_;
+	BOOL full_sync_pending_;
+	int contrast_synced_;
 };
 
 #endif	// px68k_render_adapter_h

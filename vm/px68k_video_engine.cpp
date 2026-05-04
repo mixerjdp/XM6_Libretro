@@ -393,6 +393,9 @@ BYTE FASTCALL Px68kVideoEngine::CRTCRead(DWORD addr)
 		if (state_.crtc.fastclr) {
 			data |= 0x02;
 		}
+		else {
+			data &= 0xfd;
+		}
 		return data;
 	}
 	return 0x00;
@@ -516,7 +519,7 @@ void FASTCALL Px68kVideoEngine::CRTCWrite(DWORD addr, BYTE data)
 		case 0x2c:
 		case 0x2d:
 			state_.crtc.rcflag[reg - 0x2c] = 1;
-			if ((state_.crtc.mode & 8) && state_.crtc.rcflag[0] && state_.crtc.rcflag[1]) {
+			if ((state_.crtc.mode & 8) && state_.crtc.rcflag[1]) {
 				// Execute raster copy
 				CRTCRasterCopy();
 				state_.crtc.rcflag[0] = 0;
@@ -2282,14 +2285,32 @@ void FASTCALL Px68kVideoEngine::BGDrawLine(int opaq, int gd)
 	}
 
 	SpriteDrawLineMcr(1);
-	if ((state_.bgsprite.bg_regs[9] & 8) && (state_.bgsprite.bg_chrsize == 8)) // BG1 on
-		BGDrawLineMcr8(state_.bgsprite.bg_bg1top, state_.bgsprite.bg1scrollx, state_.bgsprite.bg1scrolly);
+	if ((state_.bgsprite.bg_regs[9] & 8) && (state_.bgsprite.bg_chrsize == 8)) { // BG1 on
+		if (gd) {
+			BGDrawLineMcr8(state_.bgsprite.bg_bg1top, state_.bgsprite.bg1scrollx, state_.bgsprite.bg1scrolly);
+		}
+		else {
+			BGDrawLineMcr8_ng(state_.bgsprite.bg_bg1top, state_.bgsprite.bg1scrollx, state_.bgsprite.bg1scrolly);
+		}
+	}
 	SpriteDrawLineMcr(2);
 	if (state_.bgsprite.bg_regs[9] & 1) { // BG0 on
-		if (state_.bgsprite.bg_chrsize == 8)
-			BGDrawLineMcr8(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
-		else
-			BGDrawLineMcr16(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+		if (state_.bgsprite.bg_chrsize == 8) {
+			if (gd) {
+				BGDrawLineMcr8(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+			}
+			else {
+				BGDrawLineMcr8_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+			}
+		}
+		else {
+			if (gd) {
+				BGDrawLineMcr16(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+			}
+			else {
+				BGDrawLineMcr16_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+			}
+		}
 	}
 	SpriteDrawLineMcr(3);
 }
@@ -2842,32 +2863,19 @@ void Px68kVideoEngine::DrawLine(int vline)
 void Px68kVideoEngine::DrawFrame()
 {
 	DWORD y;
-	DWORD adr = 0;
 	
 	StartFrame();
 
-	int lps = (state_.crtc.regs[0x29] & 0x10) ? 2 : 1;
-	DWORD vend = state_.crtc.vend * lps;
-	if (vend > PX68K_FULLSCREEN_HEIGHT) {
-		vend = PX68K_FULLSCREEN_HEIGHT;
+	DWORD lines = state_.crtc.textdoty;
+	if (lines > PX68K_FULLSCREEN_HEIGHT) {
+		lines = PX68K_FULLSCREEN_HEIGHT;
 	}
-	DWORD vstart_scaled = state_.crtc.vstart * lps;
 
-	if (vstart_scaled < vend) {
-		for (y = 0; y < vstart_scaled; y++, adr += PX68K_FULLSCREEN_WIDTH) {
-			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
-		}
-		for (; y < vend; y++) {
-			DrawLine(y / lps);
-		}
-		adr = vend * PX68K_FULLSCREEN_WIDTH;
-		for (; y < PX68K_FULLSCREEN_HEIGHT; y++, adr += PX68K_FULLSCREEN_WIDTH) {
-			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
-		}
-	} else {
-		for (y = 0; y < PX68K_FULLSCREEN_HEIGHT; y++, adr += PX68K_FULLSCREEN_WIDTH) {
-			std::memset(&screen_buffer_[adr], 0, state_.crtc.textdotx * 2);
-		}
+	for (y = 0; y < lines; y++) {
+		DrawLine((int)y);
+	}
+	for (; y < PX68K_FULLSCREEN_HEIGHT; y++) {
+		std::memset(&screen_buffer_[y * PX68K_FULLSCREEN_WIDTH], 0, state_.crtc.textdotx * 2);
 	}
 
 	EndFrame();
