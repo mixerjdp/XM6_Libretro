@@ -41,6 +41,7 @@ void FASTCALL SetPx68kVideoEngine(Px68kVideoEngine* engine)
 Px68kVideoEngine::Px68kVideoEngine()
 {
 	std::memset(&state_, 0, sizeof(state_));
+	physical_vline_ = 0;
 	screen_buffer_ = NULL;
 	screen_width_ = PX68K_FULLSCREEN_WIDTH;
 	screen_height_ = PX68K_FULLSCREEN_HEIGHT;
@@ -2680,7 +2681,7 @@ void FASTCALL Px68kVideoEngine::WinDrawDrawLine()
 			int s1, s2;
 			s1 = (((state_.bgsprite.bg_regs[0x11] & 4) ? 2 : 1) - ((state_.bgsprite.bg_regs[0x11] & 16) ? 1 : 0));
 			s2 = (((state_.crtc.regs[0x29] & 4) ? 2 : 1) - ((state_.crtc.regs[0x29] & 16) ? 1 : 0));
-			state_.bgsprite.vlinebg = state_.vline;
+			state_.bgsprite.vlinebg = physical_vline_;
 			state_.bgsprite.vlinebg <<= s1;
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));
@@ -2694,7 +2695,7 @@ void FASTCALL Px68kVideoEngine::WinDrawDrawLine()
 			int s1, s2;
 			s1 = (((state_.bgsprite.bg_regs[0x11] & 4) ? 2 : 1) - ((state_.bgsprite.bg_regs[0x11] & 16) ? 1 : 0));
 			s2 = (((state_.crtc.regs[0x29] & 4) ? 2 : 1) - ((state_.crtc.regs[0x29] & 16) ? 1 : 0));
-			state_.bgsprite.vlinebg = state_.vline;
+			state_.bgsprite.vlinebg = physical_vline_;
 			state_.bgsprite.vlinebg <<= s1;
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));

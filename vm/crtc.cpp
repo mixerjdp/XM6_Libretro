@@ -1064,11 +1064,10 @@ void FASTCALL CRTC::VBlank()
 						px68k_fastclrmask = 0;
 					}
 				}
-				else {
-					crtc.fast_clr = (crtc.reg[0x29] & 0x10) ? 1 : 2;
-					gvram->FastSet((DWORD)crtc.reg[42]);
-					gvram->FastClr(&crtc);
-				}
+			else {
+				crtc.fast_clr = (crtc.reg[0x29] & 0x10) ? 1 : 2;
+				BeginPx68kFastClear();
+			}
 			}
 		}
 		else if (crtc.fast_clr == 2) {
@@ -1497,8 +1496,6 @@ void FASTCALL CRTC::SyncPx68kState()
 	if ((crtc.v_mul == 2) && !crtc.lowres && (crtc.v_dots > 0)) {
 		const WORD effective_vstart = (WORD)((crtc.v_back + 5) & 0x3ffu);
 		const WORD effective_vend = (WORD)((effective_vstart + crtc.v_dots) & 0x3ffu);
-		px68k_state_view.state.vstart = effective_vstart;
-		px68k_state_view.state.vend = effective_vend;
 		px68k_state_view.state.textdoty = (DWORD)(crtc.v_dots >> 1);
 		px68k_vstart = effective_vstart;
 		px68k_vend = effective_vend;
@@ -1538,9 +1535,9 @@ void FASTCALL CRTC::SyncPx68kState()
 	px68k_state_view.state.vstep = 2;
 	}
 	px68k_state_view.state.visible_vline = 0xffffffffu;
-	if ((crtc.v_scan >= (int)px68k_state_view.state.vstart) &&
-	    (crtc.v_scan < (int)px68k_state_view.state.vend)) {
-		px68k_state_view.state.visible_vline = (DWORD)(((DWORD)(crtc.v_scan - (int)px68k_state_view.state.vstart) * (DWORD)px68k_state_view.state.vstep) / 2u);
+	if ((crtc.v_scan >= (int)px68k_vstart) &&
+	    (crtc.v_scan < (int)px68k_vend)) {
+		px68k_state_view.state.visible_vline = (DWORD)(((DWORD)(crtc.v_scan - (int)px68k_vstart) * (DWORD)px68k_state_view.state.vstep) / 2u);
 	}
 	else if ((crtc.v_mul == 2) && !crtc.lowres &&
 	         (crtc.v_scan >= 0) && (crtc.v_scan <= crtc.v_dots)) {

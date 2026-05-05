@@ -213,6 +213,7 @@ public:
 	void ClearChangeAVTiming() { state_.changeav_timing = FALSE; }
 	DWORD GetVLineTotal() const { return state_.crtc.vline_total; }
 	void SetVLine(DWORD vline) { state_.vline = vline; }
+	void SetPhysicalVLine(DWORD vline) { physical_vline_ = vline; }
 
 	// Palette interface
 	BYTE FASTCALL PalRead(DWORD addr);
@@ -306,6 +307,9 @@ private:
 
 	// State
 	Px68kVideoEngineState state_;
+	
+	// Scanline physical (CRT beam line, like VLINE in original px68k)
+	DWORD physical_vline_;
 	
 	// RGB565 masks
 	WORD windraw_pal16r_;

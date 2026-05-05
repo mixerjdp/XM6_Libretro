@@ -614,6 +614,7 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 {
 	if (!engine_) return;
 
+	engine_->SetPhysicalVLine((DWORD)current_raster_);
 	engine_->SetVLine((DWORD)visible_vline);
 	if ((visible_vline >= 0) &&
 	    (visible_vline < (int)engine_->GetTextDotY()) &&
