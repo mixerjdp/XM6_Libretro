@@ -297,6 +297,8 @@ public:
 										// BGï¿½Eï¿½ÏX
 	void FASTCALL PCGMem(DWORD addr);
 										// PCGï¿½Eï¿½ÏX
+	void FASTCALL SpriteBGWrite(DWORD addr, BYTE data);
+										// PX68k BG/Sprite per-write update
 
 	const DWORD* FASTCALL GetTextBuf() const;
 										// ï¿½Eï¿½eï¿½Eï¿½Lï¿½Eï¿½Xï¿½Eï¿½gï¿½Eï¿½oï¿½Eï¿½bï¿½Eï¿½tï¿½Eï¿½@ï¿½Eï¿½æ“¾

@@ -3296,6 +3296,13 @@ void FASTCALL Render::PCGMem(DWORD addr)
 	}
 }
 
+void FASTCALL Render::SpriteBGWrite(DWORD addr, BYTE data)
+{
+	if (px68k_adapter) {
+		px68k_adapter->BGWrite(addr, data);
+	}
+}
+
 //---------------------------------------------------------------------------
 //
 //	PCG?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½

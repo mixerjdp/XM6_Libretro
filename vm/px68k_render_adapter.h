@@ -55,6 +55,9 @@ public:
 	void SyncSpriteState(const Sprite *sprite);
 	void SyncPaletteState(const VC *vc);
 
+	// Per-write BG/sprite update (real-time, matches original px68k BG_Write)
+	void BGWrite(DWORD addr, BYTE data);
+
 	// Output access
 	WORD* GetScreenBuffer() const;
 	DWORD GetScreenWidth() const;

@@ -647,3 +647,9 @@ DWORD Px68kRenderAdapter::GetScreenHeight() const
 	if (!engine_) return 0;
 	return engine_->GetTextDotY();
 }
+
+void Px68kRenderAdapter::BGWrite(DWORD addr, BYTE data)
+{
+	if (!engine_) return;
+	engine_->BGWrite(addr, data);
+}

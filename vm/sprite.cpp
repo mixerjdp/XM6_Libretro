@@ -362,7 +362,7 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// 800�`811�̓R���g���[�����W�X�^
+// 800�`811�̓R���g���[�����W�X�^
 	if ((addr >= 0x800) && (addr < 0x812)) {
 		// �f�[�^��������
 		sprite[addr ^ 1] = (BYTE)data;
@@ -375,15 +375,16 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 			Control((DWORD)(addr & 0xfffe), ctrl);
 		}
 		else {
-			// ��ʏ������݁B���ʂƂ��킹�ăR���g���[��
+			// ���ʏ������݁B���ʂƂ��킹�ăR���g���[��
 			ctrl = data;
 			ctrl <<= 8;
 			ctrl |= (DWORD)sprite[addr];
 			Control(addr, ctrl);
 		}
+		render->SpriteBGWrite(0xeb0000 + addr, (BYTE)data);
 		return;
 	}
-
+	
 	// 0812-7FFF�̓��U�[�u(�o�X�G���[�̉e�����󂯂Ȃ�)
 	if ((addr >= 0x812) && (addr < 0x8000)) {
 		return;
@@ -412,6 +413,7 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 
 	// ��������
 	sprite[addr ^ 1] = (BYTE)data;
+	render->SpriteBGWrite(0xeb0000 + addr, (BYTE)data);
 
 	// �����_������
 	addr &= 0xfffe;
@@ -453,6 +455,8 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 	if ((addr >= 0x800) && (addr < 0x812)) {
 		*(WORD *)(&sprite[addr]) = (WORD)data;
 		Control(addr, data);
+		render->SpriteBGWrite(0xeb0000 + addr, (BYTE)(data >> 8));
+		render->SpriteBGWrite(0xeb0000 + addr + 1, (BYTE)(data & 0xff));
 		return;
 	}
 	// 0812-7FFF�̓��U�[�u(�o�X�G���[�̉e�����󂯂Ȃ�)
@@ -475,6 +479,8 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 
 	// ��������
 	*(WORD *)(&sprite[addr]) = (WORD)data;
+	render->SpriteBGWrite(0xeb0000 + addr, (BYTE)(data >> 8));
+	render->SpriteBGWrite(0xeb0000 + addr + 1, (BYTE)(data & 0xff));
 
 	// �����_��
 	if (addr < 0x400) {
