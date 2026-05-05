@@ -319,6 +319,9 @@ void Px68kRenderAdapter::SyncVCState(const VC *vc)
 	if (!state) return;
 
 	Px68kVideoEngineState *es = engine_->GetState();
+	const BYTE old_vcreg0[2] = { es->vc.vcreg0[0], es->vc.vcreg0[1] };
+	const BYTE old_vcreg1[2] = { es->vc.vcreg1[0], es->vc.vcreg1[1] };
+	const BYTE old_vcreg2[2] = { es->vc.vcreg2[0], es->vc.vcreg2[1] };
 
 	es->vc.vcreg0[0] = 0;
 	es->vc.vcreg0[1] = (BYTE)((state->siz ? 0x04 : 0x00) | (state->col & 0x03));
@@ -326,6 +329,15 @@ void Px68kRenderAdapter::SyncVCState(const VC *vc)
 	es->vc.vcreg1[1] = (BYTE)(state->vr1l & 0xff);
 	es->vc.vcreg2[0] = (BYTE)(state->vr2h & 0xff);
 	es->vc.vcreg2[1] = (BYTE)(state->vr2l & 0xff);
+
+	if ((old_vcreg0[0] != es->vc.vcreg0[0]) ||
+	    (old_vcreg0[1] != es->vc.vcreg0[1]) ||
+	    (old_vcreg1[0] != es->vc.vcreg1[0]) ||
+	    (old_vcreg1[1] != es->vc.vcreg1[1]) ||
+	    (old_vcreg2[0] != es->vc.vcreg2[0]) ||
+	    (old_vcreg2[1] != es->vc.vcreg2[1])) {
+		engine_->TVRAMSetAllDirty();
+	}
 
 	vc_dirty_ = FALSE;
 }
@@ -338,6 +350,7 @@ void Px68kRenderAdapter::SyncGVRAMState(const GVRAM *gvram)
 	const BYTE *src = gvram->GetGVRAM();
 	if (src) {
 		std::memcpy(es->gvram.gvram, src, PX68K_GVRAM_SIZE);
+		engine_->TVRAMSetAllDirty();
 	}
 	gvram_ = gvram;
 }
@@ -397,6 +410,9 @@ void Px68kRenderAdapter::SyncPaletteState(const VC *vc)
 	engine_->PalSetColor();
 	if (contrast_synced_ >= 0) {
 		engine_->PalChangeContrast(contrast_synced_);
+	}
+	else {
+		engine_->TVRAMSetAllDirty();
 	}
 	RebuildPaletteLookup(es);
 	palette_dirty_ = FALSE;
