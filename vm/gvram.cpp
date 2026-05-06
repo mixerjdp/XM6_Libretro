@@ -1244,7 +1244,6 @@ void FASTCALL GVRAM::Reset()
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Reset");
 
 	// Plane clear flag
 	gvdata.plane[0] = FALSE;
@@ -1276,7 +1275,6 @@ BOOL FASTCALL GVRAM::Save(Fileio *fio, int /*ver*/)
 	ASSERT(fio);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Save");
 
 	// Internal Save
 	if (!fio->Write(gvram, 0x80000)) {
@@ -1317,7 +1315,6 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 	ASSERT(ver >= 0x0200);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Load");
 
 	// Internal Load
 	if (!fio->Read(gvram, 0x80000)) {
@@ -1397,7 +1394,6 @@ void FASTCALL GVRAM::ApplyCfg(const Config* /*config*/)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Apply config");
 }
 
 #if !defined(NDEBUG)
@@ -1637,7 +1633,6 @@ void FASTCALL GVRAM::SetType(DWORD type)
 				break;
 			// Undefined type
 			case 3:
-				LOG0(Log::Warning, "Graphic VRAM Undefined type");
 				ASSERT(handNDef);
 				handler = handNDef;
 				break;
@@ -1669,9 +1664,6 @@ void FASTCALL GVRAM::FastSet(DWORD mask)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-#if defined(GVRAM_LOG)
-	LOG1(Log::Normal, "Plane clear flag set %02X", mask);
-#endif	// GVRAM_LOG
 
 	if (mask & 0x08) {
 		gvdata.plane[3] = TRUE;
@@ -1746,9 +1738,6 @@ void FASTCALL GVRAM::FastClr768(const CRTC::crtc_t *p)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-#if defined(GVRAM_LOG)
-	LOG0(Log::Normal, "Plane clear 1024x1024 (512/768 width");
-#endif	// GVRAM_LOG
 
 	// Get offset y, scan line from
 	y = p->v_scan;
@@ -1810,9 +1799,6 @@ void FASTCALL GVRAM::FastClr768(const CRTC::crtc_t *p)
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastClr256(const CRTC::crtc_t *p)
 {
-#if defined(GVRAM_LOG)
-	LOG0(Log::Normal, "Plane clear 1024x1024 (256 width");
-#endif	// GVRAM_LOG
 
 	// Dummy call
 	FastClr768(p);
@@ -1837,9 +1823,6 @@ void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-#if defined(GVRAM_LOG)
-	LOG1(Log::Normal, "Plane clear 512x512 Scan=%d", p->v_scan);
-#endif	// GVRAM_LOG
 
 	// Get offset y, scan line from
 	y = p->v_scan;
@@ -1898,4 +1881,5 @@ void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
 		y -= n;
 	}
 }
+
 

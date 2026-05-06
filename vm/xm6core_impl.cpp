@@ -2076,6 +2076,29 @@ XM6CORE_API int XM6CORE_CALL xm6_exec_to_frame(XM6Handle handle)
 		total += CHUNK;
 
 		if (ctx->render->IsReady()) {
+			if (ctx->render->IsRenderFastDummyEnabled() && !ctx->px68k_video_probe_has_signature) {
+				const WORD *src = NULL;
+				int src_w = 0;
+				int src_h = 0;
+				int src_stride = 0;
+				if (ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride) &&
+					src && (src_w > 0) && (src_h > 0) && (src_stride >= src_w)) {
+					const unsigned int visible_w = (unsigned int)src_w;
+					const unsigned int visible_h = (unsigned int)src_h;
+					if ((visible_w < 8u) || (visible_h < 8u)) {
+						ctx->render->Complete();
+						continue;
+					}
+					else {
+						unsigned int nonzero = 0;
+						(void)px68k_frame_signature(src, visible_w, visible_h, (unsigned int)src_stride, &nonzero);
+						if (nonzero == 0u) {
+							ctx->render->Complete();
+							continue;
+						}
+					}
+				}
+			}
 			break;
 		}
 	}
@@ -2524,15 +2547,29 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 		int src_stride = 0;
 
 		if (!ctx->render->IsReady()) {
-			return XM6CORE_ERR_NOT_READY;
+			if (!ctx->render->EnsurePx68kFrame()) {
+				return XM6CORE_ERR_NOT_READY;
+			}
 		}
-		if (ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride) &&
+		bool has_px68k_screen = ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride);
+		if (!has_px68k_screen && ctx->render->EnsurePx68kFrame()) {
+			src = NULL;
+			src_w = 0;
+			src_h = 0;
+			src_stride = 0;
+			has_px68k_screen = ctx->render->GetPx68kScreen(&src, &src_w, &src_h, &src_stride);
+		}
+		if (has_px68k_screen &&
 			src && (src_w > 0) && (src_h > 0) && (src_stride >= src_w)) {
 			const unsigned int visible_w = (unsigned int)src_w;
 			const unsigned int visible_h = (unsigned int)src_h;
-			const unsigned int pixels = visible_w * visible_h;
+			if ((visible_w < 8u) || (visible_h < 8u)) {
+				ctx->render->Complete();
+				return XM6CORE_ERR_NOT_READY;
+			}
 			unsigned int nonzero = 0;
 			const unsigned int signature = px68k_frame_signature(src, visible_w, visible_h, (unsigned int)src_stride, &nonzero);
+			const unsigned int pixels = visible_w * visible_h;
 
 			if (!ensure_px68k_video_xrgb_buffer(ctx, pixels)) {
 				return XM6CORE_ERR_NOT_READY;
@@ -2564,24 +2601,7 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 			}
 			return XM6CORE_OK;
 		}
-		if (ensure_px68k_video_xrgb_buffer(ctx, 768u * 512u)) {
-			std::memset(ctx->px68k_video_xrgb, 0, (size_t)768u * 512u * sizeof(unsigned int));
-			out_frame->pixels_argb32 = ctx->px68k_video_xrgb;
-			out_frame->width = 768u;
-			out_frame->height = 512u;
-			out_frame->stride_pixels = 768u;
-			if (!ctx->px68k_video_probe_has_signature || ctx->px68k_video_probe_signature != 0u) {
-				ctx->px68k_video_probe_has_signature = TRUE;
-				ctx->px68k_video_probe_signature = 0u;
-				emit_messagef(ctx, "[xm6-core] PX68k framebuffer unavailable; returning black diagnostic frame");
-			}
-			ctx->px68k_watchdog_frame_count++;
-			if ((ctx->px68k_watchdog_frame_count == 1u) || (ctx->px68k_watchdog_frame_count >= 300u)) {
-				ctx->px68k_watchdog_frame_count = 1u;
-				emit_px68k_watchdog(ctx, NULL, 768u, 512u, 768u, 0u, 0u);
-			}
-			return XM6CORE_OK;
-		}
+		ctx->render->Complete();
 		return XM6CORE_ERR_NOT_READY;
 	}
 

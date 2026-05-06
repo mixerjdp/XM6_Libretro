@@ -916,7 +916,6 @@ void FASTCALL Render::Reset()
 	DWORD **ptr;
 
 	ASSERT(this);
-	LOG0(Log::Normal, "???Z?b?g");
 
 	// ?r?f?I?Ro?go?[oo?|?Co?^?ï¿½Eï¿½ï¿½Eï¿½
 	ASSERT(vc);
@@ -1080,7 +1079,6 @@ void FASTCALL Render::Reset()
 BOOL FASTCALL Render::Save(Fileio *fio, int ver)
 {
 	ASSERT(this);
-	LOG0(Log::Normal, "?Z?[?u");
 
 
 	return TRUE;
@@ -1094,7 +1092,6 @@ BOOL FASTCALL Render::Save(Fileio *fio, int ver)
 BOOL FASTCALL Render::Load(Fileio *fio, int ver)
 {
 	ASSERT(this);
-	LOG0(Log::Normal, "???[?h");
 
 	return TRUE;
 }
@@ -1107,7 +1104,6 @@ BOOL FASTCALL Render::Load(Fileio *fio, int ver)
 void FASTCALL Render::ApplyCfg(const Config *config)
 {
 	ASSERT(config);
-	LOG0(Log::Normal, "???K?p");
 
 	SetRenderFastDummyEnabled(config->render_fast_dummy);
 }
@@ -1406,9 +1402,6 @@ void FASTCALL Render::StartFrameOriginal()
 
 	// CRTC?to?Ooo?
 	if (render.crtc) {
-#if defined(REND_LOG)
-		LOG0(Log::Normal, "CRTC????");
-#endif	// REND_LOG
 
 		// ?f?[?^?ï¿½Eï¿½ï¿½Eï¿½
 		crtc->GetCRTC(&crtcdata);
@@ -2329,9 +2322,6 @@ void FASTCALL Render::TextScrl(DWORD x, DWORD y)
 
 	// ?to?OON
 	if (render.texten) {
-#if defined(REND_LOG)
-		LOG2(Log::Normal, "?e?L?X?g?X?N???[?? x=%d y=%d", x, y);
-#endif	// REND_LOG
 
 		for (i=0; i<1024; i++) {
 			render.mix[i] = TRUE;
@@ -2474,9 +2464,6 @@ void FASTCALL Render::GrpScrl(int block, DWORD x, DWORD y)
 		return;
 	}
 
-#if defined(REND_LOG)
-	LOG3(Log::Normal, "?O???t?B?b?N?X?N???[?? block=%d x=%d y=%d", block, x, y);
-#endif	// REND_LOG
 
 	for (i=0; i<1024; i++) {
 		render.mix[i] = TRUE;
@@ -3798,9 +3785,6 @@ void FASTCALL Render::Mix(int y)
 	ASSERT(render.mixlen > 0);
 
 
-#if defined(REND_LOG)
-	LOG1(Log::Normal, "???? y=%d", y);
-#endif	// REND_LOG
 
 	// ?to?OOFF?Aoo?o?b?t?@?A?ho?Xooo
 	render.mix[y] = FALSE;
@@ -4100,25 +4084,16 @@ void FASTCALL Render::Process()
 
 	// VC
 	if (render.vc) {
-#if defined(REND_LOG)
-		LOG0(Log::Normal, "?r?f?I????");
-#endif	// RENDER_LOG
 		ComposeVideo();
 	}
 
 	// ?Ro?go?X?g
 	if (render.contrast) {
-#if defined(REND_LOG)
-		LOG0(Log::Normal, "?R???g???X?g????");
-#endif	// RENDER_LOG
 		Contrast();
 	}
 
 	// ?po?b?g
 	if (render.palette) {
-#if defined(REND_LOG)
-		LOG0(Log::Normal, "?p???b?g????");
-#endif	// RENDER_LOG
 		Palette();
 	}
 
@@ -4505,3 +4480,4 @@ void FASTCALL Render::GetFastVerticalProbeSnapshot(fast_vertical_probe_snapshot_
 	out->bgspdisp = render.bgspdisp ? TRUE : FALSE;
 	out->sample_count = 0;
 }
+

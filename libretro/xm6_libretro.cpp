@@ -4203,8 +4203,6 @@ void retro_run(void)
     g_xm6.video_consume(g_xm6_handle);
   } else if (g_video_cb) {
     ++g_video_not_ready_count;
-    const unsigned pitch = current_video_pitch_bytes(g_frame_width);
-    g_video_cb(nullptr, g_frame_width, g_frame_height, pitch);
   }
 
   if (g_audio_batch_cb) {

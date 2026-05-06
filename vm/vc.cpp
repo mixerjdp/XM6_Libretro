@@ -88,7 +88,6 @@ void FASTCALL VC::Cleanup()
 void FASTCALL VC::Reset()
 {
 	ASSERT(this);
-	LOG0(Log::Normal, "���Z�b�g");
 
 	// �r�f�I���[�N���N���A
 	memset(&vc, 0, sizeof(vc));
@@ -112,7 +111,6 @@ BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
 	ASSERT(this);
 	ASSERT(fio);
 
-	LOG0(Log::Normal, "�Z�[�u");
 
 	// �T�C�Y���Z�[�u
 	sz = sizeof(vc_t);
@@ -146,7 +144,6 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 	ASSERT(this);
 	ASSERT(fio);
 
-	LOG0(Log::Normal, "���[�h");
 
 	// �T�C�Y�����[�h�A�ƍ�
 	if (!fio->Read(&sz, (int)sizeof(sz))) {
@@ -184,7 +181,6 @@ void FASTCALL VC::ApplyCfg(const Config *config)
 {
 	ASSERT(config);
 	printf("%p", (const void*)config);
-	LOG0(Log::Normal, "�ݒ�K�p");
 }
 
 //---------------------------------------------------------------------------
@@ -292,11 +288,6 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT(data < 0x100);
 
-#if defined(VC_LOG)
-	if ((addr & 0xfff) >= 0x400) {
-		LOG2(Log::Normal, "VC�������� %08X <- %02X", addr, data);
-	}
-#endif	// VC_LOG
 
 	// $1000�P�ʂŃ��[�v
 	addr &= 0xfff;
@@ -370,11 +361,6 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 	ASSERT((addr & 1) == 0);
 	ASSERT(data < 0x10000);
 
-#if defined(VC_LOG)
-	if ((addr & 0xfff) >= 0x400) {
-		LOG2(Log::Normal, "VC�������� %08X <- %04X", addr, data);
-	}
-#endif	// VC_LOG
 
 	// $1000�P�ʂŃ��[�v
 	addr &= 0xfff;
@@ -844,3 +830,4 @@ DWORD FASTCALL VC::GetVR2() const
 
 	return data;
 }
+

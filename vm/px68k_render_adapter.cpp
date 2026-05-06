@@ -172,6 +172,17 @@ static void FASTCALL RebuildBGDerivedState(Px68kVideoEngineState *state)
 		((state->bgsprite.bg_regs[0x11] & 4) ? 1 : 2);
 }
 
+static unsigned int FASTCALL KeepStableVisibleExtent(unsigned int current, unsigned int incoming)
+{
+	// The XM6 CRTC view can briefly report 1-2 line geometries while the
+	// frame is still being assembled. Px68k keeps the last stable extent
+	// until a real mode change lands, so we do the same here.
+	if (incoming >= 8u && incoming <= PX68K_FULLSCREEN_WIDTH) {
+		return incoming;
+	}
+	return current ? current : incoming;
+}
+
 } // namespace
 
 //===========================================================================
@@ -264,11 +275,13 @@ void Px68kRenderAdapter::SyncCRTCState(const CRTC *crtc)
 	Px68kVideoEngineState *es = engine_->GetState();
 	const Px68kCrtcState *state = &view->state;
 	const Px68kTimingVideoView *timing = &view->timing_view;
+	const unsigned int incoming_textdotx = (unsigned int)state->textdotx;
+	const unsigned int incoming_textdoty = (unsigned int)state->textdoty;
 
 	std::memcpy(es->crtc.regs, state->regs, sizeof(es->crtc.regs));
 	es->crtc.mode = state->mode;
-	es->crtc.textdotx = state->textdotx;
-	es->crtc.textdoty = state->textdoty;
+	es->crtc.textdotx = KeepStableVisibleExtent((unsigned int)es->crtc.textdotx, incoming_textdotx);
+	es->crtc.textdoty = KeepStableVisibleExtent((unsigned int)es->crtc.textdoty, incoming_textdoty);
 	es->crtc.vstart = state->vstart;
 	es->crtc.vend = state->vend;
 	es->crtc.hstart = state->hstart;

@@ -116,7 +116,6 @@ void FASTCALL Sprite::Reset()
 	int i;
 
 	ASSERT(this);
-	LOG0(Log::Normal, "���Z�b�g");
 
 	// ���W�X�^�ݒ�
 	spr.connect = FALSE;
@@ -155,7 +154,6 @@ BOOL FASTCALL Sprite::Save(Fileio *fio, int /*ver*/)
 	ASSERT(fio);
 	ASSERT(spr.mem);
 
-	LOG0(Log::Normal, "�Z�[�u");
 
 	// �T�C�Y���Z�[�u
 	sz = sizeof(sprite_t);
@@ -192,7 +190,6 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 	ASSERT(fio);
 	ASSERT(spr.mem);
 
-	LOG0(Log::Normal, "���[�h");
 
 	// �T�C�Y�����[�h�A�ƍ�
 	if (!fio->Read(&sz, sizeof(sz))) {
@@ -262,7 +259,6 @@ BOOL FASTCALL Sprite::Load(Fileio *fio, int /*ver*/)
 void FASTCALL Sprite::ApplyCfg(const Config *config)
 {
 	ASSERT(config);
-	LOG0(Log::Normal, "�ݒ�K�p");
 	printf("%p", (const void*)config);
 }
 
@@ -568,9 +564,6 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 
 		// BG�R���g���[��
 		case 4:
-#if defined(SPRITE_LOG)
-			LOG1(Log::Normal, "BG�R���g���[�� $%04X", data);
-#endif	// SPRITE_LOG
 			// bit17 : DISP
 			if (data & 0x0200) {
 				spr.disp = TRUE;
@@ -582,7 +575,6 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			// BG1
 			spr.bg_area[1] = (data >> 4) & 0x03;
 			if (spr.bg_area[1] & 2) {
-				LOG1(Log::Warning, "BG1�f�[�^�G���A����` $%02X", spr.bg_area[1]);
 			}
 			if (spr.bg_area[1] & 1) {
 				render->BGCtrl(3, TRUE);
@@ -601,7 +593,6 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			// BG0
 			spr.bg_area[0] = (data >> 1) & 0x03;
 			if (spr.bg_area[0] & 2) {
-				LOG1(Log::Warning, "BG0�f�[�^�G���A����` $%02X", spr.bg_area[0]);
 			}
 			if (spr.bg_area[0] & 1) {
 				render->BGCtrl(2, TRUE);
@@ -657,7 +648,6 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 			}
 			render->BGCtrl(4, spr.bg_size);
 			if (spr.h_res & 2) {
-				LOG1(Log::Warning, "BG/�X�v���C�g H-Res����` %d", spr.h_res);
 			}
 			break;
 
@@ -707,3 +697,4 @@ const BYTE* FASTCALL Sprite::GetPCG() const
 
 	return spr.pcg;
 }
+

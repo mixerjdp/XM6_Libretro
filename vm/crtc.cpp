@@ -138,7 +138,6 @@ void FASTCALL CRTC::Reset()
 	int i;
 
 	ASSERT(this);
-	LOG0(Log::Normal, "Reset");
 
 	// Clear registers
 	memset(crtc.reg, 0, sizeof(crtc.reg));
@@ -249,7 +248,6 @@ BOOL FASTCALL CRTC::Save(Fileio *fio, int ver)
 
 	ASSERT(this);
 	ASSERT(fio);
-	LOG0(Log::Normal, "Save");
 
 	// Save size
 	sz = sizeof(crtc_t);
@@ -281,7 +279,6 @@ BOOL FASTCALL CRTC::Load(Fileio *fio, int ver)
 
 	ASSERT(this);
 	ASSERT(fio);
-	LOG0(Log::Normal, "Load");
 
 	// Load size
 	if (!fio->Read(&sz, sizeof(sz))) {
@@ -332,7 +329,6 @@ void FASTCALL CRTC::ApplyCfg(const Config *config)
 	ASSERT(this);
 	ASSERT(config);
 	g_alt_raster_timing = config->alt_raster;
-	LOG0(Log::Normal, "Apply configuration");
 }
 
 BOOL FASTCALL CRTC::IsPx68kVideoEngine() const
@@ -420,7 +416,6 @@ DWORD FASTCALL CRTC::ReadByte(DWORD addr)
 		return data;
 	}
 
-	LOG1(Log::Warning, "Illegal address read $%06X", memdev.first + addr);
 	return 0xff;
 }
 
@@ -544,9 +539,6 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 			NotifyTextScrollChanged(crtc.text_scrlx, crtc.text_scrly);
 			SyncPx68kState();
 
-#if defined(CRTC_LOG)
-			LOG2(Log::Normal, "Text scroll x=%d y=%d", crtc.text_scrlx, crtc.text_scrly);
-#endif	// CRTC_LOG
 			return;
 		}
 
@@ -643,26 +635,15 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 		if (data & 0x02) {
 			// Raster copy and fast clear (X68030'90)
 			if ((crtc.fast_clr == 0) && !crtc.raster_copy) {
-#if defined(CRTC_LOG)
-				LOG0(Log::Normal, "Graphic clear fast enable");
-#endif	// CRTC_LOG
 				crtc.fast_clr = 1;
 				if (UsePx68kRasterTiming()) {
 					BeginPx68kFastClear();
 				}
 			}
-#if defined(CRTC_LOG)
-			else {
-				LOG1(Log::Normal, "Graphic clear fast state State=%d", crtc.fast_clr);
-			}
-#endif	//CRTC_LOG
 		}
 		SyncPx68kState();
 		return;
 	}
-
-	LOG2(Log::Warning, "Illegal address write $%06X <- $%02X",
-							memdev.first + addr, data);
 	SyncPx68kState();
 }
 
@@ -948,9 +929,6 @@ void FASTCALL CRTC::ReCalc()
 
 	// If CRTC register 0 is not zero, recalc (Mac compatible)
 	if (crtc.reg[0x0] != 0) {
-#if defined(CRTC_LOG)
-		LOG0(Log::Normal, "Recalculate");
-#endif	// CRTC_LOG
 
 		// Get dot clock
 		dc = Get8DotClock();
@@ -989,7 +967,6 @@ void FASTCALL CRTC::ReCalc()
 	// Horizontal settings (normal)
 	crtc.hd = (crtc.reg[0x28] & 3);
 	if (crtc.hd == 3) {
-		LOG0(Log::Warning, "High dot 50MHz mode (CompactXVI)");
 	}
 	if (crtc.hd == 0) {
 		crtc.h_mul = 2;
@@ -1089,9 +1066,6 @@ void FASTCALL CRTC::VBlank()
 			}
 		}
 		else if (crtc.fast_clr == 2) {
-#if defined(CRTC_LOG)
-			LOG0(Log::Normal, "Graphic clear end");
-#endif	// CRTC_LOG
 			crtc.fast_clr = 0;
 			px68k_fastclrline = 0;
 			px68k_fastclrmask = 0;
@@ -1117,9 +1091,6 @@ void FASTCALL CRTC::VBlank()
 
 	// Graphic clear start
 	if (!UsePx68kRasterTiming() && crtc.fast_clr == 1) {
-#if defined(CRTC_LOG)
-		LOG1(Log::Normal, "Graphic clear start data=%02X", crtc.reg[42]);
-#endif	// CRTC_LOG
 		crtc.fast_clr = 2;
 		gvram->FastSet((DWORD)crtc.reg[42]);
 		gvram->FastClr(&crtc);
@@ -1251,9 +1222,6 @@ void FASTCALL CRTC::CheckRaster()
 	if (hit) {
 		// Match
 		mfp->SetGPIP(6, 0);
-#if defined(CRTC_LOG)
-		LOG2(Log::Normal, "Raster interrupt hit raster=%d scan=%d", crtc.raster_count, crtc.v_scan);
-#endif	// CRTC_LOG
 	}
 	else {
 		// No match
@@ -1596,3 +1564,4 @@ void FASTCALL CRTC::BeginPx68kFastClear()
 	px68k_fastclrline = (DWORD)((crtc.v_scan >= 0) ? crtc.v_scan : 0);
 	px68k_fastclrmask = kFastClearMask[crtc.reg[0x2b] & 15];
 }
+

@@ -612,7 +612,6 @@ void FASTCALL TVRAM::Reset()
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "���Z�b�g");
 
 	// ���[�N�G���A������
 	tvdata.multi = 0;
@@ -645,7 +644,6 @@ BOOL FASTCALL TVRAM::Save(Fileio *fio, int /*ver*/)
 	ASSERT(fio);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "�Z�[�u");
 
 	// ���������Z�[�u
 	if (!fio->Write(tvram, 0x80000)) {
@@ -686,7 +684,6 @@ BOOL FASTCALL TVRAM::Load(Fileio *fio, int ver)
 	ASSERT(ver >= 0x0200);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "���[�h");
 
 	// �����������[�h
 	if (!fio->Read(tvram, 0x80000)) {
@@ -735,7 +732,6 @@ void FASTCALL TVRAM::ApplyCfg(const Config* /*config*/)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "�ݒ�K�p");
 }
 
 #if !defined(NDEBUG)
@@ -1098,3 +1094,4 @@ void FASTCALL TVRAM::RasterCopy()
 		render->TextCopy(tvdata.src, tvdata.dst, tvdata.plane);
 	}
 }
+
