@@ -198,14 +198,14 @@ public:
 	void DrawFrame();
 
 	// CRTC interface
-	BYTE FASTCALL CRTCRead(DWORD addr);
-	void FASTCALL CRTCWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL CRTC_Read(DWORD addr);
+	void FASTCALL CRTC_Write(DWORD addr, BYTE data);
 	void FASTCALL CRTCSetAllDirty();
 	void FASTCALL CRTCRasterCopy();			// Raster copy implementation
 
 	// VC interface
-	BYTE FASTCALL VCRead(DWORD addr);
-	void FASTCALL VCWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL VCtrl_Read(DWORD addr);
+	void FASTCALL VCtrl_Write(DWORD addr, BYTE data);
 
 	// Timing interface for frontend synchronization
 	int GetVidMode() const { return state_.vid_mode; }
@@ -216,29 +216,29 @@ public:
 	void SetPhysicalVLine(DWORD vline) { physical_vline_ = vline; }
 
 	// Palette interface
-	BYTE FASTCALL PalRead(DWORD addr);
-	void FASTCALL PalWrite(DWORD addr, BYTE data);
-	void FASTCALL PalSetColor();
-	void FASTCALL PalChangeContrast(int num);
+	BYTE FASTCALL Pal_Read(DWORD addr);
+	void FASTCALL Pal_Write(DWORD addr, BYTE data);
+	void FASTCALL Pal_SetColor();
+	void FASTCALL Pal_ChangeContrast(int num);
 
 	// GVRAM interface
-	BYTE FASTCALL GVRAMRead(DWORD addr);
-	void FASTCALL GVRAMWrite(DWORD addr, BYTE data);
-	void FASTCALL GVRAMFastClear();
+	BYTE FASTCALL GVRAM_Read(DWORD addr);
+	void FASTCALL GVRAM_Write(DWORD addr, BYTE data);
+	void FASTCALL GVRAM_FastClear();
 
 	// TVRAM interface
-	BYTE FASTCALL TVRAMRead(DWORD addr);
-	void FASTCALL TVRAMWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL TVRAM_Read(DWORD addr);
+	void FASTCALL TVRAM_Write(DWORD addr, BYTE data);
 	void FASTCALL TVRAMSetAllDirty();
 	void FASTCALL TVRAMRCUpdate();
 
 	// BG/Sprite interface
-	BYTE FASTCALL BGRead(DWORD addr);
-	void FASTCALL BGWrite(DWORD addr, BYTE data);
-	void FASTCALL BGDrawLine(int opaq, int gd);
+	BYTE FASTCALL BG_Read(DWORD addr);
+	void FASTCALL BG_Write(DWORD addr, BYTE data);
+	void FASTCALL BG_DrawLine(int opaq, int gd);
 
 	// WinDraw compositor
-	void FASTCALL WinDrawDrawLine();
+	void FASTCALL WinDraw_DrawLine();
 	void FASTCALL WinDrawDrawFrame();
 
 	// Accessors
@@ -280,7 +280,7 @@ private:
 	void FASTCALL TextDrawLine(int opaq);
 
 	// Sprite drawing
-	void FASTCALL SpriteDrawLineMcr(int pri);
+	void FASTCALL Sprite_DrawLineMcr(int pri);
 
 	// BG drawing
 	void FASTCALL BGDrawLineMcr8(WORD bgtop, DWORD scrollx, DWORD scrolly);

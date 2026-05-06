@@ -200,6 +200,13 @@ DWORD FASTCALL VC::ReadByte(DWORD addr)
 	// $1000�P�ʂŃ��[�v
 	addr &= 0xfff;
 
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		if (addr < 0x400) {
+			scheduler->Wait(1);
+		}
+		return render->VCtrlRead(memdev.first + addr);
+	}
+
 	// �f�R�[�h
 	if (addr < 0x400) {
 		// �p���b�g�G���A
@@ -307,6 +314,9 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 			// �����_���֒ʒm
 			render->SetPalette(addr >> 1);
 		}
+		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
+		}
 		return;
 	}
 
@@ -314,6 +324,9 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 	if (addr < 0x500) {
 		if (addr & 1) {
 			SetVR0L(data);
+		}
+		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
 		}
 		return;
 	}
@@ -324,6 +337,9 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 		else {
 			SetVR1H(data);
 		}
+		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
+		}
 		return;
 	}
 	if (addr < 0x700) {
@@ -332,6 +348,9 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 		}
 		else {
 			SetVR2H(data);
+		}
+		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
 		}
 		return;
 	}

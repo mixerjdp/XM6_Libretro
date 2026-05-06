@@ -3310,6 +3310,29 @@ void FASTCALL Render::CRTCRegWrite(DWORD addr, BYTE data)
 	}
 }
 
+BYTE FASTCALL Render::CRTCRegRead(DWORD addr)
+{
+	if (px68k_adapter) {
+		return px68k_adapter->CRTCRegRead(addr);
+	}
+	return 0xff;
+}
+
+BYTE FASTCALL Render::VCtrlRead(DWORD addr)
+{
+	if (px68k_adapter) {
+		return px68k_adapter->VCtrlRead(addr);
+	}
+	return 0xff;
+}
+
+void FASTCALL Render::VCtrlWrite(DWORD addr, BYTE data)
+{
+	if (px68k_adapter) {
+		px68k_adapter->VCtrlWrite(addr, data);
+	}
+}
+
 //---------------------------------------------------------------------------
 //
 //	PCG?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½

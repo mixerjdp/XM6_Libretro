@@ -60,6 +60,11 @@ public:
 
 	// Per-write CRTC register update (real-time, matches original px68k CRTC_Write)
 	void CRTCRegWrite(DWORD addr, BYTE data);
+	BYTE CRTCRegRead(DWORD addr);
+
+	// Per-write/read VC register update (real-time, matches original px68k VCtrl_Read/Write)
+	BYTE VCtrlRead(DWORD addr);
+	void VCtrlWrite(DWORD addr, BYTE data);
 
 	// Output access
 	WORD* GetScreenBuffer() const;

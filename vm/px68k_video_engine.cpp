@@ -91,7 +91,7 @@ BOOL Px68kVideoEngine::Init()
 	state_.vline_total = 567;
 
 	// Initialize Palette
-	PalSetColor();
+	Pal_SetColor();
 
 	// Initialize GVRAM
 	std::memset(state_.gvram.gvram, 0, PX68K_GVRAM_SIZE);
@@ -165,7 +165,7 @@ void Px68kVideoEngine::Reset()
 	std::memset(state_.palette.regs, 0, PX68K_PALETTE_REGS_SIZE);
 	std::memset(state_.palette.textpal, 0, sizeof(state_.palette.textpal));
 	std::memset(state_.palette.grphpal, 0, sizeof(state_.palette.grphpal));
-	PalSetColor();
+	Pal_SetColor();
 
 	// Reset GVRAM
 	std::memset(state_.gvram.gvram, 0, PX68K_GVRAM_SIZE);
@@ -213,7 +213,7 @@ void FASTCALL Px68kVideoEngine::MakeTextPattern()
 //
 //===========================================================================
 
-void FASTCALL Px68kVideoEngine::PalSetColor()
+void FASTCALL Px68kVideoEngine::Pal_SetColor()
 {
 	int i;
 	WORD bit;
@@ -280,7 +280,7 @@ void FASTCALL Px68kVideoEngine::PalSetColor()
 	}
 }
 
-void FASTCALL Px68kVideoEngine::PalChangeContrast(int num)
+void FASTCALL Px68kVideoEngine::Pal_ChangeContrast(int num)
 {
 	WORD bit;
 	WORD R[5] = {0, 0, 0, 0, 0};
@@ -342,7 +342,7 @@ void FASTCALL Px68kVideoEngine::PalChangeContrast(int num)
 	}
 }
 
-BYTE FASTCALL Px68kVideoEngine::PalRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::Pal_Read(DWORD addr)
 {
 	if (addr < 0xe82400) {
 		return state_.palette.regs[addr - 0xe82000];
@@ -350,7 +350,7 @@ BYTE FASTCALL Px68kVideoEngine::PalRead(DWORD addr)
 	return 0xff;
 }
 
-void FASTCALL Px68kVideoEngine::PalWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::Pal_Write(DWORD addr, BYTE data)
 {
 	WORD pal;
 
@@ -381,7 +381,7 @@ void FASTCALL Px68kVideoEngine::PalWrite(DWORD addr, BYTE data)
 //
 //===========================================================================
 
-BYTE FASTCALL Px68kVideoEngine::CRTCRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::CRTC_Read(DWORD addr)
 {
 	if (addr < 0xe803ff) {
 		int reg = addr & 0x3f;
@@ -402,7 +402,7 @@ BYTE FASTCALL Px68kVideoEngine::CRTCRead(DWORD addr)
 	return 0x00;
 }
 
-void FASTCALL Px68kVideoEngine::CRTCWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::CRTC_Write(DWORD addr, BYTE data)
 {
 	BYTE reg = (BYTE)(addr & 0x3f);
 
@@ -624,10 +624,10 @@ void FASTCALL Px68kVideoEngine::UpdateScreenMode()
 //
 //===========================================================================
 
-BYTE FASTCALL Px68kVideoEngine::VCRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::VCtrl_Read(DWORD addr)
 {
 	if (addr < 0x00e82400) {
-		return PalRead(addr);
+		return Pal_Read(addr);
 	}
 	if (addr < 0x00e82500) {
 		return state_.vc.vcreg0[addr & 1];
@@ -641,10 +641,10 @@ BYTE FASTCALL Px68kVideoEngine::VCRead(DWORD addr)
 	return 0xff;
 }
 
-void FASTCALL Px68kVideoEngine::VCWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::VCtrl_Write(DWORD addr, BYTE data)
 {
 	if (addr < 0x00e82400) {
-		PalWrite(addr, data);
+		Pal_Write(addr, data);
 	}
 	else if (addr < 0x00e82500) {
 		if (state_.vc.vcreg0[addr & 1] != data) {
@@ -672,7 +672,7 @@ void FASTCALL Px68kVideoEngine::VCWrite(DWORD addr, BYTE data)
 //
 //===========================================================================
 
-BYTE FASTCALL Px68kVideoEngine::GVRAMRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::GVRAM_Read(DWORD addr)
 {
 	int type;
 
@@ -756,7 +756,7 @@ BYTE FASTCALL Px68kVideoEngine::GVRAMRead(DWORD addr)
 	return 0;
 }
 
-void FASTCALL Px68kVideoEngine::GVRAMWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::GVRAM_Write(DWORD addr, BYTE data)
 {
 	int line = 1023;
 	int scr = 0;
@@ -868,7 +868,7 @@ void FASTCALL Px68kVideoEngine::GVRAMWrite(DWORD addr, BYTE data)
 	state_.tvram.textdirtyline[line] = 1;
 }
 
-void FASTCALL Px68kVideoEngine::GVRAMFastClear()
+void FASTCALL Px68kVideoEngine::GVRAM_FastClear()
 {
 	DWORD v = ((state_.crtc.regs[0x29] & 4) ? 512 : 256);
 	DWORD h = ((state_.crtc.regs[0x29] & 3) ? 512 : 256);
@@ -909,7 +909,7 @@ void FASTCALL Px68kVideoEngine::GVRAMFastClear()
 //
 //===========================================================================
 
-BYTE FASTCALL Px68kVideoEngine::TVRAMRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::TVRAM_Read(DWORD addr)
 {
 	addr &= 0x7ffff;
 #ifndef MSB_FIRST
@@ -918,7 +918,7 @@ BYTE FASTCALL Px68kVideoEngine::TVRAMRead(DWORD addr)
 	return state_.tvram.tvram[addr];
 }
 
-void FASTCALL Px68kVideoEngine::TVRAMWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::TVRAM_Write(DWORD addr, BYTE data)
 {
 	addr &= 0x7ffff;
 #ifndef MSB_FIRST
@@ -1073,7 +1073,7 @@ void FASTCALL Px68kVideoEngine::TVRAMRCUpdate()
 //
 //===========================================================================
 
-BYTE FASTCALL Px68kVideoEngine::BGRead(DWORD addr)
+BYTE FASTCALL Px68kVideoEngine::BG_Read(DWORD addr)
 {
 	if ((addr >= 0xeb0000) && (addr < 0xeb0400)) {
 		addr -= 0xeb0000;
@@ -1091,7 +1091,7 @@ BYTE FASTCALL Px68kVideoEngine::BGRead(DWORD addr)
 	return 0xff;
 }
 
-void FASTCALL Px68kVideoEngine::BGWrite(DWORD addr, BYTE data)
+void FASTCALL Px68kVideoEngine::BG_Write(DWORD addr, BYTE data)
 {
 	DWORD bg16chr;
 	int v = 0;
@@ -2014,7 +2014,7 @@ void FASTCALL Px68kVideoEngine::TextDrawLine(int opaq)
 //
 //===========================================================================
 
-void FASTCALL Px68kVideoEngine::SpriteDrawLineMcr(int pri)
+void FASTCALL Px68kVideoEngine::Sprite_DrawLineMcr(int pri)
 {
 	// Sprite control table structure
 	// Using #pragma pack for MSVC compatibility instead of __attribute__((packed))
@@ -2270,7 +2270,7 @@ void FASTCALL Px68kVideoEngine::BGDrawLineMcr16_ng(WORD BGTOP, DWORD BGScrollX, 
 	}
 }
 
-void FASTCALL Px68kVideoEngine::BGDrawLine(int opaq, int gd)
+void FASTCALL Px68kVideoEngine::BG_DrawLine(int opaq, int gd)
 {
 	int i;
 
@@ -2285,7 +2285,7 @@ void FASTCALL Px68kVideoEngine::BGDrawLine(int opaq, int gd)
 			state_.bgsprite.bg_pribuf[i] = 0xffff;
 	}
 
-	SpriteDrawLineMcr(1);
+	Sprite_DrawLineMcr(1);
 	if ((state_.bgsprite.bg_regs[9] & 8) && (state_.bgsprite.bg_chrsize == 8)) { // BG1 on
 		if (gd) {
 			BGDrawLineMcr8(state_.bgsprite.bg_bg1top, state_.bgsprite.bg1scrollx, state_.bgsprite.bg1scrolly);
@@ -2294,26 +2294,26 @@ void FASTCALL Px68kVideoEngine::BGDrawLine(int opaq, int gd)
 			BGDrawLineMcr8_ng(state_.bgsprite.bg_bg1top, state_.bgsprite.bg1scrollx, state_.bgsprite.bg1scrolly);
 		}
 	}
-	SpriteDrawLineMcr(2);
+	Sprite_DrawLineMcr(2);
 	if (state_.bgsprite.bg_regs[9] & 1) { // BG0 on
 		if (state_.bgsprite.bg_chrsize == 8) {
 			if (gd) {
-				BGDrawLineMcr8(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+					BGDrawLineMcr8(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
 			}
 			else {
-				BGDrawLineMcr8_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+					BGDrawLineMcr8_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
 			}
 		}
 		else {
 			if (gd) {
-				BGDrawLineMcr16(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+					BGDrawLineMcr16(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
 			}
 			else {
-				BGDrawLineMcr16_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
+					BGDrawLineMcr16_ng(state_.bgsprite.bg_bg0top, state_.bgsprite.bg0scrollx, state_.bgsprite.bg0scrolly);
 			}
 		}
 	}
-	SpriteDrawLineMcr(3);
+	Sprite_DrawLineMcr(3);
 }
 
 
@@ -2544,7 +2544,7 @@ void FASTCALL Px68kVideoEngine::WinDrawDrawHalfFillLine()
 //
 //===========================================================================
 
-void FASTCALL Px68kVideoEngine::WinDrawDrawLine()
+void FASTCALL Px68kVideoEngine::WinDraw_DrawLine()
 {
 	int opaq, ton = 0, gon = 0, bgon = 0, tron = 0, pron = 0, tdrawed = 0;
 
@@ -2685,7 +2685,7 @@ void FASTCALL Px68kVideoEngine::WinDrawDrawLine()
 			state_.bgsprite.vlinebg <<= s1;
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));
-			BGDrawLine(!ton, 0);
+			BG_DrawLine(!ton, 0);
 			bgon = 1;
 		}
 	}
@@ -2700,7 +2700,7 @@ void FASTCALL Px68kVideoEngine::WinDrawDrawLine()
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));
 			std::memset(state_.tvram.text_trflag, 0, state_.crtc.textdotx + 16);
-			BGDrawLine(1, 1);
+			BG_DrawLine(1, 1);
 			bgon = 1;
 		}
 		else {
@@ -2858,7 +2858,7 @@ void Px68kVideoEngine::EndFrame()
 void Px68kVideoEngine::DrawLine(int vline)
 {
 	state_.vline = vline;
-	WinDrawDrawLine();
+	WinDraw_DrawLine();
 }
 
 void Px68kVideoEngine::DrawFrame()
@@ -2906,7 +2906,7 @@ BOOL Px68kVideoEngine::LoadState(class Fileio *fio)
 	if (!fio->Read(&state_, size)) return FALSE;
 
 	// Rebuild derived state
-	PalSetColor();
+	Pal_SetColor();
 	TVRAMSetAllDirty();
 
 	return TRUE;
@@ -2923,5 +2923,5 @@ void Px68kVideoEngine::SetRGB565Masks(WORD r, WORD g, WORD b)
 	windraw_pal16r_ = r;
 	windraw_pal16g_ = g;
 	windraw_pal16b_ = b;
-	PalSetColor();
+	Pal_SetColor();
 }

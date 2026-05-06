@@ -370,6 +370,9 @@ DWORD FASTCALL CRTC::ReadByte(DWORD addr)
 
 	// $E80000-$E803FF : Register area
 	if (addr < 0x400) {
+		if (UsePx68kRasterTiming() && render) {
+			return render->CRTCRegRead(memdev.first + addr);
+		}
 		addr &= 0x3f;
 		if (addr >= 0x30) {
 			return 0xff;
@@ -387,6 +390,9 @@ DWORD FASTCALL CRTC::ReadByte(DWORD addr)
 
 	// $E80480-$E804FF : Internal port
 	if ((addr >= 0x480) && (addr <= 0x4ff)) {
+		if (UsePx68kRasterTiming() && render) {
+			return render->CRTCRegRead(memdev.first + addr);
+		}
 		// Even bytes are 0
 		if ((addr & 1) == 0) {
 			return 0;
@@ -598,6 +604,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 
 		if (UsePx68kRasterTiming()) {
 			px68k_crtc_mode = (BYTE)(data | (px68k_crtc_mode & 0x02));
+			if (render) {
+				render->CRTCRegWrite(memdev.first + addr, (BYTE)data);
+			}
 			if (px68k_crtc_mode & 0x08) {
 				crtc.raster_copy = TRUE;
 				TextVRAM();
@@ -619,6 +628,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 		if (data & 0x08) {
 			crtc.raster_copy = TRUE;
 			if (UsePx68kRasterTiming()) {
+				if (render) {
+					render->CRTCRegWrite(memdev.first + addr, (BYTE)data);
+				}
 				TextVRAM();
 				tvram->RasterCopy();
 				crtc.raster_copy = FALSE;

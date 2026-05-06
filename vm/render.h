@@ -300,6 +300,9 @@ public:
 	void FASTCALL SpriteBGWrite(DWORD addr, BYTE data);
 										// PX68k BG/Sprite per-write update
 	void FASTCALL CRTCRegWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL CRTCRegRead(DWORD addr);
+	BYTE FASTCALL VCtrlRead(DWORD addr);
+	void FASTCALL VCtrlWrite(DWORD addr, BYTE data);
 										// PX68k CRTC register per-write update
 
 	const DWORD* FASTCALL GetTextBuf() const;

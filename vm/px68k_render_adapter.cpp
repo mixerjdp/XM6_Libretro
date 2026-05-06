@@ -407,9 +407,9 @@ void Px68kRenderAdapter::SyncPaletteState(const VC *vc)
 		es->palette.regs[i * 2] = (BYTE)((w >> 8) & 0xff);
 		es->palette.regs[i * 2 + 1] = (BYTE)(w & 0xff);
 	}
-	engine_->PalSetColor();
+	engine_->Pal_SetColor();
 	if (contrast_synced_ >= 0) {
-		engine_->PalChangeContrast(contrast_synced_);
+		engine_->Pal_ChangeContrast(contrast_synced_);
 	}
 	else {
 		engine_->TVRAMSetAllDirty();
@@ -426,7 +426,7 @@ void Px68kRenderAdapter::SyncPaletteContrast(Render *owner)
 
 	Px68kVideoEngineState *es = engine_->GetState();
 	contrast_synced_ = owner->GetContrast();
-	engine_->PalChangeContrast(contrast_synced_);
+	engine_->Pal_ChangeContrast(contrast_synced_);
 	RebuildPaletteLookup(es);
 }
 
@@ -619,7 +619,7 @@ void Px68kRenderAdapter::DrawScanline(int visible_vline)
 	if ((visible_vline >= 0) &&
 	    (visible_vline < (int)engine_->GetTextDotY()) &&
 	    (visible_vline < (int)PX68K_FULLSCREEN_HEIGHT)) {
-		engine_->WinDrawDrawLine();
+		engine_->WinDraw_DrawLine();
 		drawn_lines_++;
 	}
 }
@@ -651,11 +651,29 @@ DWORD Px68kRenderAdapter::GetScreenHeight() const
 void Px68kRenderAdapter::BGWrite(DWORD addr, BYTE data)
 {
 	if (!engine_) return;
-	engine_->BGWrite(addr, data);
+	engine_->BG_Write(addr, data);
 }
 
 void Px68kRenderAdapter::CRTCRegWrite(DWORD addr, BYTE data)
 {
 	if (!engine_) return;
-	engine_->CRTCWrite(addr, data);
+	engine_->CRTC_Write(addr, data);
+}
+
+BYTE Px68kRenderAdapter::CRTCRegRead(DWORD addr)
+{
+	if (!engine_) return 0xff;
+	return engine_->CRTC_Read(addr);
+}
+
+BYTE Px68kRenderAdapter::VCtrlRead(DWORD addr)
+{
+	if (!engine_) return 0xff;
+	return engine_->VCtrl_Read(addr);
+}
+
+void Px68kRenderAdapter::VCtrlWrite(DWORD addr, BYTE data)
+{
+	if (!engine_) return;
+	engine_->VCtrl_Write(addr, data);
 }
