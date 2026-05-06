@@ -1082,6 +1082,9 @@ void FASTCALL CRTC::VBlank()
 			else {
 				crtc.fast_clr = (crtc.reg[0x29] & 0x10) ? 1 : 2;
 				BeginPx68kFastClear();
+				if (render) {
+					render->GVRAMFastClear();
+				}
 			}
 			}
 		}

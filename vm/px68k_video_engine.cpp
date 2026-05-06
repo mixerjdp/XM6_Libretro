@@ -870,6 +870,8 @@ void FASTCALL Px68kVideoEngine::GVRAM_Write(DWORD addr, BYTE data)
 
 void FASTCALL Px68kVideoEngine::GVRAM_FastClear()
 {
+	TVRAMSetAllDirty();
+
 	DWORD v = ((state_.crtc.regs[0x29] & 4) ? 512 : 256);
 	DWORD h = ((state_.crtc.regs[0x29] & 3) ? 512 : 256);
 
