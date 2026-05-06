@@ -654,6 +654,18 @@ void Px68kRenderAdapter::BGWrite(DWORD addr, BYTE data)
 	engine_->BG_Write(addr, data);
 }
 
+BYTE Px68kRenderAdapter::BGRead(DWORD addr)
+{
+	if (!engine_) return 0xff;
+	return engine_->BG_Read(addr);
+}
+
+void Px68kRenderAdapter::GVRAMFastClear()
+{
+	if (!engine_) return;
+	engine_->GVRAM_FastClear();
+}
+
 void Px68kRenderAdapter::CRTCRegWrite(DWORD addr, BYTE data)
 {
 	if (!engine_) return;
@@ -670,6 +682,30 @@ BYTE Px68kRenderAdapter::VCtrlRead(DWORD addr)
 {
 	if (!engine_) return 0xff;
 	return engine_->VCtrl_Read(addr);
+}
+
+BYTE Px68kRenderAdapter::TVRAMRead(DWORD addr)
+{
+	if (!engine_) return 0xff;
+	return engine_->TVRAM_Read(addr);
+}
+
+void Px68kRenderAdapter::TVRAMWrite(DWORD addr, BYTE data)
+{
+	if (!engine_) return;
+	engine_->TVRAM_Write(addr, data);
+}
+
+BYTE Px68kRenderAdapter::GVRAMRead(DWORD addr)
+{
+	if (!engine_) return 0xff;
+	return engine_->GVRAM_Read(addr);
+}
+
+void Px68kRenderAdapter::GVRAMWrite(DWORD addr, BYTE data)
+{
+	if (!engine_) return;
+	engine_->GVRAM_Write(addr, data);
 }
 
 void Px68kRenderAdapter::VCtrlWrite(DWORD addr, BYTE data)

@@ -1441,6 +1441,10 @@ DWORD FASTCALL GVRAM::ReadByte(DWORD addr)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
 
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		return (DWORD)render->GVRAMRead(addr & 0x1fffff);
+	}
+
 	// Wait(0.5 cycle)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
@@ -1461,6 +1465,13 @@ DWORD FASTCALL GVRAM::ReadWord(DWORD addr)
 	ASSERT((addr & 1) == 0);
 	ASSERT_DIAG();
 
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		DWORD base = addr & 0x1fffff;
+		BYTE hi = render->GVRAMRead(base);
+		BYTE lo = render->GVRAMRead(base ^ 1);
+		return (DWORD)(((WORD)hi << 8) | lo);
+	}
+
 	// Wait(0.5 cycle)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
@@ -1480,6 +1491,12 @@ void FASTCALL GVRAM::WriteByte(DWORD addr, DWORD data)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT(data < 0x100);
 	ASSERT_DIAG();
+
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		render->GVRAMWrite(addr & 0x1fffff, (BYTE)data);
+		handler->WriteByte(addr & 0x1fffff, data);
+		return;
+	}
 
 	// Wait(0.5 cycle)
 	scheduler->Wait(gvcount);
@@ -1502,6 +1519,14 @@ void FASTCALL GVRAM::WriteWord(DWORD addr, DWORD data)
 	ASSERT(data < 0x10000);
 	ASSERT_DIAG();
 
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		DWORD base = addr & 0x1fffff;
+		render->GVRAMWrite(base, (BYTE)(data >> 8));
+		render->GVRAMWrite(base ^ 1, (BYTE)(data & 0xff));
+		handler->WriteWord(addr & 0x1fffff, data);
+		return;
+	}
+
 	// Wait(0.5 cycle)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
@@ -1520,6 +1545,10 @@ DWORD FASTCALL GVRAM::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
+
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		return (DWORD)render->GVRAMRead(addr & 0x1fffff);
+	}
 
 	// Handler delegate
 	return handler->ReadOnly(addr & 0x1fffff);

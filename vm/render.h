@@ -298,11 +298,17 @@ public:
 	void FASTCALL PCGMem(DWORD addr);
 										// PCGï¿½Eï¿½ÏX
 	void FASTCALL SpriteBGWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL TVRAMRead(DWORD addr);
+	void FASTCALL TVRAMWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL GVRAMRead(DWORD addr);
+	void FASTCALL GVRAMWrite(DWORD addr, BYTE data);
+	BYTE FASTCALL BGRead(DWORD addr);
 										// PX68k BG/Sprite per-write update
 	void FASTCALL CRTCRegWrite(DWORD addr, BYTE data);
 	BYTE FASTCALL CRTCRegRead(DWORD addr);
 	BYTE FASTCALL VCtrlRead(DWORD addr);
 	void FASTCALL VCtrlWrite(DWORD addr, BYTE data);
+	void FASTCALL GVRAMFastClear();
 										// PX68k CRTC register per-write update
 
 	const DWORD* FASTCALL GetTextBuf() const;

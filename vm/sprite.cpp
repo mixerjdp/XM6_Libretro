@@ -276,6 +276,13 @@ DWORD FASTCALL Sprite::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		DWORD offset = addr & 0xffff;
+		if ((offset < 0x400) || ((offset >= 0x800) && (offset < 0x812)) || (offset >= 0xc000)) {
+			return (DWORD)render->BGRead(memdev.first + offset);
+		}
+	}
+
 	// �I�t�Z�b�g�Z�o
 	addr &= 0xffff;
 
@@ -504,6 +511,13 @@ DWORD FASTCALL Sprite::ReadOnly(DWORD addr) const
 {
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
+
+	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
+		DWORD offset = addr & 0xffff;
+		if ((offset < 0x400) || ((offset >= 0x800) && (offset < 0x812)) || (offset >= 0xc000)) {
+			return (DWORD)render->BGRead(memdev.first + offset);
+		}
+	}
 
 	// �I�t�Z�b�g�Z�o
 	addr &= 0xffff;

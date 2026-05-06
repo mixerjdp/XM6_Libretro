@@ -3303,6 +3303,51 @@ void FASTCALL Render::SpriteBGWrite(DWORD addr, BYTE data)
 	}
 }
 
+BYTE FASTCALL Render::TVRAMRead(DWORD addr)
+{
+	if (px68k_adapter) {
+		return px68k_adapter->TVRAMRead(addr);
+	}
+	return 0xff;
+}
+
+void FASTCALL Render::TVRAMWrite(DWORD addr, BYTE data)
+{
+	if (px68k_adapter) {
+		px68k_adapter->TVRAMWrite(addr, data);
+	}
+}
+
+BYTE FASTCALL Render::GVRAMRead(DWORD addr)
+{
+	if (px68k_adapter) {
+		return px68k_adapter->GVRAMRead(addr);
+	}
+	return 0xff;
+}
+
+void FASTCALL Render::GVRAMWrite(DWORD addr, BYTE data)
+{
+	if (px68k_adapter) {
+		px68k_adapter->GVRAMWrite(addr, data);
+	}
+}
+
+BYTE FASTCALL Render::BGRead(DWORD addr)
+{
+	if (px68k_adapter) {
+		return px68k_adapter->BGRead(addr);
+	}
+	return 0xff;
+}
+
+void FASTCALL Render::GVRAMFastClear()
+{
+	if (px68k_adapter) {
+		px68k_adapter->GVRAMFastClear();
+	}
+}
+
 void FASTCALL Render::CRTCRegWrite(DWORD addr, BYTE data)
 {
 	if (px68k_adapter) {

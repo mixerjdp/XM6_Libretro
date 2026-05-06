@@ -57,6 +57,8 @@ public:
 
 	// Per-write BG/sprite update (real-time, matches original px68k BG_Write)
 	void BGWrite(DWORD addr, BYTE data);
+	BYTE BGRead(DWORD addr);
+	void GVRAMFastClear();
 
 	// Per-write CRTC register update (real-time, matches original px68k CRTC_Write)
 	void CRTCRegWrite(DWORD addr, BYTE data);
@@ -65,6 +67,10 @@ public:
 	// Per-write/read VC register update (real-time, matches original px68k VCtrl_Read/Write)
 	BYTE VCtrlRead(DWORD addr);
 	void VCtrlWrite(DWORD addr, BYTE data);
+	BYTE TVRAMRead(DWORD addr);
+	void TVRAMWrite(DWORD addr, BYTE data);
+	BYTE GVRAMRead(DWORD addr);
+	void GVRAMWrite(DWORD addr, BYTE data);
 
 	// Output access
 	WORD* GetScreenBuffer() const;
