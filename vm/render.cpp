@@ -3303,6 +3303,13 @@ void FASTCALL Render::SpriteBGWrite(DWORD addr, BYTE data)
 	}
 }
 
+void FASTCALL Render::CRTCRegWrite(DWORD addr, BYTE data)
+{
+	if (px68k_adapter) {
+		px68k_adapter->CRTCRegWrite(addr, data);
+	}
+}
+
 //---------------------------------------------------------------------------
 //
 //	PCG?o?b?t?@?ï¿½Eï¿½ï¿½Eï¿½

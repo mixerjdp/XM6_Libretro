@@ -58,6 +58,9 @@ public:
 	// Per-write BG/sprite update (real-time, matches original px68k BG_Write)
 	void BGWrite(DWORD addr, BYTE data);
 
+	// Per-write CRTC register update (real-time, matches original px68k CRTC_Write)
+	void CRTCRegWrite(DWORD addr, BYTE data);
+
 	// Output access
 	WORD* GetScreenBuffer() const;
 	DWORD GetScreenWidth() const;

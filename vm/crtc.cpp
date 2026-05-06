@@ -450,6 +450,9 @@ void FASTCALL CRTC::WriteByte(DWORD addr, DWORD data)
 		}
 		crtc.reg[addr] = (BYTE)data;
 		NotifyMarkAllTextDirty();
+		if (render) {
+			render->CRTCRegWrite(0xE80000 + addr, (BYTE)data);
+		}
 
 	// GVRAM address display
 	if (addr == 0x29) {

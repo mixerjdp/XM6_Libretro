@@ -653,3 +653,9 @@ void Px68kRenderAdapter::BGWrite(DWORD addr, BYTE data)
 	if (!engine_) return;
 	engine_->BGWrite(addr, data);
 }
+
+void Px68kRenderAdapter::CRTCRegWrite(DWORD addr, BYTE data)
+{
+	if (!engine_) return;
+	engine_->CRTCWrite(addr, data);
+}
