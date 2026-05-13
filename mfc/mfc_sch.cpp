@@ -115,6 +115,23 @@ BOOL FASTCALL CScheduler::Init()
 
 //---------------------------------------------------------------------------
 //
+//	Enable control
+//
+//---------------------------------------------------------------------------
+void FASTCALL CScheduler::Enable(BOOL bEnable)
+{
+	ASSERT(this);
+	ASSERT_VALID(this);
+
+	if (!bEnable) {
+		m_bStepFrame = FALSE;
+	}
+
+	CComponent::Enable(bEnable);
+}
+
+//---------------------------------------------------------------------------
+//
 //	Cleanup
 //
 //---------------------------------------------------------------------------
@@ -195,6 +212,9 @@ void FASTCALL CScheduler::Reset()
 	m_dwDrawBackup = 0;
 	m_dwDrawCount = 0;
 	m_dwDrawPrev = 0;
+	if (m_pFrmWnd && m_pFrmWnd->GetView()) {
+		m_pFrmWnd->GetView()->ResetFrameCounter();
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -438,7 +458,7 @@ void FASTCALL CScheduler::Run()
 			continue;
 		}
 
-		while (accumulator >= 1000) {
+		while (m_bEnable && accumulator >= 1000) {
 			// Determine if rendering is possible: if less than 2000 remain,
 			// this is the last cycle "up to date"
 			if (accumulator < 2000) {
@@ -490,12 +510,6 @@ void FASTCALL CScheduler::Run()
 		if (dwExecCount > 0) {
 			Refresh();
 			dwExecCount = 0;
-
-			// Si estamos en modo Step Frame, comprobamos si se completó el frame de pantalla principal
-			if (m_bStepFrame && m_nSubWndDisp == -1) {
-				m_bStepFrame = FALSE;
-				m_bEnable = FALSE;
-			}
 		}
 
 		// Sleep once every 8 ms if idle or the menu is open
@@ -560,6 +574,11 @@ void FASTCALL CScheduler::Refresh()
 			m_pRender->Complete();
 		}
 		m_dwDrawCount++;
+
+		if (m_bStepFrame) {
+			m_bStepFrame = FALSE;
+			m_bEnable = FALSE;
+		}
 	}
 
 	// Next window

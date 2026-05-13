@@ -137,6 +137,10 @@ if errorlevel 1 (
   exit /b 1
 )
 
+if exist "%~dp0xm6_libretro.info" (
+  copy /Y "%~dp0xm6_libretro.info" "%RELEASE_DIR%\xm6_libretro.info" >nul
+)
+
 if exist "%OUT:.dll=.pdb%" (
   copy /Y "%OUT:.dll=.pdb%" "%RELEASE_DIR%\xm6_libretro.pdb" >nul
 )

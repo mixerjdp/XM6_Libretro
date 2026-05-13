@@ -954,6 +954,7 @@ void CFrmWnd::OnReset()
 
 	// Reset and redraw
 	::GetVM()->Reset();
+	GetScheduler()->Reset();
 
 	// Update the savestate filename based on loaded images
 	// This ensures that after a reset with a new disk, F5/F7 use the correct name.
@@ -3950,11 +3951,15 @@ void CFrmWnd::OnExecUI(CCmdUI *pCmdUI)
 //---------------------------------------------------------------------------
 void CFrmWnd::OnBreak()
 {
+	// Let the scheduler observe the stop request immediately, even if it is
+	// currently draining accumulated frame ticks under the VM lock.
+	GetScheduler()->Enable(FALSE);
+
 	// Lock
 	::LockVM();
 
-	// Disable scheduler
-	GetScheduler()->Enable(FALSE);
+	// Sync debugger windows to the paused PC.
+	GetScheduler()->SyncDisasm();
 
 	// Unlock
 	::UnlockVM();
