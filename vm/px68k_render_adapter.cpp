@@ -33,6 +33,19 @@ static BOOL FASTCALL HasAnyTrue(const BOOL *flags, int count)
 	return FALSE;
 }
 
+static BOOL FASTCALL HasAnyTrue(const BYTE *flags, int count)
+{
+	if (!flags || (count <= 0)) {
+		return FALSE;
+	}
+	for (int i = 0; i < count; i++) {
+		if (flags[i]) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static void FASTCALL RebuildPaletteLookup(Px68kVideoEngineState *state)
 {
 	if (!state) {
@@ -496,7 +509,7 @@ void Px68kRenderAdapter::SyncDynamicState(Render *owner)
 		std::memset(work->grpmod, 0, sizeof(work->grpmod));
 		std::memset(work->grppal, 0, sizeof(work->grppal));
 	}
-	if (HasAnyTrue(work->bgspmod, 512)) {
+	if (HasAnyTrue(work->bgspmod, 1024)) {
 		SyncSpriteState(sprite_);
 		std::memset(work->bgspmod, 0, sizeof(work->bgspmod));
 	}

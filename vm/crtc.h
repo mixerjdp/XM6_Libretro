@@ -2,207 +2,196 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 ï¿½oï¿½hï¿½D(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2003 ‚o‚hD(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2010-2014 GIMONS
 //	[ CRTC(VICON) ]
 //
 //---------------------------------------------------------------------------
 
-#if !defined(crtc_h)
+#ifndef crtc_h
 #define crtc_h
 
 #include "device.h"
 #include "event.h"
 #include "px68k_crtc_port.h"
 
+/// ‰æ–Ê‚Ì•`‰æ’x‰„‚ğ‚È‚­‚·
+/*
+VM‚Ì‚’¼‹AüŠúŠÔŠJn‚É‡‚í‚¹‚Ä•`‰æ‚ğs‚¤‚±‚Æ‚É‚æ‚èA‰æ–Ê•\¦‚Ì’x‰„‚ğ
+Œ¸‚ç‚·B‚Ü‚½A15kHzƒ‚[ƒh‚ÉCPUƒpƒ[‚ª\•ª‚É‚ ‚é‚É‚à‚©‚©‚í‚ç‚¸ƒtƒŒ[
+ƒ€ƒXƒLƒbƒv‚ª”­¶‚µ‚Ä‚µ‚Ü‚¤Œ´ì‚Ì–â‘è‚àC³‚³‚ê‚éB
+*/
+#define XM6_RENDER_SYNC	1
+
 //===========================================================================
 //
-//	CRTC
+/// CRTC
 //
 //===========================================================================
 class CRTC : public MemDevice
 {
 public:
-	// Internal data definition
+	// “à•”ƒf[ƒ^’è‹`
 	typedef struct {
-		BYTE reg[24 * 2];				// CRTC registers
-		BOOL hrl;						// HRL (system port)
-		BOOL lowres;					// 15kHz mode
-		BOOL textres;					// 768x512 mode
-		BOOL changed;					// Resolution change flag
+		BYTE reg[24 * 2];				// CRTCƒŒƒWƒXƒ^
+		BOOL hrl;						// HRL(ƒVƒXƒeƒ€ƒ|[ƒg)
+		BOOL lowres;					// 15kHzƒ‚[ƒh
+		BOOL textres;					// 768~512ƒ‚[ƒh
+		BOOL changed;					// ‰ğ‘œ“x•ÏXƒtƒ‰ƒO
 
-		int h_sync;						// Horizontal sync total
-		int h_pulse;					// Horizontal sync pulse width
-		int h_back;					// Horizontal back porch
-		int h_front;					// Horizontal front porch
-		int h_dots;					// Horizontal dot count
-		int h_mul;					// Horizontal multiplier
-		int hd;						// 256,512,768,etc.
+		int h_sync;						// …•½“¯ŠúŠúŠÔ
+		int h_pulse;					// …•½“¯Šúƒpƒ‹ƒX•
+		int h_back;						// …•½ƒoƒbƒNƒ|[ƒ`
+		int h_front;					// …•½ƒtƒƒ“ƒgƒ|[ƒ`
+		int h_dots;						// …•½ƒhƒbƒg”
+		int h_mul;						// …•½”{—¦
+		int hd;							// 256,512,768,–¢’è‹`
 
-		int v_sync;					// Vertical sync total (H units)
-		int v_pulse;					// Vertical sync pulse width (H units)
-		int v_back;					// Vertical back porch (H units)
-		int v_front;					// Vertical front porch (H units)
-		int v_dots;					// Vertical dot count
-		int v_mul;					// Vertical multiplier (0:interlace)
-		int vd;						// 256,512,etc.,interlace,etc.
+		int v_sync;						// ‚’¼“¯ŠúŠúŠÔ(H’PˆÊ)
+		int v_pulse;					// ‚’¼“¯Šúƒpƒ‹ƒX•(H’PˆÊ)
+		int v_back;						// ‚’¼ƒoƒbƒNƒ|[ƒ`(H’PˆÊ)
+		int v_front;					// ‚’¼ƒtƒƒ“ƒgƒ|[ƒ`(H’PˆÊ)
+		int v_dots;						// ‚’¼ƒhƒbƒg”
+		int v_mul;						// ‚’¼”{—¦(0:interlace)
+		int vd;							// 256,512,–¢’è‹`,–¢’è‹`
 
-		DWORD ns;					// ns counter
-		DWORD hus;					// hus counter
-		DWORD v_synccnt;				// V-SYNC counter
-		DWORD v_blankcnt;				// V-BLANK counter
-		BOOL h_disp;					// Horizontal display flag
-		BOOL v_disp;					// V-DISP flag
-		BOOL v_blank;					// V-BLANK flag
-		DWORD v_count;					// V-DISP counter
-		int v_scan;					// Scan line position
+		DWORD ns;						// nsƒJƒEƒ“ƒ^
+		DWORD hus;						// husƒJƒEƒ“ƒ^
+		DWORD v_synccnt;				// V-SYNCƒJƒEƒ“ƒ^
+		DWORD v_blankcnt;				// V-BLANKƒJƒEƒ“ƒ^
+		int h_disp;						// …•½•\¦ƒtƒ‰ƒO
+		BOOL v_disp;					// V-DISPƒtƒ‰ƒO
+		BOOL v_blank;					// V-BLANKƒtƒ‰ƒO
+		DWORD v_count;					// V-DISPƒJƒEƒ“ƒ^
+		int v_scan;						// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“
 
-		// Non-display variables
-		int h_synctime;					// Sync time (hus)
-		int h_disptime;					// Display time (hus)
-		int v_cycletime;				// Cycle time (hus)
-		int v_blanktime;				// V-blank time (hus)
-		int v_synctime;					// Sync time (hus)
-		int v_backtime;					// Back porch (hus)
+		// ˆÈ‰ºTypeGŠg’£•ª
+		BOOL disp_vsync;				// ƒzƒXƒg‘¤‚ÌVSYNC‚Æ“¯Šú
+		int h_refresh;					// ’²®Œã‚Ì…•½“¯ŠúŠúŠÔ
+		BOOL h_blockscan;				// …•½•\¦ŠúŠÔƒXƒLƒƒƒ“ƒ‚[ƒh
+		int h_blocknum;					// …•½•\¦ŠúŠÔƒXƒLƒƒƒ“ƒuƒƒbƒN”
+		int h_blockpos;					// …•½•\¦ŠúŠÔƒXƒLƒƒƒ“ƒuƒƒbƒNˆÊ’u
+		BOOL v_scaneven;				// ƒCƒ“ƒ^ƒŒ[ƒX‚Ì‹ô”ƒtƒ‰ƒO
 
-		BOOL tmem;					// Text VRAM display
-		BOOL gmem;					// Graphic VRAM display
-		DWORD siz;					// Graphic VRAM 1024x1024 mode
-		DWORD col;					// Graphic VRAM color mode
+		BOOL tmem;						// ƒeƒLƒXƒgVRAM”ñ•\¦
+		BOOL gmem;						// ƒOƒ‰ƒtƒBƒbƒNVRAM”ñ•\¦
+		DWORD siz;						// ƒOƒ‰ƒtƒBƒbƒNVRAM1024~1024ƒ‚[ƒh
+		DWORD col;						// ƒOƒ‰ƒtƒBƒbƒNVRAMFƒ‚[ƒh
 
-		DWORD text_scrlx;				// Text scroll X
-		DWORD text_scrly;				// Text scroll Y
-		DWORD grp_scrlx[4];				// Graphic scroll X
-		DWORD grp_scrly[4];				// Graphic scroll Y
+		DWORD text_scrlx;				// ƒeƒLƒXƒgƒXƒNƒ[ƒ‹X
+		DWORD text_scrly;				// ƒeƒLƒXƒgƒXƒNƒ[ƒ‹Y
+		DWORD grp_scrlx[4];				// ƒOƒ‰ƒtƒBƒbƒNƒXƒNƒ[ƒ‹X
+		DWORD grp_scrly[4];				// ƒOƒ‰ƒtƒBƒbƒNƒXƒNƒ[ƒ‹Y
 
-		int raster_count;				// Raster counter
-		int raster_int;					// Raster interrupt position
-		BOOL raster_copy;				// Raster copy flag
-		BOOL raster_exec;				// Raster copy execute flag
-		DWORD fast_clr;					// Graphic clear fast
+		int raster_count;				// ƒ‰ƒXƒ^ƒJƒEƒ“ƒ^
+		int raster_int;					// ƒ‰ƒXƒ^Š„‚è‚İˆÊ’u
+		BOOL raster_copy;				// ƒ‰ƒXƒ^ƒRƒs[ƒtƒ‰ƒO
+		BOOL raster_exec;				// ƒ‰ƒXƒ^ƒRƒs[Àsƒtƒ‰ƒO
+		DWORD fast_clr;					// ƒOƒ‰ƒtƒBƒbƒN‚‘¬ƒNƒŠƒA
 	} crtc_t;
 
 public:
-	// Basic functions
-	CRTC(VM *p);
-										// Constructor
+	// Šî–{ƒtƒ@ƒ“ƒNƒVƒ‡ƒ“
+	explicit CRTC(VM* p);
+										///< ƒRƒ“ƒXƒgƒ‰ƒNƒ^
 	BOOL FASTCALL Init();
-										// Initialization
+										// ‰Šú‰»
 	void FASTCALL Cleanup();
-										// Cleanup
+										// ƒNƒŠ[ƒ“ƒAƒbƒv
 	void FASTCALL Reset();
-										// Reset
+										// ƒŠƒZƒbƒg
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Save
+										// ƒZ[ƒu
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Load
+										// ƒ[ƒh
 	void FASTCALL ApplyCfg(const Config *config);
-										// Apply configuration
+										// İ’è“K—p
 
-	// Memory device interface
+	// ƒƒ‚ƒŠƒfƒoƒCƒX
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// Byte read
+										// ƒoƒCƒg“Ç‚İ‚İ
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// Byte write
+										// ƒoƒCƒg‘‚«‚İ
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// “Ç‚İ‚İ‚Ì‚İ
 
-	// External API
+	// ŠO•”API
 	void FASTCALL GetCRTC(crtc_t *buffer) const;
-										// Get internal data
+										// “à•”ƒf[ƒ^æ“¾
 	BOOL FASTCALL Callback(Event *ev);
-										// Event callback
+										// ƒCƒxƒ“ƒgƒR[ƒ‹ƒoƒbƒN
 	void FASTCALL SetHRL(BOOL h);
-										// Set HRL
+										// HRLİ’è
 	BOOL FASTCALL GetHRL() const;
-										// Get HRL
+										// HRLæ“¾
 	void FASTCALL GetHVHz(DWORD *h, DWORD *v) const;
-										// Get display frequency
+										// •\¦ü”g”æ“¾
 	DWORD FASTCALL GetDispCount() const	{ return crtc.v_count; }
-										// Get display counter
+										// •\¦ƒJƒEƒ“ƒ^æ“¾
 	const crtc_t* FASTCALL GetWorkAddr() const { return &crtc; }
-										// Get work address
-	const Px68kCrtcStateView* FASTCALL GetPx68kStateView() const { return &px68k_state_view; }
-										// Get PX68k-compatible state mirror
+	const Px68kCrtcStateView* FASTCALL GetPx68kStateView() const;
+										// ƒ[ƒNƒAƒhƒŒƒXæ“¾
+	int FASTCALL Get8DotClock() const;
+										// 8ƒhƒbƒgƒNƒƒbƒN‚ğ“¾‚é
+#if XM6_RENDER_SYNC == 1
+	void FASTCALL SetScheduler(class CScheduler* pScheduler) { m_pScheduler = pScheduler; }
+										///< ƒXƒPƒWƒ…[ƒ‰Ú‘±
+#endif	// XM6_RENDER_SYNC == 1
 
 private:
 	void FASTCALL ReCalc();
-										// Recalculate
+										// ÄŒvZ
 	void FASTCALL HSync();
-										// H-SYNC start
-	void FASTCALL HDisp();
-										// H-DISP start
+										// H-SYNCŠJn
+	void FASTCALL HDispRS();
+										// H-DISPŠJn(ƒ‰ƒXƒ^[ƒXƒLƒƒƒ“)
+	void FASTCALL HDispBS();
+										// H-DISPŠJn(ƒuƒƒbƒNƒXƒLƒƒƒ“)
 	void FASTCALL VSync();
-										// V-SYNC start
+										// V-SYNCŠJn
 	void FASTCALL VBlank();
-										// V-BLANK start
+										// V-BLANKŠJn
 	int FASTCALL Ns2Hus(int ns)			{ return ns / 500; }
-										// ns to 0.5us conversion
+										// ns¨0.5usŠ·Z
 	int FASTCALL Hus2Ns(int hus)		{ return hus * 500; }
-										// 0.5us to ns conversion
+										// 0.5us¨nsŠ·Z
+	void FASTCALL Raster();
+										// ƒ‰ƒXƒ^ƒJƒEƒ“ƒgˆ—
 	void FASTCALL CheckRaster();
-										// Raster interrupt check
-	BOOL FASTCALL IsPx68kVideoEngine() const;
-										// PX68k video backend active
-	BOOL FASTCALL UseAlternateRasterTiming() const;
-										// Alternate raster timing policy by backend
-	BOOL FASTCALL UsePx68kRasterTiming() const;
-										// PX68k raster timing policy
+										// ƒ‰ƒXƒ^Š„‚è‚İƒ`ƒFƒbƒN
 	void FASTCALL TextVRAM();
-										// Text VRAM setup
-	void FASTCALL SyncPx68kState();
-										// Keep PX68k-compatible state mirror updated
-	void FASTCALL BeginPx68kFastClear();
-										// Capture px68k fast clear start state
-	const Px68kCrtcHost* FASTCALL GetPx68kHost() const;
-										// Get active PX68k host bridge
-	void FASTCALL NotifyPx68kStateView();
-										// Push mirrored state to host
-	void FASTCALL NotifyMarkAllTextDirty();
-										// Notify text cache invalidation
-	void FASTCALL NotifyMarkTextDirtyLine(DWORD line);
-										// Notify text line invalidation
-	void FASTCALL NotifyTextScrollChanged(DWORD x, DWORD y);
-										// Notify text scroll change
-	void FASTCALL NotifyGrpScrollChanged(int block, DWORD x, DWORD y);
-										// Notify graphic scroll change
-	void FASTCALL NotifyScreenChanged();
-										// Notify screen geometry change
-	void FASTCALL NotifyGeometryChanged();
-										// Notify geometry change
-	void FASTCALL NotifyTimingChanged();
-										// Notify timing change
-	void FASTCALL NotifyModeChanged(BYTE mode);
-										// Notify mode change
-	int FASTCALL Get8DotClock() const;
-										// Get 8 dot clock
+	void FASTCALL SyncPx68kState() const;
+										// ƒeƒLƒXƒgVRAMŒø‰Ê
 	static const int DotClockTable[16];
-										// 8 dot clock table
+										// 8ƒhƒbƒgƒNƒƒbƒNƒe[ƒuƒ‹
 	static const BYTE ResetTable[26];
-										// RESET register table
+										// RESETƒŒƒWƒXƒ^ƒe[ƒuƒ‹
 	crtc_t crtc;
-										// CRTC internal data
+										// CRTC“à•”ƒf[ƒ^
 	Event event;
-										// Event
+										// ƒCƒxƒ“ƒg
 	TVRAM *tvram;
-										// Text VRAM
+										// ƒeƒLƒXƒgVRAM
 	GVRAM *gvram;
-										// Graphic VRAM
+										// ƒOƒ‰ƒtƒBƒbƒNVRAM
 	Sprite *sprite;
-										// Sprite controller
+										// ƒXƒvƒ‰ƒCƒgƒRƒ“ƒgƒ[ƒ‰
 	MFP *mfp;
 										// MFP
 	Render *render;
-										// Renderer
+										// ƒŒƒ“ƒ_ƒ‰
 	Printer *printer;
-										// Printer
-	Px68kCrtcStateView px68k_state_view;
-										// PX68k-compatible state mirror
-	DWORD px68k_fastclrline;
-										// PX68k fast clear start line
-	WORD px68k_fastclrmask;
-										// PX68k fast clear mask
-	BYTE px68k_crtc_mode;
-										// PX68k operation port state ($e80481)
+										// ƒvƒŠƒ“ƒ^
+	VC *vc;
+										// VC
+#if XM6_RENDER_SYNC == 1
+	class CScheduler* m_pScheduler;
+										///< ƒXƒPƒWƒ…[ƒ‰
+#endif	// XM6_RENDER_SYNC == 1
+	BOOL hsync;
+										// HSYNC
+	mutable Px68kCrtcStateView px68k_state_view;
+										// PX68k CRTC state view—v‹
 };
 
 #endif	// crtc_h

@@ -41,7 +41,6 @@
 #include "areaset.h"
 #include "windrv.h"
 #include "render.h"
-#include "x68krender.h"
 #include "midi.h"
 #include "scsi.h"
 #include "mercury.h"
@@ -113,7 +112,7 @@ BOOL FASTCALL VM::Init()
 	new Keyboard(this);
 	new Mouse(this);
 	new FDD(this);
-	new X68kRender(this);
+	new Render(this);
 	new Memory(this);
 	new GVRAM(this);
 	new TVRAM(this);

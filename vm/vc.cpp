@@ -2,106 +2,121 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ï¿½oï¿½hï¿½D(ytanaka@ipc-tokai.or.jp)
-//	[ ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½(CATHY & VIPS) ]
+//	Copyright (C) 2001-2006 ‚o‚hD(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2010-2014 GIMONS
+//	[ ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰(CATHY & VIPS) ]
 //
 //---------------------------------------------------------------------------
 
 #include "os.h"
 #include "xm6.h"
 #include "vm.h"
-#include "log.h"
 #include "schedule.h"
 #include "fileio.h"
+#include "sprite.h"
 #include "render.h"
 #include "renderin.h"
 #include "vc.h"
 
 //===========================================================================
 //
-//	ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½
+//	ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰
 //
 //===========================================================================
 //#define VC_LOG
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½Rï¿½ï¿½ï¿½Xï¿½gï¿½ï¿½ï¿½Nï¿½^
+//	ƒRƒ“ƒXƒgƒ‰ƒNƒ^
 //
 //---------------------------------------------------------------------------
 VC::VC(VM *p) : MemDevice(p)
 {
-	// ï¿½fï¿½oï¿½Cï¿½XIDï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// ƒfƒoƒCƒXID‚ğ‰Šú‰»
 	dev.id = MAKEID('V', 'C', ' ', ' ');
 	dev.desc = "VC (CATHY & VIPS)";
 
-	// ï¿½Jï¿½nï¿½Aï¿½hï¿½ï¿½ï¿½Xï¿½Aï¿½Iï¿½ï¿½ï¿½Aï¿½hï¿½ï¿½ï¿½X
+	// ŠJnƒAƒhƒŒƒXAI—¹ƒAƒhƒŒƒX
 	memdev.first = 0xe82000;
 	memdev.last = 0xe83fff;
 
-	// ï¿½ï¿½ï¿½Ì‘ï¿½
+	// ‚»‚Ì‘¼
 	render = NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//	‰Šú‰»
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Init()
 {
 	ASSERT(this);
 
-	// ï¿½ï¿½{ï¿½Nï¿½ï¿½ï¿½X
+	// Šî–{ƒNƒ‰ƒX
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½æ“¾
+	// ƒXƒvƒ‰ƒCƒgƒRƒ“ƒgƒ[ƒ‰‚ğæ“¾
+	sprite = (Sprite*)vm->SearchDevice(MAKEID('S', 'P', 'R', ' '));
+	ASSERT(sprite);
+
+	// ƒŒƒ“ƒ_ƒ‰æ“¾
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(render);
 
-	// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½ï¿½ï¿½[ï¿½Nï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½A
-	memset(palette, 0, sizeof(palette));
+	// ƒpƒŒƒbƒgƒ[ƒN‚ğƒNƒŠƒA(Šî–{‚Í$FF)
+	memset(palette, 0xff, sizeof(palette));
 
 	return TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½Nï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½Aï¿½bï¿½v
+//	ƒNƒŠ[ƒ“ƒAƒbƒv
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::Cleanup()
 {
 	ASSERT(this);
 
-	// ï¿½ï¿½{ï¿½Nï¿½ï¿½ï¿½Xï¿½ï¿½
+	// Šî–{ƒNƒ‰ƒX‚Ö
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½Zï¿½bï¿½g
+//	ƒŠƒZƒbƒg
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::Reset()
 {
 	ASSERT(this);
+	LOG0(Log::Normal, "ƒŠƒZƒbƒg");
 
-	// ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½[ï¿½Nï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½A
+	// ƒrƒfƒIƒ[ƒN‚ğƒNƒŠƒA
 	memset(&vc, 0, sizeof(vc));
 
-	// ï¿½Lï¿½ï¿½ï¿½pï¿½ï¿½ï¿½[ï¿½Nï¿½ï¿½ï¿½mï¿½ï¿½ï¿½É”ï¿½ï¿½]ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	// ‹L‰¯—pƒ[ƒN‚ğŠmÀ‚É”½“]‚³‚¹‚é
 	vc.vr1h = 0xff;
 	vc.vr1l = 0xff;
 	vc.vr2h = 0xff;
 	vc.vr2l = 0xff;
+
+	// ƒŒƒWƒXƒ^1(H)ƒŠƒZƒbƒg
+	vr1h = TRUE;
+
+	// ƒŒƒWƒXƒ^2(H)ƒŠƒZƒbƒg
+	vr2h = TRUE;
+
+	// ƒŒƒ“ƒ_ƒ‰‚É’Ê’m
+	HSync();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½Zï¿½[ï¿½u
+//	ƒZ[ƒu
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
@@ -111,19 +126,20 @@ BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
 	ASSERT(this);
 	ASSERT(fio);
 
+	LOG0(Log::Normal, "ƒZ[ƒu");
 
-	// ï¿½Tï¿½Cï¿½Yï¿½ï¿½ï¿½Zï¿½[ï¿½u
+	// ƒTƒCƒY‚ğƒZ[ƒu
 	sz = sizeof(vc_t);
 	if (!fio->Write(&sz, (int)sizeof(sz))) {
 		return FALSE;
 	}
 
-	// ï¿½ï¿½ï¿½Ì‚ï¿½ï¿½Zï¿½[ï¿½u
+	// À‘Ì‚ğƒZ[ƒu
 	if (!fio->Write(&vc, (int)sz)) {
 		return FALSE;
 	}
 
-	// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½ï¿½ï¿½Zï¿½[ï¿½u
+	// ƒpƒŒƒbƒg‚ğƒZ[ƒu
 	if (!fio->Write(palette, sizeof(palette))) {
 		return FALSE;
 	}
@@ -133,7 +149,7 @@ BOOL FASTCALL VC::Save(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½[ï¿½h
+//	ƒ[ƒh
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
@@ -144,8 +160,9 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 	ASSERT(this);
 	ASSERT(fio);
 
+	LOG0(Log::Normal, "ƒ[ƒh");
 
-	// ï¿½Tï¿½Cï¿½Yï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½hï¿½Aï¿½Æï¿½
+	// ƒTƒCƒY‚ğƒ[ƒhAÆ‡
 	if (!fio->Read(&sz, (int)sizeof(sz))) {
 		return FALSE;
 	}
@@ -153,17 +170,17 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 		return FALSE;
 	}
 
-	// ï¿½ï¿½ï¿½Ì‚ï¿½ï¿½ï¿½ï¿½[ï¿½h
+	// À‘Ì‚ğƒ[ƒh
 	if (!fio->Read(&vc, (int)sz)) {
 		return FALSE;
 	}
 
-	// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½h
+	// ƒpƒŒƒbƒg‚ğƒ[ƒh
 	if (!fio->Read(palette, sizeof(palette))) {
 		return FALSE;
 	}
 
-	// ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½Ö’Ê’m
+	// ƒŒƒ“ƒ_ƒ‰‚Ö’Ê’m
 	render->SetVC();
 	for (addr=0; addr<0x200; addr++) {
 		render->SetPalette(addr);
@@ -174,18 +191,20 @@ BOOL FASTCALL VC::Load(Fileio *fio, int /*ver*/)
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½İ’ï¿½Kï¿½p
+//	İ’è“K—p
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::ApplyCfg(const Config *config)
 {
 	ASSERT(config);
-	printf("%p", (const void*)config);
+	LOG0(Log::Normal, "İ’è“K—p");
+
+	UNREFERENCED_PARAMETER(config);
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½oï¿½Cï¿½gï¿½Ç‚İï¿½ï¿½ï¿½
+//	ƒoƒCƒg“Ç‚İ‚İ
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadByte(DWORD addr)
@@ -193,25 +212,20 @@ DWORD FASTCALL VC::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// $1000ï¿½Pï¿½Ê‚Åƒï¿½ï¿½[ï¿½v
+	// $1000’PˆÊ‚Åƒ‹[ƒv
 	addr &= 0xfff;
 
-	if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
-		if (addr < 0x400) {
-			scheduler->Wait(1);
-		}
-		return render->VCtrlRead(memdev.first + addr);
-	}
-
-	// ï¿½fï¿½Rï¿½[ï¿½h
+	// ƒfƒR[ƒh
 	if (addr < 0x400) {
-		// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½Gï¿½ï¿½ï¿½A
-		scheduler->Wait(1);
+		// ƒEƒFƒCƒg
+		scheduler->Wait(2);
+
+		// ƒpƒŒƒbƒgƒGƒŠƒA
 		addr ^= 1;
 		return palette[addr];
 	}
 
-	// ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½Xï¿½^
+	// ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰ƒŒƒWƒXƒ^
 	if (addr < 0x500) {
 		if (addr & 1) {
 			return (BYTE)GetVR0();
@@ -237,13 +251,13 @@ DWORD FASTCALL VC::ReadByte(DWORD addr)
 		}
 	}
 
-	// ï¿½fï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½Gï¿½ï¿½ï¿½Aï¿½ï¿½0
+	// ƒfƒR[ƒh‚³‚ê‚Ä‚¢‚È‚¢ƒGƒŠƒA‚Í0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½[ï¿½hï¿½Ç‚İï¿½ï¿½ï¿½
+//	ƒ[ƒh“Ç‚İ‚İ
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadWord(DWORD addr)
@@ -252,17 +266,19 @@ DWORD FASTCALL VC::ReadWord(DWORD addr)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT((addr & 1) == 0);
 
-	// $1000ï¿½Pï¿½Ê‚Åƒï¿½ï¿½[ï¿½v
+	// $1000’PˆÊ‚Åƒ‹[ƒv
 	addr &= 0xfff;
 
-	// ï¿½fï¿½Rï¿½[ï¿½h
+	// ƒfƒR[ƒh
 	if (addr < 0x400) {
-		// ï¿½pï¿½ï¿½ï¿½bï¿½g
-		scheduler->Wait(1);
+		// ƒEƒFƒCƒg
+		scheduler->Wait(2);
+
+		// ƒpƒŒƒbƒg
 		return *(WORD *)(&palette[addr]);
 	}
 
-	// ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½Xï¿½^
+	// ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰ƒŒƒWƒXƒ^
 	if (addr < 0x500) {
 		return GetVR0();
 	}
@@ -273,13 +289,13 @@ DWORD FASTCALL VC::ReadWord(DWORD addr)
 		return GetVR2();
 	}
 
-	// ï¿½fï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½Gï¿½ï¿½ï¿½Aï¿½ï¿½0
+	// ƒfƒR[ƒh‚³‚ê‚Ä‚¢‚È‚¢ƒGƒŠƒA‚Í0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½oï¿½Cï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//	ƒoƒCƒg‘‚«‚İ
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
@@ -288,36 +304,42 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT(data < 0x100);
 
+#if defined(VC_LOG)
+	if ((addr & 0xfff) >= 0x400) {
+		LOG2(Log::Normal, "VC‘‚«‚İ %08X <- %02X", addr, data);
+	}
+#endif	// VC_LOG
 
-	// $1000ï¿½Pï¿½Ê‚Åƒï¿½ï¿½[ï¿½v
+	// $1000’PˆÊ‚Åƒ‹[ƒv
 	addr &= 0xfff;
 
-	// ï¿½fï¿½Rï¿½[ï¿½h
+	// ƒfƒR[ƒh
 	if (addr < 0x400) {
-		// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½Gï¿½ï¿½ï¿½A
-		scheduler->Wait(1);
+		// ƒEƒFƒCƒg
+		scheduler->Wait(2);
+
+		// ƒeƒLƒXƒgƒpƒŒƒbƒg‚ÍƒoƒCƒgƒAƒNƒZƒX‚Å‚«‚È‚¢(_ŒË—öˆ¤•¨Œê) ‚¯‚ë‚Ò[‚©‚ç
+		if (addr >= 0x200) {
+			return;
+		}
+
+		// ƒpƒŒƒbƒgƒGƒŠƒA
 		addr ^= 1;
 
-		// ï¿½ï¿½r
+		// ”äŠr
 		if (palette[addr] != data) {
 			palette[addr] = (BYTE)data;
 
-			// ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½Ö’Ê’m
+			// ƒŒƒ“ƒ_ƒ‰‚Ö’Ê’m
 			render->SetPalette(addr >> 1);
-		}
-		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
-			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
 		}
 		return;
 	}
 
-	// ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½Xï¿½^
+	// ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰ƒŒƒWƒXƒ^
 	if (addr < 0x500) {
 		if (addr & 1) {
 			SetVR0L(data);
-		}
-		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
-			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
 		}
 		return;
 	}
@@ -328,9 +350,6 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 		else {
 			SetVR1H(data);
 		}
-		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
-			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
-		}
 		return;
 	}
 	if (addr < 0x700) {
@@ -340,18 +359,15 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 		else {
 			SetVR2H(data);
 		}
-		if (render && (render->GetCompositorMode() == Render::compositor_fast)) {
-			render->VCtrlWrite(memdev.first + addr, (BYTE)data);
-		}
 		return;
 	}
 
-	// ï¿½ï¿½ï¿½ï¿½ÈŠOï¿½Íƒfï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½
+	// ‚»‚êˆÈŠO‚ÍƒfƒR[ƒh‚³‚ê‚Ä‚¢‚È‚¢
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//	ƒ[ƒh‘‚«‚İ
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
@@ -361,26 +377,33 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 	ASSERT((addr & 1) == 0);
 	ASSERT(data < 0x10000);
 
+#if defined(VC_LOG)
+	if ((addr & 0xfff) >= 0x400) {
+		LOG2(Log::Normal, "VC‘‚«‚İ %08X <- %04X", addr, data);
+	}
+#endif	// VC_LOG
 
-	// $1000ï¿½Pï¿½Ê‚Åƒï¿½ï¿½[ï¿½v
+	// $1000’PˆÊ‚Åƒ‹[ƒv
 	addr &= 0xfff;
 
-	// ï¿½fï¿½Rï¿½[ï¿½h
+	// ƒfƒR[ƒh
 	if (addr < 0x400) {
-		// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½Gï¿½ï¿½ï¿½A
-		scheduler->Wait(1);
+		// ƒEƒFƒCƒg
+		scheduler->Wait(2);
 
-		// ï¿½ï¿½r
+		// ƒpƒŒƒbƒgƒGƒŠƒA
+
+		// ”äŠr
 		if (data != *(WORD*)(&palette[addr])) {
 			*(WORD *)(&palette[addr]) = (WORD)data;
 
-			// ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½Ö’Ê’m
+			// ƒŒƒ“ƒ_ƒ‰‚Ö’Ê’m
 			render->SetPalette(addr >> 1);
 		}
 		return;
 	}
 
-	// ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½Xï¿½^
+	// ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰ƒŒƒWƒXƒ^
 	if (addr < 0x500) {
 		SetVR0L((BYTE)data);
 		return;
@@ -396,12 +419,12 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 
-	// ï¿½ï¿½ï¿½ï¿½ÈŠOï¿½Íƒfï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½
+	// ‚»‚êˆÈŠO‚ÍƒfƒR[ƒh‚³‚ê‚Ä‚¢‚È‚¢
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½Ç‚İï¿½ï¿½İ‚Ì‚ï¿½
+//	“Ç‚İ‚İ‚Ì‚İ
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::ReadOnly(DWORD addr) const
@@ -409,17 +432,17 @@ DWORD FASTCALL VC::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// $1000ï¿½Pï¿½Ê‚Åƒï¿½ï¿½[ï¿½v
+	// $1000’PˆÊ‚Åƒ‹[ƒv
 	addr &= 0xfff;
 
-	// ï¿½fï¿½Rï¿½[ï¿½h
+	// ƒfƒR[ƒh
 	if (addr < 0x400) {
-		// ï¿½pï¿½ï¿½ï¿½bï¿½gï¿½Gï¿½ï¿½ï¿½A
+		// ƒpƒŒƒbƒgƒGƒŠƒA
 		addr ^= 1;
 		return palette[addr];
 	}
 
-	// ï¿½rï¿½fï¿½Iï¿½Rï¿½ï¿½ï¿½gï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Wï¿½Xï¿½^
+	// ƒrƒfƒIƒRƒ“ƒgƒ[ƒ‰ƒŒƒWƒXƒ^
 	if (addr < 0x500) {
 		if (addr & 1) {
 			return (BYTE)GetVR0();
@@ -445,13 +468,13 @@ DWORD FASTCALL VC::ReadOnly(DWORD addr) const
 		}
 	}
 
-	// ï¿½fï¿½Rï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½È‚ï¿½ï¿½Gï¿½ï¿½ï¿½Aï¿½ï¿½0
+	// ƒfƒR[ƒh‚³‚ê‚Ä‚¢‚È‚¢ƒGƒŠƒA‚Í0
 	return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½ï¿½ï¿½ï¿½ï¿½fï¿½[ï¿½^ï¿½æ“¾
+//	“à•”ƒf[ƒ^æ“¾
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::GetVC(vc_t *buffer)
@@ -459,13 +482,13 @@ void FASTCALL VC::GetVC(vc_t *buffer)
 	ASSERT(this);
 	ASSERT(buffer);
 
-	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½Nï¿½ï¿½ï¿½Rï¿½sï¿½[
+	// “à•”ƒ[ƒN‚ğƒRƒs[
 	*buffer = vc;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^0(L)ï¿½İ’ï¿½
+//	ƒrƒfƒIƒŒƒWƒXƒ^0(L)İ’è
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR0L(DWORD data)
@@ -476,11 +499,11 @@ void FASTCALL VC::SetVR0L(DWORD data)
 	ASSERT(this);
 	ASSERT(data < 0x100);
 
-	// ï¿½Lï¿½ï¿½
+	// ‹L‰¯
 	siz = vc.siz;
 	col = vc.col;
 
-	// ï¿½İ’ï¿½
+	// İ’è
 	if (data & 4) {
 		vc.siz = TRUE;
 	}
@@ -489,7 +512,7 @@ void FASTCALL VC::SetVR0L(DWORD data)
 	}
 	vc.col = (data & 3);
 
-	// ï¿½ï¿½r
+	// ”äŠr
 	if ((vc.siz != siz) || (vc.col != col)) {
 		render->SetVC();
 	}
@@ -497,7 +520,7 @@ void FASTCALL VC::SetVR0L(DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^0ï¿½æ“¾
+//	ƒrƒfƒIƒŒƒWƒXƒ^0æ“¾
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR0() const
@@ -517,7 +540,7 @@ DWORD FASTCALL VC::GetVR0() const
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^1(H)ï¿½İ’ï¿½
+//	ƒrƒfƒIƒŒƒWƒXƒ^1(H)İ’è
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR1H(DWORD data)
@@ -527,25 +550,19 @@ void FASTCALL VC::SetVR1H(DWORD data)
 
 	data &= 0x3f;
 
-	// ï¿½ï¿½r
+	// ”äŠr
 	if (vc.vr1h == data) {
 		return;
 	}
 	vc.vr1h = data;
 
-	vc.gr = (data & 3);
-	data >>= 2;
-	vc.tx = (data & 3);
-	data >>= 2;
-	vc.sp = data;
-
-	// ï¿½Ê’m
-	render->SetVC();
+	// ƒtƒ‰ƒOƒAƒbƒv
+	vr1h = TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^1(L)ï¿½İ’ï¿½
+//	ƒrƒfƒIƒŒƒWƒXƒ^1(L)İ’è
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR1L(DWORD data)
@@ -553,7 +570,7 @@ void FASTCALL VC::SetVR1L(DWORD data)
 	ASSERT(this);
 	ASSERT(data < 0x100);
 
-	// ï¿½ï¿½r
+	// ”äŠr
 	if (vc.vr1l == data) {
 		return;
 	}
@@ -567,41 +584,25 @@ void FASTCALL VC::SetVR1L(DWORD data)
 	data >>= 2;
 	vc.gp[3] = (data & 3);
 
-	// ï¿½Ê’m
+	// ’Ê’m
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^1ï¿½æ“¾
+//	ƒrƒfƒIƒŒƒWƒXƒ^1æ“¾
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR1() const
 {
-	DWORD data;
-
 	ASSERT(this);
 
-	data = vc.sp;
-	data <<= 2;
-	data |= vc.tx;
-	data <<= 2;
-	data |= vc.gr;
-	data <<= 2;
-	data |= vc.gp[3];
-	data <<= 2;
-	data |= vc.gp[2];
-	data <<= 2;
-	data |= vc.gp[1];
-	data <<= 2;
-	data |= vc.gp[0];
-
-	return data;
+	return (vc.vr1h << 8) | vc.vr1l;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^2(H)ï¿½İ’ï¿½
+//	ƒrƒfƒIƒŒƒWƒXƒ^2(H)İ’è
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR2H(DWORD data)
@@ -609,83 +610,19 @@ void FASTCALL VC::SetVR2H(DWORD data)
 	ASSERT(this);
 	ASSERT(data < 0x100);
 
-	// ï¿½fï¿½[ï¿½^ï¿½ï¿½r
+	// ƒf[ƒ^”äŠr
 	if (vc.vr2h == data) {
 		return;
 	}
 	vc.vr2h = data;
 
-	// YS
-	if (data & 0x80) {
-		vc.ys = TRUE;
-	}
-	else {
-		vc.ys = FALSE;
-	}
-
-	// AH
-	if (data & 0x40) {
-		vc.ah = TRUE;
-	}
-	else {
-		vc.ah = FALSE;
-	}
-
-	// VHT
-	if (data & 0x20) {
-		vc.vht = TRUE;
-	}
-	else {
-		vc.vht = FALSE;
-	}
-
-	// EXON
-	if (data & 0x10) {
-		vc.exon = TRUE;
-	}
-	else {
-		vc.exon = FALSE;
-	}
-
-	// H/P
-	if (data & 0x08) {
-		vc.hp = TRUE;
-	}
-	else {
-		vc.hp = FALSE;
-	}
-
-	// B/P
-	if (data & 0x04) {
-		vc.bp = TRUE;
-	}
-	else {
-		vc.bp = FALSE;
-	}
-
-	// G/G
-	if (data & 0x02) {
-		vc.gg = TRUE;
-	}
-	else {
-		vc.gg = FALSE;
-	}
-
-	// G/T
-	if (data & 0x01) {
-		vc.gt = TRUE;
-	}
-	else {
-		vc.gt = FALSE;
-	}
-
-	// ï¿½Ê’m
-	render->SetVC();
+	// ƒtƒ‰ƒOƒAƒbƒv
+	vr2h = TRUE;
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^2(L)ï¿½İ’ï¿½
+//	ƒrƒfƒIƒŒƒWƒXƒ^2(L)İ’è
 //
 //---------------------------------------------------------------------------
 void FASTCALL VC::SetVR2L(DWORD data)
@@ -693,7 +630,7 @@ void FASTCALL VC::SetVR2L(DWORD data)
 	ASSERT(this);
 	ASSERT(data < 0x100);
 
-	// ï¿½ï¿½r
+	// ”äŠr
 	if (vc.vr2l == data) {
 		return;
 	}
@@ -763,71 +700,125 @@ void FASTCALL VC::SetVR2L(DWORD data)
 		vc.gs[0] = FALSE;
 	}
 
-	// ï¿½Ê’m
+	// ’Ê’m
 	render->SetVC();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ï¿½rï¿½fï¿½Iï¿½ï¿½ï¿½Wï¿½Xï¿½^2ï¿½æ“¾
+//	ƒrƒfƒIƒŒƒWƒXƒ^2æ“¾
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL VC::GetVR2() const
+{
+	ASSERT(this);
+
+	// ãˆÊƒoƒCƒg‚Í’x‰„”½‰f‚³‚ê‚é‚ª”½‰f‘O‚É
+	// READ‚Í‰Â”\‚È‚½‚ßƒŒƒWƒXƒ^‚©‚ç¶¬‚·‚é
+	// (StarLuster‚ÌƒRƒbƒNƒsƒbƒg”¼“§–¾)
+	return (vc.vr2h << 8) | vc.vr2l;
+}
+
+//---------------------------------------------------------------------------
+//
+//	H-Sync’Ê’m
+//
+//---------------------------------------------------------------------------
+void FASTCALL VC::HSync()
 {
 	DWORD data;
 
 	ASSERT(this);
 
-	data = 0;
-	if (vc.ys) {
-		data |= 0x8000;
-	}
-	if (vc.ah) {
-		data |= 0x4000;
-	}
-	if (vc.vht) {
-		data |= 0x2000;
-	}
-	if (vc.exon) {
-		data |= 0x1000;
-	}
-	if (vc.hp) {
-		data |= 0x0800;
-	}
-	if (vc.bp) {
-		data |= 0x0400;
-	}
-	if (vc.gg) {
-		data |= 0x0200;
-	}
-	if (vc.gt) {
-		data |= 0x0100;
-	}
-	if (vc.bcon) {
-		data |= 0x0080;
-	}
-	if (vc.son) {
-		data |= 0x0040;
-	}
-	if (vc.ton) {
-		data |= 0x0020;
-	}
-	if (vc.gon) {
-		data |= 0x0010;
-	}
-	if (vc.gs[3]) {
-		data |= 0x0008;
-	}
-	if (vc.gs[2]) {
-		data |= 0x0004;
-	}
-	if (vc.gs[1]) {
-		data |= 0x0002;
-	}
-	if (vc.gs[0]) {
-		data |= 0x0001;
+	//vr1h•ÏX”½‰f
+	if (vr1h) {
+		// ƒtƒ‰ƒOƒIƒt
+		vr1h = FALSE;
+
+		data = vc.vr1h;
+
+		vc.gr = (data & 3);
+		data >>= 2;
+		vc.tx = (data & 3);
+		data >>= 2;
+		vc.sp = data;
+
+		// ’Ê’m
+		render->SetVC();
 	}
 
-	return data;
+	//vr2h•ÏX”½‰f
+	if (vr2h) {
+		// ƒtƒ‰ƒOƒIƒt
+		vr2h = FALSE;
+
+		data = vc.vr2h;
+
+		// YS
+		if (data & 0x80) {
+			vc.ys = TRUE;
+		}
+		else {
+			vc.ys = FALSE;
+		}
+
+		// AH
+		if (data & 0x40) {
+			vc.ah = TRUE;
+		}
+		else {
+			vc.ah = FALSE;
+		}
+
+		// VHT
+		if (data & 0x20) {
+			vc.vht = TRUE;
+		}
+		else {
+			vc.vht = FALSE;
+		}
+
+		// EXON
+		if (data & 0x10) {
+			vc.exon = TRUE;
+		}
+		else {
+			vc.exon = FALSE;
+		}
+
+		// H/P
+		if (data & 0x08) {
+			vc.hp = TRUE;
+		}
+		else {
+			vc.hp = FALSE;
+		}
+
+		// B/P
+		if (data & 0x04) {
+			vc.bp = TRUE;
+		}
+		else {
+			vc.bp = FALSE;
+		}
+
+		// G/G
+		if (data & 0x02) {
+			vc.gg = TRUE;
+		}
+		else {
+			vc.gg = FALSE;
+		}
+
+		// G/T
+		if (data & 0x01) {
+			vc.gt = TRUE;
+		}
+		else {
+			vc.gt = FALSE;
+		}
+
+		// ’Ê’m
+		render->SetVC();
+	}
 }
-

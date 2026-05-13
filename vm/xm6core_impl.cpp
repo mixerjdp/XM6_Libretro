@@ -1320,6 +1320,25 @@ static unsigned int vc_gs_mask(const VC::vc_t *v)
 	return mask;
 }
 
+static unsigned int xm6_render_visible_height(const Render::render_t *r)
+{
+	if (!r || r->height <= 0) {
+		return 0;
+	}
+
+	unsigned int visible_h = (unsigned int)r->height;
+
+	if (r->mixmode != 1 && r->hres == 0) {
+		visible_h <<= 1;
+	}
+
+	if (r->mixheight > 0 && visible_h > (unsigned int)r->mixheight) {
+		visible_h = (unsigned int)r->mixheight;
+	}
+
+	return visible_h;
+}
+
 static void emit_video_probe_internal(XM6Context *ctx, const Render::render_t *r)
 {
 	if (!ctx || !r || !ctx->render) {
@@ -2760,7 +2779,7 @@ XM6CORE_API int XM6CORE_CALL xm6_video_poll(
 	}
 
 	unsigned int visible_w = (unsigned int)r->width;
-	unsigned int visible_h = (unsigned int)r->height;
+	unsigned int visible_h = xm6_render_visible_height(r);
 	unsigned int stride = (unsigned int)r->mixwidth;
 	unsigned int max_h = (unsigned int)r->mixheight;
 
@@ -2875,7 +2894,7 @@ XM6CORE_API int XM6CORE_CALL xm6_get_video_layout(
 	unsigned int v_mul = 1u;
 
 	*out_width = (unsigned int)r->width;
-	*out_height = (unsigned int)r->height;
+	*out_height = xm6_render_visible_height(r);
 	*out_h_mul = h_mul;
 	*out_v_mul = v_mul;
 	*out_lowres = r->lowres ? 1 : 0;
