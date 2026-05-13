@@ -79,8 +79,9 @@ Typical setup:
 
 1. Copy the core binary to RetroArch `cores/`
 2. Copy `xm6_libretro.info` to RetroArch `info/`
-3. Put the BIOS and system files in RetroArch `system/`
-4. Load the game image or disk set from the front end
+3. **Delete `core_info.cache`** from the RetroArch directory so the new core is detected (the cache is rebuilt automatically on next launch)
+4. Put the BIOS and system files in RetroArch `system/`
+5. Load the game image or disk set from the front end
 
 Where supported, the core also handles disk playlists and the usual RetroArch callbacks.
 

@@ -35,6 +35,8 @@ public:
 #endif	// _DEBUG
 
 	// Execution control
+	void FASTCALL Enable(BOOL bEnable);
+										// Enable control
 	void FASTCALL Reset();
 										// Reset time
 	void FASTCALL Run();

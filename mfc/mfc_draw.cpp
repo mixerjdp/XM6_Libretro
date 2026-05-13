@@ -1039,6 +1039,19 @@ void FASTCALL CDrawView::ShowRenderStatusOSD(BOOL bVSync)
 
 //---------------------------------------------------------------------------
 //
+// Reset OSD frame counter
+//
+//---------------------------------------------------------------------------
+void FASTCALL CDrawView::ResetFrameCounter()
+{
+	m_Info.dwDrawCount = 0;
+	m_dwPerfOSDLastTick = 0;
+	m_nPerfFPS = 0;
+	m_szPerfLine[0] = _T('\0');
+}
+
+//---------------------------------------------------------------------------
+//
 // Toggle CRT shader
 //
 //---------------------------------------------------------------------------

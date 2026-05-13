@@ -94,6 +94,8 @@ public:
 										// Check whether DX9 mode is active
 	void FASTCALL ShowRenderStatusOSD(BOOL bVSync);
 										// Show active renderer and VSync state
+	void FASTCALL ResetFrameCounter();
+										// Reset OSD frame counter
 	void FASTCALL ApplyCfg(const Config *pConfig);
 										// Apply settings
 	void FASTCALL GetDrawInfo(LPDRAWINFO pDrawInfo) const;
