@@ -87,6 +87,12 @@ static BOOL IsSmokeVisibleCommand()
 	return (_tcsstr(AfxGetApp()->m_lpCmdLine, _T("--smoke-visible")) != NULL);
 }
 
+static BOOL IsSmokePx68kVideoCommand(LPCTSTR lpszCmd)
+{
+	return (_tcsstr(lpszCmd, _T("--smoke-px68k-video")) != NULL) ||
+		(_tcsstr(lpszCmd, _T("--smoke-render-px68k")) != NULL);
+}
+
 enum {
 	SmokeActionKey = 1,
 	SmokeActionJoy = 2,
@@ -125,6 +131,7 @@ static PPI::joyinfo_t g_smokeVisibleJoy[PPI::PortMax];
 static CRTC *g_smokeVisibleCRTC = NULL;
 static Keyboard *g_smokeVisibleKeyboard = NULL;
 static PPI *g_smokeVisiblePPI = NULL;
+static BOOL g_smokeVisiblePx68kVideo = FALSE;
 
 static void SmokeLogLine(LPCTSTR msg)
 {
@@ -168,6 +175,65 @@ static void SmokeLogFormatDword(LPCTSTR fmt, DWORD value)
 		_ftprintf(fp, _T("\n"));
 		fclose(fp);
 	}
+}
+
+static BOOL SmokeValidatePx68kVideoFrame()
+{
+	Render *render;
+	const WORD *pixels;
+	int width;
+	int height;
+	int stride;
+	DWORD nonzero;
+	DWORD signature;
+	int x;
+	int y;
+
+	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+	if (!render) {
+		SmokeLogLine(_T("px68k-video: missing render device"));
+		return FALSE;
+	}
+	if (!render->IsRenderFastDummyEnabled()) {
+		SmokeLogLine(_T("px68k-video: backend not active"));
+		return FALSE;
+	}
+	if (!render->EnsurePx68kFrame()) {
+		SmokeLogLine(_T("px68k-video: EnsurePx68kFrame failed"));
+		return FALSE;
+	}
+	pixels = NULL;
+	width = height = stride = 0;
+	if (!render->GetPx68kScreen(&pixels, &width, &height, &stride) ||
+		!pixels || (width <= 0) || (height <= 0) || (stride < width)) {
+		SmokeLogLine(_T("px68k-video: no screen buffer"));
+		return FALSE;
+	}
+
+	nonzero = 0;
+	signature = 2166136261u;
+	for (y = 0; y < height; y++) {
+		const WORD *row = pixels + (y * stride);
+		for (x = 0; x < width; x++) {
+			WORD value = row[x];
+			if (value != 0) {
+				nonzero++;
+			}
+			signature ^= (DWORD)value;
+			signature *= 16777619u;
+		}
+	}
+
+	SmokeLogFormatDword(_T("px68k-video-width=%lu"), (DWORD)width);
+	SmokeLogFormatDword(_T("px68k-video-height=%lu"), (DWORD)height);
+	SmokeLogFormatDword(_T("px68k-video-nonzero=%lu"), nonzero);
+	SmokeLogFormatDword(_T("px68k-video-signature=%lu"), signature);
+	if (nonzero == 0) {
+		SmokeLogLine(_T("px68k-video: blank framebuffer"));
+		return FALSE;
+	}
+	SmokeLogLine(_T("px68k-video: ok"));
+	return TRUE;
 }
 
 static LPCTSTR SmokeFindOption(LPCTSTR cmd, LPCTSTR opt, LPCTSTR after)
@@ -1868,6 +1934,7 @@ BOOL FASTCALL CFrmWnd::SmokeStartVisible(LPCTSTR lpszCmd)
 	g_smokeVisibleCmd[_countof(g_smokeVisibleCmd) - 1] = _T('\0');
 	g_smokeVisibleActionCount = 0;
 	g_smokeVisibleActionsParsed = FALSE;
+	g_smokeVisiblePx68kVideo = IsSmokePx68kVideoCommand(lpszCmd);
 	runFrames = SmokeReadDwordOption(lpszCmd, _T("--smoke-run-frames"), 0);
 	saveFrame = SmokeReadDwordOption(lpszCmd, _T("--smoke-save-frame"), 0xffffffff);
 	g_smokeVisibleHoldMs = SmokeReadDwordOption(lpszCmd, _T("--smoke-visible-hold-ms"), 0);
@@ -1939,6 +2006,7 @@ BOOL FASTCALL CFrmWnd::SmokeStartVisible(LPCTSTR lpszCmd)
 	SmokeLogFormatDword(_T("run-frames=%lu"), g_smokeVisibleTargetFrames);
 	SmokeLogFormatDword(_T("save-frame=%lu"), g_smokeVisibleSaveFrame);
 	SmokeLogFormatDword(_T("visible-hold-ms=%lu"), g_smokeVisibleHoldMs);
+	SmokeLogFormatDword(_T("px68k-video-smoke=%lu"), g_smokeVisiblePx68kVideo ? 1 : 0);
 
 	ShowWindow(SW_SHOW);
 	SetForegroundWindow();
@@ -2103,6 +2171,12 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 					&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
 			}
 		}
+	}
+
+	if (g_smokeVisiblePx68kVideo && !SmokeValidatePx68kVideoFrame()) {
+		SmokeLogLine(_T("smoke-visible: px68k video failed"));
+		::ExitProcess(1);
+		return;
 	}
 
 	if (!g_smokeVisibleSaved) {
@@ -2390,9 +2464,11 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	BOOL bFullScreen;
 	BOOL bSmokeSaveState;
 	BOOL bSmokeVisible;
+	BOOL bSmokePx68kVideo;
 
 	bSmokeSaveState = IsSmokeSaveStateCommand();
 	bSmokeVisible = IsSmokeVisibleCommand();
+	bSmokePx68kVideo = IsSmokePx68kVideoCommand(A2T(AfxGetApp()->m_lpCmdLine));
 
 	// Handle startup errors first
 	switch (m_nStatus) {
@@ -2519,6 +2595,19 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	bFullScreen = RestoreFrameWnd(bFullScreen);
 	if (bFullScreen) {
 		PostMessage(WM_COMMAND, IDM_FULLSCREEN);
+	}
+
+	if (bSmokeSaveState && bSmokePx68kVideo) {
+		BOOL bActive = FALSE;
+		::LockVM();
+		if (m_pDrawView) {
+			bActive = m_pDrawView->SetRenderFastDummyEnabled(TRUE);
+		}
+		::UnlockVM();
+		SmokeLogFormatDword(_T("px68k-video-forced=%lu"), bActive ? 1 : 0);
+		if (!bActive) {
+			::ExitProcess(1);
+		}
 	}
 
 	if (bSmokeSaveState && bSmokeVisible) {

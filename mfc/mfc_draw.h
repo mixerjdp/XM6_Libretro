@@ -182,6 +182,7 @@ protected:
 private:
 	void FASTCALL SetupBitmap();
 	void FASTCALL FinishFrame();
+	BOOL FASTCALL CopyPx68kFrameToBits(int *pWidth = NULL, int *pHeight = NULL, int *pPitch = NULL);
 	void FASTCALL DrawOSD(CDC *pDC);
 	void FASTCALL ShowOSD(LPCTSTR lpszText);
 										// Bitmap setup

@@ -1263,9 +1263,11 @@ void FASTCALL CDrawView::RenderLoop()
 						CRect rect;
 						GetClientRect(&rect);
 						ReCalc(rect);
-						srcWidth = m_Info.nWidth;
-						srcHeight = m_Info.nHeight;
-						srcPitch = m_Info.nBMPWidth;
+						if (!CopyPx68kFrameToBits(&srcWidth, &srcHeight, &srcPitch)) {
+							srcWidth = m_Info.nWidth;
+							srcHeight = m_Info.nHeight;
+							srcPitch = m_Info.nBMPWidth;
+						}
 
 						if ((srcWidth > 0) && (srcHeight > 0) && (srcPitch >= srcWidth)) {
 							if (!m_pStagingBuffer || (m_nStagingWidth < srcWidth) || (m_nStagingHeight < srcHeight)) {
@@ -1335,6 +1337,7 @@ LRESULT CDrawView::OnPresentFrame(WPARAM /*wParam*/, LPARAM /*lParam*/)
 	if (m_bEnable && m_Info.hBitmap && m_Info.pWork && m_Info.pBits) {
 		CClientDC dc(this);
 		::LockVM();
+		CopyPx68kFrameToBits();
 		OnDraw(&dc);
 		::UnlockVM();
 	}
@@ -1362,6 +1365,76 @@ void FASTCALL CDrawView::FinishFrame()
 	m_Info.nBltRight = m_Info.nWidth - 1;
 	m_Info.nBltBottom = m_Info.nHeight - 1;
 	m_Info.bBltAll = FALSE;
+}
+
+BOOL FASTCALL CDrawView::CopyPx68kFrameToBits(int *pWidth, int *pHeight, int *pPitch)
+{
+	const WORD *src;
+	int srcWidth;
+	int srcHeight;
+	int srcStride;
+	int copyWidth;
+	int copyHeight;
+	int x;
+	int y;
+
+	if (!m_bRenderFastDummy || !m_Info.pRender || !m_Info.pBits) {
+		return FALSE;
+	}
+	if (!m_Info.pRender->EnsurePx68kFrame()) {
+		return FALSE;
+	}
+	src = NULL;
+	srcWidth = srcHeight = srcStride = 0;
+	if (!m_Info.pRender->GetPx68kScreen(&src, &srcWidth, &srcHeight, &srcStride) ||
+		!src || (srcWidth <= 0) || (srcHeight <= 0) || (srcStride < srcWidth)) {
+		return FALSE;
+	}
+
+	copyWidth = min(srcWidth, m_Info.nBMPWidth);
+	copyHeight = min(srcHeight, m_Info.nBMPHeight);
+	if ((copyWidth <= 0) || (copyHeight <= 0)) {
+		return FALSE;
+	}
+
+	for (y = 0; y < copyHeight; y++) {
+		const WORD *srcRow = src + (y * srcStride);
+		DWORD *dstRow = m_Info.pBits + (y * m_Info.nBMPWidth);
+		for (x = 0; x < copyWidth; x++) {
+			WORD c = srcRow[x];
+			DWORD r = (DWORD)((c >> 11) & 0x1f);
+			DWORD g = (DWORD)((c >> 5) & 0x3f);
+			DWORD b = (DWORD)(c & 0x1f);
+			r = (r << 3) | (r >> 2);
+			g = (g << 2) | (g >> 4);
+			b = (b << 3) | (b >> 2);
+			dstRow[x] = (r << 16) | (g << 8) | b;
+		}
+	}
+	if (copyWidth < m_Info.nBMPWidth) {
+		for (y = 0; y < copyHeight; y++) {
+			memset(m_Info.pBits + (y * m_Info.nBMPWidth) + copyWidth, 0,
+				(m_Info.nBMPWidth - copyWidth) * sizeof(DWORD));
+		}
+	}
+	if (copyHeight < m_Info.nBMPHeight) {
+		memset(m_Info.pBits + (copyHeight * m_Info.nBMPWidth), 0,
+			(m_Info.nBMPHeight - copyHeight) * m_Info.nBMPWidth * sizeof(DWORD));
+	}
+
+	m_Info.nWidth = copyWidth;
+	m_Info.nHeight = copyHeight;
+	m_Info.nRendWidth = copyWidth;
+	m_Info.nRendHeight = copyHeight;
+	m_Info.nRendHMul = 1;
+	m_Info.nRendVMul = 1;
+	m_Info.bBltAll = TRUE;
+	m_Info.dwDrawCount++;
+
+	if (pWidth) *pWidth = copyWidth;
+	if (pHeight) *pHeight = copyHeight;
+	if (pPitch) *pPitch = m_Info.nBMPWidth;
+	return TRUE;
 }
 
 //---------------------------------------------------------------------------
@@ -1511,6 +1584,8 @@ void CDrawView::OnDraw(CDC *pDC)
 		DrawOSD(pDC);
 		return;
 	}
+
+	CopyPx68kFrameToBits();
 
 	// Recalculate
 	ReCalc(rect);
