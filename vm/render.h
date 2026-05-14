@@ -281,6 +281,8 @@ public:
 										// 合成バッファを強制更新
 	render_t* FASTCALL GetWorkAddr() 	{ return &render; }
 	const render_t* FASTCALL GetWorkAddr() const { return &render; }
+	void FASTCALL SetRenderTarget(void*) {}
+										// MFC render target compatibility hook
 										// ワークアドレス取得
 #if XM6_RENDER_SYNC == 2
 	void FASTCALL SetScheduler(class CScheduler* pScheduler) { m_pScheduler = pScheduler; }

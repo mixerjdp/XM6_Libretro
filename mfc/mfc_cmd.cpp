@@ -151,8 +151,6 @@ static void DumpCRTC(FILE *fp, CRTC *crtc)
 		state.h_disp, state.v_disp, state.v_blank,
 		(unsigned long)state.v_count,
 		state.v_scan);
-	fprintf(fp, "  h_synctime=%d h_disptime=%d v_cycletime=%d v_blanktime=%d v_synctime=%d v_backtime=%d\r\n",
-		state.h_synctime, state.h_disptime, state.v_cycletime, state.v_blanktime, state.v_synctime, state.v_backtime);
 	fprintf(fp, "  tmem=%d gmem=%d siz=%08lX col=%08lX\r\n",
 		state.tmem, state.gmem,
 		(unsigned long)state.siz,
@@ -256,6 +254,11 @@ static BOOL DumpVMState()
 
 } // namespace
 
+static BOOL IsSmokeSaveStateCommand()
+{
+	return (_tcsstr(AfxGetApp()->m_lpCmdLine, _T("--smoke-savestate")) != NULL);
+}
+
 //---------------------------------------------------------------------------
 //
 //	Open
@@ -288,14 +291,10 @@ void CFrmWnd::OnOpen()
 void CFrmWnd::OnFastOpen()
 {
 	Filepath path;
-	TCHAR szPath[_MAX_PATH];
-	CString quickLoadPath;
-	quickLoadPath.Format(_T("%s\\%s.xm6"), (LPCTSTR)m_strSaveStatePath, (LPCTSTR)m_strXM6FileName);
 
-	_tcsncpy(szPath, (LPCTSTR)quickLoadPath, _MAX_PATH - 1);
-	szPath[_MAX_PATH - 1] = _T('\0');
-	path.SetPath(szPath);
-
+	if (!BuildQuickStatePath(path)) {
+		return;
+	}
 
 	// Pre-open processing
 	if (!OnOpenPrep(path)) {
@@ -360,6 +359,42 @@ void FASTCALL CFrmWnd::UpdateStateFileName()
 
 	// Default fallback to empty
 	m_strXM6FileName.Empty();
+}
+
+//---------------------------------------------------------------------------
+//
+//	Build quick savestate path
+//
+//---------------------------------------------------------------------------
+BOOL FASTCALL CFrmWnd::BuildQuickStatePath(Filepath& path)
+{
+	CString strDir;
+	CString strPath;
+	DWORD dwAttr;
+
+	UpdateStateFileName();
+	if (m_strXM6FileName.GetLength() == 0) {
+		return FALSE;
+	}
+
+	strDir = m_strSaveStatePath;
+	if (strDir.GetLength() == 0) {
+		strDir = _T("saves");
+	}
+
+	dwAttr = GetFileAttributes(strDir);
+	if (dwAttr == INVALID_FILE_ATTRIBUTES) {
+		if (!CreateDirectory(strDir, NULL)) {
+			return FALSE;
+		}
+	}
+	else if ((dwAttr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+		return FALSE;
+	}
+
+	strPath.Format(_T("%s\\%s.xm6"), (LPCTSTR)strDir, (LPCTSTR)m_strXM6FileName);
+	path.SetPath((LPCTSTR)strPath);
+	return TRUE;
 }
 
 //---------------------------------------------------------------------------
@@ -552,11 +587,13 @@ BOOL FASTCALL CFrmWnd::OnOpenPrep(const Filepath& path, BOOL bWarning)
 	// Version check
 	if (nNowVer < nRecVer) {
 		// Recorded version is newer (unknown format)
-		::GetMsg(IDS_XM6LOADVER, strMsg);
-		strFmt.Format(strMsg,
-						nNowVer >> 8, nNowVer & 0xff,
-						nRecVer >> 8, nRecVer & 0xff);
-		MessageBox(strFmt, NULL, MB_ICONSTOP | MB_OK);
+		if (bWarning) {
+			::GetMsg(IDS_XM6LOADVER, strMsg);
+			strFmt.Format(strMsg,
+							nNowVer >> 8, nNowVer & 0xff,
+							nRecVer >> 8, nRecVer & 0xff);
+			MessageBox(strFmt, NULL, MB_ICONSTOP | MB_OK);
+		}
 		return FALSE;
 	}
 
@@ -631,9 +668,11 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 			}
 		}
 
-		CString msg;
-		msg.Format(_T("Fallo al cargar (VM: %u)\n\nArchivo:\n%s\n\nMotivo:\n%s"), dwPos, path.GetPath(), (LPCTSTR)errorDetail);
-		MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
+		if (!IsSmokeSaveStateCommand()) {
+			CString msg;
+			msg.Format(_T("Fallo al cargar (VM: %u)\n\nArchivo:\n%s\n\nMotivo:\n%s"), dwPos, path.GetPath(), (LPCTSTR)errorDetail);
+			MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
+		}
 
 		return FALSE;
 	}
@@ -652,9 +691,11 @@ BOOL FASTCALL CFrmWnd::OnOpenSub(const Filepath& path)
 		ResetCaption();
 
 		// LoadError
-		CString msg;
-		msg.Format(_T("Error al restaurar componentes de la interfaz grafica (MFC).\n\nArchivo:\n%s"), path.GetPath());
-		MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
+		if (!IsSmokeSaveStateCommand()) {
+			CString msg;
+			msg.Format(_T("Error al restaurar componentes de la interfaz grafica (MFC).\n\nArchivo:\n%s"), path.GetPath());
+			MessageBox(msg, _T("Error de Savestate"), MB_ICONSTOP | MB_OK);
+		}
 		return FALSE;
 	}
 
@@ -841,8 +882,10 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 		ResetCaption();
 
 		// Save error
-		::GetMsg(IDS_XM6SAVEERR, strMsg);
-		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
+		if (!IsSmokeSaveStateCommand()) {
+			::GetMsg(IDS_XM6SAVEERR, strMsg);
+			MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
+		}
 		return;
 	}
 
@@ -857,8 +900,10 @@ void FASTCALL CFrmWnd::OnSaveSub(const Filepath& path)
 		ResetCaption();
 
 		// Save error
-		::GetMsg(IDS_XM6SAVEERR, strMsg);
-		MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
+		if (!IsSmokeSaveStateCommand()) {
+			::GetMsg(IDS_XM6SAVEERR, strMsg);
+			MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
+		}
 		return;
 	}
 

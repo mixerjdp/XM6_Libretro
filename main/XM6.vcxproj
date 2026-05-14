@@ -182,6 +182,9 @@
     <ClCompile Include="..\vm\ppi.cpp" />
     <ClCompile Include="..\vm\printer.cpp" />
     <ClCompile Include="..\vm\render.cpp" />
+    <ClCompile Include="..\vm\rend_soft.cpp" />
+    <ClCompile Include="..\vm\px68k_video_engine.cpp" />
+    <ClCompile Include="..\vm\px68k_render_adapter.cpp" />
     <ClCompile Include="..\vm\rtc.cpp" />
     <ClCompile Include="..\vm\sasi.cpp" />
     <ClCompile Include="..\vm\scc.cpp" />

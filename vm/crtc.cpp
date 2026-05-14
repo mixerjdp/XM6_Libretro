@@ -25,15 +25,10 @@
 #include "crtc.h"
 #include "px68k_crtc_port.h"
 #if XM6_RENDER_SYNC == 1
-#if defined(_AFXDLL) || defined(_AFX)
-#include "mfc_com.h"
-#include "mfc_sch.h"
-#else
 class CScheduler {
 public:
 	void FASTCALL UpdateFrame() {}
 };
-#endif
 #endif	// XM6_RENDER_SYNC == 1
 
 //===========================================================================

@@ -21,6 +21,8 @@
 #include "fdc.h"
 #include "fdi.h"
 #include "render.h"
+#include "keyboard.h"
+#include "ppi.h"
 #include "mfc_frm.h"
 #include "mfc_draw.h"
 #include "mfc_res.h"
@@ -75,6 +77,327 @@ static void FASTCALL VMHostMessageCallback(const TCHAR* message, void *user)
 #define SHCNRF_InterruptLevel			0x0001
 #define SHCNRF_ShellLevel				0x0002
 #define SHCNRF_NewDelivery				0x8000
+static BOOL IsSmokeSaveStateCommand()
+{
+	return (_tcsstr(AfxGetApp()->m_lpCmdLine, _T("--smoke-savestate")) != NULL);
+}
+
+static BOOL IsSmokeVisibleCommand()
+{
+	return (_tcsstr(AfxGetApp()->m_lpCmdLine, _T("--smoke-visible")) != NULL);
+}
+
+enum {
+	SmokeActionKey = 1,
+	SmokeActionJoy = 2,
+	SmokeActionMax = 64
+};
+
+typedef struct {
+	int type;
+	DWORD key;
+	int port;
+	int button;
+	DWORD start;
+	DWORD end;
+	BOOL active;
+	TCHAR name[32];
+} smoke_action_t;
+
+static BOOL g_smokeVisibleActive = FALSE;
+static BOOL g_smokeVisibleSaved = FALSE;
+static BOOL g_smokeVisibleTickLogged = FALSE;
+static BOOL g_smokeVisibleActionsParsed = FALSE;
+static TCHAR g_smokeVisibleCmd[2048];
+static smoke_action_t g_smokeVisibleActions[SmokeActionMax];
+static int g_smokeVisibleActionCount = 0;
+static DWORD g_smokeVisibleFrames = 0;
+static DWORD g_smokeVisibleTargetFrames = 0;
+static DWORD g_smokeVisibleSaveFrame = 0;
+static DWORD g_smokeVisibleFirstActionFrame = 0xffffffff;
+static DWORD g_smokeVisibleLastActionFrame = 0;
+static DWORD g_smokeVisibleLastCount = 0;
+static DWORD g_smokeVisibleHoldMs = 0;
+static DWORD g_smokeVisibleRunStartTick = 0;
+static DWORD g_smokeVisiblePollTick = 0;
+static Filepath g_smokeVisibleStatePath;
+static PPI::joyinfo_t g_smokeVisibleJoy[PPI::PortMax];
+static CRTC *g_smokeVisibleCRTC = NULL;
+static Keyboard *g_smokeVisibleKeyboard = NULL;
+static PPI *g_smokeVisiblePPI = NULL;
+
+static void SmokeLogLine(LPCTSTR msg)
+{
+	FILE *fp;
+
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
+	if (!fp) {
+		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
+	}
+	if (fp) {
+		_ftprintf(fp, _T("%s\n"), msg);
+		fclose(fp);
+	}
+}
+
+static void SmokeLogFormat(LPCTSTR fmt, LPCTSTR value)
+{
+	FILE *fp;
+
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
+	if (!fp) {
+		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
+	}
+	if (fp) {
+		_ftprintf(fp, fmt, value);
+		_ftprintf(fp, _T("\n"));
+		fclose(fp);
+	}
+}
+
+static void SmokeLogFormatDword(LPCTSTR fmt, DWORD value)
+{
+	FILE *fp;
+
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
+	if (!fp) {
+		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
+	}
+	if (fp) {
+		_ftprintf(fp, fmt, (unsigned long)value);
+		_ftprintf(fp, _T("\n"));
+		fclose(fp);
+	}
+}
+
+static LPCTSTR SmokeFindOption(LPCTSTR cmd, LPCTSTR opt, LPCTSTR after)
+{
+	LPCTSTR p = after ? after : cmd;
+
+	return _tcsstr(p, opt);
+}
+
+static BOOL SmokeReadOptionValue(LPCTSTR cmd, LPCTSTR opt, LPCTSTR *after, TCHAR *value, int valueCount)
+{
+	LPCTSTR p;
+	LPCTSTR q;
+	int len;
+
+	ASSERT(value);
+	ASSERT(valueCount > 0);
+
+	p = SmokeFindOption(cmd, opt, after ? *after : NULL);
+	if (!p) {
+		return FALSE;
+	}
+	p += _tcslen(opt);
+	while (*p && (*p <= _T(' '))) {
+		p++;
+	}
+	if (*p == _T('\"')) {
+		p++;
+		q = _tcschr(p, _T('\"'));
+	}
+	else {
+		q = p;
+		while (*q && (*q > _T(' '))) {
+			q++;
+		}
+	}
+	if (!q || q <= p) {
+		value[0] = _T('\0');
+		if (after) {
+			*after = p;
+		}
+		return FALSE;
+	}
+
+	len = (int)(q - p);
+	if (len >= valueCount) {
+		len = valueCount - 1;
+	}
+	_tcsncpy(value, p, len);
+	value[len] = _T('\0');
+	if (after) {
+		*after = q;
+	}
+	return TRUE;
+}
+
+static DWORD SmokeReadDwordOption(LPCTSTR cmd, LPCTSTR opt, DWORD def)
+{
+	TCHAR value[32];
+
+	if (!SmokeReadOptionValue(cmd, opt, NULL, value, _countof(value))) {
+		return def;
+	}
+	return (DWORD)_tcstoul(value, NULL, 10);
+}
+
+static void SmokePumpMessages()
+{
+	MSG msg;
+
+	while (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		::TranslateMessage(&msg);
+		::DispatchMessage(&msg);
+	}
+}
+
+static DWORD SmokeKeyCode(LPCTSTR name)
+{
+	if (!_tcsicmp(name, _T("A"))) return 0x1e;
+	if (!_tcsicmp(name, _T("B"))) return 0x2e;
+	if (!_tcsicmp(name, _T("Z"))) return 0x2a;
+	if (!_tcsicmp(name, _T("X"))) return 0x2b;
+	if (!_tcsicmp(name, _T("SPACE"))) return 0x35;
+	if (!_tcsicmp(name, _T("ENTER")) || !_tcsicmp(name, _T("RETURN"))) return 0x1d;
+	if (!_tcsicmp(name, _T("OPT1")) || !_tcsicmp(name, _T("OPT.1"))) return 0x72;
+	if (!_tcsicmp(name, _T("OPT2")) || !_tcsicmp(name, _T("OPT.2"))) return 0x73;
+	if (!_tcsicmp(name, _T("F1"))) return 0x63;
+	if (!_tcsicmp(name, _T("F2"))) return 0x64;
+	if (!_tcsicmp(name, _T("F3"))) return 0x65;
+	if (!_tcsicmp(name, _T("ESC"))) return 0x01;
+	if (!_tcsicmp(name, _T("UP"))) return 0x3c;
+	if (!_tcsicmp(name, _T("DOWN"))) return 0x3e;
+	if (!_tcsicmp(name, _T("LEFT"))) return 0x3b;
+	if (!_tcsicmp(name, _T("RIGHT"))) return 0x3d;
+	if (!_tcsnicmp(name, _T("0x"), 2)) return (DWORD)_tcstoul(name + 2, NULL, 16);
+	return 0;
+}
+
+static BOOL SmokeSplit3(LPCTSTR spec, TCHAR *a, int aCount, DWORD *b, DWORD *c)
+{
+	LPCTSTR p1;
+	LPCTSTR p2;
+	int len;
+
+	p1 = _tcschr(spec, _T(':'));
+	if (!p1) {
+		return FALSE;
+	}
+	p2 = _tcschr(p1 + 1, _T(':'));
+	if (!p2) {
+		return FALSE;
+	}
+
+	len = (int)(p1 - spec);
+	if (len <= 0) {
+		return FALSE;
+	}
+	if (len >= aCount) {
+		len = aCount - 1;
+	}
+	_tcsncpy(a, spec, len);
+	a[len] = _T('\0');
+
+	*b = (DWORD)_tcstoul(p1 + 1, NULL, 10);
+	*c = (DWORD)_tcstoul(p2 + 1, NULL, 10);
+	return TRUE;
+}
+
+static BOOL SmokeParseKeyAction(LPCTSTR spec, smoke_action_t *action)
+{
+	TCHAR name[32];
+	DWORD start;
+	DWORD duration;
+	DWORD code;
+
+	if (!SmokeSplit3(spec, name, _countof(name), &start, &duration)) {
+		return FALSE;
+	}
+	code = SmokeKeyCode(name);
+	if (!code || !duration) {
+		return FALSE;
+	}
+
+	memset(action, 0, sizeof(*action));
+	action->type = SmokeActionKey;
+	action->key = code;
+	action->start = start;
+	action->end = start + duration;
+	_tcsncpy(action->name, name, _countof(action->name) - 1);
+	return TRUE;
+}
+
+static int SmokeJoyButton(LPCTSTR name)
+{
+	if (!_tcsicmp(name, _T("A"))) return 0;
+	if (!_tcsicmp(name, _T("B"))) return 1;
+	return -1;
+}
+
+static BOOL SmokeParseJoyAction(LPCTSTR spec, smoke_action_t *action)
+{
+	TCHAR name[32];
+	DWORD start;
+	DWORD duration;
+	int port;
+	int button;
+
+	if (!SmokeSplit3(spec, name, _countof(name), &start, &duration)) {
+		return FALSE;
+	}
+	port = 0;
+	if ((name[0] >= _T('0')) && (name[0] <= _T('1')) && (name[1] == _T(':'))) {
+		port = name[0] - _T('0');
+		memmove(name, name + 2, (_tcslen(name + 2) + 1) * sizeof(TCHAR));
+	}
+	button = SmokeJoyButton(name);
+	if ((button < 0) || !duration) {
+		return FALSE;
+	}
+
+	memset(action, 0, sizeof(*action));
+	action->type = SmokeActionJoy;
+	action->port = port;
+	action->button = button;
+	action->start = start;
+	action->end = start + duration;
+	_tcsncpy(action->name, name, _countof(action->name) - 1);
+	return TRUE;
+}
+
+static int SmokeParseActions(LPCTSTR cmd, smoke_action_t *actions, int maxActions)
+{
+	LPCTSTR after;
+	TCHAR value[96];
+	int count;
+
+	count = 0;
+	after = NULL;
+	while ((count < maxActions) &&
+		SmokeReadOptionValue(cmd, _T("--smoke-key-hold"), &after, value, _countof(value))) {
+		if (SmokeParseKeyAction(value, &actions[count])) {
+			count++;
+		}
+	}
+
+	after = NULL;
+	while ((count < maxActions) &&
+		SmokeReadOptionValue(cmd, _T("--smoke-joy-hold"), &after, value, _countof(value))) {
+		if (SmokeParseJoyAction(value, &actions[count])) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static void SmokeEnsureJoyPort(PPI *ppi, int port)
+{
+	PPI::ppi_t state;
+
+	if (!ppi || (port < 0) || (port >= PPI::PortMax)) {
+		return;
+	}
+
+	ppi->GetPPI(&state);
+	if (state.type[port] != 1) {
+		ppi->SetJoyType(port, 1);
+		SmokeLogFormatDword(_T("joy-port-atari=%lu"), (DWORD)port);
+	}
+}
 
 //---------------------------------------------------------------------------
 //
@@ -1156,6 +1479,662 @@ BOOL FASTCALL CFrmWnd::InitCmdSub(int nDrive, LPCTSTR lpszPath)
 
 //---------------------------------------------------------------------------
 //
+//	Headless savestate smoke test
+//
+//---------------------------------------------------------------------------
+BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
+{
+	LPCTSTR p;
+	LPCTSTR q;
+	TCHAR szDisk[_MAX_PATH];
+	Filepath statePath;
+	FILE *fp;
+	BOOL ok;
+	CFileStatus status;
+	CFileStatus inputStatus;
+	smoke_action_t actions[SmokeActionMax];
+	int actionCount;
+	DWORD runFrames;
+	DWORD saveFrame;
+	DWORD targetFrames;
+	BOOL scheduled;
+	BOOL saved;
+	BOOL visible;
+	DWORD visibleFrameMs;
+	DWORD visibleHoldMs;
+	DWORD nextFrameTick;
+
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("wt"));
+	if (!fp) {
+		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("wt"));
+	}
+
+#define SMOKE_LOG(msg) do { if (fp) { _ftprintf(fp, _T("%s\n"), _T(msg)); fflush(fp); } } while (0)
+#define SMOKE_LOG1(fmt,a) do { if (fp) { _ftprintf(fp, _T(fmt) _T("\n"), a); fflush(fp); } } while (0)
+
+	SetEnvironmentVariableA("XM6_SMOKE_SAVESTATE", "1");
+	visible = IsSmokeVisibleCommand();
+	visibleFrameMs = SmokeReadDwordOption(lpszCmd, _T("--smoke-visible-frame-ms"), 16);
+	visibleHoldMs = SmokeReadDwordOption(lpszCmd, _T("--smoke-visible-hold-ms"), 0);
+	nextFrameTick = 0;
+	if (visibleFrameMs < 1) {
+		visibleFrameMs = 1;
+	}
+	if (visible) {
+		GetScheduler()->Enable(FALSE);
+	}
+	SMOKE_LOG("smoke: start");
+	SMOKE_LOG1("visible=%d", visible);
+	SMOKE_LOG1("visible-frame-ms=%lu", (unsigned long)visibleFrameMs);
+
+	p = _tcsstr(lpszCmd, _T("--smoke-savestate"));
+	if (!p) {
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+	p += _tcslen(_T("--smoke-savestate"));
+	while (*p && (*p <= _T(' '))) {
+		p++;
+	}
+	if (*p == _T('\"')) {
+		p++;
+		q = _tcschr(p, _T('\"'));
+	}
+	else {
+		q = _tcschr(p, _T(' '));
+	}
+	if (!q) {
+		q = p + _tcslen(p);
+	}
+	if ((q <= p) || ((q - p) >= _MAX_PATH)) {
+		SMOKE_LOG("smoke: invalid disk argument");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+
+	_tcsnccpy(szDisk, p, (int)(q - p));
+	szDisk[q - p] = _T('\0');
+	SMOKE_LOG1("disk=%s", szDisk);
+	if (!CFile::GetStatus(szDisk, inputStatus)) {
+		SMOKE_LOG("smoke: disk not found");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+
+	ok = InitCmdSub(0, szDisk);
+	SMOKE_LOG1("InitCmdSub reset=%d", ok);
+	if (ok) {
+		OnReset();
+	}
+
+	UpdateStateFileName();
+	SMOKE_LOG1("state-name=%s", (LPCTSTR)m_strXM6FileName);
+	SMOKE_LOG1("state-dir=%s", (LPCTSTR)m_strSaveStatePath);
+	if (!BuildQuickStatePath(statePath)) {
+		SMOKE_LOG("BuildQuickStatePath failed");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+	SMOKE_LOG1("state-path=%s", statePath.GetPath());
+
+	actionCount = SmokeParseActions(lpszCmd, actions, SmokeActionMax);
+	runFrames = SmokeReadDwordOption(lpszCmd, _T("--smoke-run-frames"), 0);
+	saveFrame = SmokeReadDwordOption(lpszCmd, _T("--smoke-save-frame"), 0xffffffff);
+	scheduled = (BOOL)((actionCount > 0) || (runFrames > 0) || (saveFrame != 0xffffffff));
+	saved = FALSE;
+
+	if (scheduled) {
+		CRTC *crtc;
+		Keyboard *keyboard;
+		PPI *ppi;
+		Render *render;
+		PPI::joyinfo_t joy[PPI::PortMax];
+		DWORD frames;
+		DWORD lastCount;
+		DWORD curCount;
+		DWORD guard;
+		DWORD maxActionFrame;
+		int i;
+
+		crtc = (CRTC*)::GetVM()->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
+		keyboard = (Keyboard*)::GetVM()->SearchDevice(MAKEID('K', 'E', 'Y', 'B'));
+		ppi = (PPI*)::GetVM()->SearchDevice(MAKEID('P', 'P', 'I', ' '));
+		render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+		if (!crtc || !keyboard || !ppi) {
+			SMOKE_LOG("smoke: missing input/frame device");
+			if (fp) {
+				fclose(fp);
+			}
+			return FALSE;
+		}
+
+		memset(joy, 0, sizeof(joy));
+		for (i = 0; i < actionCount; i++) {
+			if (actions[i].type == SmokeActionJoy) {
+				ppi->SetJoyType(actions[i].port, 1);
+			}
+		}
+		for (i = 0; i < PPI::PortMax; i++) {
+			const PPI::joyinfo_t *src = ppi->GetJoyInfo(i);
+			if (src) {
+				joy[i] = *src;
+			}
+		}
+
+		maxActionFrame = 0;
+		for (i = 0; i < actionCount; i++) {
+			if (actions[i].end > maxActionFrame) {
+				maxActionFrame = actions[i].end;
+			}
+		}
+		targetFrames = runFrames;
+		if ((saveFrame != 0xffffffff) && (saveFrame > targetFrames)) {
+			targetFrames = saveFrame;
+		}
+		if (maxActionFrame > targetFrames) {
+			targetFrames = maxActionFrame;
+		}
+		if ((saveFrame == 0xffffffff) && (targetFrames > 0)) {
+			saveFrame = targetFrames;
+		}
+
+		SMOKE_LOG1("scheduled-actions=%d", actionCount);
+		SMOKE_LOG1("run-frames=%lu", (unsigned long)targetFrames);
+		SMOKE_LOG1("save-frame=%lu", (unsigned long)saveFrame);
+
+		frames = 0;
+		lastCount = crtc->GetDispCount();
+		if (visible) {
+			ShowWindow(SW_SHOW);
+			UpdateWindow();
+			SmokePumpMessages();
+			nextFrameTick = ::GetTickCount() + visibleFrameMs;
+			GetScheduler()->Enable(TRUE);
+			while (frames <= targetFrames) {
+				curCount = crtc->GetDispCount();
+				if (curCount != lastCount) {
+					frames++;
+					lastCount = curCount;
+					for (i = 0; i < actionCount; i++) {
+						if (!actions[i].active && (frames == actions[i].start)) {
+							actions[i].active = TRUE;
+							if (actions[i].type == SmokeActionKey) {
+								keyboard->MakeKey(actions[i].key);
+								SMOKE_LOG1("key-down=%s", actions[i].name);
+							}
+							else if (actions[i].type == SmokeActionJoy) {
+								joy[actions[i].port].button[actions[i].button] = TRUE;
+								ppi->SetJoyInfo(actions[i].port, &joy[actions[i].port]);
+								SMOKE_LOG1("joy-down=%s", actions[i].name);
+							}
+						}
+						if (actions[i].active && (frames == actions[i].end)) {
+							actions[i].active = FALSE;
+							if (actions[i].type == SmokeActionKey) {
+								keyboard->BreakKey(actions[i].key);
+								SMOKE_LOG1("key-up=%s", actions[i].name);
+							}
+							else if (actions[i].type == SmokeActionJoy) {
+								joy[actions[i].port].button[actions[i].button] = FALSE;
+								ppi->SetJoyInfo(actions[i].port, &joy[actions[i].port]);
+								SMOKE_LOG1("joy-up=%s", actions[i].name);
+							}
+						}
+					}
+					if (!saved && (frames == saveFrame)) {
+						GetScheduler()->Enable(FALSE);
+						SMOKE_LOG("quick-save begin");
+						OnSaveSub(statePath);
+						saved = TRUE;
+					}
+					if (frames >= targetFrames) {
+						break;
+					}
+					nextFrameTick += visibleFrameMs;
+				}
+				SmokePumpMessages();
+				while ((int)(nextFrameTick - ::GetTickCount()) > 0) {
+					DWORD wait = nextFrameTick - ::GetTickCount();
+					::Sleep(wait > 4 ? 4 : wait);
+					SmokePumpMessages();
+				}
+			}
+		}
+		else {
+			while (frames <= targetFrames) {
+				for (i = 0; i < actionCount; i++) {
+					if (!actions[i].active && (frames == actions[i].start)) {
+						actions[i].active = TRUE;
+						if (actions[i].type == SmokeActionKey) {
+							keyboard->MakeKey(actions[i].key);
+							SMOKE_LOG1("key-down=%s", actions[i].name);
+						}
+						else if (actions[i].type == SmokeActionJoy) {
+							joy[actions[i].port].button[actions[i].button] = TRUE;
+							ppi->SetJoyInfo(actions[i].port, &joy[actions[i].port]);
+							SMOKE_LOG1("joy-down=%s", actions[i].name);
+						}
+					}
+					if (actions[i].active && (frames == actions[i].end)) {
+						actions[i].active = FALSE;
+						if (actions[i].type == SmokeActionKey) {
+							keyboard->BreakKey(actions[i].key);
+							SMOKE_LOG1("key-up=%s", actions[i].name);
+						}
+						else if (actions[i].type == SmokeActionJoy) {
+							joy[actions[i].port].button[actions[i].button] = FALSE;
+							ppi->SetJoyInfo(actions[i].port, &joy[actions[i].port]);
+							SMOKE_LOG1("joy-up=%s", actions[i].name);
+						}
+					}
+				}
+
+				if (!saved && (frames == saveFrame)) {
+					SMOKE_LOG("quick-save begin");
+					OnSaveSub(statePath);
+					saved = TRUE;
+				}
+
+				if (frames >= targetFrames) {
+					break;
+				}
+
+				guard = 0;
+				do {
+					if (render) {
+						render->EnableAct(TRUE);
+					}
+					if (!::GetVM()->Exec(2000)) {
+						SMOKE_LOG("smoke: VM exec failed");
+						if (fp) {
+							fclose(fp);
+						}
+						return FALSE;
+					}
+					curCount = crtc->GetDispCount();
+					guard++;
+				} while ((curCount == lastCount) && (guard < 2000));
+
+				if (guard >= 2000) {
+					SMOKE_LOG("smoke: frame wait timeout");
+					if (fp) {
+						fclose(fp);
+					}
+					return FALSE;
+				}
+				frames++;
+				lastCount = curCount;
+			}
+		}
+
+		for (i = 0; i < actionCount; i++) {
+			if (actions[i].active) {
+				actions[i].active = FALSE;
+				if (actions[i].type == SmokeActionKey) {
+					keyboard->BreakKey(actions[i].key);
+				}
+				else if (actions[i].type == SmokeActionJoy) {
+					joy[actions[i].port].button[actions[i].button] = FALSE;
+					ppi->SetJoyInfo(actions[i].port, &joy[actions[i].port]);
+				}
+			}
+		}
+	}
+
+	if (!saved) {
+		SMOKE_LOG("quick-save begin");
+		OnSaveSub(statePath);
+		saved = TRUE;
+	}
+	if (!CFile::GetStatus(statePath.GetPath(), status)) {
+		SMOKE_LOG("quick-save missing output");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+	SMOKE_LOG("quick-save output exists");
+
+	SMOKE_LOG("quick-load prep begin");
+	if (!OnOpenPrep(statePath, FALSE)) {
+		SMOKE_LOG("OnOpenPrep failed");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+	SMOKE_LOG("quick-load sub begin");
+	if (!OnOpenSub(statePath)) {
+		SMOKE_LOG("OnOpenSub failed");
+		if (fp) {
+			fclose(fp);
+		}
+		return FALSE;
+	}
+
+	if (visible && (visibleHoldMs > 0)) {
+		DWORD endTick = ::GetTickCount() + visibleHoldMs;
+		SMOKE_LOG1("visible-hold-ms=%lu", (unsigned long)visibleHoldMs);
+		while ((int)(endTick - ::GetTickCount()) > 0) {
+			SmokePumpMessages();
+			::Sleep(16);
+		}
+	}
+
+	SMOKE_LOG("smoke: ok");
+	if (fp) {
+		fclose(fp);
+	}
+
+#undef SMOKE_LOG
+#undef SMOKE_LOG1
+
+	return TRUE;
+}
+
+//---------------------------------------------------------------------------
+//
+//	Visible savestate smoke test
+//
+//---------------------------------------------------------------------------
+BOOL FASTCALL CFrmWnd::SmokeStartVisible(LPCTSTR lpszCmd)
+{
+	CRTC *crtc;
+	PPI *ppi;
+	DWORD runFrames;
+	DWORD saveFrame;
+	DWORD maxActionFrame;
+	int i;
+
+	SmokeLogLine(_T("smoke-visible: start"));
+	SetEnvironmentVariableA("XM6_SMOKE_SAVESTATE", "1");
+
+	UpdateStateFileName();
+	if (!BuildQuickStatePath(g_smokeVisibleStatePath)) {
+		SmokeLogLine(_T("smoke-visible: BuildQuickStatePath failed"));
+		return FALSE;
+	}
+	SmokeLogFormat(_T("state-path=%s"), g_smokeVisibleStatePath.GetPath());
+
+	_tcsncpy(g_smokeVisibleCmd, lpszCmd, _countof(g_smokeVisibleCmd) - 1);
+	g_smokeVisibleCmd[_countof(g_smokeVisibleCmd) - 1] = _T('\0');
+	g_smokeVisibleActionCount = 0;
+	g_smokeVisibleActionsParsed = FALSE;
+	runFrames = SmokeReadDwordOption(lpszCmd, _T("--smoke-run-frames"), 0);
+	saveFrame = SmokeReadDwordOption(lpszCmd, _T("--smoke-save-frame"), 0xffffffff);
+	g_smokeVisibleHoldMs = SmokeReadDwordOption(lpszCmd, _T("--smoke-visible-hold-ms"), 0);
+	SmokeLogLine(_T("smoke-visible: action parse deferred"));
+
+	maxActionFrame = 0;
+	g_smokeVisibleFirstActionFrame = 0xffffffff;
+	g_smokeVisibleLastActionFrame = 0;
+	for (i = 0; i < g_smokeVisibleActionCount; i++) {
+		if (g_smokeVisibleActions[i].start < g_smokeVisibleFirstActionFrame) {
+			g_smokeVisibleFirstActionFrame = g_smokeVisibleActions[i].start;
+		}
+		if (g_smokeVisibleActions[i].end > maxActionFrame) {
+			maxActionFrame = g_smokeVisibleActions[i].end;
+		}
+	}
+	g_smokeVisibleLastActionFrame = maxActionFrame;
+	g_smokeVisibleTargetFrames = runFrames;
+	if ((saveFrame != 0xffffffff) && (saveFrame > g_smokeVisibleTargetFrames)) {
+		g_smokeVisibleTargetFrames = saveFrame;
+	}
+	if (maxActionFrame > g_smokeVisibleTargetFrames) {
+		g_smokeVisibleTargetFrames = maxActionFrame;
+	}
+	if ((saveFrame == 0xffffffff) && (g_smokeVisibleTargetFrames > 0)) {
+		saveFrame = g_smokeVisibleTargetFrames;
+	}
+	if (saveFrame == 0xffffffff) {
+		saveFrame = 0;
+	}
+	g_smokeVisibleSaveFrame = saveFrame;
+	g_smokeVisibleFrames = 0;
+	g_smokeVisibleSaved = FALSE;
+	g_smokeVisibleTickLogged = FALSE;
+	SmokeLogLine(_T("smoke-visible: frame plan ready"));
+
+	crtc = (CRTC*)::GetVM()->SearchDevice(MAKEID('C', 'R', 'T', 'C'));
+	ppi = (PPI*)::GetVM()->SearchDevice(MAKEID('P', 'P', 'I', ' '));
+	g_smokeVisibleCRTC = crtc;
+	g_smokeVisibleKeyboard = (Keyboard*)::GetVM()->SearchDevice(MAKEID('K', 'E', 'Y', 'B'));
+	g_smokeVisiblePPI = ppi;
+	if (!crtc || !ppi || !g_smokeVisibleKeyboard) {
+		SmokeLogLine(_T("smoke-visible: missing input/frame device"));
+		return FALSE;
+	}
+	SmokeLogLine(_T("smoke-visible: devices ready"));
+
+	memset(g_smokeVisibleJoy, 0, sizeof(g_smokeVisibleJoy));
+	if (GetInput()) {
+		for (i = 0; i < PPI::PortMax; i++) {
+			int nButton;
+			for (nButton = 0; nButton < PPI::ButtonMax; nButton++) {
+				GetInput()->SetSmokeJoyButton(i, nButton, FALSE);
+			}
+		}
+	}
+	for (i = 0; i < PPI::PortMax; i++) {
+		const PPI::joyinfo_t *src = ppi->GetJoyInfo(i);
+		if (src) {
+			g_smokeVisibleJoy[i] = *src;
+		}
+	}
+	g_smokeVisibleLastCount = crtc->GetDispCount();
+	g_smokeVisibleRunStartTick = ::GetTickCount();
+	g_smokeVisiblePollTick = g_smokeVisibleRunStartTick;
+	SmokeLogLine(_T("smoke-visible: initial input state ready"));
+
+	SmokeLogFormatDword(_T("scheduled-actions=%lu"), (DWORD)g_smokeVisibleActionCount);
+	SmokeLogFormatDword(_T("run-frames=%lu"), g_smokeVisibleTargetFrames);
+	SmokeLogFormatDword(_T("save-frame=%lu"), g_smokeVisibleSaveFrame);
+	SmokeLogFormatDword(_T("visible-hold-ms=%lu"), g_smokeVisibleHoldMs);
+
+	ShowWindow(SW_SHOW);
+	SetForegroundWindow();
+	UpdateWindow();
+
+	g_smokeVisibleActive = TRUE;
+	SmokeLogLine(_T("smoke-visible: controller active"));
+	return TRUE;
+}
+
+//---------------------------------------------------------------------------
+//
+//	Visible savestate smoke timer
+//
+//---------------------------------------------------------------------------
+void FASTCALL CFrmWnd::SmokeVisibleTimer()
+{
+	CFileStatus status;
+	CRTC *crtc;
+	Keyboard *keyboard;
+	PPI *ppi;
+	DWORD curCount;
+	DWORD deltaFrames;
+	int i;
+	BOOL ok;
+
+	if (!g_smokeVisibleActive) {
+		return;
+	}
+	if (!g_smokeVisibleTickLogged) {
+		g_smokeVisibleTickLogged = TRUE;
+		SmokeLogLine(_T("smoke-visible: first tick"));
+	}
+
+	crtc = g_smokeVisibleCRTC;
+	keyboard = g_smokeVisibleKeyboard;
+	ppi = g_smokeVisiblePPI;
+	if (!crtc || !keyboard || !ppi) {
+		SmokeLogLine(_T("smoke-visible: missing timer device"));
+		g_smokeVisibleActive = FALSE;
+		::ExitProcess(1);
+		return;
+	}
+
+	curCount = crtc->GetDispCount();
+	if (curCount == g_smokeVisibleLastCount) {
+		return;
+	}
+	if (curCount > g_smokeVisibleLastCount) {
+		deltaFrames = curCount - g_smokeVisibleLastCount;
+	}
+	else {
+		deltaFrames = 1;
+	}
+	g_smokeVisibleLastCount = curCount;
+
+	while (deltaFrames > 0) {
+		deltaFrames--;
+		g_smokeVisibleFrames++;
+		if ((g_smokeVisibleFrames % 55) == 0) {
+			SmokeLogFormatDword(_T("frame=%lu"), g_smokeVisibleFrames);
+		}
+
+		if (!g_smokeVisibleActionsParsed && (g_smokeVisibleFrames >= 55)) {
+			g_smokeVisibleActionCount = SmokeParseActions(g_smokeVisibleCmd,
+				g_smokeVisibleActions, SmokeActionMax);
+			g_smokeVisibleFirstActionFrame = 0xffffffff;
+			g_smokeVisibleLastActionFrame = 0;
+			for (i = 0; i < g_smokeVisibleActionCount; i++) {
+				if (g_smokeVisibleActions[i].start < g_smokeVisibleFirstActionFrame) {
+					g_smokeVisibleFirstActionFrame = g_smokeVisibleActions[i].start;
+				}
+				if (g_smokeVisibleActions[i].end > g_smokeVisibleLastActionFrame) {
+					g_smokeVisibleLastActionFrame = g_smokeVisibleActions[i].end;
+				}
+				if (g_smokeVisibleActions[i].type == SmokeActionJoy) {
+					SmokeEnsureJoyPort(ppi, g_smokeVisibleActions[i].port);
+				}
+			}
+			g_smokeVisibleActionsParsed = TRUE;
+			SmokeLogFormatDword(_T("parsed-actions=%lu"), (DWORD)g_smokeVisibleActionCount);
+		}
+
+		if ((g_smokeVisibleFrames >= g_smokeVisibleFirstActionFrame) &&
+			(g_smokeVisibleFrames <= g_smokeVisibleLastActionFrame)) {
+			for (i = 0; i < g_smokeVisibleActionCount; i++) {
+				if (!g_smokeVisibleActions[i].active &&
+					(g_smokeVisibleFrames == g_smokeVisibleActions[i].start)) {
+					g_smokeVisibleActions[i].active = TRUE;
+					if (g_smokeVisibleActions[i].type == SmokeActionKey) {
+						keyboard->MakeKey(g_smokeVisibleActions[i].key);
+						SmokeLogFormat(_T("key-down=%s"), g_smokeVisibleActions[i].name);
+					}
+					else if (g_smokeVisibleActions[i].type == SmokeActionJoy) {
+						if (GetInput()) {
+							GetInput()->SetSmokeJoyButton(g_smokeVisibleActions[i].port,
+								g_smokeVisibleActions[i].button, TRUE);
+						}
+						g_smokeVisibleJoy[g_smokeVisibleActions[i].port].
+							button[g_smokeVisibleActions[i].button] = TRUE;
+						ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+						SmokeLogFormat(_T("joy-down=%s"), g_smokeVisibleActions[i].name);
+					}
+				}
+				if (g_smokeVisibleActions[i].active &&
+					(g_smokeVisibleFrames == g_smokeVisibleActions[i].end)) {
+					g_smokeVisibleActions[i].active = FALSE;
+					if (g_smokeVisibleActions[i].type == SmokeActionKey) {
+						keyboard->BreakKey(g_smokeVisibleActions[i].key);
+						SmokeLogFormat(_T("key-up=%s"), g_smokeVisibleActions[i].name);
+					}
+					else if (g_smokeVisibleActions[i].type == SmokeActionJoy) {
+						if (GetInput()) {
+							GetInput()->SetSmokeJoyButton(g_smokeVisibleActions[i].port,
+								g_smokeVisibleActions[i].button, FALSE);
+						}
+						g_smokeVisibleJoy[g_smokeVisibleActions[i].port].
+							button[g_smokeVisibleActions[i].button] = FALSE;
+						ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+						SmokeLogFormat(_T("joy-up=%s"), g_smokeVisibleActions[i].name);
+					}
+				}
+			}
+		}
+
+		if (!g_smokeVisibleSaved && (g_smokeVisibleFrames >= g_smokeVisibleSaveFrame)) {
+			GetScheduler()->Enable(FALSE);
+			SmokeLogLine(_T("quick-save begin"));
+			OnSaveSub(g_smokeVisibleStatePath);
+			g_smokeVisibleSaved = TRUE;
+			GetScheduler()->Enable(TRUE);
+		}
+
+		if (g_smokeVisibleFrames >= g_smokeVisibleTargetFrames) {
+			break;
+		}
+	}
+
+	if (g_smokeVisibleFrames < g_smokeVisibleTargetFrames) {
+		return;
+	}
+
+	g_smokeVisibleActive = FALSE;
+	GetScheduler()->Enable(FALSE);
+
+	for (i = 0; i < g_smokeVisibleActionCount; i++) {
+		if (g_smokeVisibleActions[i].active) {
+			g_smokeVisibleActions[i].active = FALSE;
+			if (g_smokeVisibleActions[i].type == SmokeActionKey) {
+				keyboard->BreakKey(g_smokeVisibleActions[i].key);
+			}
+			else if (g_smokeVisibleActions[i].type == SmokeActionJoy) {
+				if (GetInput()) {
+					GetInput()->SetSmokeJoyButton(g_smokeVisibleActions[i].port,
+						g_smokeVisibleActions[i].button, FALSE);
+				}
+				g_smokeVisibleJoy[g_smokeVisibleActions[i].port].
+					button[g_smokeVisibleActions[i].button] = FALSE;
+				ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+					&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+			}
+		}
+	}
+
+	if (!g_smokeVisibleSaved) {
+		SmokeLogLine(_T("quick-save begin"));
+		OnSaveSub(g_smokeVisibleStatePath);
+		g_smokeVisibleSaved = TRUE;
+	}
+
+	ok = CFile::GetStatus(g_smokeVisibleStatePath.GetPath(), status);
+	if (ok) {
+		SmokeLogLine(_T("quick-save output exists"));
+		SmokeLogLine(_T("quick-load prep begin"));
+		ok = OnOpenPrep(g_smokeVisibleStatePath, FALSE);
+	}
+	if (ok) {
+		SmokeLogLine(_T("quick-load sub begin"));
+		ok = OnOpenSub(g_smokeVisibleStatePath);
+	}
+	if (ok && (g_smokeVisibleHoldMs > 0)) {
+		DWORD endTick = ::GetTickCount() + g_smokeVisibleHoldMs;
+		while ((int)(endTick - ::GetTickCount()) > 0) {
+			SmokePumpMessages();
+			::Sleep(16);
+		}
+	}
+
+	SmokeLogLine(ok ? _T("smoke-visible: ok") : _T("smoke-visible: failed"));
+	::ExitProcess(ok ? 0 : 1);
+}
+
+//---------------------------------------------------------------------------
+//
 //	Save components
 //	Scheduler is stopped, but CSound and CInput keep running.
 //
@@ -1409,11 +2388,19 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	LPSTR lpszCmd;
 	LPCTSTR lpszCommand;
 	BOOL bFullScreen;
+	BOOL bSmokeSaveState;
+	BOOL bSmokeVisible;
+
+	bSmokeSaveState = IsSmokeSaveStateCommand();
+	bSmokeVisible = IsSmokeVisibleCommand();
 
 	// Handle startup errors first
 	switch (m_nStatus) {
 		// VM initialization error
 		case 1:
+			if (bSmokeSaveState) {
+				::ExitProcess(1);
+			}
 			::GetMsg(IDS_INIT_VMERR, strMsg);
 			MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 			PostMessage(WM_CLOSE, 0, 0);
@@ -1421,6 +2408,9 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 
 		// Component initialization error
 		case 2:
+			if (bSmokeSaveState) {
+				::ExitProcess(1);
+			}
 			::GetMsg(IDS_INIT_COMERR, strMsg);
 			MessageBox(strMsg, NULL, MB_ICONSTOP | MB_OK);
 			PostMessage(WM_CLOSE, 0, 0);
@@ -1433,6 +2423,9 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	pMemory = (Memory*)::GetVM()->SearchDevice(MAKEID('M', 'E', 'M', ' '));
 	ASSERT(pMemory);
 	if (!pMemory->CheckIPL()) {
+		if (bSmokeSaveState) {
+			::ExitProcess(1);
+		}
 		::GetMsg(IDS_INIT_IPLERR, strMsg);
 		if (MessageBox(strMsg, NULL, MB_ICONSTOP | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
 			PostMessage(WM_CLOSE, 0, 0);
@@ -1440,6 +2433,9 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 		}
 	}
 	if (!pMemory->CheckCG()) {
+		if (bSmokeSaveState) {
+			::ExitProcess(1);
+		}
 		::GetMsg(IDS_INIT_CGERR, strMsg);
 		if (MessageBox(strMsg, NULL, MB_ICONSTOP | MB_YESNO | MB_DEFBUTTON2) != IDYES) {
 			PostMessage(WM_CLOSE, 0, 0);
@@ -1478,11 +2474,36 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 		OnReset();
 	}
 
-	RestoreDiskState();
-
 	lpszCmd = AfxGetApp()->m_lpCmdLine;
 	lpszCommand = A2T(lpszCmd);
-	if (_tcslen(lpszCommand) > 0) {
+	if (bSmokeSaveState && !bSmokeVisible) {
+		BOOL bSmoke = SmokeSaveState(lpszCommand);
+		::ExitProcess(bSmoke ? 0 : 1);
+	}
+
+	if (bSmokeSaveState && bSmokeVisible) {
+		TCHAR szSmokeDisk[_MAX_PATH];
+		CFileStatus smokeInputStatus;
+
+		SmokeLogLine(_T("smoke-visible: early mount"));
+		if (!SmokeReadOptionValue(lpszCommand, _T("--smoke-savestate"), NULL,
+			szSmokeDisk, _countof(szSmokeDisk))) {
+			SmokeLogLine(_T("smoke-visible: invalid disk argument"));
+			::ExitProcess(1);
+		}
+		SmokeLogFormat(_T("disk=%s"), szSmokeDisk);
+		if (!CFile::GetStatus(szSmokeDisk, smokeInputStatus)) {
+			SmokeLogLine(_T("smoke-visible: disk not found"));
+			::ExitProcess(1);
+		}
+		InitCmd(szSmokeDisk);
+		SmokeLogLine(_T("smoke-visible: early mount complete"));
+	}
+	else if (!bSmokeSaveState) {
+		RestoreDiskState();
+	}
+
+	if (!bSmokeSaveState && (_tcslen(lpszCommand) > 0)) {
 		InitCmd(lpszCommand);
 	}
 
@@ -1500,11 +2521,23 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 		PostMessage(WM_COMMAND, IDM_FULLSCREEN);
 	}
 
+	if (bSmokeSaveState && bSmokeVisible) {
+		if (!SmokeStartVisible(lpszCommand)) {
+			::ExitProcess(1);
+		}
+	}
+
 	pComponent = m_pFirstComponent;
 	while (pComponent) {
 		if (pComponent->GetID() == MAKEID('S', 'C', 'H', 'E')) {
 			if (!config.power_off) {
+				if (bSmokeSaveState && bSmokeVisible) {
+					SmokeLogLine(_T("smoke-visible: enabling scheduler"));
+				}
 				pComponent->Enable(TRUE);
+				if (bSmokeSaveState && bSmokeVisible) {
+					SmokeLogLine(_T("smoke-visible: scheduler component enabled"));
+				}
 			}
 			break;
 		}
@@ -1512,6 +2545,10 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	}
 
 	::UnlockVM();
+	if (bSmokeSaveState && bSmokeVisible) {
+		SmokeLogLine(_T("smoke-visible: bootstrap unlocked"));
+	}
+
 	// Main loop
 	DWORD dwStartTick = ::GetTickCount();
 	BOOL bAutoResetDone = FALSE;
@@ -1545,6 +2582,10 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 			// Update periodic timers
 			dwNow = ::GetTickCount();
 
+			if (g_smokeVisibleActive && ((dwNow - g_smokeVisiblePollTick) >= 16)) {
+				g_smokeVisiblePollTick = dwNow;
+				SmokeVisibleTimer();
+			}
 
 			if ((dwNow - dwTick20) >= 20) {
 				dwTick20 = dwNow;
@@ -1552,7 +2593,7 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 				UpdateExec();
 
 				// HACK: auto-reset to work around cold-boot bug
-				if (!bAutoResetDone && (dwNow - dwStartTick) >= 90) {
+				if (!bSmokeSaveState && !bAutoResetDone && (dwNow - dwStartTick) >= 90) {
 					bAutoResetDone = TRUE;
 					OnReset();
 				}
