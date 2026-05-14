@@ -21,6 +21,8 @@
 #include "fdc.h"
 #include "fdi.h"
 #include "render.h"
+#include "crtc.h"
+#include "vc.h"
 #include "keyboard.h"
 #include "ppi.h"
 #include "mfc_frm.h"
@@ -96,6 +98,7 @@ static BOOL IsSmokePx68kVideoCommand(LPCTSTR lpszCmd)
 enum {
 	SmokeActionKey = 1,
 	SmokeActionJoy = 2,
+	SmokeActionJoyAxis = 3,
 	SmokeActionMax = 64
 };
 
@@ -104,6 +107,8 @@ typedef struct {
 	DWORD key;
 	int port;
 	int button;
+	int axis;
+	DWORD axis_value;
 	DWORD start;
 	DWORD end;
 	BOOL active;
@@ -174,6 +179,263 @@ static void SmokeLogFormatDword(LPCTSTR fmt, DWORD value)
 		_ftprintf(fp, fmt, (unsigned long)value);
 		_ftprintf(fp, _T("\n"));
 		fclose(fp);
+	}
+}
+
+static DWORD SmokeHashDword(DWORD hash, DWORD value)
+{
+	hash ^= value;
+	hash *= 16777619u;
+	return hash;
+}
+
+static void SmokeLogRenderPage(const Render::render_t *r, int page)
+{
+	const DWORD *ptr;
+	DWORD hash;
+	DWORD nonzero;
+	DWORD transparent;
+	DWORD half;
+	int width;
+	int height;
+	int y;
+	int x;
+	TCHAR line[256];
+
+	ASSERT(r);
+	ASSERT(page >= 0 && page < 4);
+
+	ptr = r->grpbuf[page];
+	if (!ptr) {
+		_sntprintf(line, _countof(line), _T("render-page%d: missing"), page);
+		SmokeLogLine(line);
+		return;
+	}
+
+	width = r->mixlen;
+	if (width <= 0 || width > 512) {
+		width = 512;
+	}
+	height = r->height;
+	if (height <= 0 || height > 512) {
+		height = 512;
+	}
+
+	hash = 2166136261u;
+	nonzero = 0;
+	transparent = 0;
+	half = 0;
+	for (y = 0; y < height; y++) {
+		const DWORD *row = ptr + (y << 10);
+		for (x = 0; x < width; x++) {
+			DWORD value = row[x];
+			hash = SmokeHashDword(hash, value);
+			if ((value & 0x00ffffff) != 0) {
+				nonzero++;
+			}
+			if (value & 0x80000000) {
+				transparent++;
+			}
+			if (value & 0x40000000) {
+				half++;
+			}
+		}
+	}
+
+	_sntprintf(line, _countof(line),
+		_T("render-page%d: sig=%08lX size=%dx%d nonzero=%lu transparent=%lu half=%lu first=%08lX,%08lX,%08lX,%08lX"),
+		page, (unsigned long)hash, width, height, (unsigned long)nonzero,
+		(unsigned long)transparent, (unsigned long)half,
+		(unsigned long)ptr[0], (unsigned long)ptr[1],
+		(unsigned long)ptr[2], (unsigned long)ptr[3]);
+	SmokeLogLine(line);
+}
+
+static void SmokeLogRenderBuffer(LPCTSTR name, const DWORD *ptr, int stride, int width, int height)
+{
+	DWORD hash;
+	DWORD nonzero;
+	DWORD transparent;
+	DWORD half;
+	int y;
+	int x;
+	TCHAR line[256];
+
+	if (!ptr || (stride <= 0) || (width <= 0) || (height <= 0)) {
+		_sntprintf(line, _countof(line), _T("%s: missing"), name);
+		SmokeLogLine(line);
+		return;
+	}
+	if (width > stride) {
+		width = stride;
+	}
+
+	hash = 2166136261u;
+	nonzero = 0;
+	transparent = 0;
+	half = 0;
+	for (y = 0; y < height; y++) {
+		const DWORD *row = ptr + (y * stride);
+		for (x = 0; x < width; x++) {
+			DWORD value = row[x];
+			hash = SmokeHashDword(hash, value);
+			if ((value & 0x00ffffff) != 0) {
+				nonzero++;
+			}
+			if (value & 0x80000000) {
+				transparent++;
+			}
+			if (value & 0x40000000) {
+				half++;
+			}
+		}
+	}
+
+	_sntprintf(line, _countof(line),
+		_T("%s: sig=%08lX size=%dx%d stride=%d nonzero=%lu transparent=%lu half=%lu first=%08lX,%08lX,%08lX,%08lX"),
+		name, (unsigned long)hash, width, height, stride,
+		(unsigned long)nonzero, (unsigned long)transparent, (unsigned long)half,
+		(unsigned long)ptr[0], (unsigned long)ptr[1],
+		(unsigned long)ptr[2], (unsigned long)ptr[3]);
+	SmokeLogLine(line);
+}
+
+static void SmokeLogRenderState()
+{
+	Render *render;
+	const Render::render_t *r;
+	const CRTC *crtc;
+	const CRTC::crtc_t *c;
+	const VC *vc;
+	const VC::vc_t *v;
+	int page;
+
+	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
+	if (!render) {
+		SmokeLogLine(_T("render-state: missing render"));
+		return;
+	}
+
+	r = render->GetWorkAddr();
+	crtc = render->GetCRTCDevice();
+	c = crtc ? crtc->GetWorkAddr() : NULL;
+	vc = render->GetVCDevice();
+	v = vc ? vc->GetWorkAddr() : NULL;
+
+	if (r) {
+		TCHAR line[512];
+		_sntprintf(line, _countof(line),
+			_T("render-state: size=%dx%d hmul=%d vmul=%d hdisp=%d vdisp=%d hres=%d hd=%d vd=%d low=%d siz=%d mix=%dx%d page=%d type=%d len=%d mode=%d text=%d bgsp=%d/%d grptype=%d grppen=%d,%d,%d,%d grpx=%lu,%lu,%lu,%lu grpy=%lu,%lu,%lu,%lu"),
+			r->width, r->height, r->h_mul, r->v_mul,
+			r->h_disp, r->v_disp, r->hres, r->hd, r->vd,
+			r->lowres ? 1 : 0, r->siz ? 1 : 0,
+			r->mixwidth, r->mixheight, r->mixpage, r->mixtype,
+			r->mixlen, r->mixmode, r->texten ? 1 : 0,
+			r->bgspflag ? 1 : 0, r->bgspdisp ? 1 : 0, r->grptype,
+			r->grppen[0] ? 1 : 0, r->grppen[1] ? 1 : 0,
+			r->grppen[2] ? 1 : 0, r->grppen[3] ? 1 : 0,
+			(unsigned long)r->grpx[0], (unsigned long)r->grpx[1],
+			(unsigned long)r->grpx[2], (unsigned long)r->grpx[3],
+			(unsigned long)r->grpy[0], (unsigned long)r->grpy[1],
+			(unsigned long)r->grpy[2], (unsigned long)r->grpy[3]);
+		SmokeLogLine(line);
+
+		_sntprintf(line, _countof(line),
+			_T("render-mix-scroll: x=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu y=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu"),
+			r->mixx[0] ? (unsigned long)*r->mixx[0] : 0,
+			r->mixx[1] ? (unsigned long)*r->mixx[1] : 0,
+			r->mixx[2] ? (unsigned long)*r->mixx[2] : 0,
+			r->mixx[3] ? (unsigned long)*r->mixx[3] : 0,
+			r->mixx[4] ? (unsigned long)*r->mixx[4] : 0,
+			r->mixx[5] ? (unsigned long)*r->mixx[5] : 0,
+			r->mixx[6] ? (unsigned long)*r->mixx[6] : 0,
+			r->mixx[7] ? (unsigned long)*r->mixx[7] : 0,
+			r->mixy[0] ? (unsigned long)*r->mixy[0] : 0,
+			r->mixy[1] ? (unsigned long)*r->mixy[1] : 0,
+			r->mixy[2] ? (unsigned long)*r->mixy[2] : 0,
+			r->mixy[3] ? (unsigned long)*r->mixy[3] : 0,
+			r->mixy[4] ? (unsigned long)*r->mixy[4] : 0,
+			r->mixy[5] ? (unsigned long)*r->mixy[5] : 0,
+			r->mixy[6] ? (unsigned long)*r->mixy[6] : 0,
+			r->mixy[7] ? (unsigned long)*r->mixy[7] : 0);
+		SmokeLogLine(line);
+
+		_sntprintf(line, _countof(line),
+			_T("render-mix-shift: shift=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu r=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu l=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu"),
+			(unsigned long)r->mixshift[0], (unsigned long)r->mixshift[1],
+			(unsigned long)r->mixshift[2], (unsigned long)r->mixshift[3],
+			(unsigned long)r->mixshift[4], (unsigned long)r->mixshift[5],
+			(unsigned long)r->mixshift[6], (unsigned long)r->mixshift[7],
+			(unsigned long)r->mixrshift[0], (unsigned long)r->mixrshift[1],
+			(unsigned long)r->mixrshift[2], (unsigned long)r->mixrshift[3],
+			(unsigned long)r->mixrshift[4], (unsigned long)r->mixrshift[5],
+			(unsigned long)r->mixrshift[6], (unsigned long)r->mixrshift[7],
+			(unsigned long)r->mixlshift[0], (unsigned long)r->mixlshift[1],
+			(unsigned long)r->mixlshift[2], (unsigned long)r->mixlshift[3],
+			(unsigned long)r->mixlshift[4], (unsigned long)r->mixlshift[5],
+			(unsigned long)r->mixlshift[6], (unsigned long)r->mixlshift[7]);
+		SmokeLogLine(line);
+
+		_sntprintf(line, _countof(line),
+			_T("render-mix-mask: andx=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu andy=%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu"),
+			(unsigned long)r->mixandx[0], (unsigned long)r->mixandx[1],
+			(unsigned long)r->mixandx[2], (unsigned long)r->mixandx[3],
+			(unsigned long)r->mixandx[4], (unsigned long)r->mixandx[5],
+			(unsigned long)r->mixandx[6], (unsigned long)r->mixandx[7],
+			(unsigned long)r->mixandy[0], (unsigned long)r->mixandy[1],
+			(unsigned long)r->mixandy[2], (unsigned long)r->mixandy[3],
+			(unsigned long)r->mixandy[4], (unsigned long)r->mixandy[5],
+			(unsigned long)r->mixandy[6], (unsigned long)r->mixandy[7]);
+		SmokeLogLine(line);
+
+		_sntprintf(line, _countof(line),
+			_T("render-pal-flags: p0=%08lX p1=%08lX gb0=%08lX gb1=%08lX gs0=%08lX gs1=%08lX pb0=%08lX pb1=%08lX ps0=%08lX ps1=%08lX tx0=%08lX"),
+			(unsigned long)r->paldata[0], (unsigned long)r->paldata[1],
+			(unsigned long)r->paldataGB[0], (unsigned long)r->paldataGB[1],
+			(unsigned long)r->paldataGS[0], (unsigned long)r->paldataGS[1],
+			(unsigned long)r->paldataPB[0], (unsigned long)r->paldataPB[1],
+			(unsigned long)r->paldataPS[0], (unsigned long)r->paldataPS[1],
+			(unsigned long)r->paldata[0x100]);
+		SmokeLogLine(line);
+
+		for (page = 0; page < 4; page++) {
+			if (r->grppen[page]) {
+				SmokeLogRenderPage(r, page);
+			}
+		}
+		SmokeLogRenderBuffer(_T("render-textout"), r->textout, 1024, 512, 512);
+		SmokeLogRenderBuffer(_T("render-bgspbuf"), r->bgspbuf, 1024, 512, 512);
+		SmokeLogRenderBuffer(_T("render-mixbuf"), r->mixbuf, r->mixwidth, r->mixlen, r->height);
+	}
+	if (v) {
+		TCHAR line[384];
+		_sntprintf(line, _countof(line),
+			_T("vc-state: vr1=%02lX/%02lX vr2=%02lX/%02lX pri=%lu,%lu,%lu gp=%lu,%lu,%lu,%lu gs=%d,%d,%d,%d flags siz=%d exon=%d hp=%d bp=%d gg=%d gt=%d son=%d ton=%d gon=%d"),
+			(unsigned long)v->vr1h, (unsigned long)v->vr1l,
+			(unsigned long)v->vr2h, (unsigned long)v->vr2l,
+			(unsigned long)v->sp, (unsigned long)v->tx, (unsigned long)v->gr,
+			(unsigned long)v->gp[0], (unsigned long)v->gp[1],
+			(unsigned long)v->gp[2], (unsigned long)v->gp[3],
+			v->gs[0] ? 1 : 0, v->gs[1] ? 1 : 0,
+			v->gs[2] ? 1 : 0, v->gs[3] ? 1 : 0,
+			v->siz ? 1 : 0, v->exon ? 1 : 0, v->hp ? 1 : 0,
+			v->bp ? 1 : 0, v->gg ? 1 : 0, v->gt ? 1 : 0,
+			v->son ? 1 : 0, v->ton ? 1 : 0, v->gon ? 1 : 0);
+		SmokeLogLine(line);
+	}
+	if (c) {
+		TCHAR line[384];
+		_sntprintf(line, _countof(line),
+			_T("crtc-state: reg28=%02X reg29=%02X text=%lu,%lu grp=%lu,%lu/%lu,%lu/%lu,%lu/%lu,%lu vscan=%d vdots=%d vcount=%lu vdisp=%d vblank=%d raster=%d"),
+			c->reg[0x28], c->reg[0x29],
+			(unsigned long)c->text_scrlx, (unsigned long)c->text_scrly,
+			(unsigned long)c->grp_scrlx[0], (unsigned long)c->grp_scrly[0],
+			(unsigned long)c->grp_scrlx[1], (unsigned long)c->grp_scrly[1],
+			(unsigned long)c->grp_scrlx[2], (unsigned long)c->grp_scrly[2],
+			(unsigned long)c->grp_scrlx[3], (unsigned long)c->grp_scrly[3],
+			c->v_scan, c->v_dots, (unsigned long)c->v_count,
+			c->v_disp ? 1 : 0, c->v_blank ? 1 : 0, c->raster_count);
+		SmokeLogLine(line);
 	}
 }
 
@@ -393,6 +655,15 @@ static int SmokeJoyButton(LPCTSTR name)
 	return -1;
 }
 
+static BOOL SmokeJoyAxis(LPCTSTR name, int *axis, DWORD *value)
+{
+	if (!_tcsicmp(name, _T("UP"))) { *axis = 1; *value = (DWORD)-2048; return TRUE; }
+	if (!_tcsicmp(name, _T("DOWN"))) { *axis = 1; *value = (DWORD)2047; return TRUE; }
+	if (!_tcsicmp(name, _T("LEFT"))) { *axis = 0; *value = (DWORD)-2048; return TRUE; }
+	if (!_tcsicmp(name, _T("RIGHT"))) { *axis = 0; *value = (DWORD)2047; return TRUE; }
+	return FALSE;
+}
+
 static BOOL SmokeParseJoyAction(LPCTSTR spec, smoke_action_t *action)
 {
 	TCHAR name[32];
@@ -410,14 +681,22 @@ static BOOL SmokeParseJoyAction(LPCTSTR spec, smoke_action_t *action)
 		memmove(name, name + 2, (_tcslen(name + 2) + 1) * sizeof(TCHAR));
 	}
 	button = SmokeJoyButton(name);
-	if ((button < 0) || !duration) {
+	if (!duration) {
 		return FALSE;
 	}
 
 	memset(action, 0, sizeof(*action));
-	action->type = SmokeActionJoy;
+	if (button >= 0) {
+		action->type = SmokeActionJoy;
+		action->button = button;
+	}
+	else if (SmokeJoyAxis(name, &action->axis, &action->axis_value)) {
+		action->type = SmokeActionJoyAxis;
+	}
+	else {
+		return FALSE;
+	}
 	action->port = port;
-	action->button = button;
 	action->start = start;
 	action->end = start + duration;
 	_tcsncpy(action->name, name, _countof(action->name) - 1);
@@ -1072,7 +1351,8 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 
 
 	/* Set main-window size and fullscreen size here */
-	// 768x512 is treated as the 1.0x base size.
+	// Match XM6p's 1.0x base draw area. 768x512 clips modes that need the
+	// original CRT emulation margins (for example high-res HDF titles).
 	rect.left = 0;
 	rect.top = 0;
 
@@ -1084,8 +1364,8 @@ void FASTCALL CFrmWnd::InitPos(BOOL bStart)
 	}
 	else /* In windowed mode, 1024x768 is used */
 	{
-		rect.right = (768 * scalePercent) / 100;
-		rect.bottom = (512 * scalePercent) / 100;
+		rect.right = (824 * scalePercent) / 100;
+		rect.bottom = (580 * scalePercent) / 100;
 	}
 	::AdjustWindowRectEx(&rect, GetView()->GetStyle(), FALSE, GetView()->GetExStyle());
 	m_StatusBar.GetWindowRect(&rectStatus);
@@ -2082,7 +2362,8 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 				if (g_smokeVisibleActions[i].end > g_smokeVisibleLastActionFrame) {
 					g_smokeVisibleLastActionFrame = g_smokeVisibleActions[i].end;
 				}
-				if (g_smokeVisibleActions[i].type == SmokeActionJoy) {
+				if ((g_smokeVisibleActions[i].type == SmokeActionJoy) ||
+					(g_smokeVisibleActions[i].type == SmokeActionJoyAxis)) {
 					SmokeEnsureJoyPort(ppi, g_smokeVisibleActions[i].port);
 				}
 			}
@@ -2111,6 +2392,17 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
 						SmokeLogFormat(_T("joy-down=%s"), g_smokeVisibleActions[i].name);
 					}
+					else if (g_smokeVisibleActions[i].type == SmokeActionJoyAxis) {
+						if (GetInput()) {
+							GetInput()->SetSmokeJoyAxis(g_smokeVisibleActions[i].port,
+								g_smokeVisibleActions[i].axis, TRUE, g_smokeVisibleActions[i].axis_value);
+						}
+						g_smokeVisibleJoy[g_smokeVisibleActions[i].port].axis[g_smokeVisibleActions[i].axis] =
+							g_smokeVisibleActions[i].axis_value;
+						ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+						SmokeLogFormat(_T("joy-down=%s"), g_smokeVisibleActions[i].name);
+					}
 				}
 				if (g_smokeVisibleActions[i].active &&
 					(g_smokeVisibleFrames == g_smokeVisibleActions[i].end)) {
@@ -2126,6 +2418,16 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 						}
 						g_smokeVisibleJoy[g_smokeVisibleActions[i].port].
 							button[g_smokeVisibleActions[i].button] = FALSE;
+						ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+						SmokeLogFormat(_T("joy-up=%s"), g_smokeVisibleActions[i].name);
+					}
+					else if (g_smokeVisibleActions[i].type == SmokeActionJoyAxis) {
+						if (GetInput()) {
+							GetInput()->SetSmokeJoyAxis(g_smokeVisibleActions[i].port,
+								g_smokeVisibleActions[i].axis, FALSE, 0);
+						}
+						g_smokeVisibleJoy[g_smokeVisibleActions[i].port].axis[g_smokeVisibleActions[i].axis] = 0;
 						ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
 							&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
 						SmokeLogFormat(_T("joy-up=%s"), g_smokeVisibleActions[i].name);
@@ -2153,6 +2455,7 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 
 	g_smokeVisibleActive = FALSE;
 	GetScheduler()->Enable(FALSE);
+	SmokeLogRenderState();
 
 	for (i = 0; i < g_smokeVisibleActionCount; i++) {
 		if (g_smokeVisibleActions[i].active) {
@@ -2167,6 +2470,15 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 				}
 				g_smokeVisibleJoy[g_smokeVisibleActions[i].port].
 					button[g_smokeVisibleActions[i].button] = FALSE;
+				ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
+					&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
+			}
+			else if (g_smokeVisibleActions[i].type == SmokeActionJoyAxis) {
+				if (GetInput()) {
+					GetInput()->SetSmokeJoyAxis(g_smokeVisibleActions[i].port,
+						g_smokeVisibleActions[i].axis, FALSE, 0);
+				}
+				g_smokeVisibleJoy[g_smokeVisibleActions[i].port].axis[g_smokeVisibleActions[i].axis] = 0;
 				ppi->SetJoyInfo(g_smokeVisibleActions[i].port,
 					&g_smokeVisibleJoy[g_smokeVisibleActions[i].port]);
 			}

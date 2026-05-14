@@ -838,11 +838,10 @@ void FASTCALL CDrawView::SetupBitmap()
 	p = (BITMAPINFOHEADER*) new BYTE[sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD)];
 	memset(p, 0, sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD));
 
-	// Create bitmap information
-	m_Info.nBMPWidth = rect.Width();
-
-	/* Bitmap height is set here */
-	m_Info.nBMPHeight = (rect.Height() < 512) ? 512 : rect.Height();
+	// XM6p keeps a full 1024x1024 composition surface regardless of
+	// the current window size; the visible view is clipped/scaled later.
+	m_Info.nBMPWidth = 1024;
+	m_Info.nBMPHeight = 1024;
 	p->biSize = sizeof(BITMAPINFOHEADER);
 	p->biWidth = m_Info.nBMPWidth;
 	p->biHeight = -m_Info.nBMPHeight;
