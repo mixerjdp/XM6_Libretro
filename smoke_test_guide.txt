@@ -140,7 +140,7 @@ Logs
 
 The smoke test writes a log to:
 
-C:\tmp2\xm6_smoke_savestate.log
+C:\tmp\xm6_smoke_savestate.log
 
 If that path is not available, it falls back to:
 
