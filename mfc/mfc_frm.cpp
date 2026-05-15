@@ -21,6 +21,7 @@
 #include "fdc.h"
 #include "fdi.h"
 #include "render.h"
+#include "keyboard.h"
 #include "mfc_frm.h"
 #include "mfc_draw.h"
 #include "mfc_res.h"
@@ -37,6 +38,7 @@
 #include "mfc_info.h"
 #include "mfc_cfg.h"
 #include "mfc_stat.h"
+#include "mfc_smoke.h"
 static void FASTCALL VMHostSyncLockCallback(void *user)
 {
 	(void)user;
@@ -1408,6 +1410,8 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	LPSTR lpszCmd;
 	LPCTSTR lpszCommand;
 	BOOL bFullScreen;
+	BOOL bSmokeSaveState;
+	BOOL bSmokeVisible;
 
 	// Handle startup errors first
 	switch (m_nStatus) {
@@ -1477,11 +1481,39 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 		OnReset();
 	}
 
-	RestoreDiskState();
-
 	lpszCmd = AfxGetApp()->m_lpCmdLine;
 	lpszCommand = A2T(lpszCmd);
-	if (_tcslen(lpszCommand) > 0) {
+
+	bSmokeSaveState = SmokeIsSaveStateCommand();
+	bSmokeVisible = SmokeIsVisibleCommand();
+	if (bSmokeSaveState && !bSmokeVisible) {
+		BOOL bSmoke = SmokeSaveState(lpszCommand);
+		::ExitProcess(bSmoke ? 0 : 1);
+	}
+
+	if (bSmokeSaveState && bSmokeVisible) {
+		TCHAR szSmokeDisk[_MAX_PATH];
+		CFileStatus smokeInputStatus;
+
+		SmokeLogLine(_T("smoke-visible: early mount"));
+		if (!SmokeReadOptionValue(lpszCommand, _T("--smoke-savestate"), NULL,
+			szSmokeDisk, _countof(szSmokeDisk))) {
+			SmokeLogLine(_T("smoke-visible: invalid disk argument"));
+			::ExitProcess(1);
+		}
+		SmokeLogFormat(_T("disk=%s"), szSmokeDisk);
+		if (!CFile::GetStatus(szSmokeDisk, smokeInputStatus)) {
+			SmokeLogLine(_T("smoke-visible: disk not found"));
+			::ExitProcess(1);
+		}
+		InitCmd(szSmokeDisk);
+		SmokeLogLine(_T("smoke-visible: early mount complete"));
+	}
+	else {
+		RestoreDiskState();
+	}
+
+	if (!bSmokeSaveState && (_tcslen(lpszCommand) > 0)) {
 		InitCmd(lpszCommand);
 	}
 
@@ -1503,7 +1535,13 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	while (pComponent) {
 		if (pComponent->GetID() == MAKEID('S', 'C', 'H', 'E')) {
 			if (!config.power_off) {
+				if (bSmokeSaveState && bSmokeVisible) {
+					SmokeLogLine(_T("smoke-visible: enabling scheduler"));
+				}
 				pComponent->Enable(TRUE);
+				if (bSmokeSaveState && bSmokeVisible) {
+					SmokeLogLine(_T("smoke-visible: scheduler component enabled"));
+				}
 			}
 			break;
 		}
@@ -1511,6 +1549,12 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 	}
 
 	::UnlockVM();
+	if (bSmokeSaveState && bSmokeVisible) {
+		if (!SmokeStartVisible(lpszCommand)) {
+			::ExitProcess(1);
+		}
+		SmokeLogLine(_T("smoke-visible: bootstrap unlocked"));
+	}
 	// Main loop
 	DWORD dwStartTick = ::GetTickCount();
 	BOOL bAutoResetDone = FALSE;
@@ -1544,6 +1588,9 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 			// Update periodic timers
 			dwNow = ::GetTickCount();
 
+			if (SmokeVisibleShouldPoll(dwNow)) {
+				SmokeVisibleTimer();
+			}
 
 			if ((dwNow - dwTick20) >= 20) {
 				dwTick20 = dwNow;
@@ -1551,7 +1598,7 @@ LONG CFrmWnd::OnKick(UINT /*uParam*/, LONG /*lParam*/)
 				UpdateExec();
 
 				// HACK: auto-reset to work around cold-boot bug
-				if (!bAutoResetDone && (dwNow - dwStartTick) >= 90) {
+				if (!bSmokeSaveState && !bAutoResetDone && (dwNow - dwStartTick) >= 90) {
 					bAutoResetDone = TRUE;
 					OnReset();
 				}

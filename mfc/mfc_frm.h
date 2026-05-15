@@ -73,6 +73,12 @@ public:
 	// Drag and drop support
 	BOOL FASTCALL InitCmdSub(int nDrive, LPCTSTR lpszPath);
 									// Command-line processing subwindow
+	BOOL FASTCALL SmokeSaveState(LPCTSTR lpszCmd);
+									// Headless savestate smoke test
+	BOOL FASTCALL SmokeStartVisible(LPCTSTR lpszCmd);
+									// Visible savestate smoke test
+	void FASTCALL SmokeVisibleTimer();
+									// Visible smoke timer tick
 	BOOL m_bFullScreen;
 	BOOL m_bBorderless;
 	BOOL m_bVSyncEnabled;
@@ -584,6 +590,8 @@ private:
 										// Open subwindow
 	BOOL FASTCALL OnOpenPrep(const Filepath& path, BOOL bWarning = TRUE);
 										// Open check
+	BOOL FASTCALL BuildQuickStatePath(Filepath& path);
+										// Build quick savestate path
 	void FASTCALL OnSaveSub(const Filepath& path);
 										// Save subwindow
 	void FASTCALL OnFDOpen(int nDrive);
