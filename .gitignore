@@ -370,3 +370,4 @@ FodyWeavers.xsd
 /nul
 /.vscode
 /.codex_tmp
+/libretro/Release_x64
