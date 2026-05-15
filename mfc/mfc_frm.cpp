@@ -23,6 +23,7 @@
 #include "render.h"
 #include "crtc.h"
 #include "vc.h"
+#include "sprite.h"
 #include "keyboard.h"
 #include "ppi.h"
 #include "mfc_frm.h"
@@ -308,6 +309,8 @@ static void SmokeLogRenderState()
 	const CRTC::crtc_t *c;
 	const VC *vc;
 	const VC::vc_t *v;
+	const Sprite *sprite;
+	Sprite::sprite_t spr;
 	int page;
 
 	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
@@ -321,6 +324,7 @@ static void SmokeLogRenderState()
 	c = crtc ? crtc->GetWorkAddr() : NULL;
 	vc = render->GetVCDevice();
 	v = vc ? vc->GetWorkAddr() : NULL;
+	sprite = render->GetSpriteDevice();
 
 	if (r) {
 		TCHAR line[512];
@@ -437,6 +441,22 @@ static void SmokeLogRenderState()
 			c->v_disp ? 1 : 0, c->v_blank ? 1 : 0, c->raster_count);
 		SmokeLogLine(line);
 	}
+	if (sprite) {
+		TCHAR line[384];
+		sprite->GetSprite(&spr);
+		_sntprintf(line, _countof(line),
+			_T("sprite-state: connect=%d disp=%d bg_on=%d,%d bg_area=%lu,%lu bg_scroll=%lu,%lu/%lu,%lu bg_size=%d hres=%lu vres=%lu low=%d hdisp=%lu vdisp=%lu"),
+			spr.connect ? 1 : 0, spr.disp ? 1 : 0,
+			spr.bg_on[0] ? 1 : 0, spr.bg_on[1] ? 1 : 0,
+			(unsigned long)spr.bg_area[0], (unsigned long)spr.bg_area[1],
+			(unsigned long)spr.bg_scrlx[0], (unsigned long)spr.bg_scrly[0],
+			(unsigned long)spr.bg_scrlx[1], (unsigned long)spr.bg_scrly[1],
+			spr.bg_size ? 1 : 0,
+			(unsigned long)spr.h_res, (unsigned long)spr.v_res,
+			spr.lowres ? 1 : 0,
+			(unsigned long)spr.h_disp, (unsigned long)spr.v_disp);
+		SmokeLogLine(line);
+	}
 }
 
 static BOOL SmokeValidatePx68kVideoFrame()
@@ -448,8 +468,13 @@ static BOOL SmokeValidatePx68kVideoFrame()
 	int stride;
 	DWORD nonzero;
 	DWORD signature;
+	WORD min_value;
+	WORD max_value;
+	WORD first_values[8];
+	int first_count;
 	int x;
 	int y;
+	BOOL haveScreen;
 
 	render = (Render*)::GetVM()->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	if (!render) {
@@ -460,24 +485,32 @@ static BOOL SmokeValidatePx68kVideoFrame()
 		SmokeLogLine(_T("px68k-video: backend not active"));
 		return FALSE;
 	}
-	if (!render->EnsurePx68kFrame()) {
-		SmokeLogLine(_T("px68k-video: EnsurePx68kFrame failed"));
-		return FALSE;
-	}
 	pixels = NULL;
 	width = height = stride = 0;
-	if (!render->GetPx68kScreen(&pixels, &width, &height, &stride) ||
-		!pixels || (width <= 0) || (height <= 0) || (stride < width)) {
+	haveScreen = render->GetPx68kScreen(&pixels, &width, &height, &stride) &&
+		pixels && (width > 0) && (height > 0) && (stride >= width);
+	if (!haveScreen) {
 		SmokeLogLine(_T("px68k-video: no screen buffer"));
 		return FALSE;
 	}
-
 	nonzero = 0;
 	signature = 2166136261u;
+	min_value = 0xffff;
+	max_value = 0x0000;
+	first_count = 0;
 	for (y = 0; y < height; y++) {
 		const WORD *row = pixels + (y * stride);
 		for (x = 0; x < width; x++) {
 			WORD value = row[x];
+			if (first_count < 8) {
+				first_values[first_count++] = value;
+			}
+			if (value < min_value) {
+				min_value = value;
+			}
+			if (value > max_value) {
+				max_value = value;
+			}
 			if (value != 0) {
 				nonzero++;
 			}
@@ -485,11 +518,58 @@ static BOOL SmokeValidatePx68kVideoFrame()
 			signature *= 16777619u;
 		}
 	}
+	if (nonzero == 0) {
+		if (!render->EnsurePx68kFrame()) {
+			SmokeLogLine(_T("px68k-video: EnsurePx68kFrame failed"));
+			return FALSE;
+		}
+		pixels = NULL;
+		width = height = stride = 0;
+		if (!render->GetPx68kScreen(&pixels, &width, &height, &stride) ||
+			!pixels || (width <= 0) || (height <= 0) || (stride < width)) {
+			SmokeLogLine(_T("px68k-video: no screen buffer after redraw"));
+			return FALSE;
+		}
+		nonzero = 0;
+		signature = 2166136261u;
+		min_value = 0xffff;
+		max_value = 0x0000;
+		first_count = 0;
+		for (y = 0; y < height; y++) {
+			const WORD *row = pixels + (y * stride);
+			for (x = 0; x < width; x++) {
+				WORD value = row[x];
+				if (first_count < 8) {
+					first_values[first_count++] = value;
+				}
+				if (value < min_value) {
+					min_value = value;
+				}
+				if (value > max_value) {
+					max_value = value;
+				}
+				if (value != 0) {
+					nonzero++;
+				}
+				signature ^= (DWORD)value;
+				signature *= 16777619u;
+			}
+		}
+	}
 
 	SmokeLogFormatDword(_T("px68k-video-width=%lu"), (DWORD)width);
 	SmokeLogFormatDword(_T("px68k-video-height=%lu"), (DWORD)height);
 	SmokeLogFormatDword(_T("px68k-video-nonzero=%lu"), nonzero);
 	SmokeLogFormatDword(_T("px68k-video-signature=%lu"), signature);
+	{
+		TCHAR line[256];
+		_sntprintf(line, _countof(line),
+			_T("px68k-video-sample: min=%04X max=%04X first=%04X,%04X,%04X,%04X,%04X,%04X,%04X,%04X"),
+			min_value, max_value,
+			first_values[0], first_values[1], first_values[2], first_values[3],
+			first_values[4], first_values[5], first_values[6], first_values[7]);
+		SmokeLogLine(line);
+	}
 	if (nonzero == 0) {
 		SmokeLogLine(_T("px68k-video: blank framebuffer"));
 		return FALSE;

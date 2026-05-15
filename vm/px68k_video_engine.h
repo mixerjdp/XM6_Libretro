@@ -63,6 +63,8 @@ class Render;
 typedef struct Px68kCrtcRegs {
 	BYTE regs[48];					// CRTC registers (24 words)
 	BYTE mode;						// Operation mode
+	BOOL lowres;					// 15kHz mode
+	int vd;							// Vertical resolution mode
 	DWORD textdotx;					// Text dot X
 	DWORD textdoty;					// Text dot Y
 	WORD vstart;					// Vertical start

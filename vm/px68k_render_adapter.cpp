@@ -293,6 +293,8 @@ void Px68kRenderAdapter::SyncCRTCState(const CRTC *crtc)
 
 	std::memcpy(es->crtc.regs, state->regs, sizeof(es->crtc.regs));
 	es->crtc.mode = state->mode;
+	es->crtc.lowres = state->lowres;
+	es->crtc.vd = state->vd;
 	es->crtc.textdotx = KeepStableVisibleExtent((unsigned int)es->crtc.textdotx, incoming_textdotx);
 	es->crtc.textdoty = KeepStableVisibleExtent((unsigned int)es->crtc.textdoty, incoming_textdoty);
 	es->crtc.vstart = state->vstart;
@@ -491,7 +493,6 @@ void Px68kRenderAdapter::SyncDynamicState(Render *owner)
 	// CRTC/VC updates are inexpensive and keep scanline timing aligned.
 	SyncCRTCState(crtc_);
 	SyncVCState(vc_);
-
 	if (work->palette || palette_dirty_) {
 		SyncPaletteState(vc_);
 		work->palette = FALSE;
@@ -536,6 +537,7 @@ void Px68kRenderAdapter::StartFrame(Render *owner)
 		sprite_ = owner->GetSpriteDevice();
 		SyncDynamicState(owner);
 	}
+	engine_->TVRAMSetAllDirty();
 	engine_->StartFrame();
 	current_raster_ = 0;
 	drawn_lines_ = 0;
@@ -545,7 +547,7 @@ void Px68kRenderAdapter::EndFrame(Render *owner)
 {
 	if (!engine_) return;
 
-	if (drawn_lines_ == 0 && owner) {
+	if (owner) {
 		SyncAllState(owner);
 		engine_->TVRAMSetAllDirty();
 		engine_->DrawFrame();
@@ -582,17 +584,17 @@ void Px68kRenderAdapter::HSync(Render *owner, int raster)
 		if ((raster & 1) == 0) {
 			return;
 		}
-		DrawScanline((int)visible_vline);
+		DrawScanline(drawn_lines_);
 		return;
 	}
 
 	if (view->state.vstep == 4) {
-		DrawScanline((int)visible_vline);
-		DrawScanline((int)(visible_vline + 1));
+		DrawScanline(drawn_lines_);
+		DrawScanline(drawn_lines_);
 		return;
 	}
 
-	DrawScanline((int)visible_vline);
+	DrawScanline(drawn_lines_);
 }
 
 void Px68kRenderAdapter::DrawFrame(Render *owner)
@@ -672,6 +674,12 @@ DWORD Px68kRenderAdapter::GetScreenHeight() const
 {
 	if (!engine_) return 0;
 	return engine_->GetTextDotY();
+}
+
+DWORD Px68kRenderAdapter::GetScreenStride() const
+{
+	if (!engine_) return 0;
+	return PX68K_FULLSCREEN_WIDTH;
 }
 
 void Px68kRenderAdapter::BGWrite(DWORD addr, BYTE data)

@@ -4166,7 +4166,7 @@ BOOL FASTCALL Render::GetPx68kScreen(const WORD **out_pixels, int *out_width, in
 	if (out_pixels) *out_pixels = px68k_adapter->GetScreenBuffer();
 	if (out_width) *out_width = (int)px68k_adapter->GetScreenWidth();
 	if (out_height) *out_height = (int)px68k_adapter->GetScreenHeight();
-	if (out_stride) *out_stride = (int)px68k_adapter->GetScreenWidth();
+	if (out_stride) *out_stride = (int)px68k_adapter->GetScreenStride();
 	return TRUE;
 }
 

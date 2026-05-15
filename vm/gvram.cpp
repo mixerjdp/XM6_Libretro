@@ -1487,6 +1487,9 @@ void FASTCALL GVRAM::WriteByte(DWORD addr, DWORD data)
 
 	// ƒnƒ“ƒhƒ‰‚É”C‚¹‚é
 	handler->WriteByte(addr & 0x1fffff, data);
+	if (render) {
+		render->GVRAMWrite(addr & 0x1fffff, (BYTE)data);
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -1508,6 +1511,10 @@ void FASTCALL GVRAM::WriteWord(DWORD addr, DWORD data)
 
 	// ƒnƒ“ƒhƒ‰‚É”C‚¹‚é
 	handler->WriteWord(addr & 0x1fffff, data);
+	if (render) {
+		render->GVRAMWrite(addr & 0x1fffff, (BYTE)((data >> 8) & 0xff));
+		render->GVRAMWrite((addr + 1) & 0x1fffff, (BYTE)(data & 0xff));
+	}
 }
 
 //---------------------------------------------------------------------------

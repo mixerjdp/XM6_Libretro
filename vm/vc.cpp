@@ -332,6 +332,7 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 
 			// レンダラへ通知
 			render->SetPalette(addr >> 1);
+			render->VCtrlWrite(0x00e82000 + (addr ^ 1), (BYTE)data);
 		}
 		return;
 	}
@@ -340,24 +341,29 @@ void FASTCALL VC::WriteByte(DWORD addr, DWORD data)
 	if (addr < 0x500) {
 		if (addr & 1) {
 			SetVR0L(data);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)data);
 		}
 		return;
 	}
 	if (addr < 0x600) {
 		if (addr & 1) {
 			SetVR1L(data);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)data);
 		}
 		else {
 			SetVR1H(data);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)data);
 		}
 		return;
 	}
 	if (addr < 0x700) {
 		if (addr & 1) {
 			SetVR2L(data);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)data);
 		}
 		else {
 			SetVR2H(data);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)data);
 		}
 		return;
 	}
@@ -399,6 +405,8 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 
 			// レンダラへ通知
 			render->SetPalette(addr >> 1);
+			render->VCtrlWrite(0x00e82000 + addr, (BYTE)((data >> 8) & 0xff));
+			render->VCtrlWrite(0x00e82000 + addr + 1, (BYTE)(data & 0xff));
 		}
 		return;
 	}
@@ -406,16 +414,21 @@ void FASTCALL VC::WriteWord(DWORD addr, DWORD data)
 	// ビデオコントローラレジスタ
 	if (addr < 0x500) {
 		SetVR0L((BYTE)data);
+		render->VCtrlWrite(0x00e82000 + addr + 1, (BYTE)(data & 0xff));
 		return;
 	}
 	if (addr < 0x600) {
 		SetVR1L((BYTE)data);
 		SetVR1H(data >> 8);
+		render->VCtrlWrite(0x00e82000 + addr, (BYTE)((data >> 8) & 0xff));
+		render->VCtrlWrite(0x00e82000 + addr + 1, (BYTE)(data & 0xff));
 		return;
 	}
 	if (addr < 0x700) {
 		SetVR2L((BYTE)data);
 		SetVR2H(data >> 8);
+		render->VCtrlWrite(0x00e82000 + addr, (BYTE)((data >> 8) & 0xff));
+		render->VCtrlWrite(0x00e82000 + addr + 1, (BYTE)(data & 0xff));
 		return;
 	}
 

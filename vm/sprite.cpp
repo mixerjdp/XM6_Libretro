@@ -450,6 +450,7 @@ void FASTCALL Sprite::WriteByte(DWORD addr, DWORD data)
 
 		// コントロール
 		Control(addr, data);
+		NotifyPx68kBGWrite(addr, (WORD)data);
 		return;
 	}
 
@@ -549,6 +550,7 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 
 		// コントロール
 		Control(addr, data);
+		NotifyPx68kBGWrite(addr, (WORD)data);
 		return;
 	}
 
@@ -600,6 +602,8 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 		// スプライトスクロールレジスタは書き換え後
 		// 3ラスター後にしか反映しない
 		index = (int)(addr >> 3);
+		NotifyPx68kBGWrite(addr, (WORD)data);
+
 		if (sphsync[index]==0) {
 			sphsync[index]=3;
 
@@ -618,6 +622,9 @@ void FASTCALL Sprite::WriteWord(DWORD addr, DWORD data)
 
 	if (addr >= 0xc000) {
 		render->BGMem(addr, (WORD)data);
+	}
+	if (addr >= 0x8000) {
+		NotifyPx68kBGWrite(addr, (WORD)data);
 	}
 }
 
@@ -796,6 +803,17 @@ void FASTCALL Sprite::Control(DWORD addr, DWORD data)
 //	レンダラへ通知
 //
 //---------------------------------------------------------------------------
+void FASTCALL Sprite::NotifyPx68kBGWrite(DWORD addr, WORD data)
+{
+	if (!render) {
+		return;
+	}
+
+	addr = memdev.first + (addr & 0xffff);
+	render->SpriteBGWrite(addr, (BYTE)((data >> 8) & 0xff));
+	render->SpriteBGWrite(addr + 1, (BYTE)(data & 0xff));
+}
+
 void FASTCALL Sprite::NotifyRender()
 {
 	int i;

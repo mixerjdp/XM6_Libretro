@@ -2683,7 +2683,7 @@ void FASTCALL Px68kVideoEngine::WinDraw_DrawLine()
 			int s1, s2;
 			s1 = (((state_.bgsprite.bg_regs[0x11] & 4) ? 2 : 1) - ((state_.bgsprite.bg_regs[0x11] & 16) ? 1 : 0));
 			s2 = (((state_.crtc.regs[0x29] & 4) ? 2 : 1) - ((state_.crtc.regs[0x29] & 16) ? 1 : 0));
-			state_.bgsprite.vlinebg = physical_vline_;
+			state_.bgsprite.vlinebg = state_.vline;
 			state_.bgsprite.vlinebg <<= s1;
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));
@@ -2697,7 +2697,7 @@ void FASTCALL Px68kVideoEngine::WinDraw_DrawLine()
 			int s1, s2;
 			s1 = (((state_.bgsprite.bg_regs[0x11] & 4) ? 2 : 1) - ((state_.bgsprite.bg_regs[0x11] & 16) ? 1 : 0));
 			s2 = (((state_.crtc.regs[0x29] & 4) ? 2 : 1) - ((state_.crtc.regs[0x29] & 16) ? 1 : 0));
-			state_.bgsprite.vlinebg = physical_vline_;
+			state_.bgsprite.vlinebg = state_.vline;
 			state_.bgsprite.vlinebg <<= s1;
 			state_.bgsprite.vlinebg >>= s2;
 			if (!(state_.bgsprite.bg_regs[0x11] & 16)) state_.bgsprite.vlinebg -= ((state_.bgsprite.bg_regs[0x0f] >> s1) - (state_.crtc.regs[0x0d] >> s2));

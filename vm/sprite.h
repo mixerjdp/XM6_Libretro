@@ -90,6 +90,7 @@ private:
 	void FASTCALL Control(DWORD addr, DWORD ctrl);
 										// コントロール
 	void FASTCALL NotifyRender();
+	void FASTCALL NotifyPx68kBGWrite(DWORD addr, WORD data);
 										// レンダラ通知
 	sprite_t spr;
 										// 内部データ

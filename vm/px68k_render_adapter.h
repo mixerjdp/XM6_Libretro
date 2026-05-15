@@ -76,6 +76,7 @@ public:
 	WORD* GetScreenBuffer() const;
 	DWORD GetScreenWidth() const;
 	DWORD GetScreenHeight() const;
+	DWORD GetScreenStride() const;
 
 	// Mode selection
 	void SetDebugText(BOOL enable) { debug_text_ = enable; }

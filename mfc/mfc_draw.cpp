@@ -1374,15 +1374,19 @@ BOOL FASTCALL CDrawView::CopyPx68kFrameToBits(int *pWidth, int *pHeight, int *pP
 	int srcStride;
 	int copyWidth;
 	int copyHeight;
+	int px68kHMul;
+	int px68kVMul;
+	int displayWidth;
 	int x;
 	int y;
 
-	if (!m_bRenderFastDummy || !m_Info.pRender || !m_Info.pBits) {
+	if (!m_Info.pRender || !m_Info.pBits) {
 		return FALSE;
 	}
-	if (!m_Info.pRender->EnsurePx68kFrame()) {
+	if (!m_bRenderFastDummy && !m_Info.pRender->IsRenderFastDummyEnabled()) {
 		return FALSE;
 	}
+	m_bRenderFastDummy = TRUE;
 	src = NULL;
 	srcWidth = srcHeight = srcStride = 0;
 	if (!m_Info.pRender->GetPx68kScreen(&src, &srcWidth, &srcHeight, &srcStride) ||
@@ -1396,6 +1400,10 @@ BOOL FASTCALL CDrawView::CopyPx68kFrameToBits(int *pWidth, int *pHeight, int *pP
 		return FALSE;
 	}
 
+	px68kHMul = (copyWidth <= 256) ? 2 : 1;
+	px68kVMul = 1;
+	displayWidth = min(copyWidth * px68kHMul, m_Info.nBMPWidth);
+
 	for (y = 0; y < copyHeight; y++) {
 		const WORD *srcRow = src + (y * srcStride);
 		DWORD *dstRow = m_Info.pBits + (y * m_Info.nBMPWidth);
@@ -1407,13 +1415,22 @@ BOOL FASTCALL CDrawView::CopyPx68kFrameToBits(int *pWidth, int *pHeight, int *pP
 			r = (r << 3) | (r >> 2);
 			g = (g << 2) | (g >> 4);
 			b = (b << 3) | (b >> 2);
-			dstRow[x] = (r << 16) | (g << 8) | b;
+			if (px68kHMul == 2) {
+				const int dx = x * 2;
+				if (dx + 1 < displayWidth) {
+					dstRow[dx] = (r << 16) | (g << 8) | b;
+					dstRow[dx + 1] = dstRow[dx];
+				}
+			}
+			else {
+				dstRow[x] = (r << 16) | (g << 8) | b;
+			}
 		}
 	}
-	if (copyWidth < m_Info.nBMPWidth) {
+	if (displayWidth < m_Info.nBMPWidth) {
 		for (y = 0; y < copyHeight; y++) {
-			memset(m_Info.pBits + (y * m_Info.nBMPWidth) + copyWidth, 0,
-				(m_Info.nBMPWidth - copyWidth) * sizeof(DWORD));
+			memset(m_Info.pBits + (y * m_Info.nBMPWidth) + displayWidth, 0,
+				(m_Info.nBMPWidth - displayWidth) * sizeof(DWORD));
 		}
 	}
 	if (copyHeight < m_Info.nBMPHeight) {
@@ -1421,16 +1438,16 @@ BOOL FASTCALL CDrawView::CopyPx68kFrameToBits(int *pWidth, int *pHeight, int *pP
 			(m_Info.nBMPHeight - copyHeight) * m_Info.nBMPWidth * sizeof(DWORD));
 	}
 
-	m_Info.nWidth = copyWidth;
+	m_Info.nWidth = displayWidth;
 	m_Info.nHeight = copyHeight;
-	m_Info.nRendWidth = copyWidth;
+	m_Info.nRendWidth = displayWidth;
 	m_Info.nRendHeight = copyHeight;
 	m_Info.nRendHMul = 1;
-	m_Info.nRendVMul = 1;
+	m_Info.nRendVMul = px68kVMul;
 	m_Info.bBltAll = TRUE;
 	m_Info.dwDrawCount++;
 
-	if (pWidth) *pWidth = copyWidth;
+	if (pWidth) *pWidth = displayWidth;
 	if (pHeight) *pHeight = copyHeight;
 	if (pPitch) *pPitch = m_Info.nBMPWidth;
 	return TRUE;
@@ -1584,10 +1601,10 @@ void CDrawView::OnDraw(CDC *pDC)
 		return;
 	}
 
-	CopyPx68kFrameToBits();
-
 	// Recalculate
-	ReCalc(rect);
+	if (!CopyPx68kFrameToBits()) {
+		ReCalc(rect);
+	}
 
 	// Disconnect handling
 	if (::GetVM()->IsPower() != m_Info.bPower) {
