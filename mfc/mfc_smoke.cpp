@@ -57,6 +57,7 @@ typedef struct {
 
 static BOOL g_smokeVisibleActive = FALSE;
 static BOOL g_smokeVisibleSaved = FALSE;
+static BOOL g_smokeVisibleSaveRequested = FALSE;
 static BOOL g_smokeVisibleTickLogged = FALSE;
 static BOOL g_smokeVisibleActionsParsed = FALSE;
 static TCHAR g_smokeVisibleCmd[2048];
@@ -600,6 +601,7 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 	DWORD targetFrames;
 	BOOL scheduled;
 	BOOL saved;
+	BOOL saveRequested;
 
 	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("wt"));
 	if (!fp) {
@@ -634,23 +636,29 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 		OnReset();
 	}
 
-	UpdateStateFileName();
-	SMOKE_LOG1("state-name=%s", (LPCTSTR)m_strXM6FileName);
-	SMOKE_LOG1("state-dir=%s", (LPCTSTR)m_strSaveStatePath);
-	if (!BuildQuickStatePath(statePath)) {
-		SMOKE_LOG("BuildQuickStatePath failed");
-		if (fp) {
-			fclose(fp);
-		}
-		return FALSE;
-	}
-	SMOKE_LOG1("state-path=%s", statePath.GetPath());
-
 	actionCount = SmokeParseActions(lpszCmd, actions, SmokeActionMax);
 	runFrames = SmokeReadDwordOption(lpszCmd, _T("--smoke-run-frames"), 0);
 	saveFrame = SmokeReadDwordOption(lpszCmd, _T("--smoke-save-frame"), 0xffffffff);
-	scheduled = (BOOL)((actionCount > 0) || (runFrames > 0) || (saveFrame != 0xffffffff));
+	saveRequested = (BOOL)(saveFrame != 0xffffffff);
+	scheduled = (BOOL)((actionCount > 0) || (runFrames > 0) || saveRequested);
 	saved = FALSE;
+
+	if (saveRequested) {
+		UpdateStateFileName();
+		SMOKE_LOG1("state-name=%s", (LPCTSTR)m_strXM6FileName);
+		SMOKE_LOG1("state-dir=%s", (LPCTSTR)m_strSaveStatePath);
+		if (!BuildQuickStatePath(statePath)) {
+			SMOKE_LOG("BuildQuickStatePath failed");
+			if (fp) {
+				fclose(fp);
+			}
+			return FALSE;
+		}
+		SMOKE_LOG1("state-path=%s", statePath.GetPath());
+	}
+	else {
+		SMOKE_LOG("save-frame=disabled");
+	}
 
 	if (scheduled) {
 		CRTC *crtc;
@@ -698,19 +706,21 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 			}
 		}
 		targetFrames = runFrames;
-		if ((saveFrame != 0xffffffff) && (saveFrame > targetFrames)) {
+		if (saveRequested && (saveFrame > targetFrames)) {
 			targetFrames = saveFrame;
 		}
 		if (maxActionFrame > targetFrames) {
 			targetFrames = maxActionFrame;
 		}
-		if ((saveFrame == 0xffffffff) && (targetFrames > 0)) {
-			saveFrame = targetFrames;
-		}
 
 		SMOKE_LOG1("scheduled-actions=%d", actionCount);
 		SMOKE_LOG1("run-frames=%lu", (unsigned long)targetFrames);
-		SMOKE_LOG1("save-frame=%lu", (unsigned long)saveFrame);
+		if (saveRequested) {
+			SMOKE_LOG1("save-frame=%lu", (unsigned long)saveFrame);
+		}
+		else {
+			SMOKE_LOG("save-frame=disabled");
+		}
 
 		frames = 0;
 		lastCount = crtc->GetDispCount();
@@ -752,7 +762,7 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 				}
 			}
 
-			if (!saved && (frames == saveFrame)) {
+			if (saveRequested && !saved && (frames == saveFrame)) {
 				SMOKE_LOG("quick-save begin");
 				OnSaveSub(statePath);
 				saved = TRUE;
@@ -819,6 +829,16 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
 	}
 
+	if (!saveRequested) {
+		SMOKE_LOG("quick-save skipped");
+		SMOKE_LOG("quick-load skipped");
+		SMOKE_LOG("smoke: ok");
+		if (fp) {
+			fclose(fp);
+		}
+		return TRUE;
+	}
+
 	if (!saved) {
 		SMOKE_LOG("quick-save begin");
 		OnSaveSub(statePath);
@@ -876,33 +896,32 @@ BOOL FASTCALL CFrmWnd::SmokeStartVisible(LPCTSTR lpszCmd)
 	SmokeLogLine(_T("smoke-visible: start"));
 	SetEnvironmentVariableA("XM6_SMOKE_SAVESTATE", "1");
 
-	UpdateStateFileName();
-	if (!BuildQuickStatePath(g_smokeVisibleStatePath)) {
-		SmokeLogLine(_T("smoke-visible: BuildQuickStatePath failed"));
-		return FALSE;
-	}
-	SmokeLogFormat(_T("state-path=%s"), g_smokeVisibleStatePath.GetPath());
-
 	_tcsncpy(g_smokeVisibleCmd, lpszCmd, _countof(g_smokeVisibleCmd) - 1);
 	g_smokeVisibleCmd[_countof(g_smokeVisibleCmd) - 1] = _T('\0');
 	g_smokeVisibleActionCount = 0;
 	g_smokeVisibleActionsParsed = FALSE;
 	runFrames = SmokeReadDwordOption(lpszCmd, _T("--smoke-run-frames"), 0);
 	saveFrame = SmokeReadDwordOption(lpszCmd, _T("--smoke-save-frame"), 0xffffffff);
+	g_smokeVisibleSaveRequested = (BOOL)(saveFrame != 0xffffffff);
 	g_smokeVisibleHoldMs = SmokeReadDwordOption(lpszCmd, _T("--smoke-visible-hold-ms"), 0);
+	if (g_smokeVisibleSaveRequested) {
+		UpdateStateFileName();
+		if (!BuildQuickStatePath(g_smokeVisibleStatePath)) {
+			SmokeLogLine(_T("smoke-visible: BuildQuickStatePath failed"));
+			return FALSE;
+		}
+		SmokeLogFormat(_T("state-path=%s"), g_smokeVisibleStatePath.GetPath());
+	}
+	else {
+		SmokeLogLine(_T("state-path=disabled"));
+	}
 	SmokeLogLine(_T("smoke-visible: action parse deferred"));
 
 	g_smokeVisibleFirstActionFrame = 0xffffffff;
 	g_smokeVisibleLastActionFrame = 0;
 	g_smokeVisibleTargetFrames = runFrames;
-	if ((saveFrame != 0xffffffff) && (saveFrame > g_smokeVisibleTargetFrames)) {
+	if (g_smokeVisibleSaveRequested && (saveFrame > g_smokeVisibleTargetFrames)) {
 		g_smokeVisibleTargetFrames = saveFrame;
-	}
-	if ((saveFrame == 0xffffffff) && (g_smokeVisibleTargetFrames > 0)) {
-		saveFrame = g_smokeVisibleTargetFrames;
-	}
-	if (saveFrame == 0xffffffff) {
-		saveFrame = 0;
 	}
 	g_smokeVisibleSaveFrame = saveFrame;
 	g_smokeVisibleFrames = 0;
@@ -950,7 +969,12 @@ BOOL FASTCALL CFrmWnd::SmokeStartVisible(LPCTSTR lpszCmd)
 	SmokeLogLine(_T("smoke-visible: initial input state ready"));
 
 	SmokeLogFormatDword(_T("run-frames=%lu"), g_smokeVisibleTargetFrames);
-	SmokeLogFormatDword(_T("save-frame=%lu"), g_smokeVisibleSaveFrame);
+	if (g_smokeVisibleSaveRequested) {
+		SmokeLogFormatDword(_T("save-frame=%lu"), g_smokeVisibleSaveFrame);
+	}
+	else {
+		SmokeLogLine(_T("save-frame=disabled"));
+	}
 	SmokeLogFormatDword(_T("visible-hold-ms=%lu"), g_smokeVisibleHoldMs);
 
 	ShowWindow(SW_SHOW);
@@ -1094,7 +1118,8 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 			}
 		}
 
-		if (!g_smokeVisibleSaved && (g_smokeVisibleFrames >= g_smokeVisibleSaveFrame)) {
+		if (g_smokeVisibleSaveRequested && !g_smokeVisibleSaved &&
+			(g_smokeVisibleFrames >= g_smokeVisibleSaveFrame)) {
 			GetScheduler()->Enable(FALSE);
 			SmokeLogLine(_T("quick-save begin"));
 			OnSaveSub(g_smokeVisibleStatePath);
@@ -1143,21 +1168,28 @@ void FASTCALL CFrmWnd::SmokeVisibleTimer()
 		}
 	}
 
-	if (!g_smokeVisibleSaved) {
+	if (g_smokeVisibleSaveRequested && !g_smokeVisibleSaved) {
 		SmokeLogLine(_T("quick-save begin"));
 		OnSaveSub(g_smokeVisibleStatePath);
 		g_smokeVisibleSaved = TRUE;
 	}
 
-	ok = CFile::GetStatus(g_smokeVisibleStatePath.GetPath(), status);
-	if (ok) {
-		SmokeLogLine(_T("quick-save output exists"));
-		SmokeLogLine(_T("quick-load prep begin"));
-		ok = OnOpenPrep(g_smokeVisibleStatePath, FALSE);
+	ok = TRUE;
+	if (g_smokeVisibleSaveRequested) {
+		ok = CFile::GetStatus(g_smokeVisibleStatePath.GetPath(), status);
+		if (ok) {
+			SmokeLogLine(_T("quick-save output exists"));
+			SmokeLogLine(_T("quick-load prep begin"));
+			ok = OnOpenPrep(g_smokeVisibleStatePath, FALSE);
+		}
+		if (ok) {
+			SmokeLogLine(_T("quick-load sub begin"));
+			ok = OnOpenSub(g_smokeVisibleStatePath);
+		}
 	}
-	if (ok) {
-		SmokeLogLine(_T("quick-load sub begin"));
-		ok = OnOpenSub(g_smokeVisibleStatePath);
+	else {
+		SmokeLogLine(_T("quick-save skipped"));
+		SmokeLogLine(_T("quick-load skipped"));
 	}
 	if (ok && (g_smokeVisibleHoldMs > 0)) {
 		DWORD endTick = ::GetTickCount() + g_smokeVisibleHoldMs;

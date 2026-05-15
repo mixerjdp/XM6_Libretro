@@ -31,8 +31,8 @@ Required Option
 
 --smoke-savestate <path>
 
-Loads the given disk/image, runs the smoke scenario, saves a quick savestate,
-then loads it back to validate that save/load works.
+Loads the given disk/image or savestate and runs the smoke scenario. It only
+saves a new quick savestate when --smoke-save-frame is supplied.
 
 Mode Options
 ------------
@@ -51,8 +51,9 @@ Runs until the specified CRTC/display frame count is reached.
 
 --smoke-save-frame <frames>
 
-Saves the quick savestate at the specified frame instead of automatically
-saving at the final target frame.
+Saves the quick savestate at the specified frame, then loads it back to
+validate that save/load works. If this option is omitted, no savestate is
+written and the quick-load validation is skipped.
 
 --smoke-visible-hold-ms <milliseconds>
 
