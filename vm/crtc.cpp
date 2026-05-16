@@ -766,7 +766,7 @@ void FASTCALL CRTC::VSync()
 	crtc.v_synccnt = crtc.v_pulse;
 
 	// V-BLANK state and counter setup
-	if (crtc.v_front < 0) {
+	if (crtc.v_front <= 0) {
 		// Not yet displayed (minus)
 		crtc.v_blank = FALSE;
 		crtc.v_blankcnt = (-crtc.v_front) + 1;
@@ -821,7 +821,7 @@ void FASTCALL CRTC::ReCalc()
 		crtc.v_front = crtc.v_sync - ((p[7] & 0x3ff) + 1);
 
 		// If V-FRONT is negative, 1 is subtracted (interlace, scan doubler)
-		if (crtc.v_front < 0) {
+		if (crtc.v_front <= 0) {
 			over = -crtc.v_front;
 			over -= crtc.v_back;
 			if (over >= crtc.v_pulse) {
@@ -835,7 +835,10 @@ void FASTCALL CRTC::ReCalc()
 		crtc.h_dots -= (crtc.reg[0x04] + 5 - crtc.reg[0x02] - 1);
 		crtc.h_dots -= (crtc.reg[0x0] + 1 - crtc.reg[0x06] - 5);
 		crtc.h_dots *= 8;
-		crtc.v_dots = crtc.v_sync - crtc.v_pulse - crtc.v_back - crtc.v_front;
+		crtc.v_dots = crtc.v_sync - crtc.v_pulse - crtc.v_back;
+		if (crtc.v_front > 0) {
+			crtc.v_dots -= crtc.v_front;
+		}
 	}
 
 	// Horizontal settings (normal)
