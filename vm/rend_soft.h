@@ -84,14 +84,22 @@ void RendBG8(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *m
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(8x8, priority)
 void RendBG8C(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(8x8, priority, CMOV)
+void RendBG8F(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
+			DWORD *pcgbuf, DWORD *pal);	// BG(8x8, priority, force base)
 void RendBG8P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(8x8, priority copy)
+void RendBG8FP(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
+			DWORD *pcgbuf, DWORD *pal);	// BG(8x8, priority copy, force base)
 void RendBG16(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(16x16, priority)
 void RendBG16C(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(16x16, priority, CMOV)
+void RendBG16F(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
+			DWORD *pcgbuf, DWORD *pal);	// BG(16x16, priority, force base)
 void RendBG16P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
 			DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency);	// BG(16x16, priority copy)
+void RendBG16FP(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
+			DWORD *pcgbuf, DWORD *pal);	// BG(16x16, priority copy, force base)
 
 void RendMix00(DWORD *buf, BOOL *flag, int len);
 										// Mix(0 layer)

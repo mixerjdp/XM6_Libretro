@@ -272,7 +272,7 @@ private:
 										// Sprite register reset
 	void FASTCALL BGSprite(int raster);
 										// BG/Sprite
-	void FASTCALL BG(int page, int raster, DWORD *buf);
+	void FASTCALL BG(int page, int raster, DWORD *buf, BOOL force);
 										// BG
 	void FASTCALL BGBlock(int page, int y);
 										// BG (block unit)

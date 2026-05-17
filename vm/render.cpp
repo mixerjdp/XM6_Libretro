@@ -2848,7 +2848,7 @@ void FASTCALL Render::BGSprite(int raster)
 	}
 
 	if (render.bgdisp[1] && !render.bgsize) {
-		BG(1, raster, buf);
+		BG(1, raster, buf, TRUE);
 	}
 
 	if (sprite_visible) {
@@ -2877,7 +2877,7 @@ void FASTCALL Render::BGSprite(int raster)
 	}
 
 	if (render.bgdisp[0]) {
-		BG(0, raster, buf);
+		BG(0, raster, buf, (BOOL)(!render.bgdisp[1] || render.bgsize));
 	}
 
 	if (sprite_visible) {
@@ -2907,7 +2907,7 @@ void FASTCALL Render::BGSprite(int raster)
 	render.fast_bg_done[raster] = stamp;
 }
 
-void FASTCALL Render::BG(int page, int raster, DWORD *buf)
+void FASTCALL Render::BG(int page, int raster, DWORD *buf, BOOL force)
 {
 	int x;
 	int y;
@@ -2915,6 +2915,7 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	int len;
 	int rest;
 	const BOOL legacy_bg_transparency = !original_bg0_render_enabled;
+	const BOOL draw_force = (BOOL)(force && original_bg0_render_enabled);
 
 	ASSERT((page == 0) || (page == 1));
 	ASSERT((raster >= 0) && (raster < 512));
@@ -2953,7 +2954,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		if ((x & 7) == 0) {
 			// 8x8?Aooo?
 			x >>= 3;
-			if (cmov) {
+			if (draw_force) {
+				RendBG8F(ptr, buf, x, render.mixlen, render.pcgready,
+					render.sprmem, render.pcgbuf, render.paldata);
+			}
+			else if (cmov) {
 				RendBG8C(ptr, buf, x, render.mixlen, render.pcgready,
 					render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 			}
@@ -2967,15 +2972,25 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		// ooo?[?uo?b?Noos
 		rest = 8 - (x & 7);
 		ASSERT((rest > 0) && (rest < 8));
-		RendBG8P(&ptr[(x & 0xfff8) >> 2], buf, (x & 7), rest, render.pcgready,
+		if (draw_force) {
+			RendBG8FP(&ptr[(x & 0xfff8) >> 2], buf, (x & 7), rest, render.pcgready,
+				render.sprmem, render.pcgbuf, render.paldata);
+		}
+		else {
+			RendBG8P(&ptr[(x & 0xfff8) >> 2], buf, (x & 7), rest, render.pcgready,
 				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
+		}
 
 		// Line 8dot pattern
 		len = render.mixlen - rest;
 		x += rest;
 		x &= (512 - 1);
 		ASSERT((x & 7) == 0);
-		if (cmov) {
+		if (draw_force) {
+			RendBG8F(ptr, &buf[rest], (x >> 3), (len & 0xfff8), render.pcgready,
+				render.sprmem, render.pcgbuf, render.paldata);
+		}
+		else if (cmov) {
 			RendBG8C(ptr, &buf[rest], (x >> 3), (len & 0xfff8), render.pcgready,
 				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
@@ -2988,9 +3003,15 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		if (len & 7) {
 			x += (len & 0xfff8);
 			x &= (512 - 1);
-			RendBG8P(&ptr[x >> 2], &buf[rest + (len & 0xfff8)], 0, (len & 7),
-				render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
-				legacy_bg_transparency);
+			if (draw_force) {
+				RendBG8FP(&ptr[x >> 2], &buf[rest + (len & 0xfff8)], 0, (len & 7),
+					render.pcgready, render.sprmem, render.pcgbuf, render.paldata);
+			}
+			else {
+				RendBG8P(&ptr[x >> 2], &buf[rest + (len & 0xfff8)], 0, (len & 7),
+					render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
+					legacy_bg_transparency);
+			}
 		}
 		return;
 	}
@@ -3003,7 +3024,11 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	if ((x & 15) == 0) {
 		// 16x16?Aooo?
 		x >>= 4;
-		if (cmov) {
+		if (draw_force) {
+			RendBG16F(ptr, buf, x, render.mixlen, render.pcgready,
+				render.sprmem, render.pcgbuf, render.paldata);
+		}
+		else if (cmov) {
 			RendBG16C(ptr, buf, x, render.mixlen, render.pcgready,
 				render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 		}
@@ -3017,15 +3042,25 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 	// ooo?[?uo?b?Noos
 	rest = 16 - (x & 15);
 	ASSERT((rest > 0) && (rest < 16));
-	RendBG16P(&ptr[(x & 0xfff0) >> 3], buf, (x & 15), rest, render.pcgready,
+	if (draw_force) {
+		RendBG16FP(&ptr[(x & 0xfff0) >> 3], buf, (x & 15), rest, render.pcgready,
+			render.sprmem, render.pcgbuf, render.paldata);
+	}
+	else {
+		RendBG16P(&ptr[(x & 0xfff0) >> 3], buf, (x & 15), rest, render.pcgready,
 			render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
+	}
 
 		// Line 16dot pattern
 	len = render.mixlen - rest;
 	x += rest;
 	x &= (1024 - 1);
 	ASSERT((x & 15) == 0);
-	if (cmov) {
+	if (draw_force) {
+		RendBG16F(ptr, &buf[rest], (x >> 4), (len & 0xfff0), render.pcgready,
+			render.sprmem, render.pcgbuf, render.paldata);
+	}
+	else if (cmov) {
 		RendBG16C(ptr, &buf[rest], (x >> 4), (len & 0xfff0), render.pcgready,
 			render.sprmem, render.pcgbuf, render.paldata, legacy_bg_transparency);
 	}
@@ -3039,9 +3074,15 @@ void FASTCALL Render::BG(int page, int raster, DWORD *buf)
 		x += (len & 0xfff0);
 		x &= (1024 - 1);
 		x >>= 4;
-		RendBG16P(&ptr[x << 1], &buf[rest + (len & 0xfff0)], 0, (len & 15),
-			render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
-			legacy_bg_transparency);
+		if (draw_force) {
+			RendBG16FP(&ptr[x << 1], &buf[rest + (len & 0xfff0)], 0, (len & 15),
+				render.pcgready, render.sprmem, render.pcgbuf, render.paldata);
+		}
+		else {
+			RendBG16P(&ptr[x << 1], &buf[rest + (len & 0xfff0)], 0, (len & 15),
+				render.pcgready, render.sprmem, render.pcgbuf, render.paldata,
+				legacy_bg_transparency);
+		}
 	}
 }
 

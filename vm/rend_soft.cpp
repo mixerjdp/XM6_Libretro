@@ -500,6 +500,13 @@ static inline BOOL IsBGPixelVisible(DWORD pixel, BOOL legacy_bg_transparency)
 	return (pixel & 0x80000000) == 0;
 }
 
+static inline void RendBGForceWritePixel(DWORD *dst, DWORD src)
+{
+	if ((src & 0x80000000) == 0 || (*dst & 0x80000000) != 0) {
+		*dst = src;
+	}
+}
+
 void RendBG8(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
 	DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency)
 {
@@ -543,6 +550,43 @@ void RendBG8C(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *
 	RendBG8(ptr, buf, x, len, ready, mem, pcgbuf, pal, legacy_bg_transparency);
 }
 
+void RendBG8F(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
+	DWORD *pcgbuf, DWORD *pal)
+{
+	int tiles = (len >> 3) + ((len & 7) ? 1 : 0);
+	DWORD **current_ptr = ptr + (x * 2);
+	int current_x = x;
+	DWORD *dst = buf;
+
+	for (int i = 0; i < tiles; i++) {
+		DWORD bgdata = (DWORD)(size_t)current_ptr[1];
+		DWORD pcgno = bgdata & 0xfff;
+		if (!ready[pcgno]) {
+			ready[pcgno] = TRUE;
+			RendPCGNew(pcgno, mem, pcgbuf, pal);
+		}
+
+		DWORD *src_pixels = current_ptr[0];
+		if (!(bgdata & 0x4000)) {
+			for (int p = 0; p < 8; p++) {
+				RendBGForceWritePixel(&dst[p], src_pixels[p]);
+			}
+		} else {
+			for (int p = 0; p < 8; p++) {
+				RendBGForceWritePixel(&dst[7 - p], src_pixels[p]);
+			}
+		}
+
+		dst += 8;
+		current_ptr += 2;
+		current_x++;
+		if (current_x == 64) {
+			current_x = 0;
+			current_ptr = ptr;
+		}
+	}
+}
+
 void RendBG8P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
 	DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency)
 {
@@ -561,6 +605,28 @@ void RendBG8P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, cons
 	} else {
 		for (int p = 0; p < length; p++) {
 			if (IsBGPixelVisible(src_pixels[7 - (offset + p)], legacy_bg_transparency)) buf[p] = src_pixels[7 - (offset + p)];
+		}
+	}
+}
+
+void RendBG8FP(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
+	DWORD *pcgbuf, DWORD *pal)
+{
+	DWORD bgdata = (DWORD)(size_t)ptr[1];
+	DWORD pcgno = bgdata & 0xfff;
+	if (!ready[pcgno]) {
+		ready[pcgno] = TRUE;
+		RendPCGNew(pcgno, mem, pcgbuf, pal);
+	}
+
+	DWORD *src_pixels = ptr[0];
+	if (!(bgdata & 0x4000)) {
+		for (int p = 0; p < length; p++) {
+			RendBGForceWritePixel(&buf[p], src_pixels[offset + p]);
+		}
+	} else {
+		for (int p = 0; p < length; p++) {
+			RendBGForceWritePixel(&buf[p], src_pixels[7 - (offset + p)]);
 		}
 	}
 }
@@ -608,6 +674,43 @@ void RendBG16C(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE 
 	RendBG16(ptr, buf, x, len, ready, mem, pcgbuf, pal, legacy_bg_transparency);
 }
 
+void RendBG16F(DWORD **ptr, DWORD *buf, int x, int len, BOOL *ready, const BYTE *mem,
+	DWORD *pcgbuf, DWORD *pal)
+{
+	int tiles = (len >> 4) + ((len & 15) ? 1 : 0);
+	DWORD **current_ptr = ptr + (x * 2);
+	int current_x = x;
+	DWORD *dst = buf;
+
+	for (int i = 0; i < tiles; i++) {
+		DWORD bgdata = (DWORD)(size_t)current_ptr[1];
+		DWORD pcgno = bgdata & 0xfff;
+		if (!ready[pcgno]) {
+			ready[pcgno] = TRUE;
+			RendPCGNew(pcgno, mem, pcgbuf, pal);
+		}
+
+		DWORD *src = current_ptr[0];
+		if (!(bgdata & 0x4000)) {
+			for (int p = 0; p < 16; p++) {
+				RendBGForceWritePixel(&dst[p], src[p]);
+			}
+		} else {
+			for (int p = 0; p < 16; p++) {
+				RendBGForceWritePixel(&dst[15 - p], src[p]);
+			}
+		}
+
+		dst += 16;
+		current_ptr += 2;
+		current_x++;
+		if (current_x == 64) {
+			current_x = 0;
+			current_ptr = ptr;
+		}
+	}
+}
+
 void RendBG16P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
 	DWORD *pcgbuf, DWORD *pal, BOOL legacy_bg_transparency)
 {
@@ -626,6 +729,28 @@ void RendBG16P(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, con
 	} else {
 		for (int p = 0; p < length; p++) {
 			if (IsBGPixelVisible(src[15 - (offset + p)], legacy_bg_transparency)) buf[p] = src[15 - (offset + p)];
+		}
+	}
+}
+
+void RendBG16FP(DWORD **ptr, DWORD *buf, int offset, int length, BOOL *ready, const BYTE *mem,
+	DWORD *pcgbuf, DWORD *pal)
+{
+	DWORD bgdata = (DWORD)(size_t)ptr[1];
+	DWORD pcgno = bgdata & 0xfff;
+	if (!ready[pcgno]) {
+		ready[pcgno] = TRUE;
+		RendPCGNew(pcgno, mem, pcgbuf, pal);
+	}
+
+	DWORD *src = ptr[0];
+	if (!(bgdata & 0x4000)) {
+		for (int p = 0; p < length; p++) {
+			RendBGForceWritePixel(&buf[p], src[offset + p]);
+		}
+	} else {
+		for (int p = 0; p < length; p++) {
+			RendBGForceWritePixel(&buf[p], src[15 - (offset + p)]);
 		}
 	}
 }
