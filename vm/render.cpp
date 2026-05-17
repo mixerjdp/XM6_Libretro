@@ -2704,7 +2704,8 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 		index >>= 6;
 		if (render.bgsize) {
 			// 16x16
-			raster = render.bgy[i] + (index << 4);
+			raster = (index << 4);
+			raster -= render.bgy[i];
 			for (j=0; j<16; j++) {
 				raster &= (1024 - 1);
 				if ((raster >= 0) && (raster < 512)) {
@@ -2715,7 +2716,8 @@ void FASTCALL Render::BGMem(DWORD addr, WORD data)
 		}
 		else {
 			// 8x8
-			raster = render.bgy[i] + (index << 3);
+			raster = (index << 3);
+			raster -= render.bgy[i];
 			for (j=0; j<16; j++) {
 				raster &= (512 - 1);
 				render.bgspmod[raster] = TRUE;

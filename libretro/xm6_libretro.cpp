@@ -102,7 +102,6 @@ static int g_ram_size = 5;
 static bool g_fast_floppy = false;
 static int g_render_mode = XM6CORE_RENDER_MODE_ORIGINAL;
 static bool g_alt_raster_enabled = true;
-static bool g_render_bg0_enabled = true;
 static bool g_transparency_enabled = true;
 static enum retro_pixel_format g_frontend_pixel_format = RETRO_PIXEL_FORMAT_UNKNOWN;
 static int g_fm_volume = 50;
@@ -1746,7 +1745,7 @@ static void apply_runtime_core_options()
     g_xm6.set_alt_raster(g_xm6_handle, g_alt_raster_enabled ? 1 : 0);
   }
   if (g_xm6.set_render_bg0) {
-    g_xm6.set_render_bg0(g_xm6_handle, g_render_bg0_enabled ? 1 : 0);
+    g_xm6.set_render_bg0(g_xm6_handle, 1);
   }
   if (g_xm6.set_transparency_enabled) {
     g_xm6.set_transparency_enabled(g_xm6_handle, g_transparency_enabled ? 1 : 0);
@@ -2177,7 +2176,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s render_bg0=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s render=%s alt_raster=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2190,7 +2189,6 @@ static void apply_core_option_values()
            g_fast_floppy ? "enabled" : "disabled",
            (g_render_mode == XM6CORE_RENDER_MODE_FAST) ? "fast" : "original",
            g_alt_raster_enabled ? "enabled" : "disabled",
-           g_render_bg0_enabled ? "enabled" : "disabled",
            g_fm_volume, g_adpcm_volume,
            g_hq_adpcm_level,
            g_bass_enhancer_level,
@@ -2351,20 +2349,6 @@ static void register_core_options()
           { nullptr, nullptr }
         },
         "enabled"
-      },
-      {
-        "xm6_render_bg0",
-        "BG tile transparency rule",
-        nullptr,
-        "Select the background transparency rule used by the compositor.",
-        nullptr,
-        "video",
-        {
-          { "modern", nullptr },
-          { "legacy (XM62022Nuevo)", nullptr },
-          { nullptr, nullptr }
-        },
-        "modern"
       },
       {
         "xm6_transparency",
@@ -3785,7 +3769,6 @@ void retro_init(void)
   g_ram_size = 5;
   g_fast_floppy = false;
   g_alt_raster_enabled = true;
-  g_render_bg0_enabled = true;
   g_transparency_enabled = true;
   g_fm_volume = 50;
   g_adpcm_volume = 50;
@@ -4024,7 +4007,6 @@ void retro_run(void)
 	      const bool old_fast_floppy = g_fast_floppy;
 	      const int old_render_mode = g_render_mode;
 	      const bool old_alt_raster_enabled = g_alt_raster_enabled;
-	      const bool old_render_bg0_enabled = g_render_bg0_enabled;
 	      const bool old_transparency_enabled = g_transparency_enabled;
 	      const int old_fm_volume = g_fm_volume;
       const int old_adpcm_volume = g_adpcm_volume;
@@ -4087,11 +4069,6 @@ void retro_run(void)
 	        apply_runtime_core_options();
 	        core_log(RETRO_LOG_INFO, "[xm6-libretro] Alternative raster timing %s",
 	                 g_alt_raster_enabled ? "enabled" : "disabled");
-	      }
-	      if (old_render_bg0_enabled != g_render_bg0_enabled) {
-	        apply_runtime_core_options();
-	        core_log(RETRO_LOG_INFO, "[xm6-libretro] BG tile transparency rule %s",
-	                 g_render_bg0_enabled ? "modern" : "legacy (XM62022Nuevo)");
 	      }
 	      if (old_transparency_enabled != g_transparency_enabled) {
 	        apply_runtime_core_options();
