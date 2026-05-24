@@ -35,6 +35,12 @@ BOOL SmokeIsVisibleCommand()
 	return (_tcsstr(AfxGetApp()->m_lpCmdLine, _T("--smoke-visible")) != NULL);
 }
 
+BOOL SmokeIsPx68kVideoCommand(LPCTSTR lpszCmd)
+{
+	return (_tcsstr(lpszCmd, _T("--smoke-px68k-video")) != NULL) ||
+		(_tcsstr(lpszCmd, _T("--smoke-render-px68k")) != NULL);
+}
+
 enum {
 	SmokeActionKey = 1,
 	SmokeActionJoy = 2,
@@ -94,7 +100,7 @@ void SmokeLogLine(LPCTSTR msg)
 {
 	FILE *fp;
 
-	fp = _tfopen(_T("C:\\tmp\\xm6_smoke_savestate.log"), _T("at"));
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
 	if (!fp) {
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
 	}
@@ -108,7 +114,7 @@ void SmokeLogFormat(LPCTSTR fmt, LPCTSTR value)
 {
 	FILE *fp;
 
-	fp = _tfopen(_T("C:\\tmp\\xm6_smoke_savestate.log"), _T("at"));
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
 	if (!fp) {
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
 	}
@@ -119,11 +125,11 @@ void SmokeLogFormat(LPCTSTR fmt, LPCTSTR value)
 	}
 }
 
-static void SmokeLogFormatDword(LPCTSTR fmt, DWORD value)
+void SmokeLogFormatDword(LPCTSTR fmt, DWORD value)
 {
 	FILE *fp;
 
-	fp = _tfopen(_T("C:\\tmp\\xm6_smoke_savestate.log"), _T("at"));
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
 	if (!fp) {
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
 	}
@@ -603,7 +609,7 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 	BOOL saved;
 	BOOL saveRequested;
 
-	fp = _tfopen(_T("C:\\tmp\\xm6_smoke_savestate.log"), _T("wt"));
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("wt"));
 	if (!fp) {
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("wt"));
 	}
@@ -824,7 +830,7 @@ BOOL FASTCALL CFrmWnd::SmokeSaveState(LPCTSTR lpszCmd)
 	if (!SmokeValidateRenderFrame()) {
 		SmokeLogLine(_T("smoke: render probe blank"));
 	}
-	fp = _tfopen(_T("C:\\tmp\\xm6_smoke_savestate.log"), _T("at"));
+	fp = _tfopen(_T("C:\\tmp2\\xm6_smoke_savestate.log"), _T("at"));
 	if (!fp) {
 		fp = _tfopen(_T("xm6_smoke_savestate.log"), _T("at"));
 	}

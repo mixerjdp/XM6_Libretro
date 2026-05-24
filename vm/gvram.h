@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 ÇoÇhÅD(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 P.I. (ytanaka@ipc-tokai.or.jp)
 //	[ Graphic VRAM ]
 //
 //---------------------------------------------------------------------------
@@ -15,7 +15,7 @@
 
 //===========================================================================
 //
-//	Graphic VRAMHandler
+//	Graphic VRAM handler
 //
 //===========================================================================
 class GVRAMHandler
@@ -32,7 +32,7 @@ public:
 	virtual void FASTCALL WriteWord(DWORD addr, DWORD data) = 0;
 										// Word write
 	virtual DWORD FASTCALL ReadOnly(DWORD addr) const = 0;
-										// Read only
+										// Read-only
 
 protected:
 	Render *render;
@@ -45,7 +45,7 @@ protected:
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(1024)
+//	Graphic VRAM handler (1024)
 //
 //===========================================================================
 class GVRAM1024 : public GVRAMHandler
@@ -62,12 +62,12 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 };
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(16 colors)
+//	Graphic VRAM handler (16 colors)
 //
 //===========================================================================
 class GVRAM16 : public GVRAMHandler
@@ -84,12 +84,12 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 };
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(256 colors)
+//	Graphic VRAM handler (256 colors)
 //
 //===========================================================================
 class GVRAM256 : public GVRAMHandler
@@ -106,12 +106,12 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 };
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(Undefined)
+//	Graphic VRAM handler (invalid)
 //
 //===========================================================================
 class GVRAMNDef : public GVRAMHandler
@@ -128,12 +128,12 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 };
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(65536 colors)
+//	Graphic VRAM handler (65536 colors)
 //
 //===========================================================================
 class GVRAM64K : public GVRAMHandler
@@ -150,7 +150,7 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 };
 
 //===========================================================================
@@ -161,18 +161,18 @@ public:
 class GVRAM : public MemDevice
 {
 public:
-	// Structure
+	// Internal state definition
 	typedef struct {
-		BOOL mem;						// 512KB single bank flag
+		BOOL mem;						// 512 KB simple-memory flag
 		DWORD siz;						// 1024x1024 flag
-		DWORD col;						// 16, 256, Undefined, 65536
-		int type;						// Handler type (0-4)
-		DWORD mask[4];					// Plane clear mask
-		BOOL plane[4];					// Plane clear flag
+		DWORD col;						// 16, 256, undefined, 65536
+		int type;						// Handler type (0 to 4)
+		DWORD mask[4];					// Fast-clear mask
+		BOOL plane[4];					// Fast-clear plane
 	} gvram_t;
 
 public:
-	// Basic procedures
+	// Basic functions
 	GVRAM(VM *p);
 										// Constructor
 	BOOL FASTCALL Init();
@@ -186,10 +186,10 @@ public:
 	BOOL FASTCALL Load(Fileio *fio, int ver);
 										// Load
 	void FASTCALL ApplyCfg(const Config *config);
-										// Apply config
+										// Apply settings
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// Assert
+										// Diagnostics
 #endif	// NDEBUG
 
 	// Memory device
@@ -202,43 +202,43 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 
-	// Public API
+	// External API
 	void FASTCALL SetType(DWORD type);
-										// GVRAM type set
+										// Set the GVRAM type
 	void FASTCALL FastSet(DWORD mask);
-										// Plane clear flag set
+										// Set fast clear
 	void FASTCALL FastClr(const CRTC::crtc_t *p);
-										// Plane clear
+										// Fast clear
 	const BYTE* FASTCALL GetGVRAM() const;
 										// Get GVRAM
 
 private:
 	void FASTCALL FastClr768(const CRTC::crtc_t *p);
-										// Plane clear 1024x1024 512/768
+										// Fast clear 1024x1024 512/768
 	void FASTCALL FastClr256(const CRTC::crtc_t *p);
-										// Plane clear 1024x1024 256
+										// Fast clear 1024x1024 256
 	void FASTCALL FastClr512(const CRTC::crtc_t *p);
-										// Plane clear 512x512
+										// Fast clear 512x512
 	Render *render;
 										// Renderer
 	BYTE *gvram;
 										// Graphic VRAM
 	GVRAMHandler *handler;
-										// Internal Handler(default)
+										// Current memory handler
 	GVRAM1024 *hand1024;
-										// Internal Handler(1024)
+										// 1024 memory handler
 	GVRAM16 *hand16;
-										// Internal Handler(16 colors)
+										// 16-color memory handler
 	GVRAM256 *hand256;
-										// Internal Handler(256 colors)
+										// 256-color memory handler
 	GVRAMNDef *handNDef;
-										// Internal Handler(Undefined)
+										// Invalid memory handler
 	GVRAM64K *hand64K;
-										// Internal Handler(64K colors)
+										// 64K-color memory handler
 	gvram_t gvdata;
-										// State
+										// Internal state
 	DWORD gvcount;
 										// GVRAM access count (version 2.04 or later)
 };

@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
-//	[ SRAM ]
+//	Copyright (C) 2001-2006 ＰＩ．(ytanaka@ipc-tokai.or.jp)
+//	[ スタティックRAM ]
 //
 //---------------------------------------------------------------------------
 
@@ -15,71 +15,71 @@
 
 //===========================================================================
 //
-//	SRAM
+//	スタティックRAM
 //
 //===========================================================================
 class SRAM : public MemDevice
 {
 public:
-	// Constructor
+	// 基本ファンクション
 	SRAM(VM *p);
-										// Initialization
+										// コンストラクタ
 	BOOL FASTCALL Init();
-										// Cleanup
+										// 初期化
 	void FASTCALL Cleanup();
-										// Reset
+										// クリーンアップ
 	void FASTCALL Reset();
-										// Save
+										// リセット
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Load
+										// セーブ
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Apply configuration
+										// ロード
 	void FASTCALL ApplyCfg(const Config *config);
-
+										// 設定適用
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// Assert
+										// 診断
 #endif	// NDEBUG
 
-	// Memory device
+	// メモリデバイス
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// Byte read
+										// バイト読み込み
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// Word read
+										// ワード読み込み
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// Byte write
+										// バイト書き込み
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// Word write
+										// ワード書き込み
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// 読み込みのみ
 
-	// External API
+	// 外部API
 	const BYTE* FASTCALL GetSRAM() const;
-										// Get SRAM area
+										// SRAMエリア取得
 	int FASTCALL GetSize() const;
-										// Get SRAM size
+										// SRAMサイズ取得
 	void FASTCALL WriteEnable(BOOL enable);
-										// Write enable
+										// 書き込み許可
 	void FASTCALL SetMemSw(DWORD offset, DWORD data);
-										// Set memory switch
+										// メモリスイッチセット
 	DWORD FASTCALL GetMemSw(DWORD offset) const;
-										// Get memory switch
+										// メモリスイッチ取得
 	void FASTCALL UpdateBoot();
-										// Boot counter update
+										// 起動カウンタ更新
 
 private:
 	Filepath sram_path;
-										// SRAM file path
+										// SRAMファイルパス
 	int sram_size;
-										// SRAM size (16,32,48,64)
+										// SRAMサイズ(16,32,48,64)
 	BYTE sram[0x10000];
 										// SRAM (64KB)
 	BOOL write_en;
-										// Write enable flag
+										// 書き込み許可フラグ
 	BOOL mem_sync;
-										// Common RAM size sync flag
+										// メインRAMサイズ同期フラグ
 	BOOL changed;
-										// Changed flag
+										// 変更フラグ
 };
 
 #endif	// sram_h

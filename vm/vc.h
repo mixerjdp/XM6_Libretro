@@ -2,7 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 PI (ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2005 PI(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2010-2014 GIMONS
 //	[ Video Controller (CATHY & VIPS) ]
 //
 //---------------------------------------------------------------------------
@@ -20,7 +21,7 @@
 class VC : public MemDevice
 {
 public:
-	// Video data structure
+	// Work data definition
 	typedef struct {
 		DWORD vr1h;						// VR1(H) backup
 		DWORD vr1l;						// VR1(L) backup
@@ -32,37 +33,37 @@ public:
 		DWORD tx;						// Text priority
 		DWORD gr;						// Graphic priority (1024)
 		DWORD gp[4];					// Graphic priority (512)
-		BOOL ys;						// Ys output
-		BOOL ah;						// Text palette disable
-		BOOL vht;						// External sync
-		BOOL exon;						// Sprite priority ext
-		BOOL hp;						// Priority
-		BOOL bp;						// Sprite priority bit flag
-		BOOL gg;						// Graphic disable
-		BOOL gt;						// Text disable
-		BOOL bcon;						// VBLANK display
+		BOOL ys;						// Ys emphasis
+		BOOL ah;						// Text palette offset
+		BOOL vht;						// Graphic video enable
+		BOOL exon;						// External priority enable
+		BOOL hp;						// Horizontal priority
+		BOOL bp;						// Bottom bit clear flag
+		BOOL gg;						// Graphic GG enable
+		BOOL gt;						// Graphic text enable
+		BOOL bcon;						// Shape enable
 		BOOL son;						// Sprite ON
 		BOOL ton;						// Text ON
-		BOOL gon;						// Graphic ON (layer 1024)
-		BOOL gs[4];					// Graphic ON (layer 512)
+		BOOL gon;						// Graphic ON (screen 1024)
+		BOOL gs[4];						// Graphic ON (screen 512)
 	} vc_t;
 
 public:
-	// Constructor
+	// Basic functions
 	VC(VM *p);
-										// Initialization
+										// Constructor
 	BOOL FASTCALL Init();
-										// Cleanup
+										// Initialization
 	void FASTCALL Cleanup();
-										// Reset
+										// Cleanup
 	void FASTCALL Reset();
-										// Save
+										// Reset
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Load
+										// Save
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Apply configuration
+										// Load
 	void FASTCALL ApplyCfg(const Config *config);
-
+										// Apply config
 
 	// Memory device
 	DWORD FASTCALL ReadByte(DWORD addr);
@@ -77,39 +78,48 @@ public:
 										// Read only
 
 	// External API
+	void FASTCALL HSync();
+										// H-Sync notification
 	void FASTCALL GetVC(vc_t *buffer);
-										// Get video data
+										// Get work data
 	const BYTE* FASTCALL GetPalette() const	{ return palette; }
 										// Get palette RAM
 	const vc_t* FASTCALL GetWorkAddr() const{ return &vc; }
 										// Get work address
-
 private:
 	// Register access
 	void FASTCALL SetVR0L(DWORD data);
-										// Register 0 (L) set
+										// Register 0(L) set
 	DWORD FASTCALL GetVR0() const;
-										// Register 0 get
+										// Get register 0
 	void FASTCALL SetVR1H(DWORD data);
-										// Register 1 (H) set
+										// Register 1(H) set
 	void FASTCALL SetVR1L(DWORD data);
-										// Register 1 (L) set
+										// Register 1(L) set
 	DWORD FASTCALL GetVR1() const;
-										// Register 1 get
+										// Get register 1
 	void FASTCALL SetVR2H(DWORD data);
-										// Register 2 (H) set
+										// Register 2(H) set
 	void FASTCALL SetVR2L(DWORD data);
-										// Register 2 (L) set
+										// Register 2(L) set
 	DWORD FASTCALL GetVR2() const;
-										// Register 2 get
+										// Get register 2
 
 	// Data
+	Sprite *sprite;
+										// Sprite controller
 	Render *render;
-										// Render
+										// Renderer
 	vc_t vc;
-										// Video data
+										// Work data
 	BYTE palette[0x400];
 										// Palette RAM
+	BOOL vr1h;
+										// Register 1(H) change flag
+	BOOL vr2h;
+										// Register 2(H) change flag
+	int palette_wait;
+										// Palette wait
 };
 
 #endif	// vc_h

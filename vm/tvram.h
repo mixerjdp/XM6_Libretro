@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 PI (ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 P.I. (ytanaka@ipc-tokai.or.jp)
 //	[ Text VRAM ]
 //
 //---------------------------------------------------------------------------
@@ -27,21 +27,23 @@ public:
 	virtual void FASTCALL WriteWord(DWORD addr, DWORD data) = 0;
 										// Word write
 
-	// TVRAM structure copy
+	// Copy the TVRAM state
 	DWORD multi;
-										// Multi access (bit0-bit3)
+										// Simultaneous access (bits 0-3)
 	DWORD mask;
-										// Access mask (1 does not change)
+										// Access mask (1 means unchanged)
 	DWORD rev;
-										// Access mask reverse
+										// Inverted access mask
 	DWORD maskh;
-										// Access mask high byte
+										// Upper access-mask byte
 	DWORD revh;
-										// Access mask high reverse
+										// Upper access-mask inversion
 
 protected:
+	void FASTCALL NotifyPx68kTVRAMWrite(DWORD internal_addr, BYTE data);
+	void FASTCALL NotifyPx68kTVRAMWord(DWORD addr, WORD data);
 	Render *render;
-										// Render
+										// Renderer
 	BYTE *tvram;
 										// Text VRAM
 };
@@ -96,7 +98,7 @@ public:
 
 //===========================================================================
 //
-//	Text VRAM handler (mask+multi)
+//	Text VRAM handler (mask + multi)
 //
 //===========================================================================
 class TVRAMBoth : public TVRAMHandler
@@ -118,36 +120,37 @@ public:
 class TVRAM : public MemDevice
 {
 public:
-	// TVRAM data structure
+	// Internal data definition
 	typedef struct {
-		DWORD multi;					// Multi access (bit0-bit3)
-		DWORD mask;						// Access mask (1 does not change)
-		DWORD rev;						// Access mask reverse
-		DWORD maskh;					// Access mask high byte
-		DWORD revh;						// Access mask high reverse
-		DWORD src;						// Raster copy source
-		DWORD dst;						// Raster copy dest
-		DWORD plane;					// Raster copy plane
+		DWORD multi;					// Simultaneous access (bits 0-3)
+		DWORD mask;						// Access mask (1 means unchanged)
+		DWORD rev;						// Inverted access mask
+		DWORD maskh;					// Upper access-mask byte
+		DWORD revh;						// Upper access-mask inversion
+		DWORD src;						// Raster copy source raster
+		DWORD dst;						// Raster copy destination raster
+		DWORD plane;					// Raster copy target plane
 	} tvram_t;
 
 public:
-	// Constructor
+	// Basic functions
 	TVRAM(VM *p);
-										// Initialization
+										// Constructor
 	BOOL FASTCALL Init();
-										// Cleanup
+										// Initialize
 	void FASTCALL Cleanup();
-										// Reset
+										// Cleanup
 	void FASTCALL Reset();
-										// Save
+										// Reset
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Load
+										// Save
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Apply configuration
+										// Load
 	void FASTCALL ApplyCfg(const Config *config);
+										// Apply settings
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// Assert
+										// Diagnostics
 #endif	// NDEBUG
 
 	// Memory device
@@ -160,23 +163,23 @@ public:
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
 										// Word write
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// Read-only
 
 	// External API
 	const BYTE* FASTCALL GetTVRAM() const;
 										// Get TVRAM
 	void FASTCALL SetMulti(DWORD data);
-										// Multi access setting
+										// Set simultaneous writes
 	void FASTCALL SetMask(DWORD data);
-										// Access mask setting
+										// Set the access mask
 	void FASTCALL SetCopyRaster(DWORD src, DWORD dst, DWORD plane);
-										// Raster copy setting
+										// Select the raster to copy
 	void FASTCALL RasterCopy();
-										// Raster copy execute
+										// Raster copy operation
 
 private:
 	void FASTCALL SelectHandler();
-										// Handler select
+										// Select the handler
 	TVRAMNormal *normal;
 										// Handler (normal)
 	TVRAMMask *mask;
@@ -186,15 +189,15 @@ private:
 	TVRAMBoth *both;
 										// Handler (both)
 	TVRAMHandler *handler;
-										// Handler (current select)
+										// Currently selected handler
 	Render *render;
-										// Render
+										// Renderer
 	BYTE *tvram;
-										// Text VRAM (512KB)
+										// Text VRAM (512 KB)
 	tvram_t tvdata;
-										// VRAM data
+										// Internal data
 	DWORD tvcount;
-										// VRAM access count (version 2.04+)
+										// TVRAM access count (version 2.04 or later)
 };
 
 #endif	// tvram_h

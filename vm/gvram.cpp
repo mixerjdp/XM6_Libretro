@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 PI(ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2005 P.I. (ytanaka@ipc-tokai.or.jp)
 //	[ Graphic VRAM ]
 //
 //---------------------------------------------------------------------------
@@ -19,7 +19,7 @@
 
 //===========================================================================
 //
-//	Graphic VRAMHandler
+//	Graphic VRAM handler
 //
 //===========================================================================
 //#define GVRAM_LOG
@@ -42,7 +42,7 @@ GVRAMHandler::GVRAMHandler(Render *rend, BYTE *mem, CPU *p)
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(1024x1024)
+//	Graphic VRAM handler (1024x1024)
 //
 //===========================================================================
 
@@ -67,25 +67,25 @@ DWORD FASTCALL GVRAM1024::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Odd byte returns 0
+	// Reading an even byte always returns 0
 	if ((addr & 1) == 0) {
 		return 0x00;
 	}
 
-	// Odd address
+	// Common terms
 	offset = addr & 0x3ff;
 
-	// Interleaved bank arrangement
+	// Split into upper/lower and left/right halves
 	if (addr & 0x100000) {
 		if (addr & 0x400) {
-			// Page3 access
+			// Page 3 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr] >> 4);
 		}
 		else {
-			// Page2 access
+			// Page 2 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -94,14 +94,14 @@ DWORD FASTCALL GVRAM1024::ReadByte(DWORD addr)
 	}
 	else {
 		if (addr & 0x400) {
-			// Page1 access
+			// Page 1 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr ^ 1] >> 4);
 		}
 		else {
-			// Page0 access
+			// Page 0 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -123,20 +123,20 @@ DWORD FASTCALL GVRAM1024::ReadWord(DWORD addr)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT((addr & 1) == 0);
 
-	// Odd address
+	// Common terms
 	offset = addr & 0x3ff;
 
-	// Interleaved bank arrangement
+	// Split into upper/lower and left/right halves
 	if (addr & 0x100000) {
 		if (addr & 0x400) {
-			// Page3 access
+			// Page 3 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr ^ 1] >> 4);
 		}
 		else {
-			// Page2 access
+			// Page 2 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -145,14 +145,14 @@ DWORD FASTCALL GVRAM1024::ReadWord(DWORD addr)
 	}
 	else {
 		if (addr & 0x400) {
-			// Page1 access
+			// Page 1 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr] >> 4);
 		}
 		else {
-			// Page0 access
+			// Page 0 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -175,23 +175,23 @@ void FASTCALL GVRAM1024::WriteByte(DWORD addr, DWORD data)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT(data < 0x100);
 
-	// Odd byte is ignored
+	// Even bytes cannot be written
 	if ((addr & 1) == 0) {
 		return;
 	}
 
-	// Odd address
+	// Common terms
 	offset = addr & 0x3ff;
 
-	// Interleaved bank arrangement
+	// Split into upper/lower and left/right halves
 	if (addr & 0x100000) {
 		if (addr & 0x400) {
-			// Page3 access
+			// Page 3 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Upper nibble merge
+			// To the upper nibble
 			mem = (gvram[addr] & 0x0f);
 			mem |= (data << 4);
 
@@ -202,12 +202,12 @@ void FASTCALL GVRAM1024::WriteByte(DWORD addr, DWORD data)
 			}
 		}
 		else {
-			// Page2 access
+			// Page 2 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Lower nibble merge
+			// To the lower nibble
 			mem = (gvram[addr] & 0xf0);
 			mem |= (data & 0x0f);
 
@@ -220,12 +220,12 @@ void FASTCALL GVRAM1024::WriteByte(DWORD addr, DWORD data)
 	}
 	else {
 		if (addr & 0x400) {
-			// Page1 access
+			// Page 1 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Upper nibble merge
+			// To the upper nibble
 			mem = (gvram[addr ^ 1] & 0x0f);
 			mem |= (data << 4);
 
@@ -236,12 +236,12 @@ void FASTCALL GVRAM1024::WriteByte(DWORD addr, DWORD data)
 			}
 		}
 		else {
-			// Page0 access
+			// Page 0 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Lower nibble merge
+			// To the lower nibble
 			mem = (gvram[addr ^ 1] & 0xf0);
 			mem |= (data & 0x0f);
 
@@ -268,18 +268,18 @@ void FASTCALL GVRAM1024::WriteWord(DWORD addr, DWORD data)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT(data < 0x10000);
 
-	// Odd address
+	// Common terms
 	offset = addr & 0x3ff;
 
-	// Interleaved bank arrangement
+	// Split into upper/lower and left/right halves
 	if (addr & 0x100000) {
 		if (addr & 0x400) {
-			// Page3 access
+			// Page 3 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Upper nibble merge
+			// To the upper nibble
 			mem = (gvram[addr ^ 1] & 0x0f);
 			data &= 0x0f;
 			mem |= (data << 4);
@@ -291,12 +291,12 @@ void FASTCALL GVRAM1024::WriteWord(DWORD addr, DWORD data)
 			}
 		}
 		else {
-			// Page2 access
+			// Page 2 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Lower nibble merge
+			// To the lower nibble
 			mem = (gvram[addr ^ 1] & 0xf0);
 			mem |= (data & 0x0f);
 
@@ -309,12 +309,12 @@ void FASTCALL GVRAM1024::WriteWord(DWORD addr, DWORD data)
 	}
 	else {
 		if (addr & 0x400) {
-			// Page1 access
+			// Page 1 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Upper nibble merge
+			// To the upper nibble
 			mem = (gvram[addr] & 0x0f);
 			data &= 0x0f;
 			mem |= (data << 4);
@@ -326,12 +326,12 @@ void FASTCALL GVRAM1024::WriteWord(DWORD addr, DWORD data)
 			}
 		}
 		else {
-			// Page0 access
+			// Page 0 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 
-			// Lower nibble merge
+			// To the lower nibble
 			mem = (gvram[addr] & 0xf0);
 			mem |= (data & 0x0f);
 
@@ -346,7 +346,7 @@ void FASTCALL GVRAM1024::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAM1024::ReadOnly(DWORD addr) const
@@ -356,25 +356,25 @@ DWORD FASTCALL GVRAM1024::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Odd byte returns 0
+	// Reading an even byte always returns 0
 	if ((addr & 1) == 0) {
 		return 0x00;
 	}
 
-	// Odd address
+	// Common terms
 	offset = addr & 0x3ff;
 
-	// Interleaved bank arrangement
+	// Split into upper/lower and left/right halves
 	if (addr & 0x100000) {
 		if (addr & 0x400) {
-			// Page3 access
+			// Page 3 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr] >> 4);
 		}
 		else {
-			// Page2 access
+			// Page 2 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -383,14 +383,14 @@ DWORD FASTCALL GVRAM1024::ReadOnly(DWORD addr) const
 	}
 	else {
 		if (addr & 0x400) {
-			// Page1 access
+			// Page 1 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
 			return (gvram[addr ^ 1] >> 4);
 		}
 		else {
-			// Page0 access
+			// Page 0 area
 			addr >>= 1;
 			addr &= 0x7fc00;
 			addr |= offset;
@@ -401,7 +401,7 @@ DWORD FASTCALL GVRAM1024::ReadOnly(DWORD addr) const
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(16 colors)
+//	Graphic VRAM handler (16 colors)
 //
 //===========================================================================
 
@@ -424,31 +424,31 @@ DWORD FASTCALL GVRAM16::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Odd address 
+	// Odd addresses only
 	if (addr & 1) {
 		if (addr < 0x80000) {
-			// Page0:Lower nibble of word b0-b3
+			// Page 0: lower word byte bits b0-b3
 			return (gvram[addr ^ 1] & 0x0f);
 		}
 
 		if (addr < 0x100000) {
-			// Page1:Lower nibble of word b4-b7
+			// Page 1: lower word byte bits b4-b7
 			addr &= 0x7ffff;
 			return (gvram[addr ^ 1] >> 4);
 		}
 
 		if (addr < 0x180000) {
-			// Page2:Upper nibble of word b0-b3
+			// Page 2: upper word byte bits b0-b3
 			addr &= 0x7ffff;
 			return (gvram[addr] & 0x0f);
 		}
 
-		// Page3:Upper nibble of word b4-b7
+		// Page 3: upper word byte bits b4-b7
 		addr &= 0x7ffff;
 		return (gvram[addr] >> 4);
 	}
 
-	// Odd address is always 0
+	// Even addresses are always 0
 	return 0;
 }
 
@@ -464,23 +464,23 @@ DWORD FASTCALL GVRAM16::ReadWord(DWORD addr)
 	ASSERT((addr & 1) == 0);
 
 	if (addr < 0x80000) {
-		// Page0:Lower nibble of word b0-b3
+		// Page 0: lower word byte bits b0-b3
 		return (gvram[addr] & 0x0f);
 	}
 
 	if (addr < 0x100000) {
-		// Page1:Lower nibble of word b4-b7
+		// Page 1: lower word byte bits b4-b7
 		addr &= 0x7ffff;
 		return (gvram[addr] >> 4);
 	}
 
 	if (addr < 0x180000) {
-		// Page2:Upper nibble of word b0-b3
+		// Page 2: upper word byte bits b0-b3
 		addr &= 0x7ffff;
 		return (gvram[addr ^ 1] & 0x0f);
 	}
 
-	// Page3:Upper nibble of word b4-b7
+	// Page 3: upper word byte bits b4-b7
 	addr &= 0x7ffff;
 	return (gvram[addr ^ 1] >> 4);
 }
@@ -498,10 +498,10 @@ void FASTCALL GVRAM16::WriteByte(DWORD addr, DWORD data)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT(data < 0x100);
 
-	// Odd address 
+	// Odd addresses only
 	if (addr & 1) {
 		if (addr < 0x80000) {
-			// Page0:Lower nibble of word b0-b3
+			// Page 0: lower word byte bits b0-b3
 			mem = (gvram[addr ^ 1] & 0xf0);
 			mem |= (data & 0x0f);
 
@@ -514,7 +514,7 @@ void FASTCALL GVRAM16::WriteByte(DWORD addr, DWORD data)
 		}
 
 		if (addr < 0x100000) {
-			// Page1:Lower nibble of word b4-b7
+			// Page 1: lower word byte bits b4-b7
 			addr &= 0x7ffff;
 			mem = (gvram[addr ^ 1] & 0x0f);
 			mem |= (data << 4);
@@ -528,7 +528,7 @@ void FASTCALL GVRAM16::WriteByte(DWORD addr, DWORD data)
 		}
 
 		if (addr < 0x180000) {
-			// Page2:Upper nibble of word b0-b3
+			// Page 2: upper word byte bits b0-b3
 			addr &= 0x7ffff;
 			mem = (gvram[addr] & 0xf0);
 			mem |= (data & 0x0f);
@@ -541,7 +541,7 @@ void FASTCALL GVRAM16::WriteByte(DWORD addr, DWORD data)
 			return;
 		}
 
-		// Page3:Upper nibble of word b4-b7
+		// Page 3: upper word byte bits b4-b7
 		addr &= 0x7ffff;
 		mem = (gvram[addr] & 0x0f);
 		mem |= (data << 4);
@@ -554,7 +554,7 @@ void FASTCALL GVRAM16::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// Odd byte is ignored
+	// Even addresses cannot be written
 }
 
 //---------------------------------------------------------------------------
@@ -572,7 +572,7 @@ void FASTCALL GVRAM16::WriteWord(DWORD addr, DWORD data)
 	ASSERT(data < 0x10000);
 
 	if (addr < 0x80000) {
-		// Page0:Lower nibble of word b0-b3
+		// Page 0: lower word byte bits b0-b3
 		mem = (gvram[addr] & 0xf0);
 		mem |= (data & 0x0f);
 
@@ -584,7 +584,7 @@ void FASTCALL GVRAM16::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 	if (addr < 0x100000) {
-		// Page1:Lower nibble of word b4-b7
+		// Page 1: lower word byte bits b4-b7
 		addr &= 0x7ffff;
 		mem = (gvram[addr] & 0x0f);
 		data &= 0x0f;
@@ -598,7 +598,7 @@ void FASTCALL GVRAM16::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 	if (addr < 0x180000) {
-		// Page2:Upper nibble of word b0-b3
+		// Page 2: upper word byte bits b0-b3
 		addr &= 0x7ffff;
 		mem = (gvram[addr ^ 1] & 0xf0);
 		mem |= (data & 0x0f);
@@ -611,7 +611,7 @@ void FASTCALL GVRAM16::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 
-	// Page3:Upper nibble of word b4-b7
+	// Page 3: upper word byte bits b4-b7
 	addr &= 0x7ffff;
 	mem = (gvram[addr ^ 1] & 0x0f);
 	data &= 0x0f;
@@ -626,7 +626,7 @@ void FASTCALL GVRAM16::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAM16::ReadOnly(DWORD addr) const
@@ -634,37 +634,37 @@ DWORD FASTCALL GVRAM16::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Odd address 
+	// Odd addresses only
 	if (addr & 1) {
 		if (addr < 0x80000) {
-			// Page0:Lower nibble of word b0-b3
+			// Page 0: lower word byte bits b0-b3
 			return (gvram[addr ^ 1] & 0x0f);
 		}
 
 		if (addr < 0x100000) {
-			// Page1:Lower nibble of word b4-b7
+			// Page 1: lower word byte bits b4-b7
 			addr &= 0x7ffff;
 			return (gvram[addr ^ 1] >> 4);
 		}
 
 		if (addr < 0x180000) {
-			// Page2:Upper nibble of word b0-b3
+			// Page 2: upper word byte bits b0-b3
 			addr &= 0x7ffff;
 			return (gvram[addr] & 0x0f);
 		}
 
-		// Page3:Upper nibble of word b4-b7
+		// Page 3: upper word byte bits b4-b7
 		addr &= 0x7ffff;
 		return (gvram[addr] >> 4);
 	}
 
-	// Odd address is always 0
+	// Even addresses are always 0
 	return 0;
 }
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(256 colors)
+//	Graphic VRAM handler (256 colors)
 //
 //===========================================================================
 
@@ -687,20 +687,20 @@ DWORD FASTCALL GVRAM256::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Page0
+	// Page 0
 	if (addr < 0x80000) {
 		if (addr & 1) {
-			// Lower nibble of word
+			// Lower word byte
 			return gvram[addr ^ 1];
 		}
 		return 0;
 	}
 
-	// Page1
+	// Page 1
 	if (addr < 0x100000) {
 		addr &= 0x7ffff;
 		if (addr & 1) {
-			// Upper nibble of word
+			// Upper word byte
 			return gvram[addr];
 		}
 		return 0;
@@ -722,16 +722,16 @@ DWORD FASTCALL GVRAM256::ReadWord(DWORD addr)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT((addr & 1) == 0);
 
-	// Page0
+	// Page 0
 	if (addr < 0x80000) {
-		// Lower nibble of word
+		// Lower word byte
 		return gvram[addr];
 	}
 
-	// Page1
+	// Page 1
 	if (addr < 0x100000) {
 		addr &= 0x7ffff;
-		// Upper nibble of word
+		// Upper word byte
 		return gvram[addr ^ 1];
 	}
 
@@ -751,10 +751,10 @@ void FASTCALL GVRAM256::WriteByte(DWORD addr, DWORD data)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT(data < 0x100);
 
-	// Page0
+	// Page 0
 	if (addr < 0x80000) {
 		if (addr & 1) {
-			// Lower nibble of word
+			// Lower word byte
 			if (gvram[addr ^ 1] != data) {
 				gvram[addr ^ 1] = (BYTE)data;
 				render->GrpMem(addr ^ 1, 0);
@@ -763,11 +763,11 @@ void FASTCALL GVRAM256::WriteByte(DWORD addr, DWORD data)
 		return;
 	}
 
-	// Page1(Block2)
+	// Page 1 (block 2)
 	if (addr < 0x100000) {
 		addr &= 0x7ffff;
 		if (addr & 1) {
-			// Upper nibble of word
+			// Upper word byte
 			if (gvram[addr] != data) {
 				gvram[addr] = (BYTE)data;
 				render->GrpMem(addr, 2);
@@ -792,9 +792,9 @@ void FASTCALL GVRAM256::WriteWord(DWORD addr, DWORD data)
 	ASSERT((addr & 1) == 0);
 	ASSERT(data < 0x10000);
 
-	// Page0
+	// Page 0
 	if (addr < 0x80000) {
-		// Lower nibble of word
+		// Lower word byte
 		if (gvram[addr] != data) {
 			gvram[addr] = (BYTE)data;
 			render->GrpMem(addr, 0);
@@ -802,10 +802,10 @@ void FASTCALL GVRAM256::WriteWord(DWORD addr, DWORD data)
 		return;
 	}
 
-	// Page1(Block2)
+	// Page 1 (block 2)
 	if (addr < 0x100000) {
 		addr &= 0x7ffff;
-		// Upper nibble of word
+		// Upper word byte
 		if (gvram[addr ^ 1] != data) {
 			gvram[addr ^ 1] = (BYTE)data;
 			render->GrpMem(addr ^ 1, 2);
@@ -819,7 +819,7 @@ void FASTCALL GVRAM256::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAM256::ReadOnly(DWORD addr) const
@@ -827,20 +827,20 @@ DWORD FASTCALL GVRAM256::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Page0
+	// Page 0
 	if (addr < 0x80000) {
 		if (addr & 1) {
-			// Lower nibble of word
+			// Lower word byte
 			return gvram[addr ^ 1];
 		}
 		return 0;
 	}
 
-	// Page1
+	// Page 1
 	if (addr < 0x100000) {
 		addr &= 0x7ffff;
 		if (addr & 1) {
-			// Upper nibble of word
+			// Upper word byte
 			return gvram[addr];
 		}
 		return 0;
@@ -852,7 +852,7 @@ DWORD FASTCALL GVRAM256::ReadOnly(DWORD addr) const
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(Undefined)
+//	Graphic VRAM handler (invalid)
 //
 //===========================================================================
 
@@ -875,7 +875,7 @@ DWORD FASTCALL GVRAMNDef::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Undefined page
+	// Invalid page
 	if (addr & 0x80000) {
 		return 0;
 	}
@@ -899,7 +899,7 @@ DWORD FASTCALL GVRAMNDef::ReadWord(DWORD addr)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT((addr & 1) == 0);
 
-	// Undefined page
+	// Invalid page
 	if (addr & 0x80000) {
 		return 0;
 	}
@@ -920,7 +920,7 @@ void FASTCALL GVRAMNDef::WriteByte(DWORD addr, DWORD data)
 	ASSERT(addr <= 0x1fffff);
 	ASSERT(data < 0x100);
 
-	// Undefined page
+	// Invalid page
 	if (addr & 0x80000) {
 		return;
 	}
@@ -947,7 +947,7 @@ void FASTCALL GVRAMNDef::WriteWord(DWORD addr, DWORD data)
 	ASSERT((addr & 1) == 0);
 	ASSERT(data < 0x10000);
 
-	// Undefined page
+	// Invalid page
 	if (addr & 0x80000) {
 		return;
 	}
@@ -962,7 +962,7 @@ void FASTCALL GVRAMNDef::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAMNDef::ReadOnly(DWORD addr) const
@@ -970,7 +970,7 @@ DWORD FASTCALL GVRAMNDef::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT(addr <= 0x1fffff);
 
-	// Undefined page
+	// Invalid page
 	if (addr & 0x80000) {
 		return 0;
 	}
@@ -985,7 +985,7 @@ DWORD FASTCALL GVRAMNDef::ReadOnly(DWORD addr) const
 
 //===========================================================================
 //
-//	Graphic VRAMHandler(65536 colors)
+//	Graphic VRAM handler (65536 colors)
 //
 //===========================================================================
 
@@ -1086,7 +1086,7 @@ void FASTCALL GVRAM64K::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAM64K::ReadOnly(DWORD addr) const
@@ -1115,15 +1115,15 @@ DWORD FASTCALL GVRAM64K::ReadOnly(DWORD addr) const
 //---------------------------------------------------------------------------
 GVRAM::GVRAM(VM *p) : MemDevice(p)
 {
-	// Device ID Initialize
+	// Initialize the device ID
 	dev.id = MAKEID('G', 'V', 'R', 'M');
 	dev.desc = "Graphic VRAM";
 
-	// Start address, End address
+	// Start and end addresses
 	memdev.first = 0xc00000;
 	memdev.last = 0xdfffff;
 
-	// Video RAM
+	// Work area
 	gvram = NULL;
 	render = NULL;
 
@@ -1150,7 +1150,7 @@ BOOL FASTCALL GVRAM::Init()
 		return FALSE;
 	}
 
-	// Internal allocate, Cleanup
+	// Allocate and clear memory
 	try {
 		gvram = new BYTE[ 0x80000 ];
 	}
@@ -1162,28 +1162,28 @@ BOOL FASTCALL GVRAM::Init()
 	}
 	memset(gvram, 0, 0x80000);
 
-	// Renderer get
+	// Get the renderer
 	render = (Render*)vm->SearchDevice(MAKEID('R', 'E', 'N', 'D'));
 	ASSERT(render);
 
-	// Handler create
+	// Create the handlers
 	hand1024 = new GVRAM1024(render, gvram, cpu);
 	hand16 = new GVRAM16(render, gvram, cpu);
 	hand256 = new GVRAM256(render, gvram, cpu);
 	handNDef = new GVRAMNDef(render, gvram, cpu);
 	hand64K = new GVRAM64K(render, gvram, cpu);
 
-	// Memory Initialize
+	// Initialize the data
 	gvdata.mem = TRUE;
 	gvdata.siz = 0;
 	gvdata.col = 3;
 	gvcount = 0;
 
-	// Handler default(64K)
+	// Initialize the handlers (64K)
 	gvdata.type = 4;
 	handler = hand64K;
 
-	// Plane clear mask
+	// Fast-clear mask
 	gvdata.mask[0] = 0xfff0;
 	gvdata.mask[1] = 0xff0f;
 	gvdata.mask[2] = 0xf0ff;
@@ -1201,7 +1201,7 @@ void FASTCALL GVRAM::Cleanup()
 {
 	ASSERT(this);
 
-	// Handler default
+	// Release the handlers
 	if (hand64K) {
 		delete hand64K;
 		hand64K = NULL;
@@ -1224,13 +1224,13 @@ void FASTCALL GVRAM::Cleanup()
 	}
 	handler = NULL;
 
-	// Internal default
+	// Release memory
 	if (gvram) {
 		delete[] gvram;
 		gvram = NULL;
 	}
 
-	// Base class de
+	// Return to the base class
 	MemDevice::Cleanup();
 }
 
@@ -1244,22 +1244,22 @@ void FASTCALL GVRAM::Reset()
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Reset");
+	LOG0(Log::Normal, "リセット");
 
-	// Plane clear flag
+	// No fast clear
 	gvdata.plane[0] = FALSE;
 	gvdata.plane[1] = FALSE;
 	gvdata.plane[2] = FALSE;
 	gvdata.plane[3] = FALSE;
 
-	// Handler default(64K)
+	// Initialize the handlers (64K)
 	gvdata.mem = TRUE;
 	gvdata.siz = 0;
 	gvdata.col = 3;
 	gvdata.type = 4;
 	handler = hand64K;
 
-	// Access count 0
+	// Clear the access count
 	gvcount = 0;
 }
 
@@ -1276,25 +1276,25 @@ BOOL FASTCALL GVRAM::Save(Fileio *fio, int /*ver*/)
 	ASSERT(fio);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Save");
+	LOG0(Log::Normal, "セーブ");
 
-	// Internal Save
+	// Save memory
 	if (!fio->Write(gvram, 0x80000)) {
 		return FALSE;
 	}
 
-	// Size Save
+	// Save the size
 	sz = sizeof(gvram_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// Status Save
+	// Save the payload
 	if (!fio->Write(&gvdata, (int)sz)) {
 		return FALSE;
 	}
 
-	// gvcount(version 2.04 or later)
+	// gvcount (added in version 2.04)
 	if (!fio->Write(&gvcount, sizeof(gvcount))) {
 		return FALSE;
 	}
@@ -1317,14 +1317,14 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 	ASSERT(ver >= 0x0200);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Load");
+	LOG0(Log::Normal, "ロード");
 
-	// Internal Load
+	// Load memory
 	if (!fio->Read(gvram, 0x80000)) {
 		return FALSE;
 	}
 
-	// Size Load, Verify
+	// Load and verify the size
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -1332,12 +1332,12 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// Status Load
+	// Load the payload
 	if (!fio->Read(&gvdata, (int)sz)) {
 		return FALSE;
 	}
 
-	// gvcount(version 2.04 or later)
+	// gvcount (added in version 2.04)
 	gvcount = 0;
 	if (ver >= 0x0204) {
 		if (!fio->Read(&gvcount, sizeof(gvcount))) {
@@ -1345,7 +1345,7 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 		}
 	}
 
-	// Renderer notify
+	// Notify the renderer
 	for (line=0; line<0x200; line++) {
 		render->GrpAll(line, 0);
 		render->GrpAll(line, 1);
@@ -1353,18 +1353,18 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 		render->GrpAll(line, 3);
 	}
 
-	// Handler select
+	// Select the handler
 	switch (gvdata.type) {
 		case 0:
 			ASSERT(hand1024);
 			handler = hand1024;
 			break;
-		// 16 colorstype
+		// 16-color type
 		case 1:
 			ASSERT(hand16);
 			handler = hand16;
 			break;
-		// 256 colorstype
+		// 256-color type
 		case 2:
 			ASSERT(hand256);
 			handler = hand256;
@@ -1374,7 +1374,7 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 			ASSERT(handNDef);
 			handler = handNDef;
 			break;
-		// 64K colors type
+		// 64K-color type
 		case 4:
 			ASSERT(hand64K);
 			handler = hand64K;
@@ -1389,7 +1389,7 @@ BOOL FASTCALL GVRAM::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	Apply config
+//	Apply settings
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::ApplyCfg(const Config* /*config*/)
@@ -1397,13 +1397,13 @@ void FASTCALL GVRAM::ApplyCfg(const Config* /*config*/)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	LOG0(Log::Normal, "Apply config");
+	LOG0(Log::Normal, "設定適用");
 }
 
 #if !defined(NDEBUG)
 //---------------------------------------------------------------------------
 //
-//	Assert
+//	Diagnostics
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::AssertDiag() const
@@ -1441,11 +1441,11 @@ DWORD FASTCALL GVRAM::ReadByte(DWORD addr)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
 
-	// Wait(0.5 cycle)
+	// Wait (0.5 wait)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
 
-	// Handler delegate
+	// Leave it to the handler
 	return handler->ReadByte(addr & 0x1fffff);
 }
 
@@ -1461,11 +1461,11 @@ DWORD FASTCALL GVRAM::ReadWord(DWORD addr)
 	ASSERT((addr & 1) == 0);
 	ASSERT_DIAG();
 
-	// Wait(0.5 cycle)
+	// Wait (0.5 wait)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
 
-	// Handler delegate
+	// Leave it to the handler
 	return handler->ReadWord(addr & 0x1fffff);
 }
 
@@ -1481,12 +1481,15 @@ void FASTCALL GVRAM::WriteByte(DWORD addr, DWORD data)
 	ASSERT(data < 0x100);
 	ASSERT_DIAG();
 
-	// Wait(0.5 cycle)
+	// Wait (0.5 wait)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
 
-	// Handler delegate
+	// Leave it to the handler
 	handler->WriteByte(addr & 0x1fffff, data);
+	if (render) {
+		render->GVRAMWrite(addr & 0x1fffff, (BYTE)data);
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -1502,17 +1505,21 @@ void FASTCALL GVRAM::WriteWord(DWORD addr, DWORD data)
 	ASSERT(data < 0x10000);
 	ASSERT_DIAG();
 
-	// Wait(0.5 cycle)
+	// Wait (0.5 wait)
 	scheduler->Wait(gvcount);
 	gvcount ^= 1;
 
-	// Handler delegate
+	// Leave it to the handler
 	handler->WriteWord(addr & 0x1fffff, data);
+	if (render) {
+		render->GVRAMWrite(addr & 0x1fffff, (BYTE)((data >> 8) & 0xff));
+		render->GVRAMWrite((addr + 1) & 0x1fffff, (BYTE)(data & 0xff));
+	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	Read only 
+//	Read-only
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL GVRAM::ReadOnly(DWORD addr) const
@@ -1521,7 +1528,7 @@ DWORD FASTCALL GVRAM::ReadOnly(DWORD addr) const
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT_DIAG();
 
-	// Handler delegate
+	// Leave it to the handler
 	return handler->ReadOnly(addr & 0x1fffff);
 }
 
@@ -1540,7 +1547,7 @@ const BYTE* FASTCALL GVRAM::GetGVRAM() const
 
 //---------------------------------------------------------------------------
 //
-//	Type set
+//	Set the type
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::SetType(DWORD type)
@@ -1553,11 +1560,11 @@ void FASTCALL GVRAM::SetType(DWORD type)
 	ASSERT(this);
 	ASSERT_DIAG();
 
-	// Current value save
+	// Save the current value
 	mem = gvdata.mem;
 	siz = gvdata.siz;
 
-	// Set
+	// Set the value
 	if (type & 8) {
 		gvdata.mem = TRUE;
 	}
@@ -1572,10 +1579,10 @@ void FASTCALL GVRAM::SetType(DWORD type)
 	}
 	gvdata.col = type & 3;
 
-	// Current gvdata.type keep
+	// Store the current gvdata.type
 	prev = gvdata.type;
 
-	// New type calc
+	// Check the new type
 	if (gvdata.mem) {
 		next = 4;
 	}
@@ -1584,42 +1591,35 @@ void FASTCALL GVRAM::SetType(DWORD type)
 			next = 0;
 		}
 		else {
-			const bool use_fast_mapping =
-				(render && (render->GetCompositorMode() == Render::compositor_fast));
-			if (use_fast_mapping && (gvdata.col == 2)) {
-				next = 2;
-			}
-			else {
-				next = gvdata.col + 1;
-			}
+			next = gvdata.col + 1;
 		}
 	}
 
-	// If changed, notifies the renderer
+	// Recreate it if it differs
 	if (prev != next) {
 		switch (next) {
-			// 1024 colorstype
+			// 1024-color type
 			case 0:
 				ASSERT(hand1024);
 				handler = hand1024;
 				break;
-			// 16 colorstype
+			// 16-color type
 			case 1:
 				ASSERT(hand16);
 				handler = hand16;
 				break;
-			// 256 colorstype
+			// 256-color type
 			case 2:
 				ASSERT(hand256);
 				handler = hand256;
 				break;
 			// Undefined type
 			case 3:
-				LOG0(Log::Warning, "Graphic VRAM Undefined type");
+				LOG0(Log::Warning, "グラフィックVRAM 未定義タイプ");
 				ASSERT(handNDef);
 				handler = handNDef;
 				break;
-			// 64K colors type
+			// 64K-color type
 			case 4:
 				ASSERT(hand64K);
 				handler = hand64K;
@@ -1631,7 +1631,7 @@ void FASTCALL GVRAM::SetType(DWORD type)
 		gvdata.type = next;
 	}
 
-	// Internal type differs from previous display size, notifies the renderer
+	// Notify the renderer if the memory type or actual screen size differs
 	if ((gvdata.mem != mem) || (gvdata.siz != siz)) {
 		render->SetVC();
 	}
@@ -1639,7 +1639,7 @@ void FASTCALL GVRAM::SetType(DWORD type)
 
 //---------------------------------------------------------------------------
 //
-//	Plane clear flag set
+//	Set fast clear
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastSet(DWORD mask)
@@ -1648,7 +1648,7 @@ void FASTCALL GVRAM::FastSet(DWORD mask)
 	ASSERT_DIAG();
 
 #if defined(GVRAM_LOG)
-	LOG1(Log::Normal, "Plane clear flag set %02X", mask);
+	LOG1(Log::Normal, "高速クリアプレーン指定 %02X", mask);
 #endif	// GVRAM_LOG
 
 	if (mask & 0x08) {
@@ -1682,7 +1682,7 @@ void FASTCALL GVRAM::FastSet(DWORD mask)
 
 //---------------------------------------------------------------------------
 //
-//	Plane clear
+//	Fast clear
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastClr(const CRTC::crtc_t *p)
@@ -1693,11 +1693,11 @@ void FASTCALL GVRAM::FastClr(const CRTC::crtc_t *p)
 	if (gvdata.siz) {
 		// 1024x1024
 		if (p->hd >= 1) {
-			// 1024x1024,512 or 768
+			// 1024x1024, 512 or 768
 			FastClr768(p);
 		}
 		else {
-			// 1024x1024,256
+			// 1024x1024, 256
 			FastClr256(p);
 		}
 	}
@@ -1709,7 +1709,7 @@ void FASTCALL GVRAM::FastClr(const CRTC::crtc_t *p)
 
 //---------------------------------------------------------------------------
 //
-//	Plane clear 1024x1024 512/768
+//	Fast clear 1024x1024 512/768
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastClr768(const CRTC::crtc_t *p)
@@ -1725,10 +1725,10 @@ void FASTCALL GVRAM::FastClr768(const CRTC::crtc_t *p)
 	ASSERT_DIAG();
 
 #if defined(GVRAM_LOG)
-	LOG0(Log::Normal, "Plane clear 1024x1024 (512/768 width");
+	LOG0(Log::Normal, "高速クリア 1024x1024 (512/768幅)");
 #endif	// GVRAM_LOG
 
-	// Get offset y, scan line from
+	// Get the Y offset and line count n
 	y = p->v_scan;
 	n = 1;
 	if ((p->v_mul == 2) && !(p->lowres)) {
@@ -1742,63 +1742,63 @@ void FASTCALL GVRAM::FastClr768(const CRTC::crtc_t *p)
 		n = 2;
 	}
 
-	// Scan line loop
+	// Line loop
 	for (j=0; j<n; j++) {
-		// Scroll register from offset get
+		// Get the offset from the scroll registers
 		offset = (y + p->grp_scrly[0]) & 0x3ff;
 
-		// Upper part, lower part combine
+		// Split into upper and lower halves
 		if (offset < 512) {
-			// Pointer create
+			// Build the pointer
 			q = (WORD*)&gvram[offset << 10];
 
-			// Lower byte clear
+			// Clear the lower byte
 			for (k=0; k<512; k++) {
 				*q++ &= 0xff00;
 			}
 
-			// FlagUp
+			// Raise the flag
 			render->GrpAll(offset, 0);
 			render->GrpAll(offset, 1);
 		}
 		else {
-			// Pointer create
+			// Build the pointer
 			offset &= 0x1ff;
 			q = (WORD*)&gvram[offset << 10];
 
-			// Upper byte clear
+			// Clear the upper byte
 			for (k=0; k<512; k++) {
 				*q++ &= 0x00ff;
 			}
 
-			// FlagUp
+			// Raise the flag
 			render->GrpAll(offset, 2);
 			render->GrpAll(offset, 3);
 		}
 
-		// Next scan line
+		// Advance to the next line
 		y++;
 	}
 }
 
 //---------------------------------------------------------------------------
 //
-//	Plane clear 1024x1024 256
+//	Fast clear 1024x1024 256
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastClr256(const CRTC::crtc_t *p)
 {
 #if defined(GVRAM_LOG)
-	LOG0(Log::Normal, "Plane clear 1024x1024 (256 width");
+	LOG0(Log::Normal, "高速クリア 1024x1024 (256幅)");
 #endif	// GVRAM_LOG
 
-	// Dummy call
+	// Temporary measure
 	FastClr768(p);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Plane clear 512x512
+//	Fast clear 512x512
 //
 //---------------------------------------------------------------------------
 void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
@@ -1816,10 +1816,10 @@ void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
 	ASSERT_DIAG();
 
 #if defined(GVRAM_LOG)
-	LOG1(Log::Normal, "Plane clear 512x512 Scan=%d", p->v_scan);
+	LOG1(Log::Normal, "高速クリア 512x512 Scan=%d", p->v_scan);
 #endif	// GVRAM_LOG
 
-	// Get offset y, scan line from
+	// Get the Y offset and line count n
 	y = p->v_scan;
 	n = 1;
 	if ((p->v_mul == 2) && !(p->lowres)) {
@@ -1833,13 +1833,13 @@ void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
 		n = 2;
 	}
 
-	// Plane scan loop
+	// Plane loop
 	for (i=0; i<4; i++) {
 		if (!gvdata.plane[i]) {
 			continue;
 		}
 
-		// Width calc
+		// Calculate the width
 		w[0] = p->h_dots;
 		w[1] = 0;
 		if (((p->grp_scrlx[i] & 0x1ff) + w[0]) > 512) {
@@ -1847,32 +1847,32 @@ void FASTCALL GVRAM::FastClr512(const CRTC::crtc_t *p)
 			w[0] = 512 - (p->grp_scrlx[i] & 0x1ff);
 		}
 
-		// Scan line loop
+		// Line loop
 		for (j=0; j<n; j++) {
-			// Scroll register from offset get
+			// Get the offset from the scroll registers
 			offset = ((y + p->grp_scrly[i]) & 0x1ff) << 10;
 			q = (WORD*)&gvram[offset + ((p->grp_scrlx[i] & 0x1ff) << 1)];
 
-			// Clear(1)
+			// Clear (1)
 			for (k=0; k<w[0]; k++) {
 				*q++ &= gvdata.mask[i];
 			}
 			if (w[1] > 0) {
-				// Clear(2)
+				// Clear (2)
 				q = (WORD*)&gvram[offset];
 				for (k=0; k<w[1]; k++) {
 					*q++ &= gvdata.mask[i];
 				}
 			}
 
-			// FlagUp
+			// Raise the flag
 			render->GrpAll(offset >> 10, i);
 
-			// Next scan line
+			// Advance to the next line
 			y++;
 		}
 
-		// Scan line return
+		// Move back one line
 		y -= n;
 	}
 }

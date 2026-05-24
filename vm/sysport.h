@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2006 Takashi Tanaka (ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2006 PI(ytanaka@ipc-tokai.or.jp)
 //	[ System Port ]
 //
 //---------------------------------------------------------------------------
@@ -20,56 +20,57 @@
 class SysPort : public MemDevice
 {
 public:
-	// System data structure
+	// System data type definition
 	typedef struct {
 		DWORD contrast;					// Contrast
-		DWORD scope_3d;					// 3D shift
-		DWORD image_unit;				// Image unit select
-		DWORD power_count;				// Power save counter
-		DWORD ver_count;				// Version control counter
+		DWORD scope_3d;					// 3D scope mode
+		DWORD image_unit;				// Image unit number
+		DWORD power_count;				// Power switch counter
+		DWORD ver_count;				// Version management counter
 	} sysport_t;
 
 public:
-	// Constructor
+	// Basic functions
 	SysPort(VM *p);
-										// Initialization
+										// Constructor
 	BOOL FASTCALL Init();
-										// Cleanup
+										// Initialization
 	void FASTCALL Cleanup();
-										// Reset
+										// Cleanup
 	void FASTCALL Reset();
-										// Save
+										// Reset
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Load
+										// Save
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Apply configuration
+										// Load
 	void FASTCALL ApplyCfg(const Config *config);
+										// Apply configuration
 #if !defined(NDEBUG)
 	void FASTCALL AssertDiag() const;
-										// Assert
+										// Diagnostic
 #endif	// NDEBUG
 
-	// Memory device
+	// I/O device
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// Byte read
+										// Read byte
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// Word read
+										// Read word
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// Byte write
+										// Write byte
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// Word write
+										// Write word
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
 										// Read only
 
 private:
 	DWORD FASTCALL GetVR();
-										// Version register read
+										// Version register readout
 	sysport_t sysport;
-										// Structure
+										// Work memory
 	Memory *memory;
 										// Memory
 	SRAM *sram;
-										// SRAM
+										// Static RAM
 	Keyboard *keyboard;
 										// Keyboard
 	CRTC *crtc;

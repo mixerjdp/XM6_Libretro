@@ -2,7 +2,7 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2005 PI (ytanaka@ipc-tokai.or.jp)
+//	Copyright (C) 2001-2005 ＰＩ．(ytanaka@ipc-tokai.or.jp)
 //	[ RTC(RP5C15) ]
 //
 //---------------------------------------------------------------------------
@@ -25,50 +25,50 @@
 
 //---------------------------------------------------------------------------
 //
-//	Constructor
+//	コンストラクタ
 //
 //---------------------------------------------------------------------------
 RTC::RTC(VM *p) : MemDevice(p)
 {
-	// Device ID creation
+	// デバイスIDを初期化
 	dev.id = MAKEID('R', 'T', 'C', ' ');
 	dev.desc = "RTC (RP5C15)";
 
-	// Start address, End address
+	// 開始アドレス、終了アドレス
 	memdev.first = 0xe8a000;
 	memdev.last = 0xe8bfff;
 
-	// Null clear
+	// ワーククリア
 	mfp = NULL;
 }
 
 //---------------------------------------------------------------------------
 //
-//	Initialization
+//	初期化
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::Init()
 {
 	ASSERT(this);
 
-	// Base class
+	// 基本クラス
 	if (!MemDevice::Init()) {
 		return FALSE;
 	}
 
-	// Get MFP
+	// MFPを取得
 	ASSERT(!mfp);
 	mfp = (MFP*)vm->SearchDevice(MAKEID('M', 'F', 'P', ' '));
 	ASSERT(mfp);
 
-	// Create event(32Hz)
+	// イベントを作成(32Hz)
 	event.SetDevice(this);
 	event.SetDesc("Clock 16Hz");
 	event.SetUser(0);
 	event.SetTime(62500);
 	scheduler->AddEvent(&event);
 
-	// Clear RTC register
+	// 内部レジスタをクリア
 	rtc.sec = 0;
 	rtc.min = 0;
 	rtc.hour = 0;
@@ -105,10 +105,10 @@ BOOL FASTCALL RTC::Init()
 	rtc.alarm = FALSE;
 	rtc.alarmout = FALSE;
 
-	// Set current time
+	// 現在時刻を設定
 	Adjust(TRUE);
 
-	// MFPnotification(ALARM signal output)
+	// MFPへ通知(ALARM信号オフ)
 	mfp->SetGPIP(0, 1);
 
 	return TRUE;
@@ -116,31 +116,31 @@ BOOL FASTCALL RTC::Init()
 
 //---------------------------------------------------------------------------
 //
-//	Cleanup
+//	クリーンアップ
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::Cleanup()
 {
 	ASSERT(this);
 
-	// Base class
+	// 基本クラスへ
 	MemDevice::Cleanup();
 }
 
 //---------------------------------------------------------------------------
 //
-//	ReSet
+//	リセット
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::Reset()
 {
 	ASSERT(this);
-	LOG0(Log::Normal, "Reset");
+	LOG0(Log::Normal, "リセット");
 }
 
 //---------------------------------------------------------------------------
 //
-//	Save
+//	セーブ
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::Save(Fileio *fio, int ver)
@@ -150,20 +150,20 @@ BOOL FASTCALL RTC::Save(Fileio *fio, int ver)
 	ASSERT(this);
 	ASSERT(fio);
 
-	LOG0(Log::Normal, "Save");
+	LOG0(Log::Normal, "セーブ");
 
-	// Size save
+	// サイズをセーブ
 	sz = sizeof(rtc_t);
 	if (!fio->Write(&sz, sizeof(sz))) {
 		return FALSE;
 	}
 
-	// Structure save
+	// 本体をセーブ
 	if (!fio->Write(&rtc, (int)sz)) {
 		return FALSE;
 	}
 
-	// Event save
+	// イベントをセーブ
 	if (!event.Save(fio, ver)) {
 		return FALSE;
 	}
@@ -173,7 +173,7 @@ BOOL FASTCALL RTC::Save(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	Load
+//	ロード
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::Load(Fileio *fio, int ver)
@@ -183,9 +183,9 @@ BOOL FASTCALL RTC::Load(Fileio *fio, int ver)
 	ASSERT(this);
 	ASSERT(fio);
 
-	LOG0(Log::Normal, "Load");
+	LOG0(Log::Normal, "ロード");
 
-	// Size and structure verification
+	// サイズをロード、照合
 	if (!fio->Read(&sz, sizeof(sz))) {
 		return FALSE;
 	}
@@ -193,12 +193,12 @@ BOOL FASTCALL RTC::Load(Fileio *fio, int ver)
 		return FALSE;
 	}
 
-	// Structure load
+	// 本体をロード
 	if (!fio->Read(&rtc, (int)sz)) {
 		return FALSE;
 	}
 
-	// Event load
+	// イベントをロード
 	if (!event.Load(fio, ver)) {
 		return FALSE;
 	}
@@ -208,19 +208,19 @@ BOOL FASTCALL RTC::Load(Fileio *fio, int ver)
 
 //---------------------------------------------------------------------------
 //
-//	Config apply
+//	設定適用
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::ApplyCfg(const Config* /*config*/)
 {
 	ASSERT(this);
 
-	LOG0(Log::Normal, "Config apply");
+	LOG0(Log::Normal, "設定適用");
 }
 
 //---------------------------------------------------------------------------
 //
-//	Byte read
+//	バイト読み込み
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL RTC::ReadByte(DWORD addr)
@@ -230,52 +230,52 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// Odd address is invalid, returns 0xFF
+	// 奇数アドレスのみデコードされている
 	if ((addr & 1) == 0) {
-		// ROM IOCS bank read/write not supported. X680x0 is not supported
+		// ROM IOCSでワード読み出しを行っている。バスエラーは発生しない
 		return 0xff;
 	}
 
-	// 32-byte page mode
+	// 32バイト単位でループ
 	addr &= 0x1f;
 
-	// Wait
+	// ウェイト
 	scheduler->Wait(1);
 
-	// Bank mapping (register 0 to 28)
+	// レジスタ別に分類(レジスタ0～レジスタ28)
 	addr >>= 1;
 	ASSERT((rtc.bank == 0) || (rtc.bank == 1));
 	if (rtc.bank > 0) {
-		// Bank1 has 13 valid bytes from beginning
+		// バンク1は先頭13バイトに有効
 		if (addr <= 0x0c) {
 			addr += 0x10;
 		}
 	}
 
 	switch (addr) {
-		// Sec(1)
+		// 秒(1)
 		case 0x00:
 			data = rtc.sec % 10;
 			return (0xf0 | data);
 
-		// Sec(10)
+		// 秒(10)
 		case 0x01:
 			data = rtc.sec / 10;
 			return (0xf0 | data);
 
-		// Min(1)
+		// 分(1)
 		case 0x02:
 			data = rtc.min % 10;
 			return (0xf0 | data);
 
-		// Min(10)
+		// 分(10)
 		case 0x03:
 			data = rtc.min / 10;
 			return (0xf0 | data);
 
-		// Hour(1)
+		// 時(1)
 		case 0x04:
-			// 12h,24h handled
+			// 12h,24hで分ける
 			data = rtc.hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -283,9 +283,9 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			data %= 10;
 			return (0xf0 | data);
 
-		// Hour(10)
+		// 時(10)
 		case 0x05:
-			// 12h,24h handled. 12h sets PM at bit1
+			// 12h,24hで分ける。12hのPMはb1を立てる
 			data = rtc.hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -296,41 +296,41 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			}
 			return (0xf0 | data);
 
-		// Week
+		// 曜日
 		case 0x06:
 			return (0xf0 | rtc.week);
 
-		// Day(1)
+		// 日(1)
 		case 0x07:
 			data = rtc.day % 10;
 			return (0xf0 | data);
 
-		// Day(10)
+		// 日(10)
 		case 0x08:
 			data = rtc.day / 10;
 			return (0xf0 | data);
 
-		// Month(1)
+		// 月(1)
 		case 0x09:
 			data = rtc.month % 10;
 			return (0xf0 | data);
 
-		// Month(10)
+		// 月(10)
 		case 0x0a:
 			data = rtc.month / 10;
 			return (0xf0 | data);
 
-		// Year(1)
+		// 年(1)
 		case 0x0b:
 			data = rtc.year % 10;
 			return (0xf0 | data);
 
-		// Year(10)
+		// 年(10)
 		case 0x0c:
 			data = rtc.year / 10;
 			return (0xf0 | data);
 
-		// MODE register
+		// MODEレジスタ
 		case 0x0d:
 			data = 0xf0;
 			if (rtc.timer_en) {
@@ -344,11 +344,11 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			}
 			return data;
 
-		// TEST register(Write Only)
+		// TESTレジスタ(Write Only)
 		case 0x0e:
 			return 0xf0;
 
-		// RESET register(Write only is not HSi.x v2);
+		// RESETレジスタ(Write onlyではない？Si.x v2);
 		case 0x0f:
 			data = 0xf0;
 			if (!rtc.alarm_1hz) {
@@ -359,28 +359,28 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			}
 			return data;
 
-		// CLKOUT register
+		// CLKOUTレジスタ
 		case 0x10:
 			ASSERT(rtc.clkout < 0x08);
 			return (0xf0 | rtc.clkout);
 
-		// ADJUST register
+		// ADJUSTレジスタ
 		case 0x11:
 			return (0xf0 | rtc.adjust);
 
-		// Alarm Min(1)
+		// アラーム分(1)
 		case 0x12:
 			data = rtc.alarm_min % 10;
 			return (0xf0 | data);
 
-		// Alarm Min(10)
+		// アラーム分(10)
 		case 0x13:
 			data = rtc.alarm_min / 10;
 			return (0xf0 | data);
 
-		// Alarm Hour(1)
+		// アラーム時(1)
 		case 0x14:
-			// 12h,24h handled
+			// 12h,24hで分ける
 			data = rtc.alarm_hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -388,9 +388,9 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			data %= 10;
 			return (0xf0 | data);
 
-		// Alarm Hour(10)
+		// アラーム時(10)
 		case 0x15:
-			// 12h,24h handled. 12h sets PM at bit1
+			// 12h,24hで分ける。12hのPMはb1を立てる
 			data = rtc.alarm_hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -401,40 +401,40 @@ DWORD FASTCALL RTC::ReadByte(DWORD addr)
 			}
 			return (0xf0 | data);
 
-		// Alarm Week
+		// アラーム曜日
 		case 0x16:
 			return (0xf0 | rtc.alarm_week);
 
-		// Alarm Day(1)
+		// アラーム日(1)
 		case 0x17:
 			data = rtc.alarm_day % 10;
 			return (0xf0 | data);
 
-		// Alarm Day(10)
+		// アラーム日(10)
 		case 0x18:
 			data = rtc.alarm_day / 10;
 			return (0xf0 | data);
 
-		// 12h,24h switch
+		// 12h,24h切り替え
 		case 0x1a:
 			if (rtc.fullhour) {
 				return 0xf1;
 			}
 			return 0xf0;
 
-		// Leap counter
+		// 閏年カウンタ
 		case 0x1b:
 			ASSERT(rtc.leap <= 3);
 			return (0xf0 | rtc.leap);
 	}
 
-	LOG1(Log::Warning, "Invalid register read R%02d", addr);
+	LOG1(Log::Warning, "未実装レジスタ読み込み R%02d", addr);
 	return 0xff;
 }
 
 //---------------------------------------------------------------------------
 //
-//	Byte write
+//	ワード読み込み
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL RTC::ReadWord(DWORD addr)
@@ -448,7 +448,7 @@ DWORD FASTCALL RTC::ReadWord(DWORD addr)
 
 //---------------------------------------------------------------------------
 //
-//	Byte write
+//	バイト書き込み
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
@@ -457,30 +457,30 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 	ASSERT(data < 0x100);
 
-	// Odd address is invalid, returns 0xFF
+	// 奇数アドレスのみデコードされている
 	if ((addr & 1) == 0) {
-		// X680x0 is not supported
+		// バスエラーは発生しない
 		return;
 	}
 
-	// 32-byte page mode
+	// 32バイト単位でループ
 	addr &= 0x1f;
 
-	// Wait
+	// ウェイト
 	scheduler->Wait(1);
 
-	// Bank mapping (register 0 to 28)
+	// レジスタ別に分類(レジスタ0～レジスタ28)
 	addr >>= 1;
 	ASSERT((rtc.bank == 0) || (rtc.bank == 1));
 	if (rtc.bank > 0) {
-		// Bank1 has 13 valid bytes from beginning
+		// バンク1は先頭13バイトに有効
 		if (addr <= 0x0c) {
 			addr += 0x10;
 		}
 	}
 
 	switch (addr) {
-		// Sec(1)
+		// 秒(1)
 		case 0x00:
 			data &= 0x0f;
 			rtc.sec /= 10;
@@ -488,7 +488,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.sec += data;
 			return;
 
-		// Sec(10)
+		// 秒(10)
 		case 0x01:
 			data &= 0x07;
 			data *= 10;
@@ -496,7 +496,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.sec += data;
 			return;
 
-		// Min(1)
+		// 分(1)
 		case 0x02:
 			data &= 0x0f;
 			rtc.min /= 10;
@@ -504,7 +504,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.min += data;
 			return;
 
-		// Min(10)
+		// 分(10)
 		case 0x03:
 			data &= 0x07;
 			data *= 10;
@@ -512,10 +512,10 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.min += data;
 			return;
 
-		// Hour(1)
+		// 時(1)
 		case 0x04:
 			data &= 0x0f;
-			// 12h,24h handled
+			// 12h,24hで分ける
 			if (rtc.fullhour || (rtc.hour < 12)) {
 				// 24h or 12h(AM)
 				rtc.hour /= 10;
@@ -532,10 +532,10 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// Hour(10)
+		// 時(10)
 		case 0x05:
 			data &= 0x03;
-			// 12h,24h handled
+			// 12h,24hで分ける
 			if (rtc.fullhour) {
 				// 24h
 				data *= 10;
@@ -544,7 +544,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			else {
 				if (data & 0x02) {
-					// 12h,PM end invalid (data conversion error)
+					// 12h,PM強制選択(データシートによる)
 					data &= 0x01;
 					data *= 10;
 					rtc.hour %= 10;
@@ -552,7 +552,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 					rtc.hour += 12;
 				}
 				else {
-					// 12h,AM end invalid (data conversion error)
+					// 12h,AM強制選択(データシートによる)
 					data &= 0x01;
 					data *= 10;
 					rtc.hour %= 10;
@@ -561,13 +561,13 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// Week
+		// 曜日
 		case 0x06:
 			data &= 0x07;
 			rtc.week = data;
 			return;
 
-		// Day(1)
+		// 日(1)
 		case 0x07:
 			data &= 0x0f;
 			rtc.day /= 10;
@@ -575,7 +575,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.day += data;
 			return;
 
-		// Day(10)
+		// 日(10)
 		case 0x08:
 			data &= 0x03;
 			data *= 10;
@@ -583,7 +583,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.day += data;
 			return;
 
-		// Month(1)
+		// 月(1)
 		case 0x09:
 			data &= 0x0f;
 			rtc.month /= 10;
@@ -591,7 +591,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.month += data;
 			return;
 
-		// Month(10)
+		// 月(10)
 		case 0x0a:
 			data &= 0x01;
 			data *= 10;
@@ -599,7 +599,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.month += data;
 			return;
 
-		// Year(1)
+		// 年(1)
 		case 0x0b:
 			data &= 0x0f;
 			rtc.year /= 10;
@@ -607,7 +607,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.year += data;
 			return;
 
-		// Year(10)
+		// 年(10)
 		case 0x0c:
 			data &= 0x0f;
 			data *= 10;
@@ -615,12 +615,12 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.year += data;
 			return;
 
-		// MODE register
+		// MODEレジスタ
 		case 0x0d:
-			// Timer clear
+			// タイマイネーブル
 			if (data & 0x08) {
 				rtc.timer_en = TRUE;
-				// No event is registered, nothing is done
+				// キャリーが残っていれば、はきだす
 				if (rtc.carry) {
 					SecUp();
 				}
@@ -629,7 +629,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 				rtc.timer_en = FALSE;
 			}
 
-			// Alarm clear
+			// アラームイネーブル
 			if (data & 0x04) {
 				rtc.alarm_en = TRUE;
 			}
@@ -638,7 +638,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			AlarmOut();
 
-			// Bank select
+			// バンクセレクト
 			if (data & 0x01) {
 				rtc.bank = 1;
 			}
@@ -647,17 +647,17 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// TEST register
+		// TESTレジスタ
 		case 0x0e:
 			rtc.test = (data & 0x0f);
 			if (rtc.test != 0) {
-				LOG1(Log::Warning, "test mode set $%02X", rtc.test);
+				LOG1(Log::Warning, "テストモード設定 $%02X", rtc.test);
 			}
 			return;
 
-		// RESET register
+		// RESETレジスタ
 		case 0x0f:
-			// 1Hz, 16Hz signal output
+			// 1Hz, 16Hzパルス出力
 			if (data & 0x08) {
 				rtc.alarm_1hz = FALSE;
 			}
@@ -674,18 +674,18 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 
 			if (data & 0x02) {
 				rtc.under_reset = TRUE;
-				// Event is reset
+				// イベントをリセットする
 				event.SetTime(event.GetTime());
 			}
 			else {
 				rtc.under_reset = FALSE;
 			}
 			if (data & 0x01) {
-				// Check if alarm signal matches current time
+				// ALARM信号をHレベルにした後で
 				rtc.alarm_reset = TRUE;
 				rtc.alarm = FALSE;
 				AlarmOut();
-				// Register event to scheduler
+				// 現在時刻と一致させる
 				rtc.alarm_min = rtc.min;
 				rtc.alarm_hour = rtc.hour;
 				rtc.alarm_week = rtc.week;
@@ -696,31 +696,31 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// CLKOUT register
+		// CLKOUTレジスタ
 		case 0x10:
 			rtc.clkout = (data & 0x07);
 #if defined(RTC_LOG)
-			LOG1(Log::Normal, "CLKOUT reset %d", rtc.clkout);
+			LOG1(Log::Normal, "CLKOUTセット %d", rtc.clkout);
 #endif	// RTC_LOG
 			return;
 
-		// ADJ register
+		// ADJレジスタ
 		case 0x11:
 			rtc.adjust = (data & 0x01);
 			if (data & 0x01) {
-				// 1-second counter
+				// 1で秒アジャスト
 				if (rtc.sec < 30) {
-					// Round up
+					// 切り捨て
 					rtc.sec = 0;
 				}
 				else {
-					// Round up
+					// 切り上げ
 					MinUp();
 				}
 			}
 			return;
 
-		// Alarm Min(1)
+		// アラーム分(1)
 		case 0x12:
 			data &= 0x0f;
 			rtc.alarm_min /= 10;
@@ -728,7 +728,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.alarm_min += data;
 			return;
 
-		// Alarm Min(10)
+		// アラーム分(10)
 		case 0x13:
 			data &= 0x07;
 			data *= 10;
@@ -736,10 +736,10 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.alarm_min += data;
 			return;
 
-		// Alarm Hour(1)
+		// アラーム時(1)
 		case 0x14:
 			data &= 0x0f;
-			// 12h,24h handled
+			// 12h,24hで分ける
 			if (rtc.fullhour || (rtc.alarm_hour < 12)) {
 				// 24h or 12h(AM)
 				rtc.alarm_hour /= 10;
@@ -756,10 +756,10 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// Alarm Hour(10)
+		// アラーム時(10)
 		case 0x15:
 			data &= 0x03;
-			// 12h,24h handled
+			// 12h,24hで分ける
 			if (rtc.fullhour) {
 				// 24h
 				data *= 10;
@@ -768,7 +768,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			else {
 				if (data & 0x02) {
-					// 12h,PM end invalid (data conversion error)
+					// 12h,PM強制選択(データシートによる)
 					data &= 0x01;
 					data *= 10;
 					rtc.alarm_hour %= 10;
@@ -776,7 +776,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 					rtc.alarm_hour += 12;
 				}
 				else {
-					// 12h,AM end invalid (data conversion error)
+					// 12h,AM強制選択(データシートによる)
 					data &= 0x01;
 					data *= 10;
 					rtc.alarm_hour %= 10;
@@ -785,13 +785,13 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			}
 			return;
 
-		// Alarm Week
+		// アラーム曜日
 		case 0x16:
 			data &= 0x07;
 			rtc.alarm_week = data;
 			return;
 
-		// Alarm Day(1)
+		// アラーム日(1)
 		case 0x17:
 			data &= 0x0f;
 			rtc.alarm_day /= 10;
@@ -799,7 +799,7 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.alarm_day += data;
 			return;
 
-		// Alarm Day(10)
+		// アラーム日(10)
 		case 0x18:
 			data &= 0x03;
 			data *= 10;
@@ -807,35 +807,35 @@ void FASTCALL RTC::WriteByte(DWORD addr, DWORD data)
 			rtc.alarm_day += data;
 			return;
 
-		// 12h,24h switch
+		// 12h,24h切り替え
 		case 0x1a:
 			if (data & 0x01) {
 				rtc.fullhour = TRUE;
 #if defined(RTC_LOG)
-				LOG0(Log::Normal, "24-hour mode");
+				LOG0(Log::Normal, "24時間制");
 #endif	// RTC_LOG
 			}
 			else {
 				rtc.fullhour = FALSE;
 #if defined(RTC_LOG)
-				LOG0(Log::Normal, "12-hour mode");
+				LOG0(Log::Normal, "12時間制");
 #endif	// RTC_LOG
 			}
 			return;
 
-		// Leap counter
+		// 閏年カウンタ
 		case 0x1b:
 			rtc.leap = (data & 0x03);
 			return;
 	}
 
-	LOG2(Log::Warning, "Invalid register write R%02d <- $%02X",
+	LOG2(Log::Warning, "未実装レジスタ書き込み R%02d <- $%02X",
 							addr, data);
 }
 
 //---------------------------------------------------------------------------
 //
-//	Word write
+//	ワード書き込み
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::WriteWord(DWORD addr, DWORD data)
@@ -850,7 +850,7 @@ void FASTCALL RTC::WriteWord(DWORD addr, DWORD data)
 
 //---------------------------------------------------------------------------
 //
-//	Read only
+//	読み込みのみ
 //
 //---------------------------------------------------------------------------
 DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
@@ -860,48 +860,48 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 	ASSERT(this);
 	ASSERT((addr >= memdev.first) && (addr <= memdev.last));
 
-	// Odd address is invalid, returns 0xFF
+	// 奇数アドレスのみデコードされている
 	if ((addr & 1) == 0) {
 		return 0xff;
 	}
 
-	// 32-byte page mode
+	// 32バイト単位でループ
 	addr &= 0x1f;
 
-	// Bank mapping (register 0 to 28)
+	// レジスタ別に分類(レジスタ0～レジスタ28)
 	addr >>= 1;
 	ASSERT((rtc.bank == 0) || (rtc.bank == 1));
 	if (rtc.bank > 0) {
-		// Bank1 has 13 valid bytes from beginning
+		// バンク1は先頭13バイトに有効
 		if (addr <= 0x0c) {
 			addr += 0x10;
 		}
 	}
 
 	switch (addr) {
-		// Sec(1)
+		// 秒(1)
 		case 0x00:
 			data = rtc.sec % 10;
 			return (0xf0 | data);
 
-		// Sec(10)
+		// 秒(10)
 		case 0x01:
 			data = rtc.sec / 10;
 			return (0xf0 | data);
 
-		// Min(1)
+		// 分(1)
 		case 0x02:
 			data = rtc.min % 10;
 			return (0xf0 | data);
 
-		// Min(10)
+		// 分(10)
 		case 0x03:
 			data = rtc.min / 10;
 			return (0xf0 | data);
 
-		// Hour(1)
+		// 時(1)
 		case 0x04:
-			// 12h,24h handled
+			// 12h,24hで分ける
 			data = rtc.hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -909,9 +909,9 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			data %= 10;
 			return (0xf0 | data);
 
-		// Hour(10)
+		// 時(10)
 		case 0x05:
-			// 12h,24h handled. 12h sets PM at bit1
+			// 12h,24hで分ける。12hのPMはb1を立てる
 			data = rtc.hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -922,41 +922,41 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			}
 			return (0xf0 | data);
 
-		// Week
+		// 曜日
 		case 0x06:
 			return (0xf0 | rtc.week);
 
-		// Day(1)
+		// 日(1)
 		case 0x07:
 			data = rtc.day % 10;
 			return (0xf0 | data);
 
-		// Day(10)
+		// 日(10)
 		case 0x08:
 			data = rtc.day / 10;
 			return (0xf0 | data);
 
-		// Month(1)
+		// 月(1)
 		case 0x09:
 			data = rtc.month % 10;
 			return (0xf0 | data);
 
-		// Month(10)
+		// 月(10)
 		case 0x0a:
 			data = rtc.month / 10;
 			return (0xf0 | data);
 
-		// Year(1)
+		// 年(1)
 		case 0x0b:
 			data = rtc.year % 10;
 			return (0xf0 | data);
 
-		// Year(10)
+		// 年(10)
 		case 0x0c:
 			data = rtc.year / 10;
 			return (0xf0 | data);
 
-		// MODE register
+		// MODEレジスタ
 		case 0x0d:
 			data = 0xf0;
 			if (rtc.timer_en) {
@@ -970,11 +970,11 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			}
 			return data;
 
-		// TEST register(Write Only)
+		// TESTレジスタ(Write Only)
 		case 0x0e:
 			return 0xf0;
 
-		// RESET register(Write only is not HSi.x v2);
+		// RESETレジスタ(Write onlyではない？Si.x v2);
 		case 0x0f:
 			data = 0xf0;
 			if (!rtc.alarm_1hz) {
@@ -985,28 +985,28 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			}
 			return data;
 
-		// CLKOUT register
+		// CLKOUTレジスタ
 		case 0x10:
 			ASSERT(rtc.clkout < 0x08);
 			return (0xf0 | rtc.clkout);
 
-		// ADJUST register
+		// ADJUSTレジスタ
 		case 0x11:
 			return (0xf0 | rtc.adjust);
 
-		// Alarm Min(1)
+		// アラーム分(1)
 		case 0x12:
 			data = rtc.alarm_min % 10;
 			return (0xf0 | data);
 
-		// Alarm Min(10)
+		// アラーム分(10)
 		case 0x13:
 			data = rtc.alarm_min / 10;
 			return (0xf0 | data);
 
-		// Alarm Hour(1)
+		// アラーム時(1)
 		case 0x14:
-			// 12h,24h handled
+			// 12h,24hで分ける
 			data = rtc.alarm_hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -1014,9 +1014,9 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			data %= 10;
 			return (0xf0 | data);
 
-		// Alarm Hour(10)
+		// アラーム時(10)
 		case 0x15:
-			// 12h,24h handled. 12h sets PM at bit1
+			// 12h,24hで分ける。12hのPMはb1を立てる
 			data = rtc.alarm_hour;
 			if (!rtc.fullhour) {
 				data %= 12;
@@ -1027,28 +1027,28 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 			}
 			return (0xf0 | data);
 
-		// Alarm Week
+		// アラーム曜日
 		case 0x16:
 			return (0xf0 | rtc.alarm_week);
 
-		// Alarm Day(1)
+		// アラーム日(1)
 		case 0x17:
 			data = rtc.alarm_day % 10;
 			return (0xf0 | data);
 
-		// Alarm Day(10)
+		// アラーム日(10)
 		case 0x18:
 			data = rtc.alarm_day / 10;
 			return (0xf0 | data);
 
-		// 12h,24h switch
+		// 12h,24h切り替え
 		case 0x1a:
 			if (rtc.fullhour) {
 				return 0xf1;
 			}
 			return 0xf0;
 
-		// Leap counter
+		// 閏年カウンタ
 		case 0x1b:
 			ASSERT(rtc.leap <= 3);
 			return (0xf0 | rtc.leap);
@@ -1059,7 +1059,7 @@ DWORD FASTCALL RTC::ReadOnly(DWORD addr) const
 
 //---------------------------------------------------------------------------
 //
-//	Get RTC data
+//	内部データ取得
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::GetRTC(rtc_t *buffer)
@@ -1067,55 +1067,55 @@ void FASTCALL RTC::GetRTC(rtc_t *buffer)
 	ASSERT(this);
 	ASSERT(buffer);
 
-	// ReRTC data is copied
+	// 内部データをコピー
 	*buffer = rtc;
 }
 
 //---------------------------------------------------------------------------
 //
-//	Event callback
+//	イベントコールバック
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::Callback(Event* /*ev*/)
 {
 	ASSERT(this);
 
-	// Event callback
+	// ブリンク処理
 	rtc.signal_blink--;
 	if (rtc.signal_blink == 0) {
 		rtc.signal_blink = 25;
 	}
 
-	// Time adjustment
+	// 信号を反転
 	rtc.signal_16hz = !(rtc.signal_16hz);
 
-	// Re16-bit units
+	// 16回おきに処理
 	rtc.signal_count++;
 	if (rtc.signal_count < 0x10) {
-		// Output alarm register data
+		// ALARM信号の合成と出力
 		AlarmOut();
 		return TRUE;
 	}
 	rtc.signal_count = 0;
 
-	// 1HzTime adjustment
+	// 1Hz信号を反転
 	rtc.signal_1hz = !(rtc.signal_1hz);
 
-	// Output alarm register data
+	// ALARM信号の合成と出力
 	AlarmOut();
 
-	// TRUE or FALSE(validation result) in callback(Si.x v2)
+	// TRUE→FALSE(立ち下がり)で処理(Si.x v2)
 	if (rtc.signal_1hz) {
 		return TRUE;
 	}
 
-	// If timer is disabled, set carry and exit
+	// タイマーdisableなら、キャリーをセットして終了
 	if (!rtc.timer_en) {
 		rtc.carry = TRUE;
 		return TRUE;
 	}
 
-	// Sec up
+	// 秒アップ
 	SecUp();
 
 	return TRUE;
@@ -1123,7 +1123,7 @@ BOOL FASTCALL RTC::Callback(Event* /*ev*/)
 
 //---------------------------------------------------------------------------
 //
-//	Current time is set
+//	現在時刻をセット
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::Adjust(BOOL alarm)
@@ -1134,11 +1134,11 @@ void FASTCALL RTC::Adjust(BOOL alarm)
 
     ASSERT(this);
 
-	// Get current time
+	// 時刻を取得
 	ltime = time(NULL);
 	now = localtime(&ltime);
 
-	// Conversion
+	// 変換
 	rtc.year = (now->tm_year + 20) % 100;
 	rtc.month = now->tm_mon + 1;
 	rtc.day = now->tm_mday;
@@ -1147,12 +1147,12 @@ void FASTCALL RTC::Adjust(BOOL alarm)
 	rtc.min = now->tm_min;
 	rtc.sec = now->tm_sec;
 
-	// leap year calculation (not leap year in year 2100)
+	// leapを計算(2100年には未対応)
 	leap = now->tm_year;
 	leap %= 4;
 	rtc.leap = leap;
 
-	// Not supported by the 040Murder extended function
+	// アラームには同じ時間を設定
 	if (alarm) {
 		rtc.alarm_min = rtc.min;
 		rtc.alarm_hour = rtc.hour;
@@ -1163,7 +1163,7 @@ void FASTCALL RTC::Adjust(BOOL alarm)
 
 //---------------------------------------------------------------------------
 //
-//	Alarm output
+//	アラーム合成
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::AlarmOut()
@@ -1172,25 +1172,25 @@ void FASTCALL RTC::AlarmOut()
 
 	flag = FALSE;
 
-	// Alarm output
+	// アラーム合成
 	if (rtc.alarm_en) {
 		flag = rtc.alarm;
 	}
 
-	// 1Hz output
+	// 1Hz合成
 	if (rtc.alarm_1hz) {
 		flag = rtc.signal_1hz;
 	}
 
-	// 16Hz output
+	// 16Hz合成
 	if (rtc.alarm_16hz) {
 		flag = rtc.signal_16hz;
 	}
 
-	// Notify MFP
+	// 記憶
 	rtc.alarmout = flag;
 
-	// MFP notification
+	// MFPへ通知
 	if (flag) {
 		mfp->SetGPIP(0, 0);
 	}
@@ -1201,7 +1201,7 @@ void FASTCALL RTC::AlarmOut()
 
 //---------------------------------------------------------------------------
 //
-//	Get alarm output
+//	アラーム信号取得
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::GetAlarmOut() const
@@ -1213,7 +1213,7 @@ BOOL FASTCALL RTC::GetAlarmOut() const
 
 //---------------------------------------------------------------------------
 //
-//	Get FDD blink signal
+//	FDD用点滅信号取得
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::GetBlink(int drive) const
@@ -1221,7 +1221,7 @@ BOOL FASTCALL RTC::GetBlink(int drive) const
 	ASSERT(this);
 	ASSERT((drive == 0) || (drive == 1));
 
-	// Bank0, Bank1 or other included
+	// ドライブ0、ドライブ1で分ける
 	if (drive == 0) {
 		if (rtc.signal_blink >  13) {
 			return FALSE;
@@ -1229,7 +1229,7 @@ BOOL FASTCALL RTC::GetBlink(int drive) const
 		return TRUE;
 	}
 
-	// Cannot be 0-25, so divide by 4
+	// 0～25まで動くので、1/4で
 	if ((rtc.signal_blink >  6) && (rtc.signal_blink < 19)) {
 		return FALSE;
 	}
@@ -1238,7 +1238,7 @@ BOOL FASTCALL RTC::GetBlink(int drive) const
 
 //---------------------------------------------------------------------------
 //
-//	Get timer LED
+//	タイマーLEDを取得
 //
 //---------------------------------------------------------------------------
 BOOL FASTCALL RTC::GetTimerLED() const
@@ -1248,7 +1248,7 @@ BOOL FASTCALL RTC::GetTimerLED() const
 	ASSERT(this);
 	ASSERT(rtc.clkout <= 7);
 
-	// 0(L level) and 3(128Hz) are treated as invalid
+	// 0(Hレベル)から3(128Hz)までは常に点灯とみなす
 	led = TRUE;
 	if (rtc.clkout <= 3) {
 		return led;
@@ -1265,7 +1265,7 @@ BOOL FASTCALL RTC::GetTimerLED() const
 			led = rtc.signal_1hz;
 			break;
 
-		// 1/60Hz(sec is 0-29, 30-59)
+		// 1/60Hz(secが0～29, 30～59で分ける)
 		case 6:
 			if (rtc.sec < 30) {
 				led = TRUE;
@@ -1275,7 +1275,7 @@ BOOL FASTCALL RTC::GetTimerLED() const
 			}
 			break;
 
-		// L level
+		// Lレベル
 		case 7:
 			led = FALSE;
 			break;
@@ -1286,60 +1286,60 @@ BOOL FASTCALL RTC::GetTimerLED() const
 
 //---------------------------------------------------------------------------
 //
-//	Sec up
+//	秒アップ
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::SecUp()
 {
 	ASSERT(this);
 
-	// Delete existing timer event
+	// 真っ先にキャリーを降ろす
 	rtc.carry = FALSE;
 
-	// End at
+	// カウントアップ
 	rtc.sec++;
 
-	// Ends at 60
+	// 60でなければ終了
 	if (rtc.sec < 60) {
 		return;
 	}
 
-	// For alarm notification first
+	// 分アップへ引き継ぐ
 	MinUp();
 }
 
 //---------------------------------------------------------------------------
 //
-//	Min up
+//	分アップ
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::MinUp()
 {
 	ASSERT(this);
 
-	// Sec up
+	// 秒クリア
 	rtc.sec = 0;
 
-	// End at
+	// カウントアップ
 	rtc.min++;
 
-	// If not 60, check alarm and exit
+	// 60でなければアラームチェックして終了
 	if (rtc.min < 60) {
 		AlarmCheck();
 		return;
 	}
 
-	// Hour alarm
+	// 時間アップ
 	rtc.min = 0;
 	rtc.hour++;
 
-	// 24 alarm check and exit
+	// 24でなければアラームチェックして終了
 	if (rtc.hour < 24) {
 		AlarmCheck();
 		return;
 	}
 
-	// Day alarm
+	// 日アップ
 	rtc.hour = 0;
 	rtc.day++;
 	rtc.week++;
@@ -1347,33 +1347,33 @@ void FASTCALL RTC::MinUp()
 		rtc.week = 0;
 	}
 
-	// Day table check
+	// 月エンドチェック
 	if (rtc.day <= DayTable[rtc.month]) {
-		// Subtract remaining days. Check alarm and exit
+		// まだ月の残りがある。アラームチェックして終了
 		AlarmCheck();
 		return;
 	}
 
-	// 2 is leap year check
+	// 2月は閏年をチェック
 	if ((rtc.month == 2) && (rtc.day == 29)) {
-		// Leap year is 0, so February is not processed
+		// leapが0なら閏年なので、次の月に行ってはいけない
 		if (rtc.leap == 0) {
 			AlarmCheck();
 			return;
 		}
 	}
 
-	// Month up
+	// 月アップ
 	rtc.day = 1;
 	rtc.month++;
 
-	// 13 alarm check and exit
+	// 13でなければアラームチェックして終了
 	if (rtc.hour < 13) {
 		AlarmCheck();
 		return;
 	}
 
-	// New year
+	// 翌年
 	rtc.month = 1;
 	rtc.year++;
 	AlarmCheck();
@@ -1381,7 +1381,7 @@ void FASTCALL RTC::MinUp()
 
 //---------------------------------------------------------------------------
 //
-//	Alarm check
+//	アラームチェック
 //
 //---------------------------------------------------------------------------
 void FASTCALL RTC::AlarmCheck()
@@ -1390,7 +1390,7 @@ void FASTCALL RTC::AlarmCheck()
 
 	flag = TRUE;
 
-	// Sun,Mon,Tue,Wed,Thu,Fri,Sat and force update alarm
+	// 分、時、曜日、日がすべて一致するとフラグアップ
 	if (rtc.alarm_min != rtc.min) {
 		flag = FALSE;
 	}
@@ -1410,7 +1410,7 @@ void FASTCALL RTC::AlarmCheck()
 
 //---------------------------------------------------------------------------
 //
-//	Day table
+//	日付テーブル
 //
 //---------------------------------------------------------------------------
 const DWORD RTC::DayTable[] = {

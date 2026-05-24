@@ -2,8 +2,8 @@
 //
 //	X68000 EMULATOR "XM6"
 //
-//	Copyright (C) 2001-2004 PI(ytanaka@ipc-tokai.or.jp)
-//	[ Printer ]
+//	Copyright (C) 2001-2004 ＰＩ．(ytanaka@ipc-tokai.or.jp)
+//	[ プリンタ ]
 //
 //---------------------------------------------------------------------------
 
@@ -14,77 +14,77 @@
 
 //===========================================================================
 //
-//	Printer
+//	プリンタ
 //
 //===========================================================================
 class Printer : public MemDevice
 {
 public:
-	// Constants
+	// 定数値
 	enum {
-		BufMax = 0x1000				// Buffer size (2^n)
+		BufMax = 0x1000				// バッファサイズ(2の倍数)
 	};
 
-	// Internal data structure
+	// 内部データ定義
 	typedef struct {
-		BOOL connect;					// Connect
-		BOOL strobe;					// Strobe
-		BOOL ready;						// Ready
-		BYTE data;						// Write data
-		BYTE buf[BufMax];				// Buffer data
-		DWORD read;						// Buffer read position
-		DWORD write;					// Buffer write position
-		DWORD num;						// Buffer count
+		BOOL connect;					// 接続
+		BOOL strobe;					// ストローブ
+		BOOL ready;						// レディ
+		BYTE data;						// 書き込みデータ
+		BYTE buf[BufMax];				// バッファデータ
+		DWORD read;						// バッファ読み込み位置
+		DWORD write;					// バッファ書き込み位置
+		DWORD num;						// バッファ有効数
 	} printer_t;
 
 public:
-	// Basic functions
+	// 基本ファンクション
 	Printer(VM *p);
-										// Constructor
+										// コンストラクタ
 	BOOL FASTCALL Init();
-										// Initialize
+										// 初期化
 	void FASTCALL Cleanup();
-										// Cleanup
+										// クリーンアップ
 	void FASTCALL Reset();
-										// Reset
+										// リセット
 	BOOL FASTCALL Save(Fileio *fio, int ver);
-										// Save
+										// セーブ
 	BOOL FASTCALL Load(Fileio *fio, int ver);
-										// Load
+										// ロード
 	void FASTCALL ApplyCfg(const Config *config);
-										// Apply config
+										// 設定適用
 
-	// Virtual device
+	// メモリデバイス
 	DWORD FASTCALL ReadByte(DWORD addr);
-										// Byte read
+										// バイト読み込み
 	DWORD FASTCALL ReadWord(DWORD addr);
-										// Word read
+										// ワード読み込み
 	void FASTCALL WriteByte(DWORD addr, DWORD data);
-										// Byte write
+										// バイト書き込み
 	void FASTCALL WriteWord(DWORD addr, DWORD data);
-										// Word write
+										// ワード書き込み
 	DWORD FASTCALL ReadOnly(DWORD addr) const;
-										// Read only
+										// 読み込みのみ
 
-	// External API
+	// 外部API
 	BOOL FASTCALL IsReady() const		{ return printer.ready; }
-										// Get ready
+										// レディ取得
 	void FASTCALL HSync();
-										// H-Sync notification
+										// H-Sync通知
 	void FASTCALL GetPrinter(printer_t *buffer) const;
-										// Get printer data
+										// 内部データ取得
 	void FASTCALL Connect(BOOL flag);
-										// Printer connect
+										// プリンタ接続
 	BOOL FASTCALL GetData(BYTE *ptr);
-										// Get first data
+										// 先頭データ取得
 
 private:
 	IOSC *iosc;
 										// IOSC
 	Sync *sync;
-										// Sync object
+										// 同期オブジェクト
 	printer_t printer;
-										// Printer data
+										// 内部データ
 };
 
 #endif	// printer_h
