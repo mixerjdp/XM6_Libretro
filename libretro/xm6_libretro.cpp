@@ -2992,6 +2992,16 @@ static unsigned int vertical_scale_from_layout(const xm6_video_layout_t &layout,
   return 1;
 }
 
+static bool original_native_double_scan_output(const xm6_video_frame_t &frame,
+                                               const xm6_video_layout_t &layout)
+{
+  return g_render_mode == XM6CORE_RENDER_MODE_ORIGINAL &&
+         layout.valid &&
+         layout.v_mul == 2 &&
+         frame.height > 300 &&
+         (frame.height & 1u) == 0;
+}
+
 static void compute_video_scale_factors(const xm6_video_layout_t &layout,
                                         unsigned int frame_width,
                                         unsigned int frame_height,
@@ -3009,6 +3019,19 @@ static void compute_video_scale_factors(const xm6_video_layout_t &layout,
     }
     if (out_v_scale) {
       *out_v_scale = 1;
+    }
+    return;
+  }
+
+  if (g_render_mode == XM6CORE_RENDER_MODE_ORIGINAL && layout.valid) {
+    if (layout.v_mul != 2) {
+      v_scale = vertical_scale_from_layout(layout, frame_height);
+    }
+    if (out_h_scale) {
+      *out_h_scale = h_scale;
+    }
+    if (out_v_scale) {
+      *out_v_scale = v_scale;
     }
     return;
   }
@@ -3173,6 +3196,14 @@ static bool build_scaled_video_frame(
   unsigned int h_factor = 1;
   unsigned int v_factor = 1;
   compute_video_scale_factors(layout, frame.width, frame.height, &h_factor, &v_factor);
+
+  if (original_native_double_scan_output(frame, layout)) {
+    *out_pixels = frame.pixels_argb32;
+    *out_width = frame.width;
+    *out_height = frame.height / 2;
+    *out_stride_pixels = frame.stride_pixels * 2;
+    return true;
+  }
 
   const bool weave_lowres_interlace =
     (g_render_mode != XM6CORE_RENDER_MODE_FAST) && layout.valid && layout.lowres == 1 && layout.v_mul == 0;
