@@ -101,6 +101,7 @@ static int g_system_clock = 0;
 static int g_ram_size = 5;
 static bool g_fast_floppy = false;
 static bool g_alt_raster_enabled = true;
+static bool g_video_probe_logging = false;
 static bool g_render_bg0_enabled = true;
 static bool g_transparency_enabled = true;
 static int g_render_mode = XM6CORE_RENDER_MODE_ORIGINAL;
@@ -338,9 +339,17 @@ static const char* audio_engine_label(int engine)
   }
 }
 
+static bool is_video_probe_message(const char *message)
+{
+  return message && std::strncmp(message, "[video-probe-", 13) == 0;
+}
+
 static void XM6CORE_CALL xm6_host_message_cb(const char *message, void * /*user*/)
 {
   if (message && *message) {
+    if (!g_video_probe_logging && is_video_probe_message(message)) {
+      return;
+    }
     core_log(RETRO_LOG_INFO, "%s", message);
   }
 }
@@ -1963,6 +1972,11 @@ static void apply_core_option_values()
     g_alt_raster_enabled = (std::strcmp(var.value, "disabled") != 0);
   }
 
+  var.key = "xm6_video_probe_logging";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    g_video_probe_logging = (std::strcmp(var.value, "enabled") == 0);
+  }
+
   var.key = "xm6_fm_volume";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_fm_volume = std::atoi(var.value);
@@ -2171,7 +2185,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s video_compositor=%s alt_raster=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s video_compositor=%s alt_raster=%s video_probe_log=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2184,6 +2198,7 @@ static void apply_core_option_values()
           g_fast_floppy ? "enabled" : "disabled",
           (g_render_mode == XM6CORE_RENDER_MODE_FAST) ? "fast" : "original",
           g_alt_raster_enabled ? "enabled" : "disabled",
+          g_video_probe_logging ? "enabled" : "disabled",
            g_fm_volume, g_adpcm_volume,
            g_hq_adpcm_level,
            g_bass_enhancer_level,
@@ -2344,6 +2359,20 @@ static void register_core_options()
           { nullptr, nullptr }
         },
         "enabled"
+      },
+      {
+        "xm6_video_probe_logging",
+        "Detailed video probe logging",
+        nullptr,
+        "Emit [video-probe-*] diagnostic messages to the frontend log. Leave disabled for normal play.",
+        nullptr,
+        "advanced",
+        {
+          { "disabled", nullptr },
+          { "enabled", nullptr },
+          { nullptr, nullptr }
+        },
+        "disabled"
       },
       {
         "xm6_audio_engine",
@@ -2817,6 +2846,8 @@ static void register_core_options()
       "Video compositor; original|fast" },
     { "xm6_alt_raster",
       "Alternative raster timing; enabled|disabled" },
+    { "xm6_video_probe_logging",
+      "Detailed video probe logging; disabled|enabled" },
     { nullptr, nullptr }
   };
   g_environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, const_cast<retro_variable *>(vars));
