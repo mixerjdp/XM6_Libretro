@@ -1,6 +1,9 @@
 ﻿TARGET_NAME := xm6
 
 CXX ?= g++
+AR ?= ar
+
+platform ?= native
 
 TARGET_OS ?=
 ifeq ($(TARGET_OS),)
@@ -34,8 +37,16 @@ SHARED_FLAGS := -shared
 FPIC := -fPIC
 THREAD_FLAGS := -pthread
 EXTRA_LIBS :=
+STATIC_LINKING := 0
 
-ifeq ($(IS_WINDOWS),1)
+ifeq ($(platform),emscripten)
+TARGET_EXT := bc
+SHARED_FLAGS :=
+FPIC := -fPIC
+THREAD_FLAGS :=
+EXTRA_LIBS :=
+STATIC_LINKING := 1
+else ifeq ($(IS_WINDOWS),1)
 TARGET_EXT := dll
 FPIC :=
 THREAD_FLAGS :=
@@ -60,6 +71,11 @@ ifeq ($(IS_WINDOWS),0)
 CXXFLAGS += -D_GNU_SOURCE=1
 endif
 
+ifeq ($(platform),emscripten)
+CXXFLAGS += -D__LINUX__ -DEMSCRIPTEN
+CXXFLAGS += -ffast-math -fomit-frame-pointer
+endif
+
 ifneq (,$(filter aarch64 arm64,$(TARGET_ARCH)))
 CXXFLAGS += -DXM6_TARGET_ARM64=1
 endif
@@ -68,10 +84,12 @@ INCLUDES := -I. -I../vm -I../cpu -I../cpu/Musashi -I../cpu/Musashi/softfloat
 
 YMFM_SRC ?= ../vm/ymfm
 YMFM_SOURCES :=
+ifneq ($(platform),emscripten)
 ifneq ($(wildcard $(YMFM_SRC)/ymfm_opm.cpp),)
 DEFINES += -DXM6CORE_ENABLE_YMFM
 INCLUDES += -I$(YMFM_SRC)
 YMFM_SOURCES += ../vm/ymfm_opm_engine.cpp $(YMFM_SRC)/ymfm_opm.cpp
+endif
 endif
 
 XM6_ENABLE_WINDRV_HOSTFS ?= 0
@@ -161,13 +179,17 @@ endif
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
+ifeq ($(STATIC_LINKING),1)
+	$(AR) rcs $@ $(OBJECTS)
+else
 	$(CXX) $(OBJECTS) $(SHARED_FLAGS) $(THREAD_FLAGS) -o $@ $(LDFLAGS) $(EXTRA_LIBS)
+endif
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 %.o: %.c
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -x c -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -x c -std=gnu11 -c $< -o $@
 
 ifeq ($(IS_WINDOWS),1)
 clean:

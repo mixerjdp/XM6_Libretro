@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Super Chepi Bros — XM6 X68000</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --pad: rgba(255,255,255,0.14);
+      --pad-active: rgba(230,57,43,0.55);
+      --pad-border: rgba(255,255,255,0.28);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0; height: 100%;
+      background: #05080f;
+      color: #f4efe4;
+      font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.playing { background: #000; }
+
+    .wrap {
+      height: 100%;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: calc(0.5rem + var(--safe-t)) 0.5rem calc(0.5rem + var(--safe-b));
+      gap: 0.45rem;
+    }
+    body.playing .wrap { padding: 0; gap: 0; }
+
+    .topbar {
+      width: min(960px, 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0 0.25rem;
+    }
+    body.playing .topbar {
+      position: absolute;
+      top: var(--safe-t);
+      left: var(--safe-l);
+      right: var(--safe-r);
+      width: auto;
+      z-index: 5;
+      padding: 0.35rem 0.5rem;
+      pointer-events: none;
+    }
+    body.playing .topbar .btn { pointer-events: auto; opacity: 0.75; }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(0.75rem, 2.8vw, 1.05rem);
+      letter-spacing: 0.04em;
+    }
+    body.playing h1, body.playing .status, body.playing #log, body.playing #startBtn {
+      display: none;
+    }
+
+    .status { color: #9db0c9; font-size: 0.85rem; min-height: 1.1em; text-align: center; }
+
+    .stage {
+      position: relative;
+      width: min(960px, 100%);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border: 2px solid #2a3f5c;
+    }
+    body.playing .stage {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 0;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      background: #000;
+      image-rendering: pixelated;
+      touch-action: none;
+    }
+
+    .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+    .btn, #startBtn {
+      background: #e6392b; color: #fff; border: 0; border-radius: 8px;
+      padding: 0.55rem 0.95rem; font-weight: 700; cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn.secondary { background: #243248; }
+    .btn:disabled, #startBtn:disabled { opacity: 0.45; cursor: default; }
+
+    #log {
+      display: none;
+      width: min(960px, 100%);
+      max-height: 120px;
+      overflow: auto;
+      background: #071018;
+      border: 1px solid #243248;
+      color: #9db0c9;
+      font: 11px/1.35 ui-monospace, monospace;
+      padding: 0.45rem;
+      white-space: pre-wrap;
+    }
+    body.show-log #log { display: block; }
+
+    /* Touch overlay */
+    #pad {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+    body.playing #pad { display: block; }
+
+    .pad-zone {
+      position: absolute;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .dpad {
+      left: calc(0.6rem + var(--safe-l));
+      bottom: calc(0.7rem + var(--safe-b));
+      width: 148px;
+      height: 148px;
+    }
+    .face {
+      right: calc(0.6rem + var(--safe-r));
+      bottom: calc(0.7rem + var(--safe-b));
+      width: 168px;
+      height: 148px;
+    }
+    .meta {
+      left: 50%;
+      bottom: calc(0.55rem + var(--safe-b));
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+    }
+
+    .key {
+      position: absolute;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--pad-border);
+      background: var(--pad);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: grid;
+      place-items: center;
+      backdrop-filter: blur(2px);
+    }
+    .key.rect {
+      width: 64px;
+      height: 28px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      position: static;
+    }
+    .key.active { background: var(--pad-active); transform: scale(0.96); }
+
+    .dpad .up { left: 50px; top: 4px; }
+    .dpad .down { left: 50px; bottom: 4px; }
+    .dpad .left { left: 4px; top: 50px; }
+    .dpad .right { right: 4px; top: 50px; }
+
+    .face .bA { right: 58px; bottom: 8px; background: rgba(70,140,255,0.28); }
+    .face .bB { right: 8px; bottom: 58px; background: rgba(255,210,70,0.28); }
+    .face .bC { left: 8px; top: 50px; background: rgba(90,220,120,0.28); }
+    .face .bD { right: 58px; top: 8px; background: rgba(255,90,90,0.28); }
+
+    @media (orientation: portrait) {
+      .dpad { width: 132px; height: 132px; }
+      .face { width: 150px; height: 132px; }
+      .key { width: 44px; height: 44px; font-size: 0.8rem; }
+      .dpad .up { left: 44px; }
+      .dpad .down { left: 44px; }
+      .dpad .left { top: 44px; }
+      .dpad .right { top: 44px; }
+    }
+
+    @media (min-width: 900px) {
+      body.playing .dpad, body.playing .face { transform: scale(1.15); transform-origin: bottom left; }
+      body.playing .face { transform-origin: bottom right; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <h1>SUPER CHEPI BROS — XM6 X68000</h1>
+      <div class="actions">
+        <button class="btn secondary" id="fsBtn" type="button">Pantalla completa</button>
+        <button class="btn secondary" id="logBtn" type="button">Log</button>
+      </div>
+    </div>
+    <div class="status" id="status">Cargando emulador WASM…</div>
+    <div class="stage" id="stage">
+      <canvas id="canvas" tabindex="0"></canvas>
+      <div id="pad" aria-hidden="true">
+        <div class="pad-zone dpad">
+          <button class="key up" type="button" data-key="ArrowUp">▲</button>
+          <button class="key down" type="button" data-key="ArrowDown">▼</button>
+          <button class="key left" type="button" data-key="ArrowLeft">◀</button>
+          <button class="key right" type="button" data-key="ArrowRight">▶</button>
+        </div>
+        <div class="pad-zone face">
+          <!-- X68000: A/B = triggers del joystick (RetroPad B/A -> Z/X). C/D extra. -->
+          <button class="key bA" type="button" data-key="x" data-code="KeyX">A</button>
+          <button class="key bB" type="button" data-key="z" data-code="KeyZ">B</button>
+          <button class="key bC" type="button" data-key="a" data-code="KeyA">C</button>
+          <button class="key bD" type="button" data-key="s" data-code="KeyS">D</button>
+        </div>
+        <div class="pad-zone meta">
+          <button class="key rect" type="button" data-key="F1" data-code="F1">SELECT</button>
+          <button class="key rect" id="padStart" type="button" data-key="Enter" data-code="Enter">START</button>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="startBtn" disabled>Iniciar</button>
+    </div>
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    import libretro_xm6 from './xm6_libretro.js';
+
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const fsBtn = document.getElementById('fsBtn');
+    const logBtn = document.getElementById('logBtn');
+    const canvas = document.getElementById('canvas');
+    const stage = document.getElementById('stage');
+    const logEl = document.getElementById('log');
+    const lines = [];
+    const pressed = new Map();
+
+    const log = (t) => {
+      const s = String(t);
+      lines.push(s);
+      if (lines.length > 180) lines.shift();
+      logEl.textContent = lines.join('\n');
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+    const setStatus = (t) => { statusEl.textContent = t; log('[status] ' + t); };
+
+    let Module;
+
+    async function fetchBytes(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + url);
+      return new Uint8Array(await r.arrayBuffer());
+    }
+
+    function mkdirp(path) {
+      const parts = path.split('/').filter(Boolean);
+      let cur = '';
+      for (const part of parts) {
+        cur += '/' + part;
+        try { Module.FS.mkdir(cur); } catch (e) {}
+      }
+    }
+
+    function writeText(path, text) {
+      Module.FS.writeFile(path, text);
+    }
+
+    async function prepareFiles() {
+      const home = '/home/web_user';
+      const user = home + '/retroarch/userdata';
+      mkdirp(user + '/system');
+      mkdirp(user + '/content');
+      mkdirp(user + '/config/XM6');
+      mkdirp(user + '/logs');
+      mkdirp(user + '/saves');
+      mkdirp(user + '/states');
+      mkdirp(home + '/retroarch/cores');
+      mkdirp(home + '/retroarch/bundle/assets');
+
+      // XM6 busca las BIOS directamente en <system_directory>, con nombres
+      // en mayusculas. SRAM.DAT es el fichero de configuracion persistente.
+      const [iplrom, cgrom, sram, hdf] = await Promise.all([
+        fetchBytes('system/IPLROM.DAT'),
+        fetchBytes('system/CGROM.DAT'),
+        fetchBytes('system/SRAM.DAT'),
+        fetchBytes('content/chepi_x68000.hdf')
+      ]);
+
+      Module.FS.writeFile(user + '/system/IPLROM.DAT', iplrom);
+      Module.FS.writeFile(user + '/system/CGROM.DAT', cgrom);
+      Module.FS.writeFile(user + '/system/SRAM.DAT', sram);
+      Module.FS.writeFile(user + '/content/chepi_x68000.hdf', hdf);
+
+      // Valores copiados de config/XM6/XM6.opt de la instalacion nativa.
+      writeText(user + '/retroarch-core-options.cfg', [
+        'xm6_adpcm_volume = "50"',
+        'xm6_alt_raster = "enabled"',
+        'xm6_audio_engine = "XM6"',
+        'xm6_bass_enhancer = "60"',
+        'xm6_cpu_clock = "22mhz"',
+        'xm6_disk_drive = "FDD0"',
+        'xm6_eq_air = "70"',
+        'xm6_eq_bass = "90"',
+        'xm6_eq_mid = "50"',
+        'xm6_eq_presence = "50"',
+        'xm6_eq_sub_bass = "80"',
+        'xm6_eq_treble = "60"',
+        'xm6_exec_mode = "exec_to_frame"',
+        'xm6_fast_floppy = "enabled"',
+        'xm6_fm_volume = "60"',
+        'xm6_hdd_target = "auto"',
+        'xm6_hq_adpcm = "70"',
+        'xm6_joy1_type = "cpsf_sfc"',
+        'xm6_joy2_type = "cpsf_sfc"',
+        'xm6_legacy_dmac_cnt = "disabled"',
+        'xm6_midi_output = "enabled"',
+        'xm6_midi_output_type = "GM"',
+        'xm6_mouse_port = "scc"',
+        'xm6_mouse_speed = "205"',
+        'xm6_mouse_swap = "disabled"',
+        'xm6_mpu_nowait = "disabled"',
+        'xm6_pad_start_select = "xf_keys"',
+        'xm6_pointer_device = "mouse"',
+        'xm6_ram_size = "12mb"',
+        'xm6_render_bg0 = "modern"',
+        'xm6_render_fast_dummy = "disabled"',
+        'xm6_render_mode = "original"',
+        'xm6_render_px68k = "enabled"',
+        'xm6_reverb = "0"',
+        'xm6_surround = "disabled"',
+        'xm6_transparency = "enabled"',
+        'xm6_video_probe_logging = "disabled"',
+        'xm6_x68sound_volume = "100"',
+        ''
+      ].join('\n'));
+
+      writeText(user + '/retroarch.cfg', [
+        'config_save_on_exit = "false"',
+        'video_font_enable = "false"',
+        'video_vsync = "false"',
+        // RetroArch otherwise forces non-blocking mode for XM6's 73.94 Hz
+        // raster modes. The browser RAF still limits this to one callback.
+        'video_refresh_rate = "75.0"',
+        'video_swap_interval = "1"',
+        'vrr_runloop_enable = "true"',
+        'video_frame_delay = "0"',
+        'video_frame_delay_auto = "false"',
+        'video_driver = "gl"',
+        'audio_driver = "rwebaudio"',
+        'audio_sync = "false"',
+'audio_latency = "256"',
+'audio_rate_control = "true"',
+        'menu_driver = "rgui"',
+        'input_autodetect_enable = "true"',
+        'input_max_users = "1"',
+        'system_directory = "' + user + '/system"',
+        'rgui_browser_directory = "' + user + '/content"',
+        'libretro_directory = "' + home + '/retroarch/cores"',
+        'core_options_path = "' + user + '/retroarch-core-options.cfg"',
+        'log_verbosity = "false"',
+        'libretro_log_level = "0"',
+        'savestate_auto_save = "false"',
+        ''
+      ].join('\n'));
+    }
+
+    function sendKey(type, key, code) {
+      const opt = {
+        key,
+        code: code || key,
+        keyCode: key.length === 1 ? key.toUpperCase().charCodeAt(0) : undefined,
+        which: key.length === 1 ? key.toUpperCase().charCodeAt(0) : undefined,
+        bubbles: true,
+        cancelable: true
+      };
+      const special = {
+        ArrowUp: 38, ArrowDown: 40, ArrowLeft: 37, ArrowRight: 39,
+        Enter: 13, Shift: 16, ' ': 32, Space: 32, F1: 112
+      };
+      if (special[key] != null) {
+        opt.keyCode = special[key];
+        opt.which = special[key];
+      }
+      const target = document.activeElement === canvas ? canvas : window;
+      target.dispatchEvent(new KeyboardEvent(type, opt));
+      window.dispatchEvent(new KeyboardEvent(type, opt));
+      document.dispatchEvent(new KeyboardEvent(type, opt));
+    }
+
+    function bindPad() {
+      const buttons = document.querySelectorAll('#pad .key');
+      const down = (btn, ev) => {
+        ev.preventDefault();
+        const key = btn.dataset.key;
+        const code = btn.dataset.code || key;
+        const id = key + '|' + code;
+        if (pressed.has(id)) return;
+        pressed.set(id, true);
+        btn.classList.add('active');
+        sendKey('keydown', key, code);
+      };
+      const up = (btn, ev) => {
+        if (ev) ev.preventDefault();
+        const key = btn.dataset.key;
+        const code = btn.dataset.code || key;
+        const id = key + '|' + code;
+        if (!pressed.has(id)) return;
+        pressed.delete(id);
+        btn.classList.remove('active');
+        sendKey('keyup', key, code);
+      };
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('pointerdown', (e) => {
+          btn.setPointerCapture?.(e.pointerId);
+          down(btn, e);
+        });
+        btn.addEventListener('pointerup', (e) => up(btn, e));
+        btn.addEventListener('pointercancel', (e) => up(btn, e));
+        btn.addEventListener('lostpointercapture', () => up(btn));
+        btn.addEventListener('contextmenu', (e) => e.preventDefault());
+      });
+
+      window.addEventListener('blur', () => {
+        for (const btn of buttons) up(btn);
+      });
+    }
+
+    async function enterFullscreen() {
+      const el = document.documentElement;
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: 'hide' });
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+      } catch (e) {
+        log('fullscreen: ' + e.message);
+      }
+      try {
+        if (screen.orientation?.lock) await screen.orientation.lock('landscape');
+      } catch (e) {}
+    }
+
+    async function exitFullscreen() {
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (e) {}
+    }
+
+    fsBtn.addEventListener('click', async () => {
+      if (document.fullscreenElement || document.webkitFullscreenElement) await exitFullscreen();
+      else await enterFullscreen();
+      canvas.focus();
+    });
+
+    logBtn.addEventListener('click', () => {
+      document.body.classList.toggle('show-log');
+    });
+
+    bindPad();
+
+    setStatus('Inicializando XM6 WASM…');
+    Module = await libretro_xm6({
+      noInitialRun: true,
+      canvas,
+      arguments: [],
+      locateFile: (path) => path,
+      preRun: [(mod) => {
+        mod.ENV = mod.ENV || {};
+        mod.ENV.HOME = '/home/web_user';
+      }],
+      print: (t) => { try { console.log(t); } catch(e){} log(t); },
+      printErr: (t) => { try { console.warn(t); } catch(e){} log('[err] ' + t); }
+    });
+    window.__M = Module;
+    window.__xm6RunFrames = (count = 600) => {
+      const run = Module.Browser?.mainLoop?.runner;
+      if (!run) throw new Error('RetroArch mainLoop.runner no esta disponible');
+      for (let i = 0; i < count; i++) run();
+      return count;
+    };
+
+    async function runDiagnostics() {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const report = [];
+      try {
+        const runner = Module.Browser?.mainLoop?.runner;
+        if (runner) {
+          const frames = 60;
+          const t0 = performance.now();
+          for (let i = 0; i < frames; i++) runner();
+          const elapsed = performance.now() - t0;
+          report.push(`manual_frames=${frames} elapsed_ms=${elapsed.toFixed(2)} ms_per_frame=${(elapsed / frames).toFixed(3)}`);
+        } else {
+          report.push('manual_frame_runner=unavailable');
+        }
+      } catch (e) {
+        report.push('manual_frame_error=' + e.message);
+      }
+
+      try {
+        const takeScreenshot = Module._cmd_take_screenshot;
+        const result = typeof takeScreenshot === 'function' ? takeScreenshot() : 'unavailable';
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const screenshotDirs = [
+          '/home/web_user/retroarch/userdata/screenshots',
+          '/home/web_user/retroarch/screenshots',
+          '/home/web_user/screenshots'
+        ];
+        const files = [];
+        for (const dir of screenshotDirs) {
+          try {
+            const names = Module.FS.readdir(dir).filter((name) => !name.startsWith('.'));
+            if (names.length) files.push(dir + ': ' + names.join(', '));
+          } catch (e) {}
+        }
+        report.push(`screenshot_result=${result} files=${files.join(' | ') || 'none'}`);
+      } catch (e) {
+        report.push('screenshot_error=' + e.message);
+      }
+
+      try {
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) throw new Error('WebGL context unavailable');
+        const width = gl.drawingBufferWidth || canvas.width;
+        const height = gl.drawingBufferHeight || canvas.height;
+        const pixels = new Uint8Array(width * height * 4);
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        let nonBlack = 0;
+        let lumaSum = 0;
+        const histogram = new Uint32Array(16);
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          if (r || g || b) nonBlack++;
+          lumaSum += luma;
+          histogram[Math.min(15, Math.floor(luma / 16))]++;
+        }
+        report.push(`framebuffer=${width}x${height} non_black=${nonBlack}/${width * height} mean_luma=${(lumaSum / (width * height)).toFixed(2)} histogram16=${Array.from(histogram).join(',')}`);
+      } catch (e) {
+        report.push('framebuffer_error=' + e.message);
+      }
+
+      const timing = lines.join('\n').match(/Timing updated to ([0-9.]+) Hz/g);
+      if (timing?.length) {
+        const hz = Number(timing[timing.length - 1].match(/[0-9.]+/)[0]);
+        report.push(`core_timing=${hz.toFixed(2)} Hz derived_ms_per_frame=${(1000 / hz).toFixed(3)}`);
+      }
+      report.forEach((line) => log('[diag] ' + line));
+    }
+
+    try {
+      if (Module.ENV) Module.ENV.HOME = '/home/web_user';
+      setStatus('Descargando BIOS/HDD…');
+      await prepareFiles();
+      setStatus('Listo. Pulsa Iniciar.');
+      startBtn.disabled = false;
+    } catch (e) {
+      setStatus('Error preparando archivos: ' + e.message);
+      log(e.stack || e);
+    }
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      setStatus('Arrancando X68000…');
+      document.body.classList.add('playing');
+      canvas.focus();
+      try {
+        const rom = '/home/web_user/retroarch/userdata/content/chepi_x68000.hdf';
+        const cfg = '/home/web_user/retroarch/userdata/retroarch.cfg';
+        Module.callMain(['-v', rom, '-c', cfg]);
+        setStatus('Ejecutando XM6 (X68000).');
+        // Los diagnósticos que fuerzan frames manualmente pueden crear varias
+        // cadenas del main loop del navegador, especialmente en móviles.
+        // Se mantienen disponibles solo cuando se solicitan explícitamente.
+        if (new URLSearchParams(window.location.search).has('diagnostics')) {
+          runDiagnostics().catch((e) => log('[diag] error=' + e.message));
+        }
+        // Fullscreen sin bloquear el arranque (no await)
+        enterFullscreen().catch(() => {});
+      } catch (e) {
+        document.body.classList.remove('playing');
+        setStatus('Error al iniciar: ' + e.message);
+        log(e.stack || e);
+        startBtn.disabled = false;
+      }
+    });
+
+    stage.addEventListener('pointerdown', () => canvas.focus(), { passive: true });
+  </script>
+</body>
+</html>
