@@ -147,6 +147,20 @@ static unsigned g_hdd_boot_reset_countdown = 0;
 static unsigned g_savestate_guard_countdown = 0;
 static const unsigned k_hdd_boot_warmup_frames = 8;
 
+static const char *system_clock_label(int system_clock)
+{
+  switch (system_clock) {
+    case 1: return "12mhz";
+    case 2: return "15mhz";
+    case 3: return "16mhz";
+    case 4: return "17.4mhz";
+    case 5: return "22mhz";
+    case 6: return "25mhz";
+    case 7: return "40mhz";
+    default: return "10mhz";
+  }
+}
+
 static bool g_prev_start = false;
 static bool g_prev_select = false;
 static unsigned g_prev_start_keycode = 0;
@@ -1921,6 +1935,10 @@ static void apply_core_option_values()
       g_system_clock = 3;
     } else if (std::strcmp(var.value, "22mhz") == 0) {
       g_system_clock = 5;
+    } else if (std::strcmp(var.value, "25mhz") == 0) {
+      g_system_clock = 6;
+    } else if (std::strcmp(var.value, "40mhz") == 0) {
+      g_system_clock = 7;
     } else {
       g_system_clock = 0;
     }
@@ -2191,9 +2209,7 @@ static void apply_core_option_values()
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
            (g_pad_start_select_mode == START_SELECT_OPT_KEYS) ? "opt_keys" :
            (g_pad_start_select_mode == START_SELECT_XF_KEYS) ? "xf_keys" : "disabled",
-           (g_system_clock == 1) ? "12mhz" :
-           (g_system_clock == 3) ? "16mhz" :
-          (g_system_clock == 5) ? "22mhz" : "10mhz",
+           system_clock_label(g_system_clock),
           g_joy_type[0], g_joy_type[1], (g_ram_size + 1) * 2,
           g_fast_floppy ? "enabled" : "disabled",
           (g_render_mode == XM6CORE_RENDER_MODE_FAST) ? "fast" : "original",
@@ -2265,6 +2281,8 @@ static void register_core_options()
           { "12mhz", nullptr },
           { "16mhz", nullptr },
           { "22mhz", nullptr },
+          { "25mhz", nullptr },
+          { "40mhz", nullptr },
           { nullptr, nullptr }
         },
         "10mhz"
@@ -4061,16 +4079,12 @@ void retro_run(void)
         if (old_system_clock != g_system_clock && old_ram_size != g_ram_size) {
           core_log(RETRO_LOG_INFO,
                    "[xm6-libretro] Clock changed to %s. RAM changed to %dMB and will apply after manual reset.",
-                   (g_system_clock == 1) ? "12mhz" :
-                   (g_system_clock == 3) ? "16mhz" :
-                   (g_system_clock == 5) ? "22mhz" : "10mhz",
+                   system_clock_label(g_system_clock),
                    (g_ram_size + 1) * 2);
         } else if (old_system_clock != g_system_clock) {
           core_log(RETRO_LOG_INFO,
                    "[xm6-libretro] System clock changed to %s.",
-                   (g_system_clock == 1) ? "12mhz" :
-                   (g_system_clock == 3) ? "16mhz" :
-                   (g_system_clock == 5) ? "22mhz" : "10mhz");
+                   system_clock_label(g_system_clock));
         } else {
           core_log(RETRO_LOG_INFO,
                    "[xm6-libretro] RAM size changed to %dMB and will apply after manual reset.",

@@ -151,8 +151,8 @@ ASSERT_DIAG();
 	// No DMA processing
 	dma_active = FALSE;
 
-	// CPU speed setting must be between 0-5 (for INFO.RAM timer compatibility)
-ASSERT((sch.clock >= 0) && (sch.clock <= 5));
+	// CPU speed setting must be between 0-7 (for INFO.RAM timer compatibility)
+ASSERT((sch.clock >= 0) && (sch.clock <= 7));
 	SetCPUSpeed(ClockTable[sch.clock]);
 }
 
@@ -286,7 +286,7 @@ ASSERT_DIAG();
 	if (sch.clock != config->system_clock) {
 		// Configuration changed, so recalculate cycle table
 		sch.clock = config->system_clock;
-ASSERT((sch.clock >= 0) && (sch.clock <= 5));
+	ASSERT((sch.clock >= 0) && (sch.clock <= 7));
 		SetCPUSpeed(ClockTable[sch.clock]);
 	}
 }
@@ -1163,7 +1163,9 @@ const DWORD Scheduler::ClockTable[] = {
 	1460,			// 15MHz
 	1556,			// 16MHz
 	1689,			// 17.4MHz
-	2200			// 22MHz
+	2200,			// 22MHz
+	2500,			// 25MHz
+	4000			// 40MHz
 };
 
 //---------------------------------------------------------------------------

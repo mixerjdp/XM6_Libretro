@@ -20,7 +20,7 @@
 class Config200 {
 public:
 	// System
-	int system_clock;					// System clock (0~5)
+	int system_clock;					// System clock (0~7; legacy MFC config uses 0~5)
 	int ram_size;						// Main RAM size (0~5)
 	BOOL ram_sramsync;					// Backup switch update
 

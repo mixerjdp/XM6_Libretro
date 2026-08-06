@@ -97,7 +97,7 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_system_clock(XM6Handle handle, i
 	if (!handle) {
 		return XM6CORE_ERR_INVALID_HANDLE;
 	}
-	if (system_clock < 0 || system_clock > 5) {
+	if (system_clock < 0 || system_clock > 7) {
 		return XM6CORE_ERR_INVALID_ARGUMENT;
 	}
 
