@@ -1779,7 +1779,7 @@ static void apply_default_runtime_config(XM6Context *ctx)
 	Config *config = &ctx->runtime_config;
 	std::memset(config, 0, sizeof(*config));
 
-	config->system_clock = 0;
+	config->system_clock = 6;	// 25MHz default
 	config->mpu_fullspeed = FALSE;
 	config->vm_fullspeed = FALSE;
 	config->ram_size = 5;

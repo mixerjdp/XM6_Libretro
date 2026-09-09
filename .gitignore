@@ -364,6 +364,7 @@ FodyWeavers.xsd
 *.tlog
 *.exp
 *.dll
+*.so
 *.lib
 *.exe
 *.lastbuildstate

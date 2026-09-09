@@ -97,7 +97,8 @@ enum start_select_mode_t {
 static int g_pad_start_select_mode = START_SELECT_XF_KEYS;
 static unsigned g_video_not_ready_count = 0;
 static int g_joy_type[2] = { 1, 0 };
-static int g_system_clock = 0;
+static constexpr int k_default_system_clock = 6; // 25 MHz
+static int g_system_clock = k_default_system_clock;
 static int g_ram_size = 5;
 static bool g_fast_floppy = false;
 static bool g_alt_raster_enabled = true;
@@ -157,7 +158,7 @@ static const char *system_clock_label(int system_clock)
     case 5: return "22mhz";
     case 6: return "25mhz";
     case 7: return "40mhz";
-    default: return "10mhz";
+    default: return "25mhz";
   }
 }
 
@@ -1940,7 +1941,7 @@ static void apply_core_option_values()
     } else if (std::strcmp(var.value, "40mhz") == 0) {
       g_system_clock = 7;
     } else {
-      g_system_clock = 0;
+      g_system_clock = k_default_system_clock;
     }
   }
 
@@ -2285,7 +2286,7 @@ static void register_core_options()
           { "40mhz", nullptr },
           { nullptr, nullptr }
         },
-        "10mhz"
+        "25mhz"
       },
       {
         "xm6_ram_size",
@@ -3810,7 +3811,7 @@ void retro_init(void)
   g_prev_select_keycode = 0;
   g_pad_start_select_mode = START_SELECT_XF_KEYS;
   g_video_not_ready_count = 0;
-  g_system_clock = 0;
+  g_system_clock = k_default_system_clock;
   g_ram_size = 5;
   g_fast_floppy = false;
   g_alt_raster_enabled = true;
