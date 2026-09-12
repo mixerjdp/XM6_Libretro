@@ -371,3 +371,6 @@ FodyWeavers.xsd
 /nul
 /.vscode
 /.codex_tmp
+/libretro/Release_linux/xm6_libretro.info
+/main/Release_DLL/xm6core.dll.recipe
+/main/Release_DLL/XM6Core.vcxproj.FileListAbsolute.txt
