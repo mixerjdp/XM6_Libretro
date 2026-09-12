@@ -1,0 +1,61 @@
+A-Jax 
+Akazukin chacha
+Algarna
+Boyoyon
+Chase HQ
+ChiteiSenki
+Code Zero 
+Cotton
+Deflektor
+Die BahnWelt
+Dynamite Duke
+Fairy Land
+Hatenkou
+Karou Densetsu 
+Keeper
+Kyuukyoku Tiger
+Mikkun Fly
+Moon Soldier
+Motos
+Overdriver
+Souhou blue phoenix
+Super Mario Bross
+Super Star Shooter
+Tokkou
+Toypop
+Wips2
+Y2
+
+Test Fast:
+Bomberman Systemsoft->Mal
+Bomberman Nes->Bien
+Bonnou Muyou->Mal
+Blue wings 2->Bien
+Boyoyon->Mal
+Castlevania->Mal
+Chacha fighter->Mal
+Cyber core->Mal
+
+
+XM62026 Original
+Aquales->Bug pequeño quanto
+Argos no senshi->Mpu full on
+Boyoyon->Transparencia off
+ChiteiSenki->Mala transparencia
+Dynamite duke->Mal Heredado de XM6
+Fairy Land Story->Transparencia off
+Overdriver->Checar Intro
+Souhou blue phoenix->Checar bordes
+Sunspine->Alt Raster Off
+
+
+
+
+XM62022Nuevo
+Argos no senshi->Mpu Full On
+Bubble bobble->Empieza con plataformas invisibles
+Celia->Colores distorsionados tipo negativo
+Chuuka Taisen->Fondos incorrectos y faltantes
+Dragon buster->Bugs raros de textura?
+Fortress Attack->Pantalla blanca
+IndieGameMarket->Fondos incorrectos y faltantes
