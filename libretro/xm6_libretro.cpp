@@ -1,4 +1,4 @@
-﻿#include <cstdio>
+#include <cstdio>
 #include <cstdarg>
 #include <cctype>
 #include <cmath>
@@ -109,7 +109,6 @@ static int g_render_mode = XM6CORE_RENDER_MODE_ORIGINAL;
 static enum retro_pixel_format g_frontend_pixel_format = RETRO_PIXEL_FORMAT_UNKNOWN;
 static int g_fm_volume = 50;
 static int g_adpcm_volume = 50;
-static int g_hq_adpcm_level = 0;
 static int g_bass_enhancer_level = 0;
 static int g_reverb_level = 0;
 static int g_eq_sub_bass_level = 50;
@@ -119,6 +118,7 @@ static int g_eq_presence_level = 50;
 static int g_eq_treble_level = 50;
 static int g_eq_air_level = 50;
 static bool g_surround_enabled = false;
+static bool g_adpcm_interp = true, g_adpcm_analog = true, g_adpcm_lpf = true;
 static int g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
 static bool g_legacy_dmac_cnt = false;
 static bool g_midi_output_enabled = false;
@@ -293,6 +293,7 @@ struct xm6_api_t {
   int (XM6CORE_CALL *set_master_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_fm_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_adpcm_volume)(XM6Handle handle, int volume) = nullptr;
+  int (XM6CORE_CALL *set_adpcm_filters)(XM6Handle, int, int) = nullptr;
   int (XM6CORE_CALL *set_adpcm_interp)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_hq_adpcm_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_bass_enhancer_level)(XM6Handle handle, int level) = nullptr;
@@ -619,6 +620,7 @@ static bool load_xm6_api()
   g_xm6.set_fm_volume = xm6_set_fm_volume;
   g_xm6.set_adpcm_volume = xm6_set_adpcm_volume;
   g_xm6.set_adpcm_interp = xm6_set_adpcm_interp;
+  g_xm6.set_adpcm_filters = xm6_set_adpcm_filters;
   g_xm6.set_hq_adpcm_level = xm6_set_hq_adpcm_level;
   g_xm6.set_bass_enhancer_level = xm6_set_bass_enhancer_level;
   g_xm6.set_reverb_level = xm6_set_reverb_level;
@@ -756,6 +758,7 @@ static bool load_xm6_api()
   load_optional_symbol(&g_xm6.set_fm_volume, "xm6_set_fm_volume");
   load_optional_symbol(&g_xm6.set_adpcm_volume, "xm6_set_adpcm_volume");
   load_optional_symbol(&g_xm6.set_adpcm_interp, "xm6_set_adpcm_interp");
+  load_optional_symbol(&g_xm6.set_adpcm_filters, "xm6_set_adpcm_filters");
   load_optional_symbol(&g_xm6.set_hq_adpcm_level, "xm6_set_hq_adpcm_level");
   load_optional_symbol(&g_xm6.set_bass_enhancer_level, "xm6_set_bass_enhancer_level");
   load_optional_symbol(&g_xm6.set_reverb_level, "xm6_set_reverb_level");
@@ -1783,11 +1786,9 @@ static void apply_runtime_core_options()
   if (g_xm6.set_adpcm_volume) {
     g_xm6.set_adpcm_volume(g_xm6_handle, g_adpcm_volume);
   }
+  if (g_xm6.set_adpcm_filters) g_xm6.set_adpcm_filters(g_xm6_handle, g_adpcm_analog ? 1 : 0, g_adpcm_lpf ? 1 : 0);
   if (g_xm6.set_adpcm_interp) {
-    g_xm6.set_adpcm_interp(g_xm6_handle, 1);
-  }
-  if (g_xm6.set_hq_adpcm_level) {
-    g_xm6.set_hq_adpcm_level(g_xm6_handle, g_hq_adpcm_level);
+    g_xm6.set_adpcm_interp(g_xm6_handle, g_adpcm_interp ? 1 : 0);
   }
   if (g_xm6.set_bass_enhancer_level) {
     g_xm6.set_bass_enhancer_level(g_xm6_handle, g_bass_enhancer_level);
@@ -2006,19 +2007,6 @@ static void apply_core_option_values()
     g_adpcm_volume = std::atoi(var.value);
   }
 
-  var.key = "xm6_hq_adpcm";
-  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-    if (std::strcmp(var.value, "enabled") == 0) {
-      g_hq_adpcm_level = 100;
-    } else if (std::strcmp(var.value, "disabled") == 0) {
-      g_hq_adpcm_level = 0;
-    } else {
-      g_hq_adpcm_level = std::atoi(var.value);
-    }
-    if (g_hq_adpcm_level < 0) g_hq_adpcm_level = 0;
-    if (g_hq_adpcm_level > 100) g_hq_adpcm_level = 100;
-  }
-
   var.key = "xm6_bass_enhancer";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     g_bass_enhancer_level = std::atoi(var.value);
@@ -2104,6 +2092,12 @@ static void apply_core_option_values()
     g_surround_enabled = (std::strcmp(var.value, "enabled") == 0);
   }
 
+  var.key = "xm6_adpcm_interp";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) g_adpcm_interp = std::strcmp(var.value, "disabled") != 0;
+  var.key = "xm6_adpcm_analog";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) g_adpcm_analog = std::strcmp(var.value, "disabled") != 0;
+  var.key = "xm6_adpcm_lpf";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) g_adpcm_lpf = std::strcmp(var.value, "disabled") != 0;
   var.key = "xm6_audio_engine";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
     if (std::strcmp(var.value, "PX68k") == 0) {
@@ -2204,7 +2198,7 @@ static void apply_core_option_values()
     g_mpu_nowait = (std::strcmp(var.value, "enabled") == 0);
   }
 
-  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s video_compositor=%s alt_raster=%s video_probe_log=%s vol(master=100 fm=%d adpcm=%d hq_adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
+  core_log(RETRO_LOG_INFO, "[xm6-libretro] options: drive=FDD%d exec_mode=%s start_select=%s clock=%s joy1=%d joy2=%d ram=%dmb fast_floppy=%s video_compositor=%s alt_raster=%s video_probe_log=%s vol(master=100 fm=%d adpcm=%d bass_enhancer=%d reverb=%d eq(sub_bass=%d bass=%d mid=%d presence=%d treble=%d air=%d) surround=%s) audio=%s dmac_cnt=%s midi=%s/%s mouse=%s port=%d speed=%d swap=%s hdd=%s mpu_nowait=%s",
            g_disk_drive,
            g_use_exec_to_frame ? "exec_to_frame" : "legacy_exec",
            (g_pad_start_select_mode == START_SELECT_F_KEYS) ? "f_keys" :
@@ -2217,7 +2211,6 @@ static void apply_core_option_values()
           g_alt_raster_enabled ? "enabled" : "disabled",
           g_video_probe_logging ? "enabled" : "disabled",
            g_fm_volume, g_adpcm_volume,
-           g_hq_adpcm_level,
            g_bass_enhancer_level,
            g_reverb_level,
            g_eq_sub_bass_level, g_eq_bass_level, g_eq_mid_level, g_eq_presence_level, g_eq_treble_level, g_eq_air_level,
@@ -2456,27 +2449,19 @@ static void register_core_options()
         "50"
       },
       {
-        "xm6_hq_adpcm",
-        "HQ ADPCM Exciter",
-        nullptr,
-        "Apply a harmonic exciter to ADPCM only. 0 is bypass.",
-        nullptr,
-        "sound",
-        {
-          { "0", nullptr },
-          { "10", nullptr },
-          { "20", nullptr },
-          { "30", nullptr },
-          { "40", nullptr },
-          { "50", nullptr },
-          { "60", nullptr },
-          { "70", nullptr },
-          { "80", nullptr },
-          { "90", nullptr },
-          { "100", nullptr },
-          { nullptr, nullptr }
-        },
-        "0"
+        "xm6_adpcm_interp", "ADPCM: Interpolation filter", nullptr,
+        "Original XM6 TypeG ADPCM processing (all FM engines).", nullptr, "sound",
+        {{"enabled", nullptr}, {"disabled", nullptr}, {nullptr, nullptr}}, "enabled"
+      },
+      {
+        "xm6_adpcm_analog", "ADPCM: Analog circuit", nullptr,
+        "Original XM6 TypeG ADPCM processing (all FM engines).", nullptr, "sound",
+        {{"enabled", nullptr}, {"disabled", nullptr}, {nullptr, nullptr}}, "enabled"
+      },
+      {
+        "xm6_adpcm_lpf", "ADPCM: Low pass filter", nullptr,
+        "Original XM6 TypeG ADPCM processing (all FM engines).", nullptr, "sound",
+        {{"enabled", nullptr}, {"disabled", nullptr}, {nullptr, nullptr}}, "enabled"
       },
       {
         "xm6_bass_enhancer",
@@ -2860,7 +2845,10 @@ static void register_core_options()
 
   static const retro_variable vars[] = {
     { "xm6_audio_engine",
-      "Audio engine (legacy); XM6|PX68k|YMFM|X68Sound" },
+      "FM engine (TypeG ADPCM is shared); XM6|PX68k|YMFM|X68Sound" },
+    {"xm6_adpcm_interp", "ADPCM Interpolation filter; enabled|disabled"},
+    {"xm6_adpcm_analog", "ADPCM Analog circuit; enabled|disabled"},
+    {"xm6_adpcm_lpf", "ADPCM Low pass filter; enabled|disabled"},
     { "xm6_render_mode",
       "Video compositor; original|fast" },
     { "xm6_alt_raster",
@@ -3819,7 +3807,6 @@ void retro_init(void)
   g_transparency_enabled = true;
   g_fm_volume = 50;
   g_adpcm_volume = 50;
-  g_hq_adpcm_level = 0;
   g_bass_enhancer_level = 0;
   g_reverb_level = 0;
   g_eq_sub_bass_level = 50;
@@ -4057,7 +4044,6 @@ void retro_run(void)
       const bool old_alt_raster_enabled = g_alt_raster_enabled;
       const int old_fm_volume = g_fm_volume;
       const int old_adpcm_volume = g_adpcm_volume;
-	      const int old_hq_adpcm_level = g_hq_adpcm_level;
 	      const int old_bass_enhancer_level = g_bass_enhancer_level;
 	      const int old_reverb_level = g_reverb_level;
 	      const int old_eq_sub_bass_level = g_eq_sub_bass_level;
@@ -4067,6 +4053,7 @@ void retro_run(void)
 	      const int old_eq_treble_level = g_eq_treble_level;
 	      const bool old_surround_enabled = g_surround_enabled;
 	      const int old_audio_engine = g_audio_engine;
+      const bool old_adpcm_interp = g_adpcm_interp, old_adpcm_analog = g_adpcm_analog, old_adpcm_lpf = g_adpcm_lpf;
 	      const bool old_legacy_dmac_cnt = g_legacy_dmac_cnt;
       const bool old_midi_output_enabled = g_midi_output_enabled;
       const int old_midi_output_type = g_midi_output_type;
@@ -4112,6 +4099,10 @@ void retro_run(void)
         apply_runtime_core_options();
         core_log(RETRO_LOG_INFO, "[xm6-libretro] Alternative raster timing %s",
                  g_alt_raster_enabled ? "enabled" : "disabled");
+      }
+      if (old_adpcm_interp != g_adpcm_interp || old_adpcm_analog != g_adpcm_analog || old_adpcm_lpf != g_adpcm_lpf) {
+        if (g_xm6.set_adpcm_interp) g_xm6.set_adpcm_interp(g_xm6_handle, g_adpcm_interp ? 1 : 0);
+        if (g_xm6.set_adpcm_filters) g_xm6.set_adpcm_filters(g_xm6_handle, g_adpcm_analog ? 1 : 0, g_adpcm_lpf ? 1 : 0);
       }
       if (old_audio_engine != g_audio_engine) {
         apply_runtime_core_options();
@@ -4160,12 +4151,6 @@ void retro_run(void)
       if (old_fm_volume != g_fm_volume ||
           old_adpcm_volume != g_adpcm_volume) {
         apply_runtime_core_options();
-      }
-      if (old_hq_adpcm_level != g_hq_adpcm_level) {
-        apply_runtime_core_options();
-        core_log(RETRO_LOG_INFO,
-                 "[xm6-libretro] HQ ADPCM exciter level %d",
-                 g_hq_adpcm_level);
       }
       if (old_bass_enhancer_level != g_bass_enhancer_level) {
         apply_runtime_core_options();

@@ -204,7 +204,6 @@ static void reset_px68k_audio_state(XM6Context *ctx);
 static void reset_hq_adpcm_state(XM6Context *ctx);
 static void reset_bass_enhancer_state(XM6Context *ctx);
 static void reset_x68sound_adpcm_state(XM6Context *ctx);
-static void apply_x68sound_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames);
 static void reset_reverb_state(XM6Context *ctx);
 static void reset_eq_state(XM6Context *ctx);
 static void sync_x68sound_state(XM6Context *ctx);
@@ -1002,69 +1001,6 @@ static void reset_x68sound_adpcm_state(XM6Context *ctx)
 	X68SoundAdpcmCore::Reset(ctx);
 }
 
-static void apply_x68sound_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames)
-{
-	X68SoundAdpcmCore::Apply(ctx, buffer, frames);
-}
-
-static void apply_hq_adpcm_fx(XM6Context *ctx, DWORD *buffer, unsigned int frames)
-{
-	if (!ctx || !buffer || frames == 0 || ctx->hq_adpcm_level <= 0 || ctx->audio_rate == 0) {
-		return;
-	}
-
-	const int level = (ctx->hq_adpcm_level > 100) ? 100 : ctx->hq_adpcm_level;
-	if (ctx->hq_adpcm_last_level != level) {
-		reset_hq_adpcm_state(ctx);
-		ctx->hq_adpcm_last_level = level;
-	}
-
-	double prev_input = static_cast<double>(ctx->hq_adpcm_hp_prev_input);
-	double prev_output = static_cast<double>(ctx->hq_adpcm_hp_prev_output);
-	double envelope = ctx->hq_adpcm_envelope;
-	int *samples = reinterpret_cast<int*>(buffer);
-
-	const double sample_rate = static_cast<double>(ctx->audio_rate);
-	const double rc = 1.0 / (2.0 * 3.14159265358979323846 * 8000.0);
-	const double dt = 1.0 / sample_rate;
-	const double alpha = rc / (rc + dt);
-	const double gain = static_cast<double>(level) / 100.0;
-
-	for (unsigned int i = 0; i < frames; i++) {
-		const double dry_l = static_cast<double>(samples[0]) / 32768.0;
-		const double dry_r = static_cast<double>(samples[1]) / 32768.0;
-		const double input = (dry_l + dry_r) * 0.5;
-
-		const double high = alpha * (prev_output + input - prev_input);
-		prev_input = input;
-		prev_output = high;
-
-		envelope = (envelope * 0.985) + (fabs(high) * 0.015);
-		const double drive = 1.0 + (envelope * 3.25);
-		const double shaped = tanh(high * drive);
-		const double harmonic = shaped - (high * 0.55);
-		// Keep the exciter focused up to the 3rd harmonic without pushing a lot of
-		// extra upper-octave content.
-		double boosted = ((high * 0.82) + (harmonic * 1.35)) * gain * 2.0;
-
-		if (boosted > 1.0) {
-			boosted = 1.0 + ((boosted - 1.0) * 0.4);
-		} else if (boosted < -1.0) {
-			boosted = -1.0 + ((boosted + 1.0) * 0.4);
-		}
-
-		const double out_l = dry_l + boosted;
-		const double out_r = dry_r + boosted;
-		samples[0] = clamp_sample_32(static_cast<long long>(out_l * 32768.0));
-		samples[1] = clamp_sample_32(static_cast<long long>(out_r * 32768.0));
-		samples += 2;
-	}
-
-	ctx->hq_adpcm_hp_prev_input = static_cast<int>(prev_input);
-	ctx->hq_adpcm_hp_prev_output = static_cast<int>(prev_output);
-	ctx->hq_adpcm_envelope = envelope;
-}
-
 static void apply_bass_enhancer_fx(XM6Context *ctx, short *buffer, unsigned int frames)
 {
 	if (!ctx || !buffer || frames == 0 || ctx->bass_enhancer_level <= 0 || ctx->audio_rate == 0) {
@@ -1792,6 +1728,10 @@ static void apply_default_runtime_config(XM6Context *ctx)
 	config->adpcm_volume = 50;
 	config->fm_enable = TRUE;
 	config->adpcm_enable = TRUE;
+	config->adpcm_interp = config->adpcm_analog = config->adpcm_lpf = TRUE;
+	config->fm_interp = TRUE;
+	config->sound_input = 16;
+	config->midi_volume = -1;
 	config->kbd_connect = TRUE;
 	config->mouse_speed = 205;
 	config->mouse_port = 0;
@@ -1825,7 +1765,7 @@ static void post_state_load_sync(XM6Context *ctx)
 		ctx->opmif->SetEngine(ctx->opm_engine);
 		ctx->opmif->EnableFM(ctx->runtime_config.fm_enable);
 		if (ctx->audio_rate != 0) {
-			ctx->opmif->InitBuf((DWORD)ctx->audio_rate);
+			ctx->opmif->InitBuf((DWORD)ctx->audio_rate, FALSE);
 		}
 	}
 	if (ctx->opm_engine) {
@@ -1834,7 +1774,7 @@ static void post_state_load_sync(XM6Context *ctx)
 	if (ctx->adpcm) {
 		ctx->adpcm->EnableADPCM(ctx->runtime_config.adpcm_enable);
 		ctx->adpcm->SetVolume(ctx->runtime_config.adpcm_volume);
-		if (ctx->audio_rate != 0) {
+		if (ctx->audio_rate != 0 && ctx->adpcm->GetOutputRate() != ctx->audio_rate) {
 			ctx->adpcm->InitBuf((DWORD)ctx->audio_rate);
 		}
 	}
@@ -2952,15 +2892,6 @@ static int px68k_runtime_to_fm16(int volume)
 	return px68k_clamp_volume16(mapped);
 }
 
-static int px68k_runtime_to_adpcm16(int volume)
-{
-	if (volume <= 0) {
-		return 0;
-	}
-	int mapped = 15 + ((volume - 50) * 15) / 100;
-	return px68k_clamp_volume16(mapped);
-}
-
 static int px68k_opm_gain_q14(int vol16)
 {
 	if (vol16 <= 0) {
@@ -2968,18 +2899,6 @@ static int px68k_opm_gain_q14(int vol16)
 	}
 	double db = -((16.0 - (double)vol16) * 4.0);
 	double gain = pow(10.0, db / 40.0);
-	if (gain < 0.0) {
-		gain = 0.0;
-	}
-	return (int)(gain * 16384.0 + 0.5);
-}
-
-static int px68k_adpcm_gain_q14(int vol16)
-{
-	if (vol16 <= 0) {
-		return 0;
-	}
-	double gain = 1.0 / pow(1.189207115, (double)(16 - vol16));
 	if (gain < 0.0) {
 		gain = 0.0;
 	}
@@ -3005,7 +2924,6 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 	ctx->px68k_rate_accum = (unsigned int)(acc % k_den);
 
 	const int fm_gain_q14 = px68k_opm_gain_q14(px68k_runtime_to_fm16(ctx->runtime_config.fm_volume));
-	const int adpcm_gain_q14 = px68k_adpcm_gain_q14(px68k_runtime_to_adpcm16(ctx->runtime_config.adpcm_volume));
 	const int px_drive_q14 = 19661; // 1.20x
 	const int px_output_boost_q14 = 22938; // 1.40x
 
@@ -3026,7 +2944,7 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 		}
 
 		if (mix_frames > 0) {
-			if (ctx->runtime_config.adpcm_volume <= 0 || !ctx->runtime_config.adpcm_enable) {
+			if (!ctx->runtime_config.adpcm_enable) {
 				memset(ctx->adpcm_buf, 0, mix_frames * 2 * sizeof(DWORD));
 				reset_hq_adpcm_state(ctx);
 				reset_x68sound_adpcm_state(ctx);
@@ -3043,11 +2961,7 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 
 		if (ctx->surround_enabled) {
 			apply_surround_fx(ctx, ctx->opm_buf, mix_frames);
-			apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, mix_frames);
 			apply_surround_fx(ctx, ctx->adpcm_buf, mix_frames);
-		}
-		else {
-			apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, mix_frames);
 		}
 
 		int *fm_src = (int*)ctx->opm_buf;
@@ -3059,11 +2973,9 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 			if (i < mix_frames) {
 				const int fm_l = fm_src[(i * 2) + 0];
 				const int fm_r = fm_src[(i * 2) + 1];
-				const int pcm_l = adpcm_src[(i * 2) + 0];
-				const int pcm_r = adpcm_src[(i * 2) + 1];
 
-				left = ((fm_l * fm_gain_q14) + (pcm_l * adpcm_gain_q14)) >> 14;
-				right = ((fm_r * fm_gain_q14) + (pcm_r * adpcm_gain_q14)) >> 14;
+				left = (fm_l * fm_gain_q14) >> 14;
+				right = (fm_r * fm_gain_q14) >> 14;
 
 				left = (left * px_drive_q14) >> 14;
 				right = (right * px_drive_q14) >> 14;
@@ -3076,8 +2988,8 @@ static void produce_px68k_audio(XM6Context *ctx, DWORD hus)
 
 			px68k_ring_push_frame(
 				ctx,
-				saturate_s16(ctx->px68k_lpf_prev_l),
-				saturate_s16(ctx->px68k_lpf_prev_r));
+				saturate_s16(ctx->px68k_lpf_prev_l + (i < mix_frames ? adpcm_src[i * 2] : 0)),
+				saturate_s16(ctx->px68k_lpf_prev_r + (i < mix_frames ? adpcm_src[i * 2 + 1] : 0)));
 		}
 
 		frames_to_generate -= batch;
@@ -3292,13 +3204,12 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 		}
 
 		if (frames > 0) {
-			if (ctx->runtime_config.adpcm_volume <= 0 || !ctx->runtime_config.adpcm_enable) {
+			if (!ctx->runtime_config.adpcm_enable) {
 				memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
 				reset_hq_adpcm_state(ctx);
 				reset_x68sound_adpcm_state(ctx);
 			} else {
 				ctx->adpcm->GetBuf(ctx->adpcm_buf, (int)frames);
-				apply_x68sound_adpcm_fx(ctx, ctx->adpcm_buf, frames);
 			}
 		}
 
@@ -3358,7 +3269,7 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	// ADPCM: buffer separado para poder aplicar surround sin alterar FM o CD-DA
 	if (frames > 0) {
-		if (ctx->runtime_config.adpcm_volume <= 0 || !ctx->runtime_config.adpcm_enable) {
+		if (!ctx->runtime_config.adpcm_enable) {
 			memset(ctx->adpcm_buf, 0, frames * 2 * sizeof(DWORD));
 			reset_hq_adpcm_state(ctx);
 			reset_x68sound_adpcm_state(ctx);
@@ -3376,11 +3287,7 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 
 	if (ctx->surround_enabled) {
 		apply_surround_fx(ctx, ctx->opm_buf, frames);
-		apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, frames);
 		apply_surround_fx(ctx, ctx->adpcm_buf, frames);
-	}
-	else {
-		apply_hq_adpcm_fx(ctx, ctx->adpcm_buf, frames);
 	}
 
 	// SCSI CD-DA: sumar al mismo buffer

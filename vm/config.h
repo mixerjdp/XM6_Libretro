@@ -177,6 +177,16 @@ public:
 	DWORD host_drives;					// Valid drive numbers
 	DWORD host_flag[10];				// Various flags (see class CWinFileDrv)
 	TCHAR host_path[10][_MAX_PATH];		// Base path
+    // TypeG sound extension: append only, preserving previous Config payloads.
+    BOOL adpcm_analog;
+    BOOL adpcm_lpf;
+    BOOL fm_interp;
+    BOOL fm_write_busy;
+    int fm_engine;                 // Existing engines: 0=fmgen, 1=ymfm
+    int sound_input;               // 0..15=capture device, 16=none
+    BOOL sound_global_focus;
+    int midi_volume;               // -1=preserve host level, otherwise 0..65535
+
 };
 
 #endif	// config_h

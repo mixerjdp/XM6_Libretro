@@ -48,6 +48,7 @@ OPMIF::OPMIF(VM *p) : MemDevice(p)
 	fdd = NULL;
 	adpcm = NULL;
 	engine = NULL;
+    ignore_busy = FALSE;
 	opmbuf = NULL;
 }
 
@@ -329,8 +330,9 @@ BOOL FASTCALL OPMIF::Load(Fileio *fio, int ver)
 //	Apply config
 //
 //---------------------------------------------------------------------------
-void FASTCALL OPMIF::ApplyCfg(const Config* /*config*/)
+void FASTCALL OPMIF::ApplyCfg(const Config* config)
 {
+    ignore_busy = config->fm_write_busy;
  ASSERT(this);
  ASSERT_DIAG();
 
@@ -470,6 +472,7 @@ void FASTCALL OPMIF::WriteByte(DWORD addr, DWORD data)
 		}
 		else {
 			// Data write (write is accepted when BUSY is cleared)
+			if (ignore_busy && opm.busy) return;
 			Output(opm.addr, data);
 
 			// Set BUSY
@@ -916,7 +919,7 @@ void FASTCALL OPMIF::GetBufInfo(opmbuf_t *buf)
 //	Initialize buffer
 //
 //---------------------------------------------------------------------------
-void FASTCALL OPMIF::InitBuf(DWORD rate)
+void FASTCALL OPMIF::InitBuf(DWORD rate, BOOL resetADPCM)
 {
  ASSERT(this);
  ASSERT(rate > 0);
@@ -924,7 +927,7 @@ void FASTCALL OPMIF::InitBuf(DWORD rate)
  ASSERT_DIAG();
 
 	// Connect to ADPCM
-	adpcm->InitBuf(rate);
+	if (resetADPCM) adpcm->InitBuf(rate);
 
 	// Counter, pointer
 	bufinfo.num = 0;

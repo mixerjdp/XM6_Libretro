@@ -259,6 +259,27 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_interp(XM6Handle handle, i
 	return XM6CORE_OK;
 }
 
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_filters(XM6Handle handle, int analog, int low_pass)
+{
+    if (!handle) return XM6CORE_ERR_INVALID_HANDLE;
+    XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+    if (!ctx->vm || !ctx->adpcm) return XM6CORE_ERR_INVALID_HANDLE;
+    ctx->runtime_config.adpcm_analog = analog != 0;
+    ctx->runtime_config.adpcm_lpf = low_pass != 0;
+    ctx->adpcm->ApplyCfg(&ctx->runtime_config);
+    return XM6CORE_OK;
+}
+
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_adpcm_input(XM6Handle handle, const short *stereo, unsigned int frames)
+{
+    if (!handle) return XM6CORE_ERR_INVALID_HANDLE;
+    XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+    if (!ctx->vm || !ctx->adpcm) return XM6CORE_ERR_INVALID_HANDLE;
+    if ((!stereo && frames) || frames > 65536) return XM6CORE_ERR_INVALID_ARGUMENT;
+    ctx->adpcm->PutInput(stereo, frames);
+    return XM6CORE_OK;
+}
+
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_surround_enabled(XM6Handle handle, int enabled)
 {
 	if (!handle) {

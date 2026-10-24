@@ -3428,6 +3428,8 @@ void CFrmWnd::OnYmfm()
 	}
 
 	pSound->SetYmfm(!pSound->IsYmfm());
+    Config cfg; GetConfig()->GetConfig(&cfg);
+    cfg.fm_engine = pSound->IsYmfm() ? 1 : 0; GetConfig()->SetConfig(&cfg);
 
 	::LockVM();
 	ApplyCfg();

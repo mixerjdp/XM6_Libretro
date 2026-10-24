@@ -1248,58 +1248,70 @@ BEGIN
     LTEXT           "",IDC_BASIC_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_US_SOUNDPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_US_SOUNDPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
 CAPTION "Sound"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Output &Device",IDC_SOUND_DEVICEG,7,7,118,32
-    COMBOBOX        IDC_SOUND_DEVICEC,15,19,103,64,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Sample Rate",IDC_SOUND_RATEG,135,7,68,82
-    CONTROL         "44.&1kHz",IDC_SOUND_RATE0,"Button",BS_AUTORADIOBUTTON | WS_GROUP,142,18,55,10
-    CONTROL         "&48kHz",IDC_SOUND_RATE1,"Button",BS_AUTORADIOBUTTON,142,32,55,10
-    CONTROL         "&88.2kHz",IDC_SOUND_RATE2,"Button",BS_AUTORADIOBUTTON,142,46,55,10
-    CONTROL         "&96kHz",IDC_SOUND_RATE3,"Button",BS_AUTORADIOBUTTON,142,60,55,10
-    CONTROL         "(&62.5kHz)",IDC_SOUND_RATE4,"Button",BS_AUTORADIOBUTTON,142,74,34,10
-    GROUPBOX        "Sound Buffer",IDC_SOUND_BUFFERG,7,45,118,44
-    LTEXT           "&Size",IDC_SOUND_BUF1L,15,58,50,8
-    EDITTEXT        IDC_SOUND_BUF1E,72,55,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin1",IDC_SOUND_BUF1S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,54,7,14
-    LTEXT           "ms",IDC_SOUND_BUF1MS,105,58,10,8
-    LTEXT           "&Polling",IDC_SOUND_BUF2L,15,74,50,8
-    EDITTEXT        IDC_SOUND_BUF2E,72,71,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin2",IDC_SOUND_BUF2S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,70,7,14
-    LTEXT           "ms",IDC_SOUND_BUF2MS,105,74,10,8
-    GROUPBOX        "Option",IDC_SOUND_OPTIONG,7,95,196,25
-    CONTROL         "ADPCM &Interpolution",IDC_SOUND_INTERP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,106,91,10
-    LTEXT           "",IDC_SOUND_HELP,7,129,196,18,SS_SUNKEN
+    CONTROL "&Device", IDC_SOUND_DEVICEG, "Button", 0x50000007, 7, 7, 133, 40, 0x00000000
+    CONTROL "Output", IDC_TG_OUTPUT_LABEL, "Static", 0x50020000, 15, 19, 16, 8, 0x00000000
+    CONTROL "", IDC_SOUND_DEVICEC, "ComboBox", 0x50210003, 33, 17, 103, 64, 0x00000000
+    CONTROL "Input", IDC_TG_INPUT_LABEL, "Static", 0x50020000, 15, 33, 16, 8, 0x00000000
+    CONTROL "", IDC_TG_INPUT, "ComboBox", 0x50210003, 33, 31, 103, 64, 0x00000000
+    CONTROL "Sample Rate", IDC_SOUND_RATEG, "Button", 0x50000007, 145, 7, 58, 72, 0x00000000
+    CONTROL "44.&1kHz", IDC_SOUND_RATE0, "Button", 0x50020009, 152, 18, 49, 10, 0x00000000
+    CONTROL "&48kHz", IDC_SOUND_RATE1, "Button", 0x50000009, 152, 30, 49, 10, 0x00000000
+    CONTROL "&88.2kHz", IDC_SOUND_RATE2, "Button", 0x50000009, 152, 42, 49, 10, 0x00000000
+    CONTROL "&96kHz", IDC_SOUND_RATE3, "Button", 0x50000009, 152, 54, 49, 10, 0x00000000
+    CONTROL "(&62.5kHz)", IDC_SOUND_RATE4, "Button", 0x50000009, 152, 66, 49, 10, 0x00000000
+    CONTROL "Sound Buffer", IDC_SOUND_BUFFERG, "Button", 0x50000007, 7, 52, 133, 27, 0x00000000
+    CONTROL "&Size", IDC_SOUND_BUF1L, "Static", 0x50020000, 15, 64, 18, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1E, "Edit", 0x50810882, 33, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1S, "msctls_updown32", 0x50000034, 75, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF1MS, "Static", 0x50020000, 60, 63, 10, 8, 0x00000000
+    CONTROL "&Polling", IDC_SOUND_BUF2L, "Static", 0x50020000, 73, 64, 30, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2E, "Edit", 0x50810882, 99, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2S, "msctls_updown32", 0x50000034, 148, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF2MS, "Static", 0x50020000, 125, 63, 10, 8, 0x00000000
+    CONTROL "Output", IDC_VOL_OUTG, "Button", 0x50000007, 7, 83, 196, 59, 0x00000000
+    CONTROL "&Volume", IDC_VOL_VOLL, "Static", 0x50020000, 15, 93, 41, 8, 0x00000000
+    CONTROL "", IDC_VOL_VOLS, "msctls_trackbar32", 0x50010018, 83, 90, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_VOLN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "&Wave Fader", IDC_VOL_MASTERL, "Static", 0x50020000, 15, 105, 42, 8, 0x00000000
+    CONTROL "", IDC_VOL_MASTERS, "msctls_trackbar32", 0x50010018, 83, 102, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_MASTERN, "Static", 0x50020000, 176, 105, 19, 8, 0x00000000
+    CONTROL "&Midi Fader", IDC_VOL_SEPL, "Static", 0x50020000, 15, 117, 52, 8, 0x00000000
+    CONTROL "", IDC_VOL_SEPS, "msctls_trackbar32", 0x50010018, 83, 114, 91, 13, 0x00000000
+    CONTROL "100%", IDC_VOL_SEPN, "Static", 0x50020000, 176, 117, 19, 8, 0x00000000
+    CONTROL "&Play in background mode", IDC_TG_BACKGROUND, "Button", 0x50010003, 15, 129, 120, 10, 0x00000000
+    CONTROL "", IDC_SOUND_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
 END
 
-IDD_US_VOLPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Volume"
+IDD_US_VOLPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
+CAPTION "SoundUnit"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Output",IDC_VOL_OUTG,7,7,196,61
-    LTEXT           "&Volume",IDC_VOL_VOLL,15,20,41,8
-    CONTROL         "Slider1",IDC_VOL_VOLS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,17,91,15
-    LTEXT           "100",IDC_VOL_VOLN,176,20,19,8
-    LTEXT           "&Wave Fader",IDC_VOL_MASTERL,15,36,42,8
-    CONTROL         "Slider1",IDC_VOL_MASTERS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,33,91,15
-    LTEXT           "100",IDC_VOL_MASTERN,176,36,19,8
-    LTEXT           "&Midi Fader",IDC_VOL_SEPL,15,52,52,8
-    CONTROL         "Slider2",IDC_VOL_SEPS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,49,91,15
-    LTEXT           "100%",IDC_VOL_SEPN,176,52,19,8
-    GROUPBOX        "Generation",IDC_VOL_GENG,7,76,196,44
-    LTEXT           "&FM",IDC_VOL_FML,15,88,32,8
-    CONTROL         "Slider3",IDC_VOL_FMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,85,91,15
-    CONTROL         "",IDC_VOL_FMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,88,16,8
-    LTEXT           "30",IDC_VOL_FMN,176,88,19,8
-    LTEXT           "&ADPCM",IDC_VOL_ADPCML,15,105,47,8
-    CONTROL         "Slider4",IDC_VOL_ADPCMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,102,91,15
-    CONTROL         "",IDC_VOL_ADPCMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,105,16,8
-    LTEXT           "20",IDC_VOL_ADPCMN,176,105,19,8
-    LTEXT           "",IDC_VOL_HELP,7,129,196,18,SS_SUNKEN
+    CONTROL "FM", IDC_VOL_GENG, "Button", 0x50000007, 7, 7, 196, 70, 0x00000000
+    CONTROL "&Mix Volume", IDC_VOL_FML, "Static", 0x50020000, 15, 20, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_FMS, "msctls_trackbar32", 0x50010018, 83, 17, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_FMC, "Button", 0x50010003, 67, 20, 16, 8, 0x00000000
+    CONTROL "30", IDC_VOL_FMN, "Static", 0x50020000, 176, 20, 19, 8, 0x00000000
+    CONTROL "Ignore write data under &busy", IDC_TG_FM_BUSY, "Button", 0x50010003, 15, 34, 110, 10, 0x00000000
+    CONTROL "&Interpolation filter", IDC_TG_FM_INTERP, "Button", 0x50010003, 15, 48, 110, 10, 0x00000000
+    CONTROL "FM &Engine", IDC_TG_FM_ENGINE_LABEL, "Static", 0x50020000, 15, 62, 50, 8, 0x00000000
+    CONTROL "", IDC_TG_FM_ENGINE, "ComboBox", 0x50210003, 65, 60, 60, 64, 0x00000000
+    CONTROL "ADPCM", IDC_TG_ADPCM_GROUP, "Button", 0x50000007, 7, 83, 196, 57, 0x00000000
+    CONTROL "Mix &Volume", IDC_VOL_ADPCML, "Static", 0x50020000, 15, 96, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMS, "msctls_trackbar32", 0x50010018, 83, 92, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMC, "Button", 0x50010003, 67, 95, 16, 8, 0x00000000
+    CONTROL "20", IDC_VOL_ADPCMN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "Interpolation &filter", IDC_TG_ADPCM_INTERP, "Button", 0x50010003, 15, 111, 110, 10, 0x00000000
+    CONTROL "&Analog circuit", IDC_TG_ADPCM_ANALOG, "Button", 0x50010003, 15, 125, 70, 10, 0x00000000
+    CONTROL "&Low pass filter", IDC_TG_ADPCM_LPF, "Button", 0x50010003, 100, 125, 80, 10, 0x00000000
+    CONTROL "", IDC_VOL_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
 END
 
 IDD_US_MISCPAGE DIALOG 0, 0, 210, 154
@@ -1891,56 +1903,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDC_US_SOUND_DEVICEG    "Device Setup"
-    IDC_US_SOUND_DEVICEC    "Select output device."
-    IDC_US_SOUND_RATEG      "Sound Rate Setup"
-    IDC_US_SOUND_RATE0      "Generates sounds at 44.1kHz. Default setting is 62.5kHz."
-    IDC_US_SOUND_RATE1      "Generates sounds at 48kHz. Default setting is 62.5kHz."
-    IDC_US_SOUND_RATE2      "Generates sounds at 88.2kHz. Default setting is 62.5kHz."
-    IDC_US_SOUND_RATE3      "Generates sounds at 96kHz. Default setting is 62.5kHz."
-    IDC_US_SOUND_RATE4      "Generates sounds at 62.5kHz. Defaut setting is 62.5kHz."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_US_SOUND_BUFFERG    "Sound Buffer Setup"
-    IDC_US_SOUND_BUF1L      "Specify the size of buffer. Default setting is 100ms."
-    IDC_US_SOUND_BUF1E      "Specify the size of buffer. Default setting is 100ms."
-    IDC_US_SOUND_BUF1S      "Specify the size of buffer. Default setting is 100ms."
-    IDC_US_SOUND_BUF1MS     "Specify the size of buffer. Default setting is 100ms."
-    IDC_US_SOUND_BUF2L      "Adjust interval time for polling buffer. Default setting is 5ms."
-    IDC_US_SOUND_BUF2E      "Adjust interval time for polling buffer. Default setting is 5ms."
-    IDC_US_SOUND_BUF2S      "Adjust interval time for polling buffer. Default setting is 5ms."
-    IDC_US_SOUND_BUF2MS     "Adjust interval time for polling buffer. Default setting is 5ms."
     IDC_US_SOUND_OPTIONG    "Other Options"
     IDC_US_SOUND_INTERP     "Enable Interpolution with converting ADPCM to WAV. Default setting is ON."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_US_VOL_OUTG         "Output Setup"
-    IDC_US_VOL_VOLL         "Main Fader level."
-    IDC_US_VOL_VOLS         "Main Fader level."
-    IDC_US_VOL_VOLN         "Main Fader level."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_US_VOL_MASTERL      "Wave Fader level. Default setting is 100."
-    IDC_US_VOL_MASTERS      "Wave Fader level. Default setting is 100."
-    IDC_US_VOL_MASTERN      "Wave Fader level. Default setting is 100."
-    IDC_US_VOL_SEPL         "MIDI Fader level."
-    IDC_US_VOL_SEPS         "MIDI Fader level."
-    IDC_US_VOL_SEPN         "MIDI Fader level."
-    IDC_US_VOL_GENG         "Genaration Setup"
-    IDC_US_VOL_FML          "FM level. Default setting is 54."
-    IDC_US_VOL_FMC          "Enable FM sound. Default setting is ON."
-    IDC_US_VOL_FMS          "FM level. Default setting is 54."
-    IDC_US_VOL_FMN          "FM level. Default setting is 54."
-    IDC_US_VOL_ADPCML       "ADPCM level. Default setting is 52."
-    IDC_US_VOL_ADPCMC       "Enable ADPCM sound. Default setting is ON."
-    IDC_US_VOL_ADPCMS       "ADPCM level. Default setting is 52."
-    IDC_US_VOL_ADPCMN       "ADPCM level. Default setting is 52."
 END
 
 STRINGTABLE
@@ -3622,112 +3586,136 @@ BEGIN
     LTEXT           "",IDC_BASIC_HELP,7,129,196,18,SS_SUNKEN
 END
 
-IDD_SOUNDPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "サウンド"
-FONT 9, "ＭＳ Ｐゴシック"
-BEGIN
-    GROUPBOX        "出力デバイス(&D)",IDC_SOUND_DEVICEG,7,7,118,32
-    COMBOBOX        IDC_SOUND_DEVICEC,15,19,103,64,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "サンプリングレート",IDC_SOUND_RATEG,135,7,68,82
-    CONTROL         "44.&1kHz",IDC_SOUND_RATE0,"Button",BS_AUTORADIOBUTTON | WS_GROUP,142,18,55,10
-    CONTROL         "&48kHz",IDC_SOUND_RATE1,"Button",BS_AUTORADIOBUTTON,142,32,55,10
-    CONTROL         "&88.2kHz",IDC_SOUND_RATE2,"Button",BS_AUTORADIOBUTTON,142,46,55,10
-    CONTROL         "&96kHz",IDC_SOUND_RATE3,"Button",BS_AUTORADIOBUTTON,142,60,55,10
-    CONTROL         "(&62.5kHz)",IDC_SOUND_RATE4,"Button",BS_AUTORADIOBUTTON,142,74,55,10
-    GROUPBOX        "サウンドバッファ",IDC_SOUND_BUFFERG,7,45,118,44
-    LTEXT           "バッファサイズ(&S)",IDC_SOUND_BUF1L,15,58,50,8
-    EDITTEXT        IDC_SOUND_BUF1E,72,55,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin1",IDC_SOUND_BUF1S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,54,7,14
-    LTEXT           "ms",IDC_SOUND_BUF1MS,105,58,10,8
-    LTEXT           "ポーリング間隔(&P)",IDC_SOUND_BUF2L,15,74,50,8
-    EDITTEXT        IDC_SOUND_BUF2E,72,71,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin2",IDC_SOUND_BUF2S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,70,7,14
-    LTEXT           "ms",IDC_SOUND_BUF2MS,105,74,10,8
-    GROUPBOX        "その他のオプション",IDC_SOUND_OPTIONG,7,95,196,25
-    CONTROL         "ADPCMを線形補間する(&I)",IDC_SOUND_INTERP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,106,91,10
-    LTEXT           "",IDC_SOUND_HELP,7,129,196,18,SS_SUNKEN
-END
-
-IDD_ES_SOUNDPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+IDD_SOUNDPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
 CAPTION "Sound"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Output &Device",IDC_SOUND_DEVICEG,7,7,118,32
-    COMBOBOX        IDC_SOUND_DEVICEC,15,19,103,64,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    GROUPBOX        "Sample Rate",IDC_SOUND_RATEG,135,7,68,82
-    CONTROL         "44.&1kHz",IDC_SOUND_RATE0,"Button",BS_AUTORADIOBUTTON | WS_GROUP,142,18,55,10
-    CONTROL         "&48kHz",IDC_SOUND_RATE1,"Button",BS_AUTORADIOBUTTON,142,32,55,10
-    CONTROL         "&88.2kHz",IDC_SOUND_RATE2,"Button",BS_AUTORADIOBUTTON,142,46,55,10
-    CONTROL         "&96kHz",IDC_SOUND_RATE3,"Button",BS_AUTORADIOBUTTON,142,60,55,10
-    CONTROL         "(&62.5kHz)",IDC_SOUND_RATE4,"Button",BS_AUTORADIOBUTTON,142,74,34,10
-    GROUPBOX        "Sound Buffer",IDC_SOUND_BUFFERG,7,45,118,44
-    LTEXT           "&Size",IDC_SOUND_BUF1L,15,58,50,8
-    EDITTEXT        IDC_SOUND_BUF1E,72,55,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin1",IDC_SOUND_BUF1S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,54,7,14
-    LTEXT           "ms",IDC_SOUND_BUF1MS,105,58,10,8
-    LTEXT           "&Polling",IDC_SOUND_BUF2L,15,74,50,8
-    EDITTEXT        IDC_SOUND_BUF2E,72,71,30,14,ES_RIGHT | ES_AUTOHSCROLL | ES_READONLY
-    CONTROL         "Spin2",IDC_SOUND_BUF2S,"msctls_updown32",UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,118,70,7,14
-    LTEXT           "ms",IDC_SOUND_BUF2MS,105,74,10,8
-    GROUPBOX        "Option",IDC_SOUND_OPTIONG,7,95,196,25
-    CONTROL         "ADPCM &Interpolution",IDC_SOUND_INTERP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,106,91,10
-    LTEXT           "",IDC_SOUND_HELP,7,129,196,18,SS_SUNKEN
+    CONTROL "&Device", IDC_SOUND_DEVICEG, "Button", 0x50000007, 7, 7, 133, 40, 0x00000000
+    CONTROL "Output", IDC_TG_OUTPUT_LABEL, "Static", 0x50020000, 15, 19, 16, 8, 0x00000000
+    CONTROL "", IDC_SOUND_DEVICEC, "ComboBox", 0x50210003, 33, 17, 103, 64, 0x00000000
+    CONTROL "Input", IDC_TG_INPUT_LABEL, "Static", 0x50020000, 15, 33, 16, 8, 0x00000000
+    CONTROL "", IDC_TG_INPUT, "ComboBox", 0x50210003, 33, 31, 103, 64, 0x00000000
+    CONTROL "Sample Rate", IDC_SOUND_RATEG, "Button", 0x50000007, 145, 7, 58, 72, 0x00000000
+    CONTROL "44.&1kHz", IDC_SOUND_RATE0, "Button", 0x50020009, 152, 18, 49, 10, 0x00000000
+    CONTROL "&48kHz", IDC_SOUND_RATE1, "Button", 0x50000009, 152, 30, 49, 10, 0x00000000
+    CONTROL "&88.2kHz", IDC_SOUND_RATE2, "Button", 0x50000009, 152, 42, 49, 10, 0x00000000
+    CONTROL "&96kHz", IDC_SOUND_RATE3, "Button", 0x50000009, 152, 54, 49, 10, 0x00000000
+    CONTROL "(&62.5kHz)", IDC_SOUND_RATE4, "Button", 0x50000009, 152, 66, 49, 10, 0x00000000
+    CONTROL "Sound Buffer", IDC_SOUND_BUFFERG, "Button", 0x50000007, 7, 52, 133, 27, 0x00000000
+    CONTROL "&Size", IDC_SOUND_BUF1L, "Static", 0x50020000, 15, 64, 18, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1E, "Edit", 0x50810882, 33, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1S, "msctls_updown32", 0x50000034, 75, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF1MS, "Static", 0x50020000, 60, 63, 10, 8, 0x00000000
+    CONTROL "&Polling", IDC_SOUND_BUF2L, "Static", 0x50020000, 73, 64, 30, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2E, "Edit", 0x50810882, 99, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2S, "msctls_updown32", 0x50000034, 148, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF2MS, "Static", 0x50020000, 125, 63, 10, 8, 0x00000000
+    CONTROL "Output", IDC_VOL_OUTG, "Button", 0x50000007, 7, 83, 196, 59, 0x00000000
+    CONTROL "&Volume", IDC_VOL_VOLL, "Static", 0x50020000, 15, 93, 41, 8, 0x00000000
+    CONTROL "", IDC_VOL_VOLS, "msctls_trackbar32", 0x50010018, 83, 90, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_VOLN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "&Wave Fader", IDC_VOL_MASTERL, "Static", 0x50020000, 15, 105, 42, 8, 0x00000000
+    CONTROL "", IDC_VOL_MASTERS, "msctls_trackbar32", 0x50010018, 83, 102, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_MASTERN, "Static", 0x50020000, 176, 105, 19, 8, 0x00000000
+    CONTROL "&Midi Fader", IDC_VOL_SEPL, "Static", 0x50020000, 15, 117, 52, 8, 0x00000000
+    CONTROL "", IDC_VOL_SEPS, "msctls_trackbar32", 0x50010018, 83, 114, 91, 13, 0x00000000
+    CONTROL "100%", IDC_VOL_SEPN, "Static", 0x50020000, 176, 117, 19, 8, 0x00000000
+    CONTROL "&Play in background mode", IDC_TG_BACKGROUND, "Button", 0x50010003, 15, 129, 120, 10, 0x00000000
+    CONTROL "", IDC_SOUND_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
 END
 
-IDD_VOLPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "音量"
-FONT 9, "ＭＳ Ｐゴシック"
-BEGIN
-    GROUPBOX        "出力",IDC_VOL_OUTG,7,7,196,61
-    LTEXT           "ボリューム(&V)",IDC_VOL_VOLL,15,20,41,8
-    CONTROL         "Slider1",IDC_VOL_VOLS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,17,91,15
-    LTEXT           "100",IDC_VOL_VOLN,176,20,19,8
-    LTEXT           "WAVEレベル(&W)",IDC_VOL_MASTERL,15,36,52,8
-    CONTROL         "Slider1",IDC_VOL_MASTERS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,33,91,15
-    LTEXT           "100",IDC_VOL_MASTERN,176,36,19,8
-    LTEXT           "MIDIレベル(&M)",IDC_VOL_SEPL,15,52,52,8
-    CONTROL         "Slider2",IDC_VOL_SEPS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,49,91,15
-    LTEXT           "100",IDC_VOL_SEPN,176,52,19,8
-    GROUPBOX        "合成",IDC_VOL_GENG,7,76,196,44
-    LTEXT           "FM音源(&F)",IDC_VOL_FML,15,88,32,8
-    CONTROL         "Slider3",IDC_VOL_FMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,85,91,15
-    CONTROL         "",IDC_VOL_FMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,88,16,8
-    LTEXT           "30",IDC_VOL_FMN,176,88,19,8
-    LTEXT           "ADPCM音源(&A)",IDC_VOL_ADPCML,15,105,47,8
-    CONTROL         "Slider4",IDC_VOL_ADPCMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,102,91,15
-    CONTROL         "",IDC_VOL_ADPCMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,105,16,8
-    LTEXT           "20",IDC_VOL_ADPCMN,176,105,19,8
-    LTEXT           "",IDC_VOL_HELP,7,129,196,18,SS_SUNKEN
-END
-
-IDD_ES_VOLPAGE DIALOG 0, 0, 210, 154
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Volume"
+IDD_ES_SOUNDPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
+CAPTION "Sound"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Output",IDC_VOL_OUTG,7,7,196,61
-    LTEXT           "&Volume",IDC_VOL_VOLL,15,20,41,8
-    CONTROL         "Slider1",IDC_VOL_VOLS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,17,91,15
-    LTEXT           "100",IDC_VOL_VOLN,176,20,19,8
-    LTEXT           "&Wave Fader",IDC_VOL_MASTERL,15,36,42,8
-    CONTROL         "Slider1",IDC_VOL_MASTERS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,33,91,15
-    LTEXT           "100",IDC_VOL_MASTERN,176,36,19,8
-    LTEXT           "&Midi Fader",IDC_VOL_SEPL,15,52,52,8
-    CONTROL         "Slider2",IDC_VOL_SEPS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,49,91,15
-    LTEXT           "100%",IDC_VOL_SEPN,176,52,19,8
-    GROUPBOX        "Generation",IDC_VOL_GENG,7,76,196,44
-    LTEXT           "&FM",IDC_VOL_FML,15,88,32,8
-    CONTROL         "Slider3",IDC_VOL_FMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,85,91,15
-    CONTROL         "",IDC_VOL_FMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,88,16,8
-    LTEXT           "30",IDC_VOL_FMN,176,88,19,8
-    LTEXT           "&ADPCM",IDC_VOL_ADPCML,15,105,47,8
-    CONTROL         "Slider4",IDC_VOL_ADPCMS,"msctls_trackbar32",TBS_BOTH | TBS_NOTICKS | WS_TABSTOP,83,102,91,15
-    CONTROL         "",IDC_VOL_ADPCMC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,67,105,16,8
-    LTEXT           "20",IDC_VOL_ADPCMN,176,105,19,8
-    LTEXT           "",IDC_VOL_HELP,7,129,196,18,SS_SUNKEN
+    CONTROL "&Device", IDC_SOUND_DEVICEG, "Button", 0x50000007, 7, 7, 133, 40, 0x00000000
+    CONTROL "Output", IDC_TG_OUTPUT_LABEL, "Static", 0x50020000, 15, 19, 16, 8, 0x00000000
+    CONTROL "", IDC_SOUND_DEVICEC, "ComboBox", 0x50210003, 33, 17, 103, 64, 0x00000000
+    CONTROL "Input", IDC_TG_INPUT_LABEL, "Static", 0x50020000, 15, 33, 16, 8, 0x00000000
+    CONTROL "", IDC_TG_INPUT, "ComboBox", 0x50210003, 33, 31, 103, 64, 0x00000000
+    CONTROL "Sample Rate", IDC_SOUND_RATEG, "Button", 0x50000007, 145, 7, 58, 72, 0x00000000
+    CONTROL "44.&1kHz", IDC_SOUND_RATE0, "Button", 0x50020009, 152, 18, 49, 10, 0x00000000
+    CONTROL "&48kHz", IDC_SOUND_RATE1, "Button", 0x50000009, 152, 30, 49, 10, 0x00000000
+    CONTROL "&88.2kHz", IDC_SOUND_RATE2, "Button", 0x50000009, 152, 42, 49, 10, 0x00000000
+    CONTROL "&96kHz", IDC_SOUND_RATE3, "Button", 0x50000009, 152, 54, 49, 10, 0x00000000
+    CONTROL "(&62.5kHz)", IDC_SOUND_RATE4, "Button", 0x50000009, 152, 66, 49, 10, 0x00000000
+    CONTROL "Sound Buffer", IDC_SOUND_BUFFERG, "Button", 0x50000007, 7, 52, 133, 27, 0x00000000
+    CONTROL "&Size", IDC_SOUND_BUF1L, "Static", 0x50020000, 15, 64, 18, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1E, "Edit", 0x50810882, 33, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF1S, "msctls_updown32", 0x50000034, 75, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF1MS, "Static", 0x50020000, 60, 63, 10, 8, 0x00000000
+    CONTROL "&Polling", IDC_SOUND_BUF2L, "Static", 0x50020000, 73, 64, 30, 8, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2E, "Edit", 0x50810882, 99, 62, 26, 14, 0x00000000
+    CONTROL "", IDC_SOUND_BUF2S, "msctls_updown32", 0x50000034, 148, 59, 7, 14, 0x00000000
+    CONTROL "ms", IDC_SOUND_BUF2MS, "Static", 0x50020000, 125, 63, 10, 8, 0x00000000
+    CONTROL "Output", IDC_VOL_OUTG, "Button", 0x50000007, 7, 83, 196, 59, 0x00000000
+    CONTROL "&Volume", IDC_VOL_VOLL, "Static", 0x50020000, 15, 93, 41, 8, 0x00000000
+    CONTROL "", IDC_VOL_VOLS, "msctls_trackbar32", 0x50010018, 83, 90, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_VOLN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "&Wave Fader", IDC_VOL_MASTERL, "Static", 0x50020000, 15, 105, 42, 8, 0x00000000
+    CONTROL "", IDC_VOL_MASTERS, "msctls_trackbar32", 0x50010018, 83, 102, 91, 13, 0x00000000
+    CONTROL "100", IDC_VOL_MASTERN, "Static", 0x50020000, 176, 105, 19, 8, 0x00000000
+    CONTROL "&Midi Fader", IDC_VOL_SEPL, "Static", 0x50020000, 15, 117, 52, 8, 0x00000000
+    CONTROL "", IDC_VOL_SEPS, "msctls_trackbar32", 0x50010018, 83, 114, 91, 13, 0x00000000
+    CONTROL "100%", IDC_VOL_SEPN, "Static", 0x50020000, 176, 117, 19, 8, 0x00000000
+    CONTROL "&Play in background mode", IDC_TG_BACKGROUND, "Button", 0x50010003, 15, 129, 120, 10, 0x00000000
+    CONTROL "", IDC_SOUND_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
+END
+
+IDD_VOLPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
+CAPTION "SoundUnit"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "FM", IDC_VOL_GENG, "Button", 0x50000007, 7, 7, 196, 70, 0x00000000
+    CONTROL "&Mix Volume", IDC_VOL_FML, "Static", 0x50020000, 15, 20, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_FMS, "msctls_trackbar32", 0x50010018, 83, 17, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_FMC, "Button", 0x50010003, 67, 20, 16, 8, 0x00000000
+    CONTROL "30", IDC_VOL_FMN, "Static", 0x50020000, 176, 20, 19, 8, 0x00000000
+    CONTROL "Ignore write data under &busy", IDC_TG_FM_BUSY, "Button", 0x50010003, 15, 34, 110, 10, 0x00000000
+    CONTROL "&Interpolation filter", IDC_TG_FM_INTERP, "Button", 0x50010003, 15, 48, 110, 10, 0x00000000
+    CONTROL "FM &Engine", IDC_TG_FM_ENGINE_LABEL, "Static", 0x50020000, 15, 62, 50, 8, 0x00000000
+    CONTROL "", IDC_TG_FM_ENGINE, "ComboBox", 0x50210003, 65, 60, 60, 64, 0x00000000
+    CONTROL "ADPCM", IDC_TG_ADPCM_GROUP, "Button", 0x50000007, 7, 83, 196, 57, 0x00000000
+    CONTROL "Mix &Volume", IDC_VOL_ADPCML, "Static", 0x50020000, 15, 96, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMS, "msctls_trackbar32", 0x50010018, 83, 92, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMC, "Button", 0x50010003, 67, 95, 16, 8, 0x00000000
+    CONTROL "20", IDC_VOL_ADPCMN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "Interpolation &filter", IDC_TG_ADPCM_INTERP, "Button", 0x50010003, 15, 111, 110, 10, 0x00000000
+    CONTROL "&Analog circuit", IDC_TG_ADPCM_ANALOG, "Button", 0x50010003, 15, 125, 70, 10, 0x00000000
+    CONTROL "&Low pass filter", IDC_TG_ADPCM_LPF, "Button", 0x50010003, 100, 125, 80, 10, 0x00000000
+    CONTROL "", IDC_VOL_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
+END
+
+IDD_ES_VOLPAGE DIALOG 0, 0, 210, 166
+STYLE 0x48c00040
+EXSTYLE 0x00000000
+CAPTION "SoundUnit"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL "FM", IDC_VOL_GENG, "Button", 0x50000007, 7, 7, 196, 70, 0x00000000
+    CONTROL "&Mix Volume", IDC_VOL_FML, "Static", 0x50020000, 15, 20, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_FMS, "msctls_trackbar32", 0x50010018, 83, 17, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_FMC, "Button", 0x50010003, 67, 20, 16, 8, 0x00000000
+    CONTROL "30", IDC_VOL_FMN, "Static", 0x50020000, 176, 20, 19, 8, 0x00000000
+    CONTROL "Ignore write data under &busy", IDC_TG_FM_BUSY, "Button", 0x50010003, 15, 34, 110, 10, 0x00000000
+    CONTROL "&Interpolation filter", IDC_TG_FM_INTERP, "Button", 0x50010003, 15, 48, 110, 10, 0x00000000
+    CONTROL "FM &Engine", IDC_TG_FM_ENGINE_LABEL, "Static", 0x50020000, 15, 62, 50, 8, 0x00000000
+    CONTROL "", IDC_TG_FM_ENGINE, "ComboBox", 0x50210003, 65, 60, 60, 64, 0x00000000
+    CONTROL "ADPCM", IDC_TG_ADPCM_GROUP, "Button", 0x50000007, 7, 83, 196, 57, 0x00000000
+    CONTROL "Mix &Volume", IDC_VOL_ADPCML, "Static", 0x50020000, 15, 96, 65, 8, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMS, "msctls_trackbar32", 0x50010018, 83, 92, 91, 13, 0x00000000
+    CONTROL "", IDC_VOL_ADPCMC, "Button", 0x50010003, 67, 95, 16, 8, 0x00000000
+    CONTROL "20", IDC_VOL_ADPCMN, "Static", 0x50020000, 176, 93, 19, 8, 0x00000000
+    CONTROL "Interpolation &filter", IDC_TG_ADPCM_INTERP, "Button", 0x50010003, 15, 111, 110, 10, 0x00000000
+    CONTROL "&Analog circuit", IDC_TG_ADPCM_ANALOG, "Button", 0x50010003, 15, 125, 70, 10, 0x00000000
+    CONTROL "&Low pass filter", IDC_TG_ADPCM_LPF, "Button", 0x50010003, 100, 125, 80, 10, 0x00000000
+    CONTROL "", IDC_VOL_HELP, "Static", 0x50021000, 7, 146, 196, 18, 0x00000000
 END
 
 IDD_MISCPAGE DIALOG 0, 0, 210, 198
@@ -4939,56 +4927,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDC_SOUND_DEVICEG       "・ｽT・ｽE・ｽ・ｽ・ｽh・ｽ・ｽ・ｽﾄ撰ｿｽ・ｽ・ｽ・ｽ・ｽf・ｽo・ｽC・ｽX・ｽ・ｽI・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB(・ｽ・ｽ・ｽ闢厄ｿｽﾄなゑｿｽ)・ｽﾉゑｿｽ・ｽ・ｽﾆサ・ｽE・ｽ・ｽ・ｽh・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾑ再撰ｿｽ・ｽ・ｽ・ｽs・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ"
-    IDC_SOUND_DEVICEC       "・ｽT・ｽE・ｽ・ｽ・ｽh・ｽ・ｽ・ｽﾄ撰ｿｽ・ｽ・ｽ・ｽ・ｽf・ｽo・ｽC・ｽX・ｽ・ｽI・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB(・ｽ・ｽ・ｽ闢厄ｿｽﾄなゑｿｽ)・ｽﾉゑｿｽ・ｽ・ｽﾆサ・ｽE・ｽ・ｽ・ｽh・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾑ再撰ｿｽ・ｽ・ｽ・ｽs・ｽ・ｽ・ｽﾜゑｿｽ・ｽ・ｽ"
-    IDC_SOUND_RATEG         "・ｽﾄ撰ｿｽ・ｽ・ｽ・ｽ[・ｽg・ｽ・ｽI・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB48.2k・ｽE88.2k・ｽE96k・ｽﾍ対会ｿｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽ・ｽf・ｽo・ｽC・ｽX・ｽ・ｽ・ｽK・ｽv・ｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5k・ｽﾅゑｿｽ"
-    IDC_SOUND_RATE0         "44.1kHz・ｽﾅ搾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽﾙとゑｿｽﾇのデ・ｽo・ｽC・ｽX・ｽ・ｽ・ｽﾎ会ｿｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5kHz・ｽﾅゑｿｽ"
-    IDC_SOUND_RATE1         "48kHz・ｽﾅ搾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽ・ｽﾌデ・ｽo・ｽC・ｽX・ｽ・ｽ・ｽﾎ会ｿｽ・ｽ・ｽ・ｽﾄゑｿｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5kHz・ｽﾅゑｿｽ"
-    IDC_SOUND_RATE2         "88.2kHz・ｽﾅ搾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽBCPU・ｽ・ｽ・ｽﾗは托ｿｽ・ｽﾟになゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5kHz・ｽﾅゑｿｽ"
-    IDC_SOUND_RATE3         "96kHz・ｽﾅ搾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽBCPU・ｽ・ｽ・ｽﾗは最托ｿｽﾉなゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5kHz・ｽﾅゑｿｽ"
-    IDC_SOUND_RATE4         "62.5kHz・ｽﾅ搾ｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽBDirectSound・ｽﾉゑｿｽ・ｽ・ｽ・ｽg・ｽ・ｽ・ｽﾏ奇ｿｽ・ｽ・ｽ・ｽs・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ62.5kHz・ｽﾅゑｿｽ"
-    IDC_SOUND_BUFFERG       "・ｽT・ｽE・ｽ・ｽ・ｽh・ｽo・ｽb・ｽt・ｽ@・ｽﾌサ・ｽC・ｽY・ｽ・ｽ・ｽ・ｽﾑ更・ｽV・ｽﾔ隔・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB"
-    IDC_SOUND_BUF1L         "・ｽo・ｽb・ｽt・ｽ@・ｽT・ｽC・ｽY・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB・ｽT・ｽC・ｽY・ｽ揩竄ｷ・ｽﾆ再撰ｿｽ・ｽx・ｽ黷ｪ・ｽ蛯ｫ・ｽ・ｽ・ｽﾈゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF1E         "・ｽo・ｽb・ｽt・ｽ@・ｽT・ｽC・ｽY・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB・ｽT・ｽC・ｽY・ｽ揩竄ｷ・ｽﾆ再撰ｿｽ・ｽx・ｽ黷ｪ・ｽ蛯ｫ・ｽ・ｽ・ｽﾈゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF1S         "・ｽo・ｽb・ｽt・ｽ@・ｽT・ｽC・ｽY・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB・ｽT・ｽC・ｽY・ｽ揩竄ｷ・ｽﾆ再撰ｿｽ・ｽx・ｽ黷ｪ・ｽ蛯ｫ・ｽ・ｽ・ｽﾈゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF1MS        "・ｽo・ｽb・ｽt・ｽ@・ｽT・ｽC・ｽY・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB・ｽT・ｽC・ｽY・ｽ揩竄ｷ・ｽﾆ再撰ｿｽ・ｽx・ｽ黷ｪ・ｽ蛯ｫ・ｽ・ｽ・ｽﾈゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF2L         "・ｽo・ｽb・ｽt・ｽ@・ｽﾌポ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽO・ｽﾔ隔・ｽｲ撰ｿｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽﾍ上級・ｽﾒ鯉ｿｽ・ｽ・ｽ・ｽﾌ設抵ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ5ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF2E         "・ｽo・ｽb・ｽt・ｽ@・ｽﾌポ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽO・ｽﾔ隔・ｽｲ撰ｿｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽﾍ上級・ｽﾒ鯉ｿｽ・ｽ・ｽ・ｽﾌ設抵ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ5ms・ｽﾅゑｿｽ"
-    IDC_SOUND_BUF2S         "・ｽo・ｽb・ｽt・ｽ@・ｽﾌポ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽO・ｽﾔ隔・ｽｲ撰ｿｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽﾍ上級・ｽﾒ鯉ｿｽ・ｽ・ｽ・ｽﾌ設抵ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ5ms・ｽﾅゑｿｽ"
-END
-
-STRINGTABLE
-BEGIN
-    IDC_SOUND_BUF2MS        "・ｽo・ｽb・ｽt・ｽ@・ｽﾌポ・ｽ[・ｽ・ｽ・ｽ・ｽ・ｽO・ｽﾔ隔・ｽｲ撰ｿｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽ・ｽ・ｽ・ｽﾍ上級・ｽﾒ鯉ｿｽ・ｽ・ｽ・ｽﾌ設抵ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ5ms・ｽﾅゑｿｽ"
     IDC_SOUND_OPTIONG       "・ｽﾄ撰ｿｽ・ｽI・ｽv・ｽV・ｽ・ｽ・ｽ・ｽ・ｽ・ｽI・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ"
     IDC_SOUND_INTERP        "ADPCM・ｽ・ｽ・ｽ・ｽWAV・ｽﾖの変奇ｿｽ・ｽ・ｽ・ｽﾉ包ｿｽﾔゑｿｽ・ｽ・ｽ・ｽ・ｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽON・ｽﾅゑｿｽ"
-END
-
-STRINGTABLE
-BEGIN
-    IDC_VOL_OUTG            "・ｽo・ｽﾍ段・ｽﾌ会ｿｽ・ｽﾊパ・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ^・ｽ・ｽﾝ定し・ｽﾜゑｿｽ"
-    IDC_VOL_VOLL            "・ｽ・ｽ・ｽC・ｽ・ｽ・ｽ{・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBWAVE・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_VOLS            "・ｽ・ｽ・ｽC・ｽ・ｽ・ｽ{・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBWAVE・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_VOLN            "・ｽ・ｽ・ｽC・ｽ・ｽ・ｽ{・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBWAVE・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_MASTERL         "WAVE・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100・ｽﾅゑｿｽ"
-    IDC_VOL_MASTERS         "WAVE・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100・ｽﾅゑｿｽ"
-    IDC_VOL_MASTERN         "WAVE・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ100・ｽﾅゑｿｽ"
-    IDC_VOL_SEPL            "MIDI・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBMIDI・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_SEPS            "MIDI・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBMIDI・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_SEPN            "MIDI・ｽ・ｽ・ｽx・ｽ・ｽ・ｽ・ｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽBMIDI・ｽf・ｽo・ｽC・ｽX・ｽﾉゑｿｽ阮ｳ・ｽ・ｽ・ｽﾆなゑｿｽﾜゑｿｽ"
-    IDC_VOL_GENG            "・ｽ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊパ・ｽ・ｽ・ｽ・ｽ・ｽ[・ｽ^・ｽ・ｽﾝ定し・ｽﾜゑｿｽ"
-    IDC_VOL_FML             "FM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ"
-END
-
-STRINGTABLE
-BEGIN
-    IDC_VOL_FMC             "FM・ｽ・ｽ・ｽ・ｽ・ｽﾌ出・ｽﾍゑｿｽL・ｽ・ｽ・ｽﾉゑｿｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽON・ｽﾅゑｿｽ"
-    IDC_VOL_FMS             "FM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽ繧ｰ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾆ会ｿｽ・ｽ・ｽ・ｽ・ｽﾌ鯉ｿｽ・ｽ・ｽ・ｽﾉなゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ54・ｽﾅゑｿｽ"
-    IDC_VOL_FMN             "FM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽ繧ｰ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾆ会ｿｽ・ｽ・ｽ・ｽ・ｽﾌ鯉ｿｽ・ｽ・ｽ・ｽﾉなゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ54・ｽﾅゑｿｽ"
-    IDC_VOL_ADPCML          "ADPCM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ"
-    IDC_VOL_ADPCMC          "ADPCM・ｽ・ｽ・ｽ・ｽ・ｽﾌ出・ｽﾍゑｿｽL・ｽ・ｽ・ｽﾉゑｿｽ・ｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽON・ｽﾅゑｿｽ"
-    IDC_VOL_ADPCMS          "ADPCM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽ繧ｰ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾆ会ｿｽ・ｽ・ｽ・ｽ・ｽﾌ鯉ｿｽ・ｽ・ｽ・ｽﾉなゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ52・ｽﾅゑｿｽ"
-    IDC_VOL_ADPCMN          "ADPCM・ｽ・ｽ・ｽ・ｽ・ｽﾌ会ｿｽ・ｽﾊゑｿｽﾝ定し・ｽﾜゑｿｽ・ｽB0・ｽﾅ最擾ｿｽ・ｽA100・ｽﾅ最托ｿｽﾅゑｿｽ・ｽB・ｽ繧ｰ・ｽ・ｽ・ｽ・ｽ・ｽ・ｽﾆ会ｿｽ・ｽ・ｽ・ｽ・ｽﾌ鯉ｿｽ・ｽ・ｽ・ｽﾉなゑｿｽﾜゑｿｽ・ｽB・ｽf・ｽt・ｽH・ｽ・ｽ・ｽg・ｽ・ｽ52・ｽﾅゑｿｽ"
 END
 
 STRINGTABLE
@@ -5581,56 +5521,8 @@ END
 
 STRINGTABLE
 BEGIN
-    IDC_ES_SOUND_DEVICEG    "Configuraciﾃｳn de dispositivo"
-    IDC_ES_SOUND_DEVICEC    "Seleccionar dispositivo de salida."
-    IDC_ES_SOUND_RATEG      "Configuraciﾃｳn de tasa de sonido"
-    IDC_ES_SOUND_RATE0      "Genera sonidos a 44.1kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_ES_SOUND_RATE1      "Genera sonidos a 48kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_ES_SOUND_RATE2      "Genera sonidos a 88.2kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_ES_SOUND_RATE3      "Genera sonidos a 96kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-    IDC_ES_SOUND_RATE4      "Genera sonidos a 62.5kHz. Configuraciﾃｳn predeterminada es 62.5kHz."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_ES_SOUND_BUFFERG    "Configuraciﾃｳn de buffer de sonido"
-    IDC_ES_SOUND_BUF1L      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_ES_SOUND_BUF1E      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_ES_SOUND_BUF1S      "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_ES_SOUND_BUF1MS     "Especificar tamaﾃｱo del buffer. Configuraciﾃｳn predeterminada es 100ms."
-    IDC_ES_SOUND_BUF2L      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_ES_SOUND_BUF2E      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_ES_SOUND_BUF2S      "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
-    IDC_ES_SOUND_BUF2MS     "Ajustar intervalo de tiempo para pooling del buffer. Configuraciﾃｳn predeterminada es 5ms."
     IDC_ES_SOUND_OPTIONG    "Otras opciones"
     IDC_ES_SOUND_INTERP     "Habilitar interpolaciﾃｳn al convertir ADPCM a WAV. Configuraciﾃｳn predeterminada es ON."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_ES_VOL_OUTG         "Configuraciﾃｳn de salida"
-    IDC_ES_VOL_VOLL         "Nivel del mezclador principal."
-    IDC_ES_VOL_VOLS         "Nivel del mezclador principal."
-    IDC_ES_VOL_VOLN         "Nivel del mezclador principal."
-END
-
-STRINGTABLE
-BEGIN
-    IDC_ES_VOL_MASTERL      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_ES_VOL_MASTERS      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_ES_VOL_MASTERN      "Nivel del fader de onda. Configuraciﾃｳn predeterminada es 100."
-    IDC_ES_VOL_SEPL         "Nivel del fader MIDI."
-    IDC_ES_VOL_SEPS         "Nivel del fader MIDI."
-    IDC_ES_VOL_SEPN         "Nivel del fader MIDI."
-    IDC_ES_VOL_GENG         "Configuraciﾃｳn de generaciﾃｳn"
-    IDC_ES_VOL_FML          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_ES_VOL_FMC          "Habilitar sonido FM. Configuraciﾃｳn predeterminada es ON."
-    IDC_ES_VOL_FMS          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_ES_VOL_FMN          "Nivel FM. Configuraciﾃｳn predeterminada es 54."
-    IDC_ES_VOL_ADPCML       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
-    IDC_ES_VOL_ADPCMC       "Habilitar sonido ADPCM. Configuraciﾃｳn predeterminada es ON."
-    IDC_ES_VOL_ADPCMS       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
-    IDC_ES_VOL_ADPCMN       "Nivel ADPCM. Configuraciﾃｳn predeterminada es 52."
 END
 
 STRINGTABLE
@@ -5962,3 +5854,208 @@ END
 #endif    // not APSTUDIO_INVOKED
 
 
+
+
+
+// BEGIN TYPEG SOUND HELP
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+STRINGTABLE
+BEGIN
+    1200 "Device Setup"
+    1201 "Select output device."
+    1202 "Sound Rate Setup"
+    1203 "Generates sounds at 44.1kHz. Default setting is 62.5kHz."
+    1204 "Generates sounds at 48kHz. Default setting is 62.5kHz."
+    1205 "Generates sounds at 88.2kHz. Default setting is 62.5kHz."
+    1206 "Generates sounds at 96kHz. Default setting is 62.5kHz."
+    1207 "Generates sounds at 62.5kHz. Defaut setting is 62.5kHz."
+    1208 "Sound Buffer Setup"
+    1209 "Specify the size of buffer. Default setting is 100ms."
+    1210 "Specify the size of buffer. Default setting is 100ms."
+    1211 "Specify the size of buffer. Default setting is 100ms."
+    1212 "Specify the size of buffer. Default setting is 100ms."
+    1213 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1214 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1215 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1216 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1220 "Select input device."
+    1221 "Select input device."
+    1222 "Select output device."
+    1223 "Playing when application loses focus. Default setting is OFF."
+    1300 "Output Setup"
+    1301 "Main Fader level."
+    1302 "Main Fader level."
+    1303 "Main Fader level."
+    1304 "Wave Fader level. Default setting is 100."
+    1305 "Wave Fader level. Default setting is 100."
+    1306 "Wave Fader level. Default setting is 100."
+    1307 "MIDI Fader level."
+    1308 "MIDI Fader level."
+    1309 "MIDI Fader level."
+    1310 "Internal Sound Genaration Setup"
+    1311 "FM Mix level."
+    1312 "Enable FM sound. Default setting is ON."
+    1313 "FM Mix level. Default setting is 54."
+    1314 "FM Mix level. Default setting is 54."
+    1315 "ADPCM Mix level."
+    1316 "Enable ADPCM sound. Default setting is ON."
+    1317 "ADPCM Mix level. Default setting is 52."
+    1318 "ADPCM Mix level. Default setting is 52."
+    1320 "Ignore write data under busy condition. Default setting is OFF."
+    1321 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    1322 "Select FM engine."
+    1323 "Select FM engine."
+    1324 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    1325 "Enable Internal 10bits DAC. Default setting is ON."
+    1326 "Enable Low-pass filter. Default setting is ON."
+    1327 "Internal ADPCM Setup"
+    6200 "Device Setup"
+    6201 "Select output device."
+    6202 "Sound Rate Setup"
+    6203 "Generates sounds at 44.1kHz. Default setting is 62.5kHz."
+    6204 "Generates sounds at 48kHz. Default setting is 62.5kHz."
+    6205 "Generates sounds at 88.2kHz. Default setting is 62.5kHz."
+    6206 "Generates sounds at 96kHz. Default setting is 62.5kHz."
+    6207 "Generates sounds at 62.5kHz. Defaut setting is 62.5kHz."
+    6208 "Sound Buffer Setup"
+    6209 "Specify the size of buffer. Default setting is 100ms."
+    6210 "Specify the size of buffer. Default setting is 100ms."
+    6211 "Specify the size of buffer. Default setting is 100ms."
+    6212 "Specify the size of buffer. Default setting is 100ms."
+    6213 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6214 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6215 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6216 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6220 "Select input device."
+    6221 "Select input device."
+    6222 "Select output device."
+    6223 "Playing when application loses focus. Default setting is OFF."
+    6300 "Output Setup"
+    6301 "Main Fader level."
+    6302 "Main Fader level."
+    6303 "Main Fader level."
+    6304 "Wave Fader level. Default setting is 100."
+    6305 "Wave Fader level. Default setting is 100."
+    6306 "Wave Fader level. Default setting is 100."
+    6307 "MIDI Fader level."
+    6308 "MIDI Fader level."
+    6309 "MIDI Fader level."
+    6310 "Internal Sound Genaration Setup"
+    6311 "FM Mix level."
+    6312 "Enable FM sound. Default setting is ON."
+    6313 "FM Mix level. Default setting is 54."
+    6314 "FM Mix level. Default setting is 54."
+    6315 "ADPCM Mix level."
+    6316 "Enable ADPCM sound. Default setting is ON."
+    6317 "ADPCM Mix level. Default setting is 52."
+    6318 "ADPCM Mix level. Default setting is 52."
+    6320 "Ignore write data under busy condition. Default setting is OFF."
+    6321 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    6322 "Select FM engine."
+    6323 "Select FM engine."
+    6324 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    6325 "Enable Internal 10bits DAC. Default setting is ON."
+    6326 "Enable Low-pass filter. Default setting is ON."
+    6327 "Internal ADPCM Setup"
+END
+LANGUAGE LANG_SPANISH, SUBLANG_SPANISH_MODERN
+STRINGTABLE
+BEGIN
+    1200 "Device Setup"
+    1201 "Select output device."
+    1202 "Sound Rate Setup"
+    1203 "Generates sounds at 44.1kHz. Default setting is 62.5kHz."
+    1204 "Generates sounds at 48kHz. Default setting is 62.5kHz."
+    1205 "Generates sounds at 88.2kHz. Default setting is 62.5kHz."
+    1206 "Generates sounds at 96kHz. Default setting is 62.5kHz."
+    1207 "Generates sounds at 62.5kHz. Defaut setting is 62.5kHz."
+    1208 "Sound Buffer Setup"
+    1209 "Specify the size of buffer. Default setting is 100ms."
+    1210 "Specify the size of buffer. Default setting is 100ms."
+    1211 "Specify the size of buffer. Default setting is 100ms."
+    1212 "Specify the size of buffer. Default setting is 100ms."
+    1213 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1214 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1215 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1216 "Adjust interval time for polling buffer. Default setting is 5ms."
+    1220 "Select input device."
+    1221 "Select input device."
+    1222 "Select output device."
+    1223 "Playing when application loses focus. Default setting is OFF."
+    1300 "Output Setup"
+    1301 "Main Fader level."
+    1302 "Main Fader level."
+    1303 "Main Fader level."
+    1304 "Wave Fader level. Default setting is 100."
+    1305 "Wave Fader level. Default setting is 100."
+    1306 "Wave Fader level. Default setting is 100."
+    1307 "MIDI Fader level."
+    1308 "MIDI Fader level."
+    1309 "MIDI Fader level."
+    1310 "Internal Sound Genaration Setup"
+    1311 "FM Mix level."
+    1312 "Enable FM sound. Default setting is ON."
+    1313 "FM Mix level. Default setting is 54."
+    1314 "FM Mix level. Default setting is 54."
+    1315 "ADPCM Mix level."
+    1316 "Enable ADPCM sound. Default setting is ON."
+    1317 "ADPCM Mix level. Default setting is 52."
+    1318 "ADPCM Mix level. Default setting is 52."
+    1320 "Ignore write data under busy condition. Default setting is OFF."
+    1321 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    1322 "Select FM engine."
+    1323 "Select FM engine."
+    1324 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    1325 "Enable Internal 10bits DAC. Default setting is ON."
+    1326 "Enable Low-pass filter. Default setting is ON."
+    1327 "Internal ADPCM Setup"
+    6200 "Device Setup"
+    6201 "Select output device."
+    6202 "Sound Rate Setup"
+    6203 "Generates sounds at 44.1kHz. Default setting is 62.5kHz."
+    6204 "Generates sounds at 48kHz. Default setting is 62.5kHz."
+    6205 "Generates sounds at 88.2kHz. Default setting is 62.5kHz."
+    6206 "Generates sounds at 96kHz. Default setting is 62.5kHz."
+    6207 "Generates sounds at 62.5kHz. Defaut setting is 62.5kHz."
+    6208 "Sound Buffer Setup"
+    6209 "Specify the size of buffer. Default setting is 100ms."
+    6210 "Specify the size of buffer. Default setting is 100ms."
+    6211 "Specify the size of buffer. Default setting is 100ms."
+    6212 "Specify the size of buffer. Default setting is 100ms."
+    6213 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6214 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6215 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6216 "Adjust interval time for polling buffer. Default setting is 5ms."
+    6220 "Select input device."
+    6221 "Select input device."
+    6222 "Select output device."
+    6223 "Playing when application loses focus. Default setting is OFF."
+    6300 "Output Setup"
+    6301 "Main Fader level."
+    6302 "Main Fader level."
+    6303 "Main Fader level."
+    6304 "Wave Fader level. Default setting is 100."
+    6305 "Wave Fader level. Default setting is 100."
+    6306 "Wave Fader level. Default setting is 100."
+    6307 "MIDI Fader level."
+    6308 "MIDI Fader level."
+    6309 "MIDI Fader level."
+    6310 "Internal Sound Genaration Setup"
+    6311 "FM Mix level."
+    6312 "Enable FM sound. Default setting is ON."
+    6313 "FM Mix level. Default setting is 54."
+    6314 "FM Mix level. Default setting is 54."
+    6315 "ADPCM Mix level."
+    6316 "Enable ADPCM sound. Default setting is ON."
+    6317 "ADPCM Mix level. Default setting is 52."
+    6318 "ADPCM Mix level. Default setting is 52."
+    6320 "Ignore write data under busy condition. Default setting is OFF."
+    6321 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    6322 "Select FM engine."
+    6323 "Select FM engine."
+    6324 "Enable Interpolation filter with converting to WAV. Default setting is ON."
+    6325 "Enable Internal 10bits DAC. Default setting is ON."
+    6326 "Enable Low-pass filter. Default setting is ON."
+    6327 "Internal ADPCM Setup"
+END
+// END TYPEG SOUND HELP

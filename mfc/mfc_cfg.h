@@ -207,98 +207,33 @@ protected:
 //	Sound page
 //
 //===========================================================================
-class CSoundPage : public CConfigPage
-{
+
+class CSoundPage : public CConfigPage {
 public:
-	CSoundPage();
-										// Constructor
-	BOOL OnInitDialog();
-										// Initialization
-	void OnOK();
-										// OK
-
+    CSoundPage(); BOOL OnInitDialog(); void OnOK(); void OnCancel();
 protected:
-	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pBar);
-										// Vertical scroll
-	afx_msg void OnSelChange();
-										// Combo box change
-
+    afx_msg void OnVScroll(UINT, UINT, CScrollBar*);
+    afx_msg void OnHScroll(UINT, UINT, CScrollBar*);
+    afx_msg void OnSelChange();
+    afx_msg void OnTimer(UINT_PTR);
 private:
-	void FASTCALL EnableControls(BOOL bEnable);
-										// Control state change
-	BOOL m_bEnableCtrl;
-										// Control state
-	static const UINT ControlTable[];
-										// Control table
-
-	DECLARE_MESSAGE_MAP()
-										// With message map
+    void EnableControls(BOOL);
+    CSound *m_pSound; CMIDI *m_pMIDI;
+    int m_nMasterOrg, m_nMIDIOrg;
+    UINT_PTR m_nTimerID;
+    DECLARE_MESSAGE_MAP()
+};
+class CVolPage : public CConfigPage {
+public:
+    CVolPage(); BOOL OnInitDialog(); void OnOK(); void OnCancel();
+protected:
+    afx_msg void OnHScroll(UINT, UINT, CScrollBar*);
+    afx_msg void OnFMCheck(); afx_msg void OnADPCMCheck();
+private:
+    CSound *m_pSound; OPMIF *m_pOPMIF; ADPCM *m_pADPCM;
+    DECLARE_MESSAGE_MAP()
 };
 
-//===========================================================================
-//
-//	Volume page
-//
-//===========================================================================
-class CVolPage : public CConfigPage
-{
-public:
-	CVolPage();
-										// Constructor
-	BOOL OnInitDialog();
-										// Initialization
-	void OnOK();
-										// OK
-	void OnCancel();
-										// Cancel
-
-protected:
-	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar *pBar);
-										// Horizontal scroll
-	afx_msg void OnFMCheck();
-										// FM synthesizer check
-	afx_msg void OnADPCMCheck();
-										// ADPCM synthesizer check
-#if _MFC_VER >= 0x700
-	afx_msg void OnTimer(UINT_PTR nTimerID);
-#else
-	afx_msg void OnTimer(UINT nTimerID);
-#endif
-										// Timer
-
-private:
-	CSound *m_pSound;
-										// Sound
-	OPMIF *m_pOPMIF;
-										// OPM interface
-	ADPCM *m_pADPCM;
-										// ADPCM
-	CMIDI *m_pMIDI;
-										// MIDI
-#if _MFC_VER >= 0x700
-	UINT_PTR m_nTimerID;
-#else
-	UINT m_nTimerID;
-#endif
-										// Timer ID
-	int m_nMasterVol;
-										// Master volume
-	int m_nMasterOrg;
-										// Original master volume
-	int m_nMIDIVol;
-										// MIDI volume
-	int m_nMIDIOrg;
-										// MIDI original volume
-
-	DECLARE_MESSAGE_MAP()
-										// With message map
-};
-
-//===========================================================================
-//
-//	Keyboard page
-//
-//===========================================================================
 class CKbdPage : public CConfigPage
 {
 public:

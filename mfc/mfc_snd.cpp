@@ -55,6 +55,8 @@ CSound::CSound(CFrmWnd *pWnd) : CComponent(pWnd)
 	m_nFMVol = 54;
 	m_nADPCMVol = 52;
 	m_bYmfm = FALSE;
+	m_capture = NULL; m_captureBuffer = NULL; m_capturePosition = 0; m_captureBytes = 50000; m_captureDevice = 16; m_nInputNum = 0;
+	m_bBackground = FALSE; m_bInterpolation = TRUE;
 	m_bYmfmActive = FALSE;
 	m_uConfiguredRate = 0;
 
@@ -107,6 +109,7 @@ BOOL FASTCALL CSound::Init()
 
 	// Enumerate devices
 	EnumDevice();
+	DirectSoundCaptureEnumerateA(EnumInputCallback, this);
 
 	// Nothing to do here (ApplyCfg will be called later)
 	return TRUE;
@@ -182,7 +185,7 @@ BOOL FASTCALL CSound::InitSub()
 	pcmwf.wBitsPerSample = 16;
 	memset(&dsbd, 0, sizeof(dsbd));
 	dsbd.dwSize = sizeof(dsbd);
-	dsbd.dwFlags = DSBCAPS_STICKYFOCUS | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLVOLUME;
+	dsbd.dwFlags = (m_bBackground ? DSBCAPS_GLOBALFOCUS : DSBCAPS_STICKYFOCUS) | DSBCAPS_GETCURRENTPOSITION2 | DSBCAPS_CTRLVOLUME;
 	dsbd.dwBufferBytes = (pcmwf.wf.nAvgBytesPerSec * m_uTick) / 1000;
 	dsbd.dwBufferBytes = ((dsbd.dwBufferBytes + 7) >> 3) << 3;	// 8-byte aligned
 	m_uBufSize = dsbd.dwBufferBytes;
@@ -201,7 +204,7 @@ BOOL FASTCALL CSound::InitSub()
 	if (!m_lpBuf) {
 		return FALSE;
 	}
-	memset(m_lpBuf, sizeof(DWORD) * (m_uBufSize / 2), m_uBufSize);
+	memset(m_lpBuf, 0, sizeof(DWORD) * (m_uBufSize / 2));
 
 	// OPM device (synthesizer) initialization
 #if defined(XM6CORE_ENABLE_YMFM)
@@ -213,7 +216,7 @@ BOOL FASTCALL CSound::InitSub()
 		CleanupSub();
 		return FALSE;
 	}
-	if (!m_pOPM->Init(4000000, m_uRate, true)) {
+	if (!m_pOPM->Init(4000000, m_uRate, m_bInterpolation != FALSE)) {
 		delete m_pOPM;
 		m_pOPM = NULL;
 		CleanupSub();
@@ -260,6 +263,7 @@ void FASTCALL CSound::Cleanup()
 //---------------------------------------------------------------------------
 void FASTCALL CSound::CleanupSub()
 {
+    CloseInput();
 	// Stop playback
 	Stop();
 
@@ -315,16 +319,18 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	ASSERT(this);
 	ASSERT(pConfig);
 
+	m_bYmfm = pConfig->fm_engine == 1;
 	uConfiguredRate = RateTable[pConfig->sample_rate];
 	uRate = uConfiguredRate;
 #if defined(XM6CORE_ENABLE_YMFM)
-	if (m_bYmfm) {
+	if (m_bYmfm && uConfiguredRate != 0) {
 		uRate = 62500;
 	}
 #endif
 
 	// Check for changes
-	bFlag = FALSE;
+	bFlag = m_bBackground != pConfig->sound_global_focus || m_bInterpolation != pConfig->fm_interp;
+    m_bBackground = pConfig->sound_global_focus; m_bInterpolation = pConfig->fm_interp;
 	if (m_nSelectDevice != pConfig->sound_device) {
 		bFlag = TRUE;
 	}
@@ -387,6 +393,7 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 		m_pADPCM->EnableADPCM(pConfig->adpcm_enable);
 		SetADPCMVol(pConfig->adpcm_volume);
 	}
+	ConfigureInput(pConfig->sound_input);
 	m_nMaster = pConfig->master_volume;
 	m_uPoll = (UINT)pConfig->polling_buffer;
 }
@@ -482,6 +489,7 @@ void FASTCALL CSound::Stop()
 //---------------------------------------------------------------------------
 void FASTCALL CSound::Process(BOOL bRun)
 {
+    ProcessInput(bRun);
 	HRESULT hr;
 	DWORD dwOffset;
 	DWORD dwWrite;
@@ -766,7 +774,8 @@ BOOL CALLBACK CSound::EnumCallback(LPGUID lpGuid, LPCTSTR lpDescr, LPCTSTR /*lpM
 		index = pSound->m_nDeviceNum;
 
 		// Save
-		pSound->m_lpGUID[index] = lpGuid;
+		if (lpGuid) pSound->m_OutputGUID[index] = *lpGuid;
+        pSound->m_lpGUID[index] = lpGuid ? &pSound->m_OutputGUID[index] : NULL;
 		pSound->m_DeviceDescr[index] = lpDescr;
 		pSound->m_nDeviceNum++;
 	}
@@ -1175,6 +1184,62 @@ void FASTCALL CSound::EndSaveWav()
 	// Free buffer
 	delete[] m_pWav;
 	m_pWav = NULL;
+}
+
+BOOL CALLBACK CSound::EnumInputCallback(LPGUID guid, LPCSTR text, LPCSTR, void *context) {
+    CSound *s = (CSound*)context;
+    if (s->m_nInputNum >= 16) return FALSE;
+    const int n = s->m_nInputNum++;
+    s->m_InputDescr[n] = text;
+    s->m_InputDefault[n] = guid == NULL;
+    if (guid) s->m_InputGUID[n] = *guid;
+    return TRUE;
+}
+void CSound::CloseInput() {
+    if (m_captureBuffer) { m_captureBuffer->Stop(); m_captureBuffer->Release(); m_captureBuffer = NULL; }
+    if (m_capture) { m_capture->Release(); m_capture = NULL; }
+    m_captureDevice = 16; m_capturePosition = 0;
+}
+void CSound::ConfigureInput(int device) {
+    if (device == m_captureDevice) return;
+    CloseInput();
+    if (device < 0 || device >= m_nInputNum || device >= 16 || !m_uRate) return;
+    m_captureBytes = ((m_uRate * 4 * m_uTick / 1000 + 7) >> 3) << 3;
+    LPGUID guid = m_InputDefault[device] ? NULL : &m_InputGUID[device];
+    HRESULT result = DirectSoundCaptureCreate(guid, &m_capture, NULL);
+    if (SUCCEEDED(result)) {
+        WAVEFORMATEX format = {};
+        format.wFormatTag = WAVE_FORMAT_PCM; format.nChannels = 2;
+        format.nSamplesPerSec = m_uRate; format.wBitsPerSample = 16;
+        format.nBlockAlign = 4; format.nAvgBytesPerSec = m_uRate * 4;
+        DSCBUFFERDESC desc = {}; desc.dwSize = sizeof(desc);
+        desc.dwBufferBytes = m_captureBytes; desc.lpwfxFormat = &format;
+        result = m_capture->CreateCaptureBuffer(&desc, &m_captureBuffer, NULL);
+        if (SUCCEEDED(result)) result = m_captureBuffer->Start(DSCBSTART_LOOPING);
+    }
+    if (FAILED(result)) {
+        CloseInput();
+        CString message; message.Format(_T("Cannot open the selected ADPCM input at %u Hz (0x%08lx)."), m_uRate, result);
+        m_pFrmWnd->MessageBox(message, _T("Sound input"), MB_OK | MB_ICONWARNING);
+        return;
+    }
+    m_captureDevice = device;
+}
+void CSound::ProcessInput(BOOL running) {
+    if (!m_captureBuffer) return;
+    DWORD safe;
+    if (FAILED(m_captureBuffer->GetCurrentPosition(NULL, &safe))) return;
+    safe &= ~3u;
+    DWORD bytes = (safe + m_captureBytes - m_capturePosition) % m_captureBytes;
+    if (bytes && running && m_pADPCM) {
+        void *a = NULL, *b = NULL; DWORD na = 0, nb = 0;
+        if (SUCCEEDED(m_captureBuffer->Lock(m_capturePosition, bytes, &a, &na, &b, &nb, 0))) {
+            m_pADPCM->PutHostInput((const short*)a, na / 4);
+            if (nb) m_pADPCM->PutHostInput((const short*)b, nb / 4);
+            m_captureBuffer->Unlock(a, na, b, nb);
+        }
+    }
+    m_capturePosition = safe;
 }
 
 #endif	// _WIN32

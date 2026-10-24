@@ -89,7 +89,7 @@ public:
 										// レジスタ出力
 	void FASTCALL SetEngine(FM::OPM *p);
 										// エンジン指定
-	void FASTCALL InitBuf(DWORD rate);
+	void FASTCALL InitBuf(DWORD rate, BOOL resetADPCM = TRUE);
 										// バッファ初期化
 	DWORD FASTCALL ProcessBuf();
 										// バッファ処理
@@ -126,6 +126,7 @@ private:
 	Event event[2];
 										// タイマーイベント
 	FM::OPM *engine;
+    BOOL ignore_busy;
 										// 合成エンジン
 	enum {
 		BufMax = 0x10000				// バッファサイズ

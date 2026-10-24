@@ -374,3 +374,9 @@ FodyWeavers.xsd
 /libretro/Release_linux/xm6_libretro.info
 /main/Release_DLL/xm6core.dll.recipe
 /main/Release_DLL/XM6Core.vcxproj.FileListAbsolute.txt
+# Local TypeG differential-test dependencies and outputs
+/tools/typeg_audio/deps/
+/tools/typeg_audio/build/
+
+/main/Release_DLL_x64/
+/main/Debug_DLL_x64/

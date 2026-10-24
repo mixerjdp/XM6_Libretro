@@ -68,9 +68,23 @@ public:
 	CString m_DeviceDescr[16];
 										// DirectSound device name
 	int m_nDeviceNum;
+	CString m_InputDescr[16];
+	int m_nInputNum;
 										// Number of detected devices
 
 private:
+	void ConfigureInput(int device);
+	void CloseInput();
+	void ProcessInput(BOOL running);
+	static BOOL CALLBACK EnumInputCallback(LPGUID, LPCSTR, LPCSTR, void*);
+	GUID m_OutputGUID[16];
+    GUID m_InputGUID[16];
+	BOOL m_InputDefault[16];
+	LPDIRECTSOUNDCAPTURE m_capture;
+	LPDIRECTSOUNDCAPTUREBUFFER m_captureBuffer;
+	DWORD m_capturePosition, m_captureBytes;
+	int m_captureDevice;
+	BOOL m_bBackground, m_bInterpolation;
 	// Initialization
 	BOOL FASTCALL InitSub();
 										// Initialization sub

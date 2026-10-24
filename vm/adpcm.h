@@ -12,6 +12,7 @@
 
 #include "device.h"
 #include "event.h"
+#include "typeg_adpcm.h"
 
 //===========================================================================
 //
@@ -121,6 +122,9 @@ public:
 	void FASTCALL EnableADPCM(BOOL flag) { adpcm.sound = flag; }
 										// Play enable
 	void FASTCALL SetVolume(int volume);
+	void FASTCALL PutInput(const short *stereo, unsigned frames);
+	void FASTCALL PutHostInput(const short *stereo, unsigned frames);
+	DWORD FASTCALL GetOutputRate() const { return adpcm.sync_rate * 100; }
 										// Volume setting
 	void FASTCALL SetArianshuuLoopFix(BOOL enabled);
 										// Arianshuu: prevents infinite hold on ADPCM drain
@@ -149,18 +153,13 @@ private:
 										// 4bit decode
 	Event event;
 										// Timer event
-	adpcm_t adpcm;
+	TypeGAdpcm::State adpcm;
+	TypeGAdpcm::Tables codec_tables;
 										// Internal data
 	DMAC *dmac;
 										// DMAC
 	DWORD *adpcmbuf;
 										// Internal buffer
-	int DiffTable[49 * 16];
-										// Diff table
-	static const int NextTable[16];
-										// Next table
-	static const int OffsetTable[58];
-										// Offset table
 	BOOL quirk_arianshuu_loop_fix;
 	int quirk_stuck_l;
 	int quirk_stuck_r;

@@ -251,6 +251,7 @@ void FASTCALL CMIDI::ApplyCfg(const Config* pConfig)
 			pComponent->SetMIDIDevice((int)m_dwInDevice, TRUE);
 		}
 	}
+    if (pConfig->midi_volume >= 0) SetOutVolume(pConfig->midi_volume);
 }
 
 #if !defined(NDEBUG)

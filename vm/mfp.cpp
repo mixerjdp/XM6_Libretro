@@ -43,6 +43,11 @@ MFP::MFP(VM *p) : MemDevice(p)
 
 	// Sync object
 	sync = NULL;
+
+	// RTC::Init can signal GPIP before the first VM reset. IntCheck must see
+	// disabled interrupts and no current index, never an uninitialized index.
+	memset(&mfp, 0, sizeof(mfp));
+	mfp.iidx = -1;
 }
 
 //---------------------------------------------------------------------------
