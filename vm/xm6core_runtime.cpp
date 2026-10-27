@@ -270,6 +270,18 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_adpcm_filters(XM6Handle handle, 
     return XM6CORE_OK;
 }
 
+extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_fm_interp(XM6Handle handle, int enabled)
+{
+    if (!handle) return XM6CORE_ERR_INVALID_HANDLE;
+    XM6ContextRuntimeShim *ctx = reinterpret_cast<XM6ContextRuntimeShim*>(handle);
+    if (!ctx->vm) return XM6CORE_ERR_INVALID_HANDLE;
+    ctx->runtime_config.fm_interp = enabled != 0;
+    if (ctx->opm_engine && ctx->audio_rate &&
+        !ctx->opm_engine->SetRate(4000000, ctx->audio_rate, enabled != 0))
+        return XM6CORE_ERR_INVALID_ARGUMENT;
+    return XM6CORE_OK;
+}
+
 extern "C" XM6CORE_API int XM6CORE_CALL xm6_adpcm_input(XM6Handle handle, const short *stereo, unsigned int frames)
 {
     if (!handle) return XM6CORE_ERR_INVALID_HANDLE;

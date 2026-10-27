@@ -304,6 +304,9 @@ public:
 
 	// simple getters for debugging
 	fm_operator<RegisterType> *debug_operator(uint32_t index) const { return m_op[index]; }
+	int32_t debug_typeg_output() const { return m_typeg_output; }
+	void clear_typeg_output() const { m_typeg_output=0; }
+	void typeg_trace_state(ymfm_saved_state &state) { state.save_restore(m_typeg_output); }
 
 private:
 	// helper to add values to the outputs based on channel enables
@@ -333,6 +336,7 @@ private:
 	std::array<fm_operator<RegisterType> *, 4> m_op; // up to 4 operators
 	RegisterType &m_regs;                  // direct reference to registers
 	fm_engine_base<RegisterType> &m_owner; // reference to the owning engine
+	mutable int32_t m_typeg_output = 0; // TypeG channel trace before stereo routing
 };
 
 
@@ -416,6 +420,25 @@ public:
 
 	// invalidate any caches
 	void invalidate_caches() { m_modified_channels = RegisterType::ALL_CHANNELS; }
+
+	// Exact continuation of TypeG's eager prepare and channel trace state.
+	void typeg_checkpoint(ymfm_saved_state &state) {
+		state.save_restore(m_active_channels);state.save_restore(m_modified_channels);
+		state.save_restore(m_prepare_count);m_regs.typeg_waveforms(state);
+		for (auto &channel:m_channel)channel->typeg_trace_state(state);
+		for (auto &op:m_operator) {
+			auto &cache=op->debug_cache();
+			state.save_restore(cache.phase_step);state.save_restore(cache.total_level);
+			state.save_restore(cache.block_freq);state.save_restore(cache.detune);
+			state.save_restore(cache.multiple);state.save_restore(cache.eg_sustain);
+			state.save_restore(cache.eg_rate);state.save_restore(cache.eg_shift);
+			// OPM has one immutable sine waveform; never serialize its pointer.
+			if(!state.saving()) {
+				opdata_cache fresh;m_regs.cache_operator_data(op->choffs(),op->opoffs(),fresh);
+				cache.waveform=fresh.waveform;
+			}
+		}
+	}
 
 	// simple getters for debugging
 	fm_channel<RegisterType> *debug_channel(uint32_t index) const { return m_channel[index].get(); }

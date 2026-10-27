@@ -322,12 +322,6 @@ void FASTCALL CSound::ApplyCfg(const Config *pConfig)
 	m_bYmfm = pConfig->fm_engine == 1;
 	uConfiguredRate = RateTable[pConfig->sample_rate];
 	uRate = uConfiguredRate;
-#if defined(XM6CORE_ENABLE_YMFM)
-	if (m_bYmfm && uConfiguredRate != 0) {
-		uRate = 62500;
-	}
-#endif
-
 	// Check for changes
 	bFlag = m_bBackground != pConfig->sound_global_focus || m_bInterpolation != pConfig->fm_interp;
     m_bBackground = pConfig->sound_global_focus; m_bInterpolation = pConfig->fm_interp;

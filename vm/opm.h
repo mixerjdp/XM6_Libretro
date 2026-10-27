@@ -9,6 +9,7 @@
 
 #include "fmgen.h"
 #include "fmtimer.h"
+#include <vector>
 
 namespace FM
 {
@@ -35,6 +36,9 @@ void	SetLPFCutoff(uint freq);
 		void	SetChannelMask(uint mask);
 		
 		virtual void	TimerA();
+		virtual unsigned AudioStateKind() const { return 0; }
+		virtual void SaveAudioState(std::vector<unsigned char> &out) { out.clear(); }
+		virtual bool LoadAudioState(const std::vector<unsigned char> &) { return false; }
 	private:
 		virtual void Intr(bool) {}
 

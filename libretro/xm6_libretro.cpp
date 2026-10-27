@@ -52,6 +52,8 @@ static const double k_default_fps = 55.0;
 static const double k_default_aspect = 4.0 / 3.0;
 static const unsigned k_default_sample_rate = 44100;
 static const unsigned k_ymfm_sample_rate = 62500;
+static unsigned g_ymfm_sample_rate = k_ymfm_sample_rate;
+static bool g_fm_interp = true;
 static const unsigned k_default_width = 768;
 static const unsigned k_default_height = 512;
 static const unsigned k_savestate_guard_frames_default = 300;
@@ -151,6 +153,7 @@ static const unsigned k_hdd_boot_warmup_frames = 8;
 static const char *system_clock_label(int system_clock)
 {
   switch (system_clock) {
+    case 0: return "10mhz";
     case 1: return "12mhz";
     case 2: return "15mhz";
     case 3: return "16mhz";
@@ -294,6 +297,7 @@ struct xm6_api_t {
   int (XM6CORE_CALL *set_fm_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_adpcm_volume)(XM6Handle handle, int volume) = nullptr;
   int (XM6CORE_CALL *set_adpcm_filters)(XM6Handle, int, int) = nullptr;
+  int (XM6CORE_CALL *set_fm_interp)(XM6Handle, int) = nullptr;
   int (XM6CORE_CALL *set_adpcm_interp)(XM6Handle handle, int enabled) = nullptr;
   int (XM6CORE_CALL *set_hq_adpcm_level)(XM6Handle handle, int level) = nullptr;
   int (XM6CORE_CALL *set_bass_enhancer_level)(XM6Handle handle, int level) = nullptr;
@@ -342,7 +346,7 @@ static void fill_av_info(struct retro_system_av_info *info);
 static unsigned desired_audio_sample_rate_for_engine(int engine)
 {
   return (engine == XM6CORE_AUDIO_ENGINE_YMFM ||
-          engine == XM6CORE_AUDIO_ENGINE_YMFM_DIRECT) ? k_ymfm_sample_rate : k_default_sample_rate;
+          engine == XM6CORE_AUDIO_ENGINE_YMFM_DIRECT) ? g_ymfm_sample_rate : k_default_sample_rate;
 }
 static const char* audio_engine_label(int engine)
 {
@@ -621,6 +625,7 @@ static bool load_xm6_api()
   g_xm6.set_adpcm_volume = xm6_set_adpcm_volume;
   g_xm6.set_adpcm_interp = xm6_set_adpcm_interp;
   g_xm6.set_adpcm_filters = xm6_set_adpcm_filters;
+  g_xm6.set_fm_interp = xm6_set_fm_interp;
   g_xm6.set_hq_adpcm_level = xm6_set_hq_adpcm_level;
   g_xm6.set_bass_enhancer_level = xm6_set_bass_enhancer_level;
   g_xm6.set_reverb_level = xm6_set_reverb_level;
@@ -759,6 +764,7 @@ static bool load_xm6_api()
   load_optional_symbol(&g_xm6.set_adpcm_volume, "xm6_set_adpcm_volume");
   load_optional_symbol(&g_xm6.set_adpcm_interp, "xm6_set_adpcm_interp");
   load_optional_symbol(&g_xm6.set_adpcm_filters, "xm6_set_adpcm_filters");
+  load_optional_symbol(&g_xm6.set_fm_interp, "xm6_set_fm_interp");
   load_optional_symbol(&g_xm6.set_hq_adpcm_level, "xm6_set_hq_adpcm_level");
   load_optional_symbol(&g_xm6.set_bass_enhancer_level, "xm6_set_bass_enhancer_level");
   load_optional_symbol(&g_xm6.set_reverb_level, "xm6_set_reverb_level");
@@ -1787,6 +1793,7 @@ static void apply_runtime_core_options()
     g_xm6.set_adpcm_volume(g_xm6_handle, g_adpcm_volume);
   }
   if (g_xm6.set_adpcm_filters) g_xm6.set_adpcm_filters(g_xm6_handle, g_adpcm_analog ? 1 : 0, g_adpcm_lpf ? 1 : 0);
+  if (g_xm6.set_fm_interp) g_xm6.set_fm_interp(g_xm6_handle, g_fm_interp ? 1 : 0);
   if (g_xm6.set_adpcm_interp) {
     g_xm6.set_adpcm_interp(g_xm6_handle, g_adpcm_interp ? 1 : 0);
   }
@@ -1931,7 +1938,9 @@ static void apply_core_option_values()
 
   var.key = "xm6_cpu_clock";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
-    if (std::strcmp(var.value, "12mhz") == 0) {
+    if (std::strcmp(var.value, "10mhz") == 0) {
+      g_system_clock = 0;
+    } else if (std::strcmp(var.value, "12mhz") == 0) {
       g_system_clock = 1;
     } else if (std::strcmp(var.value, "16mhz") == 0) {
       g_system_clock = 3;
@@ -2092,6 +2101,13 @@ static void apply_core_option_values()
     g_surround_enabled = (std::strcmp(var.value, "enabled") == 0);
   }
 
+  var.key = "xm6_ymfm_rate";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) {
+    const int rate=std::atoi(var.value);
+    if (rate==44100 || rate==48000 || rate==62500 || rate==88200 || rate==96000) g_ymfm_sample_rate=unsigned(rate);
+  }
+  var.key = "xm6_fm_interp";
+  if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) g_fm_interp=std::strcmp(var.value,"disabled")!=0;
   var.key = "xm6_adpcm_interp";
   if (g_environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value) g_adpcm_interp = std::strcmp(var.value, "disabled") != 0;
   var.key = "xm6_adpcm_analog";
@@ -2447,6 +2463,16 @@ static void register_core_options()
           { nullptr, nullptr }
         },
         "50"
+      },
+      {
+        "xm6_ymfm_rate", "YMFM: Sample rate", nullptr,
+        "Output rate for the XM6 TypeG YMFM engine.", nullptr, "sound",
+        {{"62500",nullptr},{"44100",nullptr},{"48000",nullptr},{"88200",nullptr},{"96000",nullptr},{nullptr,nullptr}}, "62500"
+      },
+      {
+        "xm6_fm_interp", "FM: Interpolation filter", nullptr,
+        "XM6 TypeG YMFM output filter; interpolation for the other FM engine.", nullptr, "sound",
+        {{"enabled",nullptr},{"disabled",nullptr},{nullptr,nullptr}}, "enabled"
       },
       {
         "xm6_adpcm_interp", "ADPCM: Interpolation filter", nullptr,
@@ -2844,9 +2870,13 @@ static void register_core_options()
   }
 
   static const retro_variable vars[] = {
+    { "xm6_cpu_clock",
+      "System clock; 25mhz|10mhz|12mhz|16mhz|22mhz|40mhz" },
     { "xm6_audio_engine",
       "FM engine (TypeG ADPCM is shared); XM6|PX68k|YMFM|X68Sound" },
     {"xm6_adpcm_interp", "ADPCM Interpolation filter; enabled|disabled"},
+    {"xm6_ymfm_rate", "YMFM Sample rate; 62500|44100|48000|88200|96000"},
+    {"xm6_fm_interp", "FM Interpolation filter; enabled|disabled"},
     {"xm6_adpcm_analog", "ADPCM Analog circuit; enabled|disabled"},
     {"xm6_adpcm_lpf", "ADPCM Low pass filter; enabled|disabled"},
     { "xm6_render_mode",
@@ -3817,6 +3847,8 @@ void retro_init(void)
   g_eq_air_level = 50;
   g_surround_enabled = false;
   g_audio_engine = XM6CORE_AUDIO_ENGINE_XM6;
+  g_ymfm_sample_rate = k_ymfm_sample_rate;
+  g_fm_interp = true;
   g_legacy_dmac_cnt = false;
   g_midi_output_enabled = false;
   g_midi_output_type = MIDI_OUTPUT_GM;
@@ -4044,6 +4076,8 @@ void retro_run(void)
       const bool old_alt_raster_enabled = g_alt_raster_enabled;
       const int old_fm_volume = g_fm_volume;
       const int old_adpcm_volume = g_adpcm_volume;
+      const unsigned old_ymfm_sample_rate = g_ymfm_sample_rate;
+      const bool old_fm_interp = g_fm_interp;
 	      const int old_bass_enhancer_level = g_bass_enhancer_level;
 	      const int old_reverb_level = g_reverb_level;
 	      const int old_eq_sub_bass_level = g_eq_sub_bass_level;
@@ -4104,7 +4138,7 @@ void retro_run(void)
         if (g_xm6.set_adpcm_interp) g_xm6.set_adpcm_interp(g_xm6_handle, g_adpcm_interp ? 1 : 0);
         if (g_xm6.set_adpcm_filters) g_xm6.set_adpcm_filters(g_xm6_handle, g_adpcm_analog ? 1 : 0, g_adpcm_lpf ? 1 : 0);
       }
-      if (old_audio_engine != g_audio_engine) {
+      if (old_audio_engine != g_audio_engine || old_ymfm_sample_rate != g_ymfm_sample_rate || old_fm_interp != g_fm_interp) {
         apply_runtime_core_options();
         g_audio_fraction = 0.0;
         core_log(RETRO_LOG_INFO,

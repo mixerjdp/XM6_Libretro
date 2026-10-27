@@ -128,6 +128,7 @@ public:
 
 	// reset to initial state
 	void reset();
+	void typeg_waveforms(ymfm_saved_state &state) { state.save_restore(m_lfo_waveform); }
 
 	// save/restore
 	void save_restore(ymfm_saved_state &state);

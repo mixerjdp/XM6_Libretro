@@ -954,6 +954,7 @@ void fm_channel<RegisterType>::output_2op(output_data &output, uint32_t rshift, 
 	}
 
 	// add to the output
+	m_typeg_output = result;
 	add_to_output(m_choffs, output, result);
 }
 
@@ -1071,6 +1072,7 @@ void fm_channel<RegisterType>::output_4op(output_data &output, uint32_t rshift, 
 		result = clamp(result + (opout[3] >> rshift), clipmin, clipmax);
 
 	// add to the output
+	m_typeg_output = result;
 	add_to_output(m_choffs, output, result);
 }
 

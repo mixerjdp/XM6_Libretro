@@ -1655,7 +1655,7 @@ static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_
 		if (YmfmOpmEngineSupportsRate(k_opm_clock_hz, sample_rate)) {
 			engine = CreateYmfmOpmEngine(direct_mode ? TRUE : FALSE);
 			if (engine) {
-				if (!engine->Init(k_opm_clock_hz, sample_rate, true)) {
+				if (!engine->Init(k_opm_clock_hz, sample_rate, ctx->runtime_config.fm_interp != FALSE)) {
 					delete engine;
 					engine = NULL;
 				} else if (out_using_ymfm) {
@@ -1670,7 +1670,7 @@ static FM::OPM *create_selected_opm_engine(XM6Context *ctx, unsigned int sample_
 			}
 		} else {
 			emit_messagef(ctx,
-				"[xm6-core] %s requires native OPM rate (%u Hz requested, %u Hz required); falling back to FMGEN/XM6 backend",
+				"[xm6-core] %s does not support %u Hz (native OPM %u Hz); falling back to FMGEN/XM6 backend",
 				"YMFM",
 				sample_rate,
 				k_opm_clock_hz / 64u);
@@ -1764,7 +1764,8 @@ static void post_state_load_sync(XM6Context *ctx)
 	if (ctx->opmif) {
 		ctx->opmif->SetEngine(ctx->opm_engine);
 		ctx->opmif->EnableFM(ctx->runtime_config.fm_enable);
-		if (ctx->audio_rate != 0) {
+		if (ctx->audio_rate != 0 && (!ctx->opmif->HasCompleteAudioState() ||
+			ctx->opmif->GetOutputRate()!=ctx->audio_rate)) {
 			ctx->opmif->InitBuf((DWORD)ctx->audio_rate, FALSE);
 		}
 	}
@@ -3263,7 +3264,10 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 			frames = ready;
 		}
 
-		if (ctx->runtime_config.fm_volume <= 0) {
+		const bool mute_fm = ctx->runtime_config.fm_volume <= 0 &&
+			ctx->audio_engine != XM6CORE_AUDIO_ENGINE_YMFM &&
+			ctx->audio_engine != XM6CORE_AUDIO_ENGINE_YMFM_DIRECT;
+		if (mute_fm) {
 			memset(ctx->opm_buf, 0, frames * 2 * sizeof(DWORD));
 		}
 
@@ -3299,8 +3303,8 @@ XM6CORE_API int XM6CORE_CALL xm6_audio_mix(
 	const int *fm_src = (const int*)ctx->opm_buf;
 	const int *adpcm_src = (const int*)ctx->adpcm_buf;
 	for (unsigned int i = 0; i < frames; i++) {
-		const int fm_l = (ctx->runtime_config.fm_volume <= 0) ? 0 : fm_src[(i * 2) + 0];
-		const int fm_r = (ctx->runtime_config.fm_volume <= 0) ? 0 : fm_src[(i * 2) + 1];
+		const int fm_l = mute_fm ? 0 : fm_src[(i * 2) + 0];
+		const int fm_r = mute_fm ? 0 : fm_src[(i * 2) + 1];
 		const int mixed_l = fm_l + adpcm_src[(i * 2) + 0];
 		const int mixed_r = fm_r + adpcm_src[(i * 2) + 1];
 		out_interleaved_stereo[(i * 2) + 0] = saturate_s16(mixed_l);

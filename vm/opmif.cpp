@@ -49,6 +49,7 @@ OPMIF::OPMIF(VM *p) : MemDevice(p)
 	adpcm = NULL;
 	engine = NULL;
     ignore_busy = FALSE;
+	full_audio_state = FALSE;
 	opmbuf = NULL;
 }
 
@@ -142,6 +143,7 @@ void FASTCALL OPMIF::Cleanup()
 //---------------------------------------------------------------------------
 void FASTCALL OPMIF::Reset()
 {
+	full_audio_state = FALSE;
 	int i;
 
  ASSERT(this);
@@ -205,6 +207,11 @@ void FASTCALL OPMIF::Reset()
 BOOL FASTCALL OPMIF::Save(Fileio *fio, int ver)
 {
 	size_t sz;
+	const DWORD kind=engine?engine->AudioStateKind():0;
+	if(kind) {
+		DWORD header[2]={MAKEID('T','G','F','M'),1};
+		if(!fio->Write(header,sizeof(header)))return FALSE;
+	}
 
  ASSERT(this);
  ASSERT(fio);
@@ -241,6 +248,12 @@ BOOL FASTCALL OPMIF::Save(Fileio *fio, int ver)
 	if (!event[1].Save(fio, ver)) {
 		return FALSE;
 	}
+	if(kind) {
+		std::vector<unsigned char> state;engine->SaveAudioState(state);
+		DWORD bytes=(DWORD)state.size();
+		if(!fio->Write(opmbuf,BufMax*2*sizeof(DWORD)) || !fio->Write((void*)&kind,4) ||
+		   !fio->Write(&bytes,4) || !fio->Write(state.data(),bytes))return FALSE;
+	}
 
 	return TRUE;
 }
@@ -254,6 +267,16 @@ BOOL FASTCALL OPMIF::Load(Fileio *fio, int ver)
 {
 	size_t sz;
 	int i;
+	full_audio_state=FALSE;
+	DWORD tag,version=0;
+	if(!fio->Read(&tag,4))return FALSE;
+	const bool extended=tag==MAKEID('T','G','F','M');
+	if(extended) {
+		if(!fio->Read(&version,4) || version!=1 || !fio->Read(&sz,sizeof(sz)))return FALSE;
+	} else {
+		sz=tag;
+		if(sizeof(size_t)==8) { DWORD upper;if(!fio->Read(&upper,4) || upper)return FALSE; }
+	}
 
  ASSERT(this);
  ASSERT(fio);
@@ -262,9 +285,6 @@ BOOL FASTCALL OPMIF::Load(Fileio *fio, int ver)
 	LOG0(Log::Normal, "Load");
 
 	// Load size and verify
-	if (!fio->Read(&sz, sizeof(sz))) {
-		return FALSE;
-	}
 	if (sz != sizeof(opm_t)) {
 		return FALSE;
 	}
@@ -294,12 +314,25 @@ BOOL FASTCALL OPMIF::Load(Fileio *fio, int ver)
 	if (!event[1].Load(fio, ver)) {
 		return FALSE;
 	}
+	if(extended) {
+		DWORD kind,bytes;
+		if(bufinfo.read>=BufMax || bufinfo.write>=BufMax || bufinfo.num>BufMax ||
+		   !fio->Read(opmbuf,BufMax*2*sizeof(DWORD)) || !fio->Read(&kind,4) ||
+		   !fio->Read(&bytes,4) || bytes>65536 || !bytes)return FALSE;
+		std::vector<unsigned char> state(bytes);
+		if(!fio->Read(state.data(),bytes))return FALSE;
+		if(engine && engine->AudioStateKind()==kind) {
+			if(!engine->LoadAudioState(state))return FALSE;
+			full_audio_state=TRUE;return TRUE;
+		}
+	}
 
 	// Initialize buffer
 	InitBuf(bufinfo.rate * 100);
 
 	// Re-set register to engine
 	if (engine) {
+		if(engine->AudioStateKind())engine->Reset();
 		const bool raw_mode = engine->UseRawModeReg();
 		// Register set: MFB, LFO, PMD, AMD, CSM
 		engine->SetReg(0x0f, opm.reg[0x0f]);
@@ -598,6 +631,8 @@ BOOL FASTCALL OPMIF::Callback(Event *ev)
 void FASTCALL OPMIF::SetEngine(FM::OPM *p)
 {
 	int i;
+	if(full_audio_state && engine==p && p) { adpcm->Enable(TRUE);return; }
+	full_audio_state=FALSE;
 
  ASSERT(this);
  ASSERT_DIAG();
@@ -681,7 +716,8 @@ void FASTCALL OPMIF::Output(DWORD addr, DWORD data)
 		case 0x1b:
 			CtrlCT(data);
 			opm.reg[addr] = data;
-			data &= raw_mode ? 0xff : 0x3f;
+			// TypeG handles the CT pins here and sends only the six FM bits.
+			data &= 0x3f;
 			break;
 
 		// Key
@@ -816,6 +852,12 @@ void FASTCALL OPMIF::CtrlTimer(DWORD data)
 		// 0->1 loads timer value, otherwise timer ON
 		if (!opm.enable[0]) {
 			CalcTimerA();
+			// TypeG's CSM startup event at the maximum Timer-A period.
+			if (engine && engine->UseRawModeReg() && (data & 0x80) &&
+				opm.reg[0x10] == 0 && (opm.reg[0x11] & 3) == 0) {
+				ProcessBuf();
+				engine->TimerA();
+			}
 		}
 		opm.enable[0] = TRUE;
 	}
@@ -921,6 +963,7 @@ void FASTCALL OPMIF::GetBufInfo(opmbuf_t *buf)
 //---------------------------------------------------------------------------
 void FASTCALL OPMIF::InitBuf(DWORD rate, BOOL resetADPCM)
 {
+	full_audio_state=FALSE;
  ASSERT(this);
  ASSERT(rate > 0);
  ASSERT((rate % 100) == 0);

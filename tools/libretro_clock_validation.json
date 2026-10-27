@@ -1,0 +1,169 @@
+{
+  "options64": {
+    "status": "PASS",
+    "bits": 64,
+    "option_cases": 16,
+    "cycle_table_entries_per_case": 4096,
+    "frontend_apis": [
+      2,
+      0
+    ],
+    "guest_cpu_executed": false
+  },
+  "status": "PASS",
+  "sha256": {
+    "tools/test_libretro_clock.cpp": "d0f34356fb88062e301290dea331fc1d366e965084a0b793e9e3aa7fa8d86240",
+    "tools/timing_probe.py": "0e61247b14b40e179061e5d3e9ce8daabbcf612d0c8c4331bf56f3020fd3c991",
+    "libretro/Release/xm6_libretro.dll": "f5e0657da802f9d4a5b7b13bb8bcfe2bcf3936bbfd0d369e93ec9b97941215f7",
+    "libretro/xm6_libretro.cpp": "132defac6ee70af8f1ee6935b21cb11e6aa26bec9421c7bd667139703a488002",
+    "libretro/Release_x64/xm6_libretro.dll": "fd0c64bcb7acbbb1d77584b5f506461568fcd34416e8091e98be0255381268f8"
+  },
+  "date": "2026-10-24",
+  "throughput": {
+    "status": "PASS",
+    "cases": [
+      {
+        "render": 0,
+        "clock": 0,
+        "selected_speed": 979,
+        "loops": 54389,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0010672000007616589
+      },
+      {
+        "render": 0,
+        "clock": 1,
+        "selected_speed": 1171,
+        "loops": 65056,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.001175699999294011
+      },
+      {
+        "render": 0,
+        "clock": 2,
+        "selected_speed": 1460,
+        "loops": 81112,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0012976999987586169
+      },
+      {
+        "render": 0,
+        "clock": 3,
+        "selected_speed": 1556,
+        "loops": 86445,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0014425999997911276
+      },
+      {
+        "render": 0,
+        "clock": 4,
+        "selected_speed": 1689,
+        "loops": 93834,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0014159000002109678
+      },
+      {
+        "render": 0,
+        "clock": 5,
+        "selected_speed": 2200,
+        "loops": 122223,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0016479999994771788
+      },
+      {
+        "render": 0,
+        "clock": 6,
+        "selected_speed": 2500,
+        "loops": 138889,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0018638000001374166
+      },
+      {
+        "render": 0,
+        "clock": 7,
+        "selected_speed": 4000,
+        "loops": 222223,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0033951000004890375
+      },
+      {
+        "render": 1,
+        "clock": 0,
+        "selected_speed": 979,
+        "loops": 54389,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.001173900000139838
+      },
+      {
+        "render": 1,
+        "clock": 1,
+        "selected_speed": 1171,
+        "loops": 65056,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0020177999995212303
+      },
+      {
+        "render": 1,
+        "clock": 2,
+        "selected_speed": 1460,
+        "loops": 81112,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0019831000008707633
+      },
+      {
+        "render": 1,
+        "clock": 3,
+        "selected_speed": 1556,
+        "loops": 86445,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.001859800000602263
+      },
+      {
+        "render": 1,
+        "clock": 4,
+        "selected_speed": 1689,
+        "loops": 93834,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0014336000003822846
+      },
+      {
+        "render": 1,
+        "clock": 5,
+        "selected_speed": 2200,
+        "loops": 122223,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0017982999997911975
+      },
+      {
+        "render": 1,
+        "clock": 6,
+        "selected_speed": 2500,
+        "loops": 138889,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0018237000003864523
+      },
+      {
+        "render": 1,
+        "clock": 7,
+        "selected_speed": 4000,
+        "loops": 222223,
+        "virtual_hus": 200000,
+        "wall_seconds": 0.0025504000004730187
+      }
+    ],
+    "guest_cpu_executed": "Only the synthetic ADDQ.L/BRA.S loop; no game execution",
+    "scope": "Core CPU throughput at all eight scheduler clocks in both video modes"
+  },
+  "options32": {
+    "status": "PASS",
+    "bits": 32,
+    "option_cases": 16,
+    "cycle_table_entries_per_case": 4096,
+    "frontend_apis": [
+      2,
+      0
+    ],
+    "guest_cpu_executed": false
+  },
+  "baseline": "Previous x64 DLL reproduced 10mhz -> scheduler index 6, speed 2500 (25 MHz)."
+}

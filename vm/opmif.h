@@ -96,6 +96,8 @@ public:
 	void FASTCALL GetBuf(DWORD *buf, int samples);
 										// バッファより取得
 	void FASTCALL GetBufInfo(opmbuf_t *buffer);
+	BOOL FASTCALL HasCompleteAudioState() const { return full_audio_state; }
+	DWORD FASTCALL GetOutputRate() const { return bufinfo.rate * 100; }
 										// バッファ情報を得る
 	void FASTCALL EnableFM(BOOL flag)	{ bufinfo.sound = flag; }
 										// FM音源有効
@@ -127,6 +129,7 @@ private:
 										// タイマーイベント
 	FM::OPM *engine;
     BOOL ignore_busy;
+	BOOL full_audio_state;
 										// 合成エンジン
 	enum {
 		BufMax = 0x10000				// バッファサイズ
