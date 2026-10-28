@@ -1,0 +1,33 @@
+{
+  "sha256": {
+    "tools/test_libretro_joy_options.cpp": "731c632b74af3f7b758b0a3e89c70cc2575f27b7aef0d98956f330d31933865d",
+    "libretro/Release/xm6_libretro.dll": "d44a4c294b08a7079e40c5689420f155a8d2efdbfbb7a29d23727b3e56b1caf6",
+    "libretro/Release_x64/xm6_libretro.dll": "48f2004538b5b8f5a642c0cb598aeec63a59140d589b705a5e66e522829ddab1",
+    "libretro/xm6_libretro.cpp": "132defac6ee70af8f1ee6935b21cb11e6aa26bec9421c7bd667139703a488002",
+    "vm/xm6core_runtime.cpp": "f1cde3a68a206f715d191f56493a283d355548b40471a99a88bb85cb46a4f14f"
+  },
+  "tests": {
+    "32": {
+      "status": "PASS",
+      "bits": 32,
+      "option_changes": 24,
+      "button_cases": 192,
+      "ports": 2,
+      "checks": "Both actual PPI types and four guest-observed bank bytes per button",
+      "game_executed": false
+    },
+    "64": {
+      "status": "PASS",
+      "bits": 64,
+      "option_changes": 24,
+      "button_cases": 192,
+      "ports": 2,
+      "checks": "Both actual PPI types and four guest-observed bank bytes per button",
+      "game_executed": false
+    }
+  },
+  "baseline": "Previous x64 DLL failed after changing FM volume: actual PPI types 1/0 instead of selected CPSF-SFC 7/7.",
+  "scope": "Actual Libretro option-update/input callbacks, both PPI types and guest-observed CPSF-SFC packet bytes; 24 hot option changes, eight buttons, both ports, x86 and x64.",
+  "status": "PASS",
+  "date": "2026-10-28"
+}

@@ -88,6 +88,9 @@ extern "C" XM6CORE_API int XM6CORE_CALL xm6_set_joy_type(XM6Handle handle, int p
 		ctx->ppi = ppi;
 	}
 
+	// Other runtime setters reapply this Config to every device. Keep the
+	// selected controller here too, so they cannot recreate the default pad.
+	ctx->runtime_config.joy_type[port] = type;
 	ppi->SetJoyType(port, type);
 	return XM6CORE_OK;
 }
